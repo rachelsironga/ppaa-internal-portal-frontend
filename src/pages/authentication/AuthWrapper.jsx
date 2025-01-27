@@ -13,7 +13,7 @@ export const AuthWrapper = ({ children }) => {
                                     <span className="app-brand-logo demo">
                                         <img src="/assets/img/sneat.svg" alt="sneat-logo" />
                                     </span>
-                                    <span className="app-brand-text demo text-body fw-bold">Sneat</span>
+                                    <span className="app-brand-text demo text-body fw-bold">EduTech</span>
                                 </Link>
                             </div>
                             {children}

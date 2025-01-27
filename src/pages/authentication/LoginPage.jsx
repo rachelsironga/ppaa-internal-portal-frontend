@@ -10,6 +10,9 @@ export const LoginPage = () => {
         rememberMe: false,
     });
 
+    const [isloading, setIsLoading] = useState(true);
+
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
 
@@ -21,13 +24,15 @@ export const LoginPage = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        console.log('Form isloading:', isloading);
         // Handle form submission logic here
         console.log('Form submitted:', formData);
     };
     return (
         <AuthWrapper>
-            <h4 className="mb-2">Welcome to Sneat! 👋</h4>
-            <p className="mb-4">Please sign-in to your account and start the adventure</p>
+            <h4 className="mb-2">Welcome to Edutech! 👋</h4>
+            <p className="mb-4">Sign-in to your account to Start Explore</p>
 
             <form id="formAuthentication" className="mb-3" onSubmit={handleSubmit}>
                 <div className="mb-3">
@@ -36,6 +41,7 @@ export const LoginPage = () => {
                         type="text"
                         className="form-control"
                         id="email"
+                        required='required'
                         value={formData.name}
                         onChange={handleChange}
                         name="email"
@@ -54,6 +60,7 @@ export const LoginPage = () => {
                             type="password"
                             autoComplete="true"
                             id="password"
+                            required='required'
                             value={formData.password}
                             onChange={handleChange}
                             className="form-control"

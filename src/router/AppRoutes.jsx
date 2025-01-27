@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 // Layout
 import { WithoutMenuPage } from "../pages/layouts/WithoutMenuPage";
 import { WithoutNavbarPage } from "../pages/layouts/WithoutNavbarPage";
@@ -7,7 +7,7 @@ import { FluidPage } from "../pages/layouts/FluidPage";
 import { BlankPage } from "../pages/layouts/BlankPage";
 
 import { LoginPage } from "../pages/authentication/LoginPage";
-import { RegisterPage } from "../pages/authentication/RegisterPage";
+import RegisterPage from "../pages/authentication/RegisterPage";
 import { ForgotPasswordPage } from "../pages/authentication/ForgotPasswordPage";
 import { AccountPage } from "../pages/account/AccountPage";
 import { Connections } from "../pages/account/ConnectionsPage";
@@ -20,7 +20,7 @@ import { AlertPage } from "../pages/user-interface/AlertPage";
 import { BadgesPage } from "../pages/user-interface/BadgePage";
 import { ButtonPage } from "../pages/user-interface/ButtonPage";
 import { CarouselPage } from "../pages/user-interface/CarouselPage";
-import { CardsPage } from   "../pages/user-interface/CardsPage";
+import { CardsPage } from "../pages/user-interface/CardsPage";
 import { CollapsePage } from "../pages/user-interface/CollapsePage";
 import { DropdownPage } from "../pages/user-interface/DropdownPage";
 import { FooterPage } from "../pages/user-interface/FooterPage";
@@ -48,11 +48,29 @@ import { DashboardPage } from "../pages/DashboardPage";
 import { PerfectScrollbarPage } from "../pages/extended-ui/PerfectScrollbar";
 import { TextDividerPage } from "../pages/extended-ui/TextDividerPage";
 
+
+
+
+function Logout() {
+    localStorage.clear
+    return <Navigate to="/auth/login" />
+}
+
+function RegisterAndLogout() {
+    localStorage.clear
+    return <RegisterPage />
+}
+
+
 const AppRoutes = () => {
     return (
         <Routes>
+            <Route path="/auth/login" element={<LoginPage />} />
+            <Route path="/auth/register" element={<RegisterAndLogout />} />
+            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/" element={<DashboardPage />} />
-            
+            <Route path="*" element={<ErrorPage />} />
+
             <Route path="/layout/without-menu" element={<WithoutMenuPage />} />
             <Route path="/layout/without-navbar" element={<WithoutNavbarPage />} />
             <Route path="/layout/container" element={<ContainerPage />} />
@@ -81,9 +99,6 @@ const AppRoutes = () => {
             <Route path="/ui/tooltips-popovers" element={<TooltipPopoverPage />} />
             <Route path="/ui/typography" element={<TypographyPage />} />
 
-            <Route path="/auth/login" element={<LoginPage />} />
-            <Route path="/auth/register" element={<RegisterPage />} />
-            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
 
             <Route path="/account/settings" element={<AccountPage />} />
             <Route path="/account/notifications" element={<NotificationPage />} />
@@ -91,7 +106,7 @@ const AppRoutes = () => {
 
             <Route path="/misc/error" element={<ErrorPage />} />
             <Route path="/misc/under-maintenance" element={<MaintenancePage />} />
-            
+
             <Route path="/extended-ui/perfect-scrollbar" element={<PerfectScrollbarPage />} />
             <Route path="/extended-ui/text-divider" element={<TextDividerPage />} />
 
@@ -99,7 +114,7 @@ const AppRoutes = () => {
 
             <Route path="/form/basic-inputs" element={<BasicInputPage />} />
             <Route path="/form/input-groups" element={<InputGroupPage />} />
-            
+
             <Route path="/form-layout/horizontal-form" element={<HorizontalFormPage />} />
             <Route path="/form-layout/vertical-form" element={<VerticalFormPage />} />
 

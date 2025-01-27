@@ -1,11 +1,14 @@
-import { useState } from "react";
-import { Link } from "react-router-dom"
-import './page-auth.css'
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import './page-auth.css';
 import { AuthWrapper } from "./AuthWrapper";
+import { connect } from "react-redux";
+import { signup } from "../../state-manager/actions/authentication";
 
-export const RegisterPage = () => {
+const RegisterPage = ({ isLoading, success, msg, status, signup }) => {
     const [formData, setFormData] = useState({
-        username: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
         terms: false,
@@ -22,32 +25,68 @@ export const RegisterPage = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Handle form submission logic here
-        console.log('Form submitted:', formData);
+        signup(formData);
     };
+
+    useEffect(() => {
+        if (success) {
+            // Handle success, e.g., redirect to login page or show a success message
+            console.log("Registration successful!");
+        }
+    }, [success]);
 
     return (
         <AuthWrapper>
+            <h4 className="mb-2">Create Your New Account 🚀</h4>
+            <p className="mb-4">Please Make Sure you give Correct Information</p>
 
-            <h4 className="mb-2">Adventure starts here 🚀</h4>
-            <p className="mb-4">Make your app management easy and fun!</p>
+            {msg && (
+                <div className="alert alert-danger" role="alert">
+                    {typeof msg === "string" ? msg : JSON.stringify(msg)}
+                </div>
+            )}
+
+            {success && (
+                <div className="alert alert-success" role="alert">
+                    Registration successful! Please check your email to verify your account.
+                </div>
+            )}
 
             <form id="formAuthentication" className="mb-3" onSubmit={handleSubmit}>
                 <div className="mb-3">
-                    <label htmlFor="username" className="form-label">Username</label>
+                    <label htmlFor="first_name" className="form-label">First Name</label>
                     <input
                         type="text"
                         className="form-control"
-                        id="username"
-                        value={formData.username}
+                        id="first_name"
+                        value={formData.first_name}
                         onChange={handleChange}
-                        name="username"
-                        placeholder="Enter your username"
+                        name="first_name"
+                        placeholder="Enter your first name"
+                        autoFocus />
+                </div>
+                <div className="mb-3">
+                    <label htmlFor="last_name" className="form-label">Last Name</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        id="last_name"
+                        value={formData.last_name}
+                        onChange={handleChange}
+                        name="last_name"
+                        placeholder="Enter your last name"
                         autoFocus />
                 </div>
                 <div className="mb-3">
                     <label htmlFor="email" className="form-label">Email</label>
-                    <input type="text" className="form-control" id="email" name="email" placeholder="Enter your email" />
+                    <input
+                        type="text"
+                        className="form-control"
+                        id="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        name="email"
+                        placeholder="Enter your email" />
                 </div>
                 <div className="mb-3 form-password-toggle">
                     <label className="form-label" htmlFor="password">Password</label>
@@ -76,11 +115,13 @@ export const RegisterPage = () => {
                         />
                         <label className="form-check-label" htmlFor="terms-conditions">
                             I agree to
-                            <a aria-label="pricacy policy and terms" href="#"> privacy policy & terms</a>
+                            <a aria-label="privacy policy and terms" href="#"> privacy policy & terms</a>
                         </label>
                     </div>
                 </div>
-                <button aria-label='Click me' className="btn btn-primary d-grid w-100">Sign up</button>
+                <button aria-label='Click me' className="btn btn-primary d-grid w-100" disabled={isLoading}>
+                    {isLoading ? 'Signing up...' : 'Sign up'}
+                </button>
             </form>
 
             <p className="text-center">
@@ -90,7 +131,19 @@ export const RegisterPage = () => {
                     Back to login
                 </Link>
             </p>
-
         </AuthWrapper>
-    )
-}
+    );
+};
+
+const mapStateToProps = (state) => ({
+    isLoading: state.signupReducer.isLoading,
+    success: state.signupReducer.success,
+    msg: state.errorReducer.msg,
+    status: state.errorReducer.status,
+});
+
+const mapDispatchToProps = {
+    signup: signup,
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(RegisterPage);
