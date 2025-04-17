@@ -2,9 +2,9 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom';
 
 const navData = [
-    { link: '/account/settings', name: 'Account' },
-    { link: '/account/notifications', name: 'Notifications' },
-    { link: '/account/connections', name: 'Connections' }
+    { link: '/account/settings', name: 'Personal Info' },
+    { link: '/account/notifications', name: 'Account Setup' },
+    { link: '/account/password', name: 'Change Password' }
 ];
 const MenuItem = (item, index) => {
     const location = useLocation();
@@ -18,7 +18,7 @@ const MenuItem = (item, index) => {
 export const AccountWrapper = ({ title, children }) => {
     return (
         <>
-            <h4 className="py-3 mb-4"><span className="text-muted fw-light">Account Settings /</span> {title}</h4>
+            <h4 className="py-3 mb-4"><span className="text-muted fw-light">Profile /</span> {title}</h4>
 
             <div className="row">
                 <div className="col-md-12">

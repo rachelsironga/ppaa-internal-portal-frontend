@@ -6,7 +6,7 @@ import { ContainerPage } from "../pages/layouts/ContainerPage";
 import { FluidPage } from "../pages/layouts/FluidPage";
 import { BlankPage } from "../pages/layouts/BlankPage";
 
-import { LoginPage } from "../pages/authentication/LoginPage";
+import LoginPage from "../pages/authentication/LoginPage";
 import RegisterPage from "../pages/authentication/RegisterPage";
 import { ForgotPasswordPage } from "../pages/authentication/ForgotPasswordPage";
 import { AccountPage } from "../pages/account/AccountPage";
@@ -47,6 +47,13 @@ import { DashboardPage } from "../pages/DashboardPage";
 
 import { PerfectScrollbarPage } from "../pages/extended-ui/PerfectScrollbar";
 import { TextDividerPage } from "../pages/extended-ui/TextDividerPage";
+import ChangePassword from "../pages/account/ChangePassword";
+import { DepartmentPage } from "../pages/department/View";
+import { ApprovalLevelPage } from "../pages/approval_level/View";
+import { ApprovalActionPage } from "../pages/approval_action/View";
+import { ApprovalModulePage } from "../pages/approval_module/View";
+import { ApprovalModuleOpenPage } from "../pages/approval_module/Open";
+import { ApprovalRequestPage } from "../pages/approval_request/View";
 
 
 
@@ -70,6 +77,17 @@ const AppRoutes = () => {
             <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/" element={<DashboardPage />} />
             <Route path="*" element={<ErrorPage />} />
+
+            {/* settings */}
+            <Route path="/settings/departments" element={<DepartmentPage />} />
+            <Route path="/settings/approval-levels" element={<ApprovalLevelPage />} />
+            <Route path="/settings/approval-actions" element={<ApprovalActionPage />} />
+            <Route path="/settings/approval-modules" element={<ApprovalModulePage />} />
+            <Route path="/settings/approval-modules-open/:uid" element={<ApprovalModuleOpenPage />} />
+
+            {/* Requestes */}
+            <Route path="/requests" element={<ApprovalRequestPage />} />
+
 
             <Route path="/layout/without-menu" element={<WithoutMenuPage />} />
             <Route path="/layout/without-navbar" element={<WithoutNavbarPage />} />
@@ -103,6 +121,7 @@ const AppRoutes = () => {
             <Route path="/account/settings" element={<AccountPage />} />
             <Route path="/account/notifications" element={<NotificationPage />} />
             <Route path="/account/connections" element={<Connections />} />
+            <Route path="/account/password" element={<ChangePassword />} />
 
             <Route path="/misc/error" element={<ErrorPage />} />
             <Route path="/misc/under-maintenance" element={<MaintenancePage />} />

@@ -1,0 +1,5 @@
+export const requestTypes = {
+    REQUEST_WAIT: 'REQUEST_WAIT',
+    REQUEST_SUCCESS: 'REQUEST_SUCCESS',
+    REQUEST_FAILURE: 'REQUEST_FAILURE',
+};
