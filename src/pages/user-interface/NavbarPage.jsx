@@ -10,7 +10,7 @@ export const NavbarPage = () => {
             <nav className="navbar navbar-expand-lg navbar-light bg-light mb-5">
                 <div className="container-fluid">
                     <a aria-label="navbar link" className="navbar-brand" href="#">Navbar</a>
-                    <button 
+                    <button
                         className="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
@@ -67,7 +67,7 @@ export const NavbarPage = () => {
                 <nav className="navbar navbar-example navbar-expand-lg navbar-light bg-light">
                     <div className="container-fluid">
                         <a aria-label="navbar link" className="navbar-brand" href="#">Navbar</a>
-                        <button 
+                        <button
                             className="navbar-toggler"
                             type="button"
                             data-bs-toggle="collapse"

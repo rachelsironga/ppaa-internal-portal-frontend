@@ -1,8 +1,10 @@
 import { useLocation } from "react-router-dom";
 import { AccountWrapper } from "../../components/wrapper/AccountWrapper";
 import { useEffect } from "react";
+import { useSelector } from "react-redux";
 
 export const AccountPage = () => {
+    const user = useSelector((state) => state.userReducer?.data);
     useEffect(() => {
         const deactivateAcc = document.querySelector('#formAccountDeactivation');
 
@@ -74,12 +76,12 @@ export const AccountPage = () => {
                                         type="text"
                                         id="firstName"
                                         name="firstName"
-                                        value="John"
+                                        value={user.first_name}
                                         autoFocus />
                                 </div>
                                 <div className="mb-3 col-md-6">
                                     <label htmlFor="lastName" className="form-label">Last Name</label>
-                                    <input className="form-control" type="text" name="lastName" id="lastName" value="Doe" />
+                                    <input className="form-control" type="text" name="lastName" id="lastName" value={user.last_name} />
                                 </div>
                                 <div className="mb-3 col-md-6">
                                     <label htmlFor="email" className="form-label">E-mail</label>
@@ -88,7 +90,9 @@ export const AccountPage = () => {
                                         type="text"
                                         id="email"
                                         name="email"
-                                        value="john.doe@example.com"
+                                        value={user.email}
+                                        readOnly='readOnly'
+                                        disabled='disabled'
                                         placeholder="john.doe@example.com" />
                                 </div>
                                 <div className="mb-3 col-md-6">
@@ -103,13 +107,15 @@ export const AccountPage = () => {
                                 <div className="mb-3 col-md-6">
                                     <label className="form-label" htmlFor="phoneNumber">Phone Number</label>
                                     <div className="input-group input-group-merge">
-                                        <span className="input-group-text">US (+1)</span>
+                                        <span className="input-group-text">US (+255)</span>
                                         <input
                                             type="text"
                                             id="phoneNumber"
                                             name="phoneNumber"
                                             className="form-control"
-                                            placeholder="202 555 0111" />
+                                            maxLength={9}
+                                            value={user.phone_number}
+                                            placeholder="7XX XXX XXXX" />
                                     </div>
                                 </div>
                                 <div className="mb-3 col-md-6">
@@ -170,67 +176,11 @@ export const AccountPage = () => {
                                         <option value="pt">Portuguese</option>
                                     </select>
                                 </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="timeZones" className="form-label">Timezone</label>
-                                    <select id="timeZones" className="select2 form-select">
-                                        <option value="">Select Timezone</option>
-                                        <option value="-12">(GMT-12:00) International Date Line West</option>
-                                        <option value="-11">(GMT-11:00) Midway Island, Samoa</option>
-                                        <option value="-10">(GMT-10:00) Hawaii</option>
-                                        <option value="-9">(GMT-09:00) Alaska</option>
-                                        <option value="-8">(GMT-08:00) Pacific Time (US & Canada)</option>
-                                        <option value="-8">(GMT-08:00) Tijuana, Baja CalihtmlFornia</option>
-                                        <option value="-7">(GMT-07:00) Arizona</option>
-                                        <option value="-7">(GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
-                                        <option value="-7">(GMT-07:00) Mountain Time (US & Canada)</option>
-                                        <option value="-6">(GMT-06:00) Central America</option>
-                                        <option value="-6">(GMT-06:00) Central Time (US & Canada)</option>
-                                        <option value="-6">(GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
-                                        <option value="-6">(GMT-06:00) Saskatchewan</option>
-                                        <option value="-5">(GMT-05:00) Bogota, Lima, Quito, Rio Branco</option>
-                                        <option value="-5">(GMT-05:00) Eastern Time (US & Canada)</option>
-                                        <option value="-5">(GMT-05:00) Indiana (East)</option>
-                                        <option value="-4">(GMT-04:00) Atlantic Time (Canada)</option>
-                                        <option value="-4">(GMT-04:00) Caracas, La Paz</option>
-                                    </select>
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="currency" className="form-label">Currency</label>
-                                    <select id="currency" className="select2 form-select">
-                                        <option value="">Select Currency</option>
-                                        <option value="usd">USD</option>
-                                        <option value="euro">Euro</option>
-                                        <option value="pound">Pound</option>
-                                        <option value="bitcoin">Bitcoin</option>
-                                    </select>
-                                </div>
                             </div>
                             <div className="mt-2">
                                 <button aria-label='Click me' type="submit" className="btn btn-primary me-2">Save changes</button>
                                 <button aria-label='Click me' type="reset" className="btn btn-outline-secondary">Cancel</button>
                             </div>
-                        </form>
-                    </div>
-                </div>
-                <div className="card">
-                    <h5 className="card-header">Delete Account</h5>
-                    <div className="card-body">
-                        <div className="mb-3 col-12 mb-0">
-                            <div className="alert alert-warning">
-                                <h6 className="alert-heading mb-1">Are you sure you want to delete your account?</h6>
-                                <p className="mb-0">Once you delete your account, there is no going back. Please be certain.</p>
-                            </div>
-                        </div>
-                        <form id="formAccountDeactivation" onSubmit="return false">
-                            <div className="form-check mb-3">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    name="accountActivation"
-                                    id="accountActivation" />
-                                <label className="form-check-label" htmlFor="accountActivation">I confirm my account deactivation</label>
-                            </div>
-                            <button aria-label='Click me' type="submit" className="btn btn-danger deactivate-account">Deactivate Account</button>
                         </form>
                     </div>
                 </div>

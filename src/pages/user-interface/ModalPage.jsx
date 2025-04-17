@@ -204,7 +204,7 @@ export const ModalPage = () => {
                                     className="btn btn-primary"
                                     data-bs-toggle="modal"
                                     data-bs-target="#youTubeModal"
-                                    >
+                                >
                                     Launch modal
                                 </button>
 
@@ -237,7 +237,7 @@ export const ModalPage = () => {
                                     id="modalToggle"
                                     aria-labelledby="modalToggleLabel"
                                     tabIndex="-1"
-                                    style={{display: "none"}}
+                                    style={{ display: "none" }}
                                     aria-hidden="true">
                                     <div className="modal-dialog modal-dialog-centered">
                                         <div className="modal-content">

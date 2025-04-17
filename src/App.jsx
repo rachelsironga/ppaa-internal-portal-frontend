@@ -4,7 +4,10 @@ import AppRoutes from "./router/AppRoutes";
 import { Blank } from "./layouts/Blank";
 import ProtectedRoute from "./components/wrapper/ProtectedRoute";
 import { Provider } from "react-redux";
-import store from "./state-manager/store";
+import store, { persistor } from "./redux/store";
+import { PersistGate } from "redux-persist/integration/react";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const location = useLocation();
@@ -15,18 +18,22 @@ function App() {
     location.pathname.includes("blank");
   return (
     <>
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+
       <Provider store={store}>
-        {isAuthPath ? (
-          <AppRoutes>
-            <Blank />
-          </AppRoutes>
-        ) : (
-          <ProtectedRoute>
-            <Layout>
-              <AppRoutes />
-            </Layout>
-          </ProtectedRoute>
-        )}
+        <PersistGate loading={null} persistor={persistor}>
+          {isAuthPath ? (
+            <AppRoutes>
+              <Blank />
+            </AppRoutes>
+          ) : (
+            <ProtectedRoute>
+              <Layout>
+                <AppRoutes />
+              </Layout>
+            </ProtectedRoute>
+          )}
+        </PersistGate>
       </Provider>
 
     </>

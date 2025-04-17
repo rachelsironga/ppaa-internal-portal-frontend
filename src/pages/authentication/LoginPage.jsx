@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
 import './page-auth.css'
 import { AuthWrapper } from "./AuthWrapper";
+import { connect } from "react-redux";
+import { login } from "../../redux/actions"
 
-export const LoginPage = () => {
+
+
+
+const LoginPage = ({ isLoading, success, error, status, state, login, authUser }) => {
     const [formData, setFormData] = useState({
         password: '',
         email: '',
@@ -11,6 +17,8 @@ export const LoginPage = () => {
     });
 
     const [isloading, setIsLoading] = useState(true);
+
+    const navigate = useNavigate();
 
 
     const handleChange = (e) => {
@@ -24,19 +32,25 @@ export const LoginPage = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setIsLoading(true);
-        console.log('Form isloading:', isloading);
-        // Handle form submission logic here
-        console.log('Form submitted:', formData);
+        login(formData, navigate);
+        console.log(error);
     };
+
     return (
         <AuthWrapper>
-            <h4 className="mb-2">Welcome to Edutech! 👋</h4>
-            <p className="mb-4">Sign-in to your account to Start Explore</p>
+
+            {error && error?.message && (
+                <div className="alert alert-danger" role="alert">
+                    {error?.message}
+                </div>
+            )}
+
+
+
 
             <form id="formAuthentication" className="mb-3" onSubmit={handleSubmit}>
                 <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Email or Username</label>
+                    <label htmlFor="email" className="form-label">Email</label>
                     <input
                         type="text"
                         className="form-control"
@@ -45,7 +59,7 @@ export const LoginPage = () => {
                         value={formData.name}
                         onChange={handleChange}
                         name="email"
-                        placeholder="Enter your email or username"
+                        placeholder="Enter your email"
                         autoFocus />
                 </div>
                 <div className="mb-3 form-password-toggle">
@@ -70,6 +84,8 @@ export const LoginPage = () => {
                         <span className="input-group-text cursor-pointer"></span>
                     </div>
                 </div>
+                {error?.message && <div className="invalid-feedback">{error?.message}</div>}{" "}
+
                 <div className="mb-3">
                     <div className="form-check">
                         <input
@@ -84,7 +100,13 @@ export const LoginPage = () => {
                     </div>
                 </div>
                 <div className="mb-3">
-                    <button aria-label='Click me' className="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+                    <button
+                        aria-label="Click me"
+                        className="btn btn-primary d-grid w-100"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? "Signing in..." : "Sign In"}
+                    </button>
                 </div>
             </form>
 
@@ -98,3 +120,17 @@ export const LoginPage = () => {
         </AuthWrapper>
     )
 }
+
+const mapStateToProps = (state) => ({
+    isLoading: state.loginReducer.isLoading,
+    success: state.loginReducer.success,
+    error: state.loginReducer.error,
+    status: state.loginReducer.status,
+    authUser: state.userReducer,
+});
+
+const mapDispatchToProps = {
+    login: login,
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(LoginPage);
