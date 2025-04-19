@@ -298,7 +298,7 @@ export const ApprovalModuleOpenPage = () => {
                 </div>
 
                 <div className="card-body animate__animated animate__fadeInUp animate__faster">
-                    <div className="table-responsive text-nowrap mb-4">
+                    <div className="text-nowrap mb-4">
                         <DragDropContext onDragEnd={handleDragEnd}>
                             <table className="table table-hover table-align-middle mb-0 table-bordered" >
                                 <thead style={{ backgroundColor: "#f1f1f1" }}>

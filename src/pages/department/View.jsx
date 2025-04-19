@@ -190,7 +190,7 @@ export const DepartmentPage = () => {
                         </div>
                     </div>
 
-                    <div className="table-responsive text-nowrap animate__animated animate__fadeInUp animate__faster">
+                    <div className=" text-nowrap animate__animated animate__fadeInUp animate__faster">
                         <table className="table table-hover table-align-middle mb-0 table-bordered">
                             <thead style={{ backgroundColor: "#f1f1f1" }}>
                                 <tr>
@@ -288,31 +288,34 @@ export const DepartmentPage = () => {
                                 )}
                             </tbody>
                         </table>
+
+
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            {/* Your content here */}
+                            <div></div>
+                            <ReactPaginate
+                                previousLabel={"Previous"}
+                                nextLabel={"Next"}
+                                breakLabel={"..."}
+                                pageCount={Math.ceil((totalCount || 0) / (pageSize || 1))}
+                                marginPagesDisplayed={2}
+                                pageRangeDisplayed={5}
+                                onPageChange={handlePageClick}
+                                containerClassName={"pagination justify-content-center"}
+                                pageClassName={"page-item"}
+                                pageLinkClassName={"page-link"}
+                                previousClassName={"page-item"}
+                                previousLinkClassName={"page-link"}
+                                nextClassName={"page-item"}
+                                nextLinkClassName={"page-link"}
+                                breakClassName={"page-item"}
+                                breakLinkClassName={"page-link"}
+                                activeClassName={"active"}
+                            />
+                        </div>
                     </div>
 
-                    <div className="d-flex justify-content-between align-items-center mt-3">
-                        {/* Your content here */}
-                        <div></div>
-                        <ReactPaginate
-                            previousLabel={"Previous"}
-                            nextLabel={"Next"}
-                            breakLabel={"..."}
-                            pageCount={Math.ceil((totalCount || 0) / (pageSize || 1))}
-                            marginPagesDisplayed={2}
-                            pageRangeDisplayed={5}
-                            onPageChange={handlePageClick}
-                            containerClassName={"pagination justify-content-center"}
-                            pageClassName={"page-item"}
-                            pageLinkClassName={"page-link"}
-                            previousClassName={"page-item"}
-                            previousLinkClassName={"page-link"}
-                            nextClassName={"page-item"}
-                            nextLinkClassName={"page-link"}
-                            breakClassName={"page-item"}
-                            breakLinkClassName={"page-link"}
-                            activeClassName={"active"}
-                        />
-                    </div>
+
                 </div>
             </div>
         </DepartmentsContext.Provider>

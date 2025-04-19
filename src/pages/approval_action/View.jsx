@@ -192,7 +192,7 @@ export const ApprovalActionPage = () => {
                             </form>
                         </div>
                     </div>
-                    <div className="table-responsive text-nowrap animate__animated animate__fadeInUp animate__faster">
+                    <div className="text-nowrap animate__animated animate__fadeInUp animate__faster">
                         <table className="table table-hover table-align-middle mb-0 table-bordered">
                             <thead style={{ backgroundColor: "#f1f1f1" }}>
                                 <tr>
@@ -292,7 +292,7 @@ export const ApprovalActionPage = () => {
                                 )}
                             </tbody>
                         </table>
-                    </div>
+
 
                     <div className="d-flex justify-content-between align-items-center mt-3">
                         {/* Your content here */}
@@ -317,6 +317,9 @@ export const ApprovalActionPage = () => {
                             activeClassName={"active"}
                         />
                     </div>
+
+                    </div>
+
                 </div>
             </div>
         </ApprovalActionContext.Provider>
