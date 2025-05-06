@@ -3,7 +3,7 @@ import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
 import "animate.css";
-import { deleteItem, getItems, sortItemLevels } from "./Queries";
+import { deleteItem, deleteItemLevel, getItems, sortItemLevels } from "./Queries";
 import { ApprovalModuleContext } from "../../utils/context";
 import { useParams } from "react-router-dom";
 import ApprovalModuleLevelModal from "./LevelsModal";
@@ -89,6 +89,49 @@ export const ApprovalModuleOpenPage = () => {
         }
 
         setSelectedApprovalModule(null); // Reset selected approvalModule after deletion
+    };
+
+
+    const handleDeleteLevel = async (approvalModuleLevel = null) => {
+        if (!approvalModuleLevel) {
+            Swal.fire("Error!", "Unable to Select this Approval Module Level.", "error");
+            return;
+        }
+
+        try {
+            const confirmation = await Swal.fire({
+                title: "Are you sure?",
+                text: "Your About to Delete the Module Level",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                cancelButtonColor: "#aaa",
+                confirmButtonText: "Yes, delete it!",
+            });
+
+            if (confirmation.isConfirmed) {
+                const result = await deleteItemLevel(approvalModuleLevel.uid);
+                if (result.status === 200 || result.status === 8000) {
+                    Swal.fire(
+                        "Process Completed!",
+                        "The Approval Module Level has been deleted.",
+                        "success"
+                    );
+                    handleFetchData();
+                } else {
+                    console.error("Error deleting Approval Module:", result);
+                    Swal.fire("Error Occurred!", `${result.message}`, "error");
+                }
+            }
+        } catch (error) {
+            Swal.fire(
+                "Unsuccessful",
+                `Unable to Perform Delete. Please Try Again or Contact Support Team`,
+                "error"
+            );
+        }
+
+        setSelectedApprovalLevelModule(null); // Reset selected approvalModule after deletion
     };
 
     const handleSaveSorting = async () => {
@@ -201,7 +244,7 @@ export const ApprovalModuleOpenPage = () => {
                                     <i className="bx bx-edit-alt me-1"></i> Edit
                                 </button>
                                 <button
-                                    aria-label="CDelete Item"
+                                    aria-label="Delete Item"
                                     className="btn btn-danger ms-auto btn-sm"
                                     onClick={async () => {
                                         handleDelete(approvalModule);
@@ -421,11 +464,10 @@ export const ApprovalModuleOpenPage = () => {
                                                                                 <i className="bx bx-edit-alt me-1"></i> View / Edit
                                                                             </a>
                                                                             <a
-                                                                                aria-label="dropdown action option"
                                                                                 className="dropdown-item text-danger"
                                                                                 href="#"
                                                                                 onClick={async () => {
-                                                                                    // handleDelete(dataRows);
+                                                                                    handleDeleteLevel(dataRows);
                                                                                 }}
                                                                             >
                                                                                 <i className="bx bx-trash me-1"></i> Delete

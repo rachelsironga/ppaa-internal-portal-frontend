@@ -8,5 +8,6 @@ const ApprovalModuleContext = createContext();
 
 const DepartmentsContext = createContext();
 
+const DirectoryContext = createContext();
 
-export  {ApprovalActionContext, ApprovalLevelContext, DepartmentsContext, ApprovalModuleContext};
+export  {ApprovalActionContext, ApprovalLevelContext, DepartmentsContext,DirectoryContext, ApprovalModuleContext};

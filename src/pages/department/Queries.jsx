@@ -18,14 +18,24 @@ const setConfig = (pagination = {}) => ({
 export const getDepartments = async ({
     uid = "",
     search = "",
+    directory = "",
     pagination = {},
 }) => {
     try {
-        const response = await api.get(
-            `${API_URL}${uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`
-            }`,
-            uid == "" ? setConfig(pagination) : {}
-        );
+        let url = `${API_URL}`;
+        let config = {};
+
+        if (uid !== "") {
+            url += `/${uid}`;
+        } else {
+            const params = new URLSearchParams();
+            if (search) params.append("search", search);
+            if (directory) params.append("directory", directory);
+            url += `?${params.toString()}`;
+            config = setConfig(pagination);
+        }
+
+        const response = await api.get(url, config);
         return response.data;
     } catch (error) {
         console.error("Error fetching departments:", error);

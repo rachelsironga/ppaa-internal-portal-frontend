@@ -54,6 +54,8 @@ import { ApprovalActionPage } from "../pages/approval_action/View";
 import { ApprovalModulePage } from "../pages/approval_module/View";
 import { ApprovalModuleOpenPage } from "../pages/approval_module/Open";
 import { ApprovalRequestPage } from "../pages/approval_request/View";
+import { DirectoryPage } from "../pages/directory/View";
+import { DirectoryOpenPage } from "../pages/directory/Open";
 
 
 
@@ -79,6 +81,8 @@ const AppRoutes = () => {
             <Route path="*" element={<ErrorPage />} />
 
             {/* settings */}
+            <Route path="/settings/directories" element={<DirectoryPage />} />
+            <Route path="/settings/directory-open/:uid" element={<DirectoryOpenPage />} />
             <Route path="/settings/departments" element={<DepartmentPage />} />
             <Route path="/settings/approval-levels" element={<ApprovalLevelPage />} />
             <Route path="/settings/approval-actions" element={<ApprovalActionPage />} />

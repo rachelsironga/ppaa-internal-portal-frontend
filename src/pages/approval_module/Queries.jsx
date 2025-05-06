@@ -55,6 +55,17 @@ export const deleteItem = async (id) => {
     }
 };
 
+
+export const deleteItemLevel = async (id) => {
+    try {
+        const response = await axios.delete(`${API_URL_LEVEL}/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting Module Level:", error);
+        throw error;
+    }
+};
+
 export const createUpdateItemLevel = async (formData) => {
     try {
         const response = await api.post(API_URL_LEVEL, formData, config);

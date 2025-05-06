@@ -43,6 +43,7 @@ function ProtectedRoute({ children }) {
         } catch (error) {
             console.error("Authorization error:", error);
             setIsAuthorized(false);
+            dispatch(logout());
         }
     };
 

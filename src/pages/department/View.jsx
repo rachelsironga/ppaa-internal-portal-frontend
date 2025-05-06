@@ -190,13 +190,14 @@ export const DepartmentPage = () => {
                         </div>
                     </div>
 
-                    <div className=" text-nowrap animate__animated animate__fadeInUp animate__faster">
+                    <div className="table-responsive text-nowrap animate__animated animate__fadeInUp animate__faster">
                         <table className="table table-hover table-align-middle mb-0 table-bordered">
                             <thead style={{ backgroundColor: "#f1f1f1" }}>
                                 <tr>
                                     <th style={{ width: "50px" }}>S/N</th>
                                     <th>Name</th>
                                     <th>Code</th>
+                                    <th>Directory</th>
                                     <th style={{ width: "100px" }}>Status</th>
                                     <th style={{ width: "60px" }}>Actions</th>
                                 </tr>
@@ -236,6 +237,7 @@ export const DepartmentPage = () => {
                                             <td>{(currentPage - 1) * pageSize + index + 1}</td>
                                             <td className="fw-medium">{dept.name}</td>
                                             <td className="fw-medium">{dept.code}</td>
+                                            <td className="fw-medium text-center">{dept?.directory?.code ?? '--'}</td>
                                             <td>
                                                 <span
                                                     className={

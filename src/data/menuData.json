@@ -40,6 +40,14 @@
     "header": "SETINGS",
     "items": [
       {
+        "text": "Directories",
+        "icon": "bx bx-unite",
+        "available": true,
+        "link": "/settings/directories",
+        "permission": ["1"],
+        "role": ["admin"]
+      },
+      {
         "text": "Departments",
         "icon": "bx bx-layer",
         "available": true,
