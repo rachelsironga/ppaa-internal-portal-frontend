@@ -265,18 +265,6 @@ export const DirectoryPage = () => {
                                                                 <i className="bx bx-edit-alt me-1"></i> View
                                                             </button>
                                                             <a
-                                                                className="dropdown-item"
-                                                                href="#"
-                                                                onClick={() => {
-                                                                    setselectedDirectory(dept);
-                                                                }}
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#viewCreateDataModal"
-                                                            >
-                                                                <i className="bx bx-edit-alt me-1"></i> View /
-                                                                Edit
-                                                            </a>
-                                                            <a
                                                                 aria-label="dropdown action option"
                                                                 className="dropdown-item text-danger"
                                                                 href="#"
