@@ -7,6 +7,8 @@ import { toast } from "react-toastify";
 import showToast from "../../helpers/ToastHelper";
 import { DirectoryContext } from "../../utils/context";
 import { createUpdateDepartment } from "../department/Queries";
+import Select from "react-select";
+
 
 export const DirectoryModal = ({ loadOnlyModal = false }) => {
     const { fetchDirectories, selectedDirectory, setselectedDirectory } = useContext(DirectoryContext)
@@ -166,7 +168,7 @@ export const DirectoryModal = ({ loadOnlyModal = false }) => {
 };
 
 export const DirectoryDepartmentModal = () => {
-    const { fetchDepartments, selectedDepartment, setSelectedDepartment } = useContext(DepartmentsContext)
+    const { fetchDepartments, selectedDirectory, selectedDepartment, setSelectedDepartment } = useContext(DirectoryContext)
     const [errors, setOtherError] = useState({});
     const [loadingDirectories, setLoadingDirectories] = useState(false);
     const [directories, setDirectories] = useState([]);
@@ -176,7 +178,7 @@ export const DirectoryDepartmentModal = () => {
         code: selectedDepartment?.code || "",
         description: selectedDepartment?.description || "",
         is_active: selectedDepartment?.is_active ?? true,
-        directory_uid: selectedDepartment?.directory?.uid || "",
+        directory_uid: selectedDirectory?.uid || "",
     };
 
     const validationSchema = Yup.object().shape({
@@ -304,17 +306,8 @@ export const DirectoryDepartmentModal = () => {
                                                 <Select
                                                     isLoading={loadingDirectories}
                                                     className="select2-selection fetched-select2"
-                                                    onChange={(e) => {
-                                                        console.log("Selected Directory:", e);
-                                                        if (e === null || e.value == "") {
-                                                            setFieldValue("directory_uid", "");
-                                                        } else {
-                                                            setFieldValue("directory_uid", e.value);
-                                                        }
-                                                    }}
-                                                    onInputChange={(e) => {
-                                                        handleFetchDirectories(e);
-                                                    }}
+                                                    disabled={"disabled"}
+                                                    readOnly={true}
                                                     options={directories?.map((item) => ({
                                                         value: item.uid,
                                                         label: `${item.name} (${item.code})`,

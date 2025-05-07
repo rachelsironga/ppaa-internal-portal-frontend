@@ -3,13 +3,14 @@ import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
 import "animate.css";
-import { deleteDepartment } from "../department/Queries";
+import { deleteDepartment, getDepartments } from "../department/Queries";
 import { DirectoryContext } from "../../utils/context";
 import { useParams } from "react-router-dom";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { getDirectories } from "./Queries";
 import usePagination from "../../hooks/usePagination";
 import { DirectoryDepartmentModal, DirectoryModal } from "./Modal";
+import ReactPaginate from "react-paginate";
 
 
 
@@ -52,8 +53,6 @@ export const DirectoryOpenPage = () => {
             });
             if (result.status === 200 || result.status === 8000) {
                 setSelectedDirectory(result.data)
-                setDirectoryDepartments(result.data.departments);
-
             } else {
                 setError(true);
                 showToast("No Directory Found", "warning", "Fetch Completed");
@@ -68,11 +67,12 @@ export const DirectoryOpenPage = () => {
     };
 
     const fetchDepartments = async () => {
-        setLoading(true);
-        setError(null);
+        setLoadingDepartment(true);
+        setErrorDepartment(null);
         try {
             const result = await getDepartments({
                 search: searchQuery,
+                directory: uid,
                 pagination: {
                     page: currentPage,
                     page_size: pageSize,
@@ -80,7 +80,8 @@ export const DirectoryOpenPage = () => {
                 },
             });
             if (result.status === 200 || result.status === 8000) {
-                setDepartments(result.data);
+                setDirectoryDepartments(result.data);
+
                 if (result.pagination) {
                     updatePagination(result.pagination);
                     updateTotalCount(result.pagination.total || 0);
@@ -88,14 +89,14 @@ export const DirectoryOpenPage = () => {
                     updatePagination({});
                 }
             } else {
-                setError(true);
+                setErrorDepartment(true);
                 showToast("No Department Found", "warning", "Fetch Completed");
             }
         } catch (err) {
-            setError(true);
+            setErrorDepartment(true);
             showToast("Unable to Fetch Departments", "warning", "Failed");
         } finally {
-            setLoading(false);
+            setLoadingDepartment(false);
         }
     };
 
@@ -167,7 +168,7 @@ export const DirectoryOpenPage = () => {
                         "The Directory Department has been deleted.",
                         "success"
                     );
-                    handleFetchData();
+                    fetchDepartments();
                 } else {
                     console.error("Error deleting Department:", result);
                     Swal.fire("Error Occurred!", `${result.message}`, "error");
@@ -189,12 +190,13 @@ export const DirectoryOpenPage = () => {
         if (debounceTimeout) clearTimeout(debounceTimeout);
         const timeout = setTimeout(() => {
             handleFetchData();
-        }, 1500);
+            fetchDepartments();
+        }, 1000);
 
         setDebounceTimeout(timeout);
 
         return () => clearTimeout(timeout);
-    }, []);
+    }, [searchQuery, pageSize, currentPage]);
 
     return (
         <DirectoryContext.Provider
@@ -205,7 +207,8 @@ export const DirectoryOpenPage = () => {
                 selectedDirectory,
                 setSelectedDirectory,
                 selectedDepartment,
-                setSelectedDepartment
+                setSelectedDepartment,
+                fetchDepartments
             }}
         >
             <h4 className="py-3 mb-4">
@@ -231,7 +234,7 @@ export const DirectoryOpenPage = () => {
                                     type="button"
                                     className="btn btn-primary ms-auto btn-sm me-2"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#viewCreateDataModal">
+                                    data-bs-target="#viewCreateDirectoryModal">
                                     <i className="bx bx-edit-alt me-1"></i> Edit
                                 </button>
                                 <button
@@ -267,7 +270,7 @@ export const DirectoryOpenPage = () => {
                                 </center>
                             </div>
                         </div>
-                    ) : error || selectedDirectory.length === 0 ? (
+                    ) : error || selectedDirectory.length === null ? (
                         // error || directory.length === 0
                         <div className="alert alert-info" role="alert">
                             <div className="alert-body text-center">
@@ -301,16 +304,16 @@ export const DirectoryOpenPage = () => {
             <div className="card">
                 <div>
                     <div className="d-flex justify-content-between align-items-center card-header">
-                        <h5 className="mb-0">Directories Levels</h5>
-                        {loading || error || selectedDirectory == null ? (
+                        <h5 className="mb-0">Directories Departments</h5>
+                        {loadingDepartment || errorDepartment || selectedDirectory == null ? (
                             <div className="form-group"></div>
                         ) :
                             (
                                 <div className="form-group">
-                                    {/* <DirectoryDepartmentModal
+                                    <DirectoryDepartmentModal
                                         title="View Departments"
                                         onClose={() => setSelectedDepartment(null)}
-                                    /> */}
+                                    />
                                 </div>
 
                             )
@@ -319,6 +322,58 @@ export const DirectoryOpenPage = () => {
                 </div>
 
                 <div className="card-body animate__animated animate__fadeInUp animate__faster">
+                    <div className="d-flex justify-content-between align-items-center mb-2 animate__animated animate__fadeInDown animate__faster">
+                        <div className="d-flex align-items-center col-md-8 col-sm-6">
+                            <label className="text-sm font-medium me-2 mb-0">
+                                Rows per page:
+                            </label>
+                            <select
+                                value={pageSize}
+                                onChange={(e) => {
+                                    updatePageSize(Number(e.target.value));
+                                    updatePage(1);
+                                    updatePagination({
+                                        page: 1,
+                                        page_size: Number(e.target.value),
+                                    });
+                                }}
+                                className="form-select"
+                                aria-label="Default select example"
+                                style={{ width: "80px" }}
+                            >
+                                {pageSizeData.map((size) => (
+                                    <option key={size} value={size}>
+                                        {size}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className=" col-md-4 col-sm-6">
+                            <form className="d-flex">
+                                <div className="input-group">
+                                    <span className="input-group-text">
+                                        <i className="tf-icons bx bx-search"></i>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Search..."
+                                        value={searchQuery}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value);
+                                            updatePage(1);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                fetchDepartments();
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                     <div className="text-nowrap mb-4">
                         <table className="table table-hover table-align-middle mb-0 table-bordered" >
                             <thead style={{ backgroundColor: "#f1f1f1" }}>
@@ -331,7 +386,7 @@ export const DirectoryOpenPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="table-border-bottom-0">
-                                {loading ? (
+                                {loadingDepartment ? (
                                     <tr>
                                         <td colSpan="100%">
                                             <div className="col-md-12 col-lg-12 col-sm-12 p-2">
@@ -351,7 +406,7 @@ export const DirectoryOpenPage = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                ) : error || directoryDepartments.length === 0 ? (
+                                ) : errorDepartment || directoryDepartments.length === 0 ? (
                                     <tr>
                                         <td colSpan="100%">
                                             <div className="alert alert-info" role="alert">
@@ -419,7 +474,29 @@ export const DirectoryOpenPage = () => {
                                 )}
                             </tbody>
                         </table>
-                        <div style={{ minHeight: "40px" }}></div>
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            {/* Your content here */}
+                            <div></div>
+                            <ReactPaginate
+                                previousLabel={"Previous"}
+                                nextLabel={"Next"}
+                                breakLabel={"..."}
+                                pageCount={Math.ceil((totalCount || 0) / (pageSize || 1))}
+                                marginPagesDisplayed={2}
+                                pageRangeDisplayed={5}
+                                onPageChange={handlePageClick}
+                                containerClassName={"pagination justify-content-center"}
+                                pageClassName={"page-item"}
+                                pageLinkClassName={"page-link"}
+                                previousClassName={"page-item"}
+                                previousLinkClassName={"page-link"}
+                                nextClassName={"page-item"}
+                                nextLinkClassName={"page-link"}
+                                breakClassName={"page-item"}
+                                breakLinkClassName={"page-link"}
+                                activeClassName={"active"}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
