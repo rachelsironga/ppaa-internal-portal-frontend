@@ -12,9 +12,17 @@ const Sidebar = () => {
     console.log('userPermissions', userPermissions);
     console.log('userRoles', userRoles);
 
+    // const hasPermission = (itemPermissions, itemRoles, userPermissions, userRoles) => {
+    //     const hasRequiredPermission = !itemPermissions || itemPermissions.some(permission => userPermissions?.includes(permission));
+    //     const hasRequiredRole = !itemRoles || itemRoles.some(role => userRoles.includes(role));
+    //     return hasRequiredPermission || hasRequiredRole;
+    // };
+
     const hasPermission = (itemPermissions, itemRoles, userPermissions, userRoles) => {
-        const hasRequiredPermission = !itemPermissions || itemPermissions.some(permission => userPermissions?.includes(permission));
-        const hasRequiredRole = !itemRoles || itemRoles.some(role => userRoles.includes(role));
+        const hasRequiredPermission =
+            !itemPermissions || itemPermissions.some(permission => userPermissions?.includes(permission));
+        const hasRequiredRole =
+            !itemRoles || itemRoles.some(role => userRoles?.includes(role));
         return hasRequiredPermission || hasRequiredRole;
     };
 
@@ -45,14 +53,18 @@ const Sidebar = () => {
 
 
             <ul className="menu-inner py-1">
-                {menuData.map((section) => (
-                    <React.Fragment key={section.header}>
+                {menuData.map((section, sectionIndex) => (
+                    <React.Fragment key={"header-" + sectionIndex}>
                         {section.header && section.items.length > 0 && (
                             <li className="menu-header small text-uppercase">
-                                <span className="menu-header-text">{section.header} - {section.items.length}</span>
+                                <span className="menu-header-text">{section.header} </span>
                             </li>
                         )}
-                        {section.items.filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles)).map(MenuItem)}
+                        {section.items
+                            .filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles))
+                            .map((item, intemIndex) => (
+                                <MenuItem key={item.id || intemIndex} {...item} />
+                            ))}
                     </React.Fragment>
                 ))}
             </ul>
@@ -82,7 +94,11 @@ const MenuItem = (item) => {
                 )}
             </NavLink>
             {item.submenu && (
-                <ul key={item.submenu} className="menu-sub">{item.submenu.map(MenuItem)}</ul>
+                <ul key={`submenu-${item.id || item.text}`} className="menu-sub">
+                    {item.submenu.map((subitem, subitemIndex) => (
+                        <MenuItem key={subitem.id || `${item.id || item.text}-${subitemIndex}`} {...subitem} />
+                    ))}
+                </ul>
             )}
         </li>
     );
