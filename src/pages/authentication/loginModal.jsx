@@ -25,14 +25,19 @@ const showLoginDialog = () => {
         const Modal = () => {
             const [loading, setLoading] = React.useState(false);
             const user = useSelector((state) => state.userReducer);
+            const [errorMessage, setErrorMessage] = React.useState(false);
+            const [errorCount, setErrorCount] = React.useState(1);
             if (!user) {
                 reject(true)
                 closeModal();
             }
 
+
             const handleLogin = async () => {
                 if (loading) return;
                 setLoading(true);
+
+
 
                 try {
                     const email = user?.data?.email;
@@ -58,8 +63,27 @@ const showLoginDialog = () => {
                         closeModal();
                     }
                 } catch (error) {
-                    closeModal();
-                    reject(true);
+                    setLoading(false);
+
+                    if (error.status === 401) {
+                        alert("Invalid password. Try again." + errorCount);
+                        if (errorCount === 2) {
+                            closeModal();
+                            reject(true);
+                        } else {
+                            setErrorCount(errorCount + 1);
+                            setErrorMessage(
+                                <div>
+                                    Invalid password. Try again. <br /> <small>(Last attempt)</small>
+                                </div>
+                            );
+                        }
+
+                    } else {
+                        closeModal();
+                        reject(true);
+                    }
+
                 }
             };
 
@@ -110,14 +134,21 @@ const showLoginDialog = () => {
                                                 placeholder="Enter your password"
                                             />
                                         </div>
+                                        <div className="me-1">
+                                            {errorMessage && (
+                                                <div className="text-danger text-center" role="alert">
+                                                    {errorMessage}
+                                                </div>
+                                            )}
+                                        </div>
                                         <button
                                             type="button"
                                             className="btn btn-primary mt-2"
                                             style={{ width: "200px" }}
                                             onClick={handleLogin}
-                                            disabled={loading}
+                                            disabled={loading || errorCount > 2}
                                         >
-                                            {loading ? "Signing in..." : "Sign In"}                                        </button>
+                                            {loading ? "Verifying..." : "Verify"}                                         </button>
                                     </form>
                                 </div>
                             </div>

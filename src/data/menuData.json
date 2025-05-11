@@ -29,7 +29,7 @@
         "icon": "bx bx-layer",
         "available": true,
         "link": "/requests",
-        "permission": ["1"],
+        "permission": ["1", "delete_approvalactionw"],
         "role": ["admin"]
       }
     ]

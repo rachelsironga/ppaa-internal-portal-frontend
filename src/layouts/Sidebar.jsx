@@ -49,7 +49,7 @@ const Sidebar = () => {
                     <React.Fragment key={section.header}>
                         {section.header && section.items.length > 0 && (
                             <li className="menu-header small text-uppercase">
-                                <span className="menu-header-text">{section.header}</span>
+                                <span className="menu-header-text">{section.header} - {section.items.length}</span>
                             </li>
                         )}
                         {section.items.filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles)).map(MenuItem)}

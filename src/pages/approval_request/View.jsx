@@ -137,12 +137,11 @@ export const ApprovalRequestPage = () => {
       }}
     >
       <h4 className="py-3 mb-4">
-        <span className="text-muted fw-light">Setting /</span> Approval
-        Requestsddddd
+        <span className="text-muted fw-light">Setting /</span> Approval Requests
       </h4>
       <div className="card">
         <div className="d-flex justify-content-between align-items-center card-header">
-          <h5 className="mb-0">Request Of All List</h5>
+          <h5 className="mb-0">List Of All Request</h5>
           <ApprovalRequestModal
             title="View Approval Request"
             onClose={() => setSelectedApprovalRequest(null)}

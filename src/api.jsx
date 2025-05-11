@@ -26,7 +26,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (!error.config._retry) {
+    if (error.config.url && error.config.url.includes("/user/") || error.config.url.includes("/token/")) {
+      return Promise.reject(error);
+    }
+
       if (
         error.response &&
         (error.response.status === 401 || error.response.data?.status === 8001)
@@ -38,8 +41,6 @@ api.interceptors.response.use(
             error.config.headers.Authorization = `Bearer ${newAccessToken}`;
             return api.request(error.config); // retry original request
           } else {
-            error.config._retry = true;
-
             const didLogin = await showLoginDialog();
             if (didLogin) {
               const newAccessToken = localStorage.getItem(ACCESS_TOKEN);
@@ -55,30 +56,10 @@ api.interceptors.response.use(
         }
       }
 
-    }
     return Promise.reject(error);
   }
 );
 
-// Utility function to handle token refresh or redirection
-const handleAuthError = async (error) => {
-  if (checkAuthStatus()) {
-    try {
-      const accessToken = localStorage.getItem("accessToken");
-
-      // Retry the original request with the new access token
-      error.config.headers.Authorization = `Bearer ${accessToken}`;
-
-      return axios.request(error.config);
-    } catch (refreshError) {
-      const dio = await showLoginDialog();
-    }
-  } else {
-    showLoginDialog();
-  }
-
-  throw error;
-};
 
 
 const checkAuthStatus = async () => {
