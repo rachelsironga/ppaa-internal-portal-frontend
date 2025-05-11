@@ -7,6 +7,7 @@ import { createUpdateItemLevel } from "./Queries";
 import Select from "react-select";
 import { getApprovalLevels } from "../approval_level/Queries";
 import { getApprovalActions } from "../approval_action/Queries";
+import { getDepartments } from "../department/Queries";
 
 const ApprovalModuleLevelModal = () => {
   const {
@@ -20,14 +21,18 @@ const ApprovalModuleLevelModal = () => {
   const [errors, setOtherError] = useState({});
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [loadingActions, setLoadingActions] = useState(false);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
 
   const [levels, setLevels] = useState([]);
   const [actions, setActions] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
   const resetFormRef = useRef(null);
   const initialValues = {
     module_uid: selectApprovalModule?.name || "",
     level_uid: selectedApprovalLevelModule?.level?.uid || "",
     action_uid: selectedApprovalLevelModule?.action?.uid || "",
+    department_uid: selectedApprovalLevelModule?.department?.uid || "",
     order: selectedApprovalLevelModule?.order || 1,
     is_signatory: selectedApprovalLevelModule?.is_signatory || true,
     is_active: selectedApprovalLevelModule?.is_active || true,
@@ -37,6 +42,7 @@ const ApprovalModuleLevelModal = () => {
     level_uid: Yup.string().required("Level is required"),
     module_uid: Yup.string().required("Module is required"),
     action_uid: Yup.string().required("Action is required"),
+    department_uid: Yup.string().required("Department is required"),
     order: Yup.string().required("Level Order is required"),
     is_signatory: Yup.string().required("Is The Signatory"),
   });
@@ -119,11 +125,11 @@ const ApprovalModuleLevelModal = () => {
 
   const handleFetchActions = async (searchValue = "") => {
     setLoadingActions(true);
-    try {
+    try { 
       const result = await getApprovalActions({
         search: searchValue,
         pagination: {
-          page: 1,
+          page: 1,  
           page_size: 10,
           paginated: true,
         },
@@ -140,13 +146,40 @@ const ApprovalModuleLevelModal = () => {
     }
   };
 
+  const fetchDepartments = async (searchValue = "") => {
+    setLoadingDepartments(true);
+    try {
+      const result = await getDepartments({
+        search: searchValue,
+        pagination: {
+          page: 1,
+          page_size: 10,
+          paginated: true,
+        },
+      });
+      if (result.status === 200 || result.status === 8000) {
+        setDepartments(result.data);
+      } else {
+        setDepartments(null);
+      }
+    } catch (err) {
+      console.log("Fetching departments...");
+      console.error("Error fetching departments:", err);
+      setDepartments(null);
+    } finally {
+      setLoadingDepartments(false)
+    }
+  };
+
   useEffect(() => {
     if (!selectedApprovalLevelModule) {
       handleFetchLevels();
       handleFetchActions();
+      fetchDepartments();
     } else {
       values.level_uid = selectedApprovalLevelModule?.level?.uid;
       values.action_uid = selectedApprovalLevelModule?.action?.uid;
+      values.department_uid = selectedApprovalLevelModule?.department?.uid;
     }
   }, []);
 
@@ -212,6 +245,54 @@ const ApprovalModuleLevelModal = () => {
                           />
                           <ErrorMessage
                             name="name"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                        <div className="col mb-3">
+                          <label htmlFor="levelUid" className="form-label">
+                            Department
+                          </label>
+                          <Select
+                            isLoading={loadingDepartments}
+                            onChange={(e) => {
+                              console.log("Selected Department:", e);
+                              if (e === null || e.value == "") {
+                                setFieldValue("department_uid", "");
+                              } else {
+                                setFieldValue("department_uid", e.value);
+                              }
+                            }}
+                            onInputChange={(e) => {
+                              console.log("Input Changed:", e);
+                              fetchDepartments(e);
+                            }}
+                            options={departments?.map((item) => ({
+                              value: item.uid,
+                              label: `${item.name} (${item.code})`,
+                            }))}
+                            className="select2-selection fetched-select2"
+                            styles={{
+                              menu: (base) => ({
+                                ...base,
+                                position: "absolute",
+                                zIndex: 9999,
+                              }),
+                            }}
+                            name="department_uid"
+                            value={
+                              departments
+                                ?.map((item) => ({
+                                  value: item.uid,
+                                  label: `${item.name} (${item.code})`,
+                                }))
+                                .find(
+                                  (option) => option.value === values.department_uid
+                                ) || null
+                            }
+                          />
+                          <ErrorMessage
+                            name="department_uid"
                             component="div"
                             className="text-danger"
                           />

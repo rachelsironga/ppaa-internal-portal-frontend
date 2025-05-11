@@ -10,4 +10,7 @@ const DepartmentsContext = createContext();
 
 const DirectoryContext = createContext();
 
-export  {ApprovalActionContext, ApprovalLevelContext, DepartmentsContext,DirectoryContext, ApprovalModuleContext};
+const ApprovalRequestsContext = createContext();
+
+
+export  {ApprovalActionContext, ApprovalLevelContext, DepartmentsContext,ApprovalRequestsContext,DirectoryContext, ApprovalModuleContext};

@@ -106,7 +106,18 @@ const ApprovalModuleModal = ({ loadOnlyModal = false }) => {
                                         <div className="row">
                                             <div className="col mb-3">
                                                 <label htmlFor="descriptionLarge" className="form-label">Description</label>
-                                                <Field as="textarea" name="description" id="descriptionLarge" className="form-control" rows="3" placeholder="Enter Description" />
+                                                <Field
+                                                    as="textarea"
+                                                    name="description"
+                                                    id="descriptionLarge"
+                                                    className="form-control"
+                                                    rows="5"
+                                                    placeholder="Enter Description"
+                                                    style={{
+                                                        maxHeight: '150px',
+                                                        overflowY: 'auto'
+                                                    }}
+                                                />
                                                 <ErrorMessage name="description" component="div" className="text-danger" />
                                             </div>
                                         </div>
