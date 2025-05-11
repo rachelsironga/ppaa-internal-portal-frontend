@@ -9,6 +9,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
+
 function App() {
   const location = useLocation();
   const isAuthPath =
@@ -16,6 +17,7 @@ function App() {
     location.pathname.includes("error") ||
     location.pathname.includes("under-maintenance") |
     location.pathname.includes("blank");
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={5000} hideProgressBar newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />

@@ -310,7 +310,7 @@ export const ApprovalModuleOpenPage = () => {
             <div className="card">
                 <div>
                     <div className="d-flex justify-content-between align-items-center card-header">
-                        <h5 className="mb-0">Approval Modules Levels</h5>
+                        <h5 className="mb-0">Assigned Modules Levels</h5>
                         {loading || error || approvalModule == null ? (
                             <div className="form-group"></div>
                         ) :

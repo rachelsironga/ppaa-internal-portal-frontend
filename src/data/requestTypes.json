@@ -1,0 +1,24 @@
+[
+    {
+        "title": "Internet & Email Connectivity",
+        "type": "INTERNET_EMAIL_CONNECTIVITY",
+        "color": "#FF5733",
+        "icon": "bx-subdirectory-right",
+        "description": "Issues related to internet connectivity or email access."
+    },
+    {
+        "title": "JEEVA Access",
+        "type": "JEEVA_ACCESS",
+        "color": "#FF33A1",
+        "icon": "bx-subdirectory-right",
+        "description": "Problems accessing the JEEVA system."
+    },
+    {
+        "title": "EDMS Access",
+        "type": "EDMS_ACCESS",
+        "color": "#33FF57",
+        "icon": "bx-subdirectory-right",
+        "description": "Issues related to accessing the EDMS system."
+    }
+]
+  

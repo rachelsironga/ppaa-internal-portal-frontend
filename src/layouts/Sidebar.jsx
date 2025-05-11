@@ -47,7 +47,7 @@ const Sidebar = () => {
             <ul className="menu-inner py-1">
                 {menuData.map((section) => (
                     <React.Fragment key={section.header}>
-                        {section.header && (
+                        {section.header && section.items.length > 0 && (
                             <li className="menu-header small text-uppercase">
                                 <span className="menu-header-text">{section.header}</span>
                             </li>
