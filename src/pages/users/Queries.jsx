@@ -43,7 +43,7 @@ export const createUpdateDirectory = async (departmentData) => {
     }
 };
 
-export const deleteDirectory = async (id) => {
+export const deleteUser = async (id) => {
     try {
         const response = await axios.delete(`${API_URL}/${id}`);
         return response.data;

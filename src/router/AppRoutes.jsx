@@ -57,6 +57,7 @@ import { ApprovalRequestPage } from "../pages/approval_request/View";
 import { DirectoryPage } from "../pages/directory/View";
 import { DirectoryOpenPage } from "../pages/directory/Open";
 import { UserListPage } from "../pages/users/View";
+import { UserOpenPage } from "../pages/users/Open";
 
 
 
@@ -92,7 +93,7 @@ const AppRoutes = () => {
 
             {/* Users */}
             <Route path="/users/list" element={<UserListPage />} />
-            <Route path="/users/view/:uid" element={<DirectoryOpenPage />} />
+            <Route path="/users/view/:uid" element={<UserOpenPage />} />
 
             {/* Requestes */}
             <Route path="/requests" element={<ApprovalRequestPage />} />

@@ -11,12 +11,12 @@ import Select from "react-select";
 
 
 export const UserModal = ({ loadOnlyModal = false }) => {
-    const { fetchDirectories, selectedDirectory, setSelectedDirectory } = useContext(UsersContext)
+    const { fetchDirectories, selectedUser, setSelectedUser } = useContext(UsersContext)
     const [errors, setOtherError] = useState({});
     const initialValues = {
-        name: selectedDirectory?.name || "",
-        code: selectedDirectory?.code || "",
-        description: selectedDirectory?.description || ""
+        name: selectedUser?.name || "",
+        code: selectedUser?.code || "",
+        description: selectedUser?.description || ""
     };
 
     const validationSchema = Yup.object().shape({
@@ -27,8 +27,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     const handleSubmit = async (values, { setSubmitting, resetForm, setErrors }) => {
         try {
             // Check if the Directory is being created or updated
-            if (selectedDirectory) {
-                values.uid = selectedDirectory.uid;
+            if (selectedUser) {
+                values.uid = selectedUser.uid;
             }
             // Call the API to create or update the Directory
             const result = await createUpdateDirectory(values);
@@ -62,7 +62,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 
     const handleClose = () => {
         console.log("Modal closed");
-        setSelectedDirectory(null);
+        setSelectedUser(null);
         const modalElement = document.getElementById("viewCreateDataModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
@@ -168,7 +168,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 };
 
 export const DirectoryDepartmentModal = () => {
-    const { fetchDepartments, selectedDirectory, selectedDepartment, setSelectedDepartment } = useContext(UsersContext)
+    const { fetchDepartments, selectedUser, selectedDepartment, setSelectedDepartment } = useContext(UsersContext)
     const [errors, setOtherError] = useState({});
     const [loadingDirectories, setLoadingDirectories] = useState(false);
     const [directories, setDirectories] = useState([]);
@@ -178,7 +178,7 @@ export const DirectoryDepartmentModal = () => {
         code: selectedDepartment?.code || "",
         description: selectedDepartment?.description || "",
         is_active: selectedDepartment?.is_active ?? true,
-        directory_uid: selectedDirectory?.uid || "",
+        directory_uid: selectedUser?.uid || "",
     };
 
     const validationSchema = Yup.object().shape({

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import { deleteDirectory, getUsers } from "./Queries";
+import { deleteUser, getUsers } from "./Queries";
 import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
@@ -17,7 +17,7 @@ export const UserListPage = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedDirectory, setSelectedDirectory] = useState(null); //Get data for editing / deleting
+    const [selectedUser, setSelectedUser] = useState(null); //Get data for editing / deleting
     const [searchQuery, setSearchQuery] = useState("");
     const [debounceTimeout, setDebounceTimeout] = useState(null);
     const {
@@ -29,7 +29,6 @@ export const UserListPage = () => {
         updatePagination,
         updateTotalCount,
     } = usePagination(10, 1, true);
-
 
     const handlePageClick = (event) => {
         updatePage(event.selected + 1);
@@ -57,19 +56,19 @@ export const UserListPage = () => {
                 }
             } else {
                 setError(true);
-                showToast("No Directory Found", "warning", "Fetch Completed");
+                showToast("No User Found", "warning", "Fetch Completed");
             }
         } catch (err) {
             setError(true);
-            showToast("Unable to Fetch Directorys", "warning", "Failed");
+            showToast("Unable to Fetch Users", "warning", "Failed");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async (directory = null) => {
-        if (!directory) {
-            Swal.fire("Error!", "Unable to Select this Directory.", "error");
+    const handleDelete = async (user = null) => {
+        if (!user) {
+            Swal.fire("Error!", "Unable to Select this User.", "error");
             return;
         }
 
@@ -85,21 +84,21 @@ export const UserListPage = () => {
             });
 
             if (confirmation.isConfirmed) {
-                const result = await deleteDirectory(directory.uid);
+                const result = await deleteUser(user.uid);
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Process Completed!",
-                        "The Directory has been deleted.",
+                        "The User has been deleted.",
                         "success"
                     );
                     fetchUsers();
                 } else {
-                    console.error("Error deleting Directory:", result);
+                    console.error("Error deleting User:", result);
                     Swal.fire("Error Occurred!", `${result.message}`, "error");
                 }
             }
         } catch (error) {
-            console.error("Error deleting Directory:", error);
+            console.error("Error deleting User:", error);
             Swal.fire(
                 "Unsuccessful",
                 `Unable to Perform Delete. Please Try Again or Contact Support Team`,
@@ -107,10 +106,10 @@ export const UserListPage = () => {
             );
         }
 
-        setSelectedDirectory(null); // Reset selected Directory after deletion
+        setSelectedUser(null); // Reset selected User after deletion
     };
 
-    // Fetch Directorys on initial load
+    // Fetch Users on initial load
     useEffect(() => {
         if (debounceTimeout) clearTimeout(debounceTimeout);
 
@@ -126,22 +125,110 @@ export const UserListPage = () => {
 
     return (
         <UsersContext.Provider
-            value={{ fetchUsers, selectedDirectory, setSelectedDirectory }}
+            value={{ fetchUsers, selectedUser, setSelectedUser }}
         >
             <h4 className="py-3 mb-4">
                 <span className="text-muted fw-light">Home /</span> Users
             </h4>
+            <div className="flex-grow-1 container-p-y container-fluid">
+                <div className="row g-6 mb-6" style={{ marginBottom: "20px" }}>
+                    <div className="col-sm-6 col-xl-3">
+                        <div className="card">
+                            <div className="card-body">
+                                <div className="d-flex align-items-start justify-content-between">
+                                    <div className="content-left">
+                                        <span className="text-heading">Syatem Users</span>
+                                        <div className="d-flex align-items-center my-1">
+                                            <h4 className="mb-0 me-2">{totalCount}</h4>
+                                            <p className="text-success mb-0">(100%)</p>
+                                        </div>
+                                        <small className="mb-0">Total Users</small>
+                                    </div>
+                                    <div className="avatar">
+                                        <span className="avatar-initial rounded bg-label-primary">
+                                            <i className="icon-base bx bx-group icon-lg"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-sm-6 col-xl-3">
+                        <div className="card">
+                            <div className="card-body">
+                                <div className="d-flex align-items-start justify-content-between">
+                                    <div className="content-left">
+                                        <span className="text-heading">Active Users</span>
+                                        <div className="d-flex align-items-center my-1">
+                                            <h4 className="mb-0 me-2">0</h4>
+                                            <p className="text-danger mb-0">(0%)</p>
+                                        </div>
+                                        <small className="mb-0">Last week analytics</small>
+                                    </div>
+                                    <div className="avatar">
+                                        <span className="avatar-initial rounded bg-label-success">
+                                            <i className="icon-base bx bx-user-check icon-lg"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-sm-6 col-xl-3">
+                        <div className="card">
+                            <div className="card-body">
+                                <div className="d-flex align-items-start justify-content-between">
+                                    <div className="content-left">
+                                        <span className="text-heading">Suspend Users</span>
+                                        <div className="d-flex align-items-center my-1">
+                                            <h4 className="mb-0 me-2">0</h4>
+                                            <p className="text-success mb-0">(0%)</p>
+                                        </div>
+                                        <small className="mb-0">Last week analytics </small>
+                                    </div>
+                                    <div className="avatar">
+                                        <span className="avatar-initial rounded bg-label-danger">
+                                            <i className="icon-base bx bx-user-plus icon-lg"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-sm-6 col-xl-3">
+                        <div className="card">
+                            <div className="card-body">
+                                <div className="d-flex align-items-start justify-content-between">
+                                    <div className="content-left">
+                                        <span className="text-heading">Retired Users</span>
+                                        <div className="d-flex align-items-center my-1">
+                                            <h4 className="mb-0 me-2">0</h4>
+                                            <p className="text-success mb-0">(0%)</p>
+                                        </div>
+                                        <small className="mb-0">Last week analytics</small>
+                                    </div>
+                                    <div className="avatar">
+                                        <span className="avatar-initial rounded bg-label-warning">
+                                            <i className="icon-base bx bx-user-voice icon-lg"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="card">
                 <div className="d-flex justify-content-between align-items-center card-header mb-1">
                     <h5 className="mb-0">User Managments</h5>
                     {/* <UserModal
                         title="View User Managment"
-                        onClose={() => setSelectedDirectory(null)}
+                        onClose={() => setSelectedUser(null)}
                     /> */}
                 </div>
 
                 <div className="card-body">
-
                     <div className="d-flex justify-content-between align-items-center mb-2 animate__animated animate__fadeInDown animate__faster">
                         <div className="d-flex align-items-center col-md-8 col-sm-6">
                             <label className="text-sm font-medium me-2 mb-0">
@@ -201,12 +288,12 @@ export const UserListPage = () => {
                                 <thead style={{ backgroundColor: "#f1f1f1" }}>
                                     <tr>
                                         <th style={{ width: "50px" }}>S/N</th>
-                                        <th style={{ width: "300px" }}>Name</th>
-                                        <th>PF-Number</th>
-                                        <th>Check-Number</th>
+                                        <th style={{ width: "400px" }}>Name</th>
+                                        <th style={{ width: "80px" }}>PF-Number</th>
+                                        <th style={{ width: "100px" }}>Check-Number</th>
                                         <th>Gender</th>
-                                        <th>Phone-Number</th>
-                                        <th>Status</th>
+                                        <th>Phone Number</th>
+                                        <th style={{ width: "50px" }}>Status</th>
                                         <th style={{ width: "60px" }}>Actions</th>
                                     </tr>
                                 </thead>
@@ -241,13 +328,68 @@ export const UserListPage = () => {
                                             </td>
                                         </tr>
                                     ) : (
-                                        users.map((dept, index) => (
-                                            <tr key={dept.uid}>
+                                                users.map((userData, index) => (
+                                                    <tr key={userData.uid}>
                                                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                                                <td className="fw-medium">{dept.name}</td>
-                                                <td className="fw-medium">{dept.code}</td>
+                                                        <td className="fw-medium">
+                                                            <div className="d-flex justify-content-start align-items-center user-name">
+                                                                <div className="avatar-wrapper">
+                                                                    <div className="avatar avatar-sm me-4">
+                                                                        <img
+                                                                            src={
+                                                                                userData.photo ||
+                                                                                "../../assets/img/avatars/1.png"
+                                                                            }
+                                                                            alt="Avatar"
+                                                                            className="rounded-circle"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="d-flex flex-column">
+                                                                    <a
+                                                                        href={`/users/view/${userData.uid}`}
+                                                                        className="text-heading text-truncate"
+                                                                    >
+                                                                        <span className="fw-medium">
+                                                                            {userData.first_name} {userData.middle_name}{" "}
+                                                                            {userData.last_name}
+                                                                        </span>
+                                                                    </a>
+                                                                    <small className="text-primary">
+                                                                        {userData.email}
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="fw-medium">{userData.pf_number}</td>
+                                                        <td className="fw-medium">{userData.check_number}</td>
+                                                        <td className="fw-medium">
+                                                            {userData.sex === "MALE"
+                                                                ? "Male"
+                                                                : userData.sex === "FEMALE"
+                                                                    ? "Female"
+                                                                    : "N/A"}
+                                                        </td>
+                                                        <td className="fw-medium">{userData.phone_number}</td>
                                                 <td className="fw-medium">
-                                                    bmnbnm
+                                                            <span
+                                                                className={
+                                                                    userData.status === "ACTIVE"
+                                                                        ? "badge bg-label-primary me-1"
+                                                                        : userData.status === "NEW"
+                                                                            ? "badge bg-label-warning me-1"
+                                                                            : userData.status === "SUSPENDED" ||
+                                                                                userData.status === "CANCELLED" ||
+                                                                                userData.status === "EXPIRED"
+                                                                                ? "badge bg-label-danger me-1"
+                                                                                : userData.status === "RETIRED"
+                                                                                    ? "badge bg-label-secondary me-1"
+                                                                                    : "badge bg-label-info me-1"
+                                                                }
+                                                            >
+                                                                {userData.status}
+                                                            </span>
                                                 </td>
                                                 <td>
                                                     <div className="dropdown">
@@ -262,7 +404,9 @@ export const UserListPage = () => {
                                                         <div className="dropdown-menu">
                                                             <button
                                                                 className="dropdown-item"
-                                                                onClick={() => navigate(`/settings/directory-open/${dept.uid}`)}
+                                                                        onClick={() =>
+                                                                            navigate(`/users/view/${userData.guid}`)
+                                                                        }
                                                             >
                                                                 <i className="bx bx-edit-alt me-1"></i> View
                                                             </button>
@@ -271,7 +415,7 @@ export const UserListPage = () => {
                                                                 className="dropdown-item text-danger"
                                                                 href="#"
                                                                 onClick={async () => {
-                                                                    handleDelete(dept);
+                                                                    handleDelete(userData);
                                                                 }}
                                                             >
                                                                 <i className="bx bx-trash me-1"></i> Delete
@@ -285,7 +429,6 @@ export const UserListPage = () => {
                                 </tbody>
                             </table>
                         </div>
-
 
                         <div className="d-flex justify-content-between align-items-center mt-3">
                             {/* Your content here */}
@@ -311,8 +454,6 @@ export const UserListPage = () => {
                             />
                         </div>
                     </div>
-
-
                 </div>
             </div>
         </UsersContext.Provider>
