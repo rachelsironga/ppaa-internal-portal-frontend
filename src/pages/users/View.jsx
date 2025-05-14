@@ -1,20 +1,20 @@
 import React, { createContext, useState, useEffect } from "react";
-import { deleteDirectory, getDirectories } from "./Queries";
+import { deleteDirectory, getUsers } from "./Queries";
 import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
 import usePagination from "../../hooks/usePagination";
 import ReactPaginate from "react-paginate";
-import { DirectoryContext } from "../../utils/context";
+import { UsersContext } from "../../utils/context";
 import { useNavigate } from "react-router-dom";
-import { DirectoryModal } from "./Modal";
+import { UserModal } from "./Modal";
 
 import "animate.css";
 
-export const DirectoryPage = () => {
+export const UserListPage = () => {
     const navigate = useNavigate();
     const pageSizeData = [5, 10, 20, 50, 70, 100];
-    const [directories, setDirectories] = useState([]);
+    const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedDirectory, setSelectedDirectory] = useState(null); //Get data for editing / deleting
@@ -35,11 +35,11 @@ export const DirectoryPage = () => {
         updatePage(event.selected + 1);
     };
 
-    const fetchDirectories = async () => {
+    const fetchUsers = async () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getDirectories({
+            const result = await getUsers({
                 search: searchQuery,
                 pagination: {
                     page: currentPage,
@@ -48,7 +48,7 @@ export const DirectoryPage = () => {
                 },
             });
             if (result.status === 200 || result.status === 8000) {
-                setDirectories(result.data);
+                setUsers(result.data);
                 if (result.pagination) {
                     updatePagination(result.pagination);
                     updateTotalCount(result.pagination.total || 0);
@@ -92,7 +92,7 @@ export const DirectoryPage = () => {
                         "The Directory has been deleted.",
                         "success"
                     );
-                    fetchDirectories();
+                    fetchUsers();
                 } else {
                     console.error("Error deleting Directory:", result);
                     Swal.fire("Error Occurred!", `${result.message}`, "error");
@@ -116,7 +116,7 @@ export const DirectoryPage = () => {
 
         // Set new debounce timeout
         const timeout = setTimeout(() => {
-            fetchDirectories();
+            fetchUsers();
         }, 1500); // 2.5 seconds
 
         setDebounceTimeout(timeout);
@@ -125,19 +125,19 @@ export const DirectoryPage = () => {
     }, [searchQuery, pageSize, currentPage]); // Fetch when search query changes
 
     return (
-        <DirectoryContext.Provider
-            value={{ fetchDirectories, selectedDirectory, setSelectedDirectory }}
+        <UsersContext.Provider
+            value={{ fetchUsers, selectedDirectory, setSelectedDirectory }}
         >
             <h4 className="py-3 mb-4">
-                <span className="text-muted fw-light">Setting /</span> Directories
+                <span className="text-muted fw-light">Home /</span> Users
             </h4>
             <div className="card">
                 <div className="d-flex justify-content-between align-items-center card-header mb-1">
-                    <h5 className="mb-0">Hospital Directories</h5>
-                    <DirectoryModal
-                        title="View Hospital Directories"
+                    <h5 className="mb-0">User Managments</h5>
+                    {/* <UserModal
+                        title="View User Managment"
                         onClose={() => setSelectedDirectory(null)}
-                    />
+                    /> */}
                 </div>
 
                 <div className="card-body">
@@ -186,7 +186,7 @@ export const DirectoryPage = () => {
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") {
                                                 e.preventDefault();
-                                                fetchDirectories();
+                                                fetchUsers();
                                             }
                                         }}
                                     />
@@ -201,12 +201,16 @@ export const DirectoryPage = () => {
                                 <thead style={{ backgroundColor: "#f1f1f1" }}>
                                     <tr>
                                         <th style={{ width: "50px" }}>S/N</th>
-                                        <th>Name</th>
-                                        <th>Code</th>
-                                        <th>Descriptions</th>
+                                        <th style={{ width: "300px" }}>Name</th>
+                                        <th>PF-Number</th>
+                                        <th>Check-Number</th>
+                                        <th>Gender</th>
+                                        <th>Phone-Number</th>
+                                        <th>Status</th>
                                         <th style={{ width: "60px" }}>Actions</th>
                                     </tr>
                                 </thead>
+
                                 <tbody className="table-border-bottom-0">
                                     {loading ? (
                                         <tr>
@@ -221,12 +225,12 @@ export const DirectoryPage = () => {
                                                         />
                                                     </center>
                                                     <center className="mt-1">
-                                                        <h6 className="text-muted">Fetching Directories</h6>
+                                                        <h6 className="text-muted">Fetching Users</h6>
                                                     </center>
                                                 </div>
                                             </td>
                                         </tr>
-                                    ) : error || directories.length === 0 ? (
+                                    ) : error || users.length === 0 ? (
                                         <tr>
                                             <td colSpan="100%">
                                                 <div className="alert alert-info" role="alert">
@@ -237,15 +241,13 @@ export const DirectoryPage = () => {
                                             </td>
                                         </tr>
                                     ) : (
-                                        directories.map((dept, index) => (
+                                        users.map((dept, index) => (
                                             <tr key={dept.uid}>
                                                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                                                 <td className="fw-medium">{dept.name}</td>
                                                 <td className="fw-medium">{dept.code}</td>
                                                 <td className="fw-medium">
-                                                    {dept.description.length > 40
-                                                        ? `${dept.description.slice(0, 40)}...`
-                                                        : dept.description}
+                                                    bmnbnm
                                                 </td>
                                                 <td>
                                                     <div className="dropdown">
@@ -313,6 +315,6 @@ export const DirectoryPage = () => {
 
                 </div>
             </div>
-        </DirectoryContext.Provider>
+        </UsersContext.Provider>
     );
 };

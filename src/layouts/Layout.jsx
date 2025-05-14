@@ -14,7 +14,7 @@ const Layout = ({ children }) => {
         <div className="layout-page ">
           <Navbar />
           <div className="content-wrapper">
-            <div className="container-xxl flex-grow-1 container-p-y">
+            <div className="flex-grow-1 container-p-y container-fluid">
             {children}
             </div>
             <Footer />

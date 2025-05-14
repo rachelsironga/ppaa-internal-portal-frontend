@@ -5,16 +5,16 @@ import ReactLoading from "react-loading";
 import usePagination from "../../hooks/usePagination";
 import ReactPaginate from "react-paginate";
 import "animate.css";
-import { deleteApprovalLevel, getApprovalLevels } from "./Queries";
-import ApprovalLevelModal from "./Modal";
-import { ApprovalLevelContext } from "../../utils/context";
+import { deletePositionalLevel, getPositionalLevels } from "./Queries";
+import { PositionalLevelContext } from "../../utils/context";
+import PositionalLevelModal from "./Modal";
 
-export const ApprovalLevelPage = () => {
+export const PositionalLevelPage = () => {
     const pageSizeData = [5, 10, 20, 50, 70, 100];
-    const [approvalLevels, setApprovalLevels] = useState([]);
+    const [positionalLevels, setPositionalLevels] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectApprovalLevel, setSelectedApprovalLevel] = useState(null);
+    const [selectPositionalLevel, setSelectedPositionalLevel] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [debounceTimeout, setDebounceTimeout] = useState(null);
     const {
@@ -31,11 +31,11 @@ export const ApprovalLevelPage = () => {
         updatePage(event.selected + 1);
     };
 
-    const fetchApprovalLevels = async () => {
+    const fetchPositionalLevels = async () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getApprovalLevels({
+            const result = await getPositionalLevels({
                 search: searchQuery,
                 pagination: {
                     page: currentPage,
@@ -44,7 +44,7 @@ export const ApprovalLevelPage = () => {
                 },
             });
             if (result.status === 200 || result.status === 8000) {
-                setApprovalLevels(result.data);
+                setPositionalLevels(result.data);
                 if (result.pagination) {
                     updatePagination(result.pagination);
                     updateTotalCount(result.pagination.total || 0);
@@ -53,19 +53,19 @@ export const ApprovalLevelPage = () => {
                 }
             } else {
                 setError(true);
-                showToast("No Approval Level Found", "warning", "Fetch Completed");
+                showToast("No Positional Level Found", "warning", "Fetch Completed");
             }
         } catch (err) {
             setError(true);
-            showToast("Unable to Fetch approvalLevels", "warning", "Failed");
+            showToast("Unable to Fetch PositionalLevels", "warning", "Failed");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async (approvalLevel = null) => {
-        if (!approvalLevel) {
-            Swal.fire("Error!", "Unable to Select this Approval Level.", "error");
+    const handleDelete = async (positionalLevel = null) => {
+        if (!positionalLevel) {
+            Swal.fire("Error!", "Unable to Select this Positional Level.", "error");
             return;
         }
 
@@ -81,21 +81,21 @@ export const ApprovalLevelPage = () => {
             });
 
             if (confirmation.isConfirmed) {
-                const result = await deleteApprovalLevel(approvalLevel.uid);
+                const result = await deletePositionalLevel(positionalLevel.uid);
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Process Completed!",
-                        "The approval Level has been deleted.",
+                        "The Positional Level has been deleted.",
                         "success"
                     );
-                    fetchApprovalLevels();
+                    fetchPositionalLevels();
                 } else {
-                    console.error("Error deleting approval Level:", result);
+                    console.error("Error deleting Positional Level:", result);
                     Swal.fire("Error Occurred!", `${result.message}`, "error");
                 }
             }
         } catch (error) {
-            console.error("Error deleting approval Level:", error);
+            console.error("Error deleting Positional Level:", error);
             Swal.fire(
                 "Unsuccessful",
                 `Unable to Perform Delete. Please Try Again or Contact Support Team`,
@@ -103,15 +103,15 @@ export const ApprovalLevelPage = () => {
             );
         }
 
-        setSelectedApprovalLevel(null); // Reset selected approvalLevel after deletion
+        setSelectedPositionalLevel(null); // Reset selected PositionalLevel after deletion
     };
-    // Fetch approvalLevels on initial load
+    // Fetch PositionalLevels on initial load
     useEffect(() => {
         if (debounceTimeout) clearTimeout(debounceTimeout);
 
         // Set new debounce timeout
         const timeout = setTimeout(() => {
-            fetchApprovalLevels();
+            fetchPositionalLevels();
         }, 1500); // 2.5 seconds
 
         setDebounceTimeout(timeout);
@@ -120,22 +120,22 @@ export const ApprovalLevelPage = () => {
     }, [searchQuery, pageSize, currentPage]); // Fetch when search query changes
 
     return (
-        <ApprovalLevelContext.Provider
+        <PositionalLevelContext.Provider
             value={{
-                fetchApprovalLevels,
-                selectApprovalLevel,
-                setSelectedApprovalLevel,
+                fetchPositionalLevels,
+                selectPositionalLevel,
+                setSelectedPositionalLevel,
             }}
         >
             <h4 className="py-3 mb-4">
-                <span className="text-muted fw-light">Setting /</span> Approval Levels
+                <span className="text-muted fw-light">Setting /</span> Positional Levels
             </h4>
             <div className="card">
                 <div className="d-flex justify-content-between align-items-center card-header mb-1">
-                    <h5 className="mb-0">Approval Levels</h5>
-                    <ApprovalLevelModal
-                        title="View Approval Levels"
-                        onClose={() => setSelectedApprovalLevel(null)}
+                    <h5 className="mb-0">Positional Levels</h5>
+                    <PositionalLevelModal
+                        title="View Positional Levels"
+                        onClose={() => setSelectedPositionalLevel(null)}
                     />
                 </div>
 
@@ -184,7 +184,7 @@ export const ApprovalLevelPage = () => {
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") {
                                                 e.preventDefault();
-                                                fetchApprovalLevels();
+                                                fetchPositionalLevels();
                                             }
                                         }}
                                     />
@@ -219,13 +219,13 @@ export const ApprovalLevelPage = () => {
                                                 </center>
                                                 <center className="mt-1">
                                                     <h6 className="text-muted">
-                                                        Fetching Approval Levels
+                                                        Fetching Positional Levels
                                                     </h6>
                                                 </center>
                                             </div>
                                         </td>
                                     </tr>
-                                ) : error || approvalLevels.length === 0 ? (
+                                ) : error || positionalLevels.length === 0 ? (
                                     <tr>
                                         <td colSpan="100%">
                                             <div className="alert alert-info" role="alert">
@@ -236,7 +236,7 @@ export const ApprovalLevelPage = () => {
                                         </td>
                                     </tr>
                                 ) : (
-                                    approvalLevels.map((dataRows, index) => (
+                                    positionalLevels.map((dataRows, index) => (
                                         <tr key={dataRows.uid}>
                                             <td>{(currentPage - 1) * pageSize + index + 1}</td>
                                             <td className="fw-medium">{dataRows.name}</td>
@@ -267,7 +267,7 @@ export const ApprovalLevelPage = () => {
                                                             className="dropdown-item"
                                                             href="#"
                                                             onClick={() => {
-                                                                setSelectedApprovalLevel(dataRows);
+                                                                setSelectedPositionalLevel(dataRows);
                                                             }}
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#viewCreateDataModal"
@@ -322,6 +322,6 @@ export const ApprovalLevelPage = () => {
 
                 </div>
             </div>
-        </ApprovalLevelContext.Provider>
+        </PositionalLevelContext.Provider>
     );
 };

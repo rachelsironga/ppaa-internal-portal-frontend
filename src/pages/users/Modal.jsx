@@ -2,16 +2,16 @@ import React, { useContext, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Swal from "sweetalert2";
-import { createUpdateDirectory, getDirectories } from "./Queries";
+import { createUpdateDirectory, getUsers } from "./Queries";
 import { toast } from "react-toastify";
 import showToast from "../../helpers/ToastHelper";
-import { DirectoryContext } from "../../utils/context";
+import { UsersContext } from "../../utils/context";
 import { createUpdateDepartment } from "../department/Queries";
 import Select from "react-select";
 
 
-export const DirectoryModal = ({ loadOnlyModal = false }) => {
-    const { fetchDirectories, selectedDirectory, setSelectedDirectory } = useContext(DirectoryContext)
+export const UserModal = ({ loadOnlyModal = false }) => {
+    const { fetchDirectories, selectedDirectory, setSelectedDirectory } = useContext(UsersContext)
     const [errors, setOtherError] = useState({});
     const initialValues = {
         name: selectedDirectory?.name || "",
@@ -81,16 +81,16 @@ export const DirectoryModal = ({ loadOnlyModal = false }) => {
                     type="button"
                     className="btn btn-primary ms-auto btn-sm"
                     data-bs-toggle="modal"
-                    data-bs-target="#viewCreateDirectoryModal">
-                    <i className="bx bx-edit-alt me-1"></i> Add Approval Module
+                    data-bs-target="#viewCreateUserModal">
+                    <i className="bx bx-edit-alt me-1"></i> Add User
                 </button>
             )}
 
-            <div className="modal modal-slide-in" id="viewCreateDirectoryModal" tabIndex="-1" aria-hidden="true">
+            <div className="modal modal-slide-in" id="viewCreateUserModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-md" role="document">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h5 className="modal-title" id="exampleModalLabel3">{selectedDirectory === null ? 'Create New' : 'View / Update'} Directories </h5>
+                            <h5 className="modal-title" id="exampleModalLabel3">Create New User </h5>
                             <button
                                 type="button"
                                 className="btn-close"
@@ -168,7 +168,7 @@ export const DirectoryModal = ({ loadOnlyModal = false }) => {
 };
 
 export const DirectoryDepartmentModal = () => {
-    const { fetchDepartments, selectedDirectory, selectedDepartment, setSelectedDepartment } = useContext(DirectoryContext)
+    const { fetchDepartments, selectedDirectory, selectedDepartment, setSelectedDepartment } = useContext(UsersContext)
     const [errors, setOtherError] = useState({});
     const [loadingDirectories, setLoadingDirectories] = useState(false);
     const [directories, setDirectories] = useState([]);
@@ -225,7 +225,7 @@ export const DirectoryDepartmentModal = () => {
     const handleFetchDirectories = async (searchValue = "") => {
         setLoadingDirectories(true);
         try {
-            const result = await getDirectories({
+            const result = await getUsers({
                 search: searchValue,
                 pagination: {
                     page: 1,

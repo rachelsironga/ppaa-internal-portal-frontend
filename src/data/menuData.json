@@ -56,10 +56,10 @@
         "role": ["admin"]
       },
       {
-        "text": "Approval Levels",
+        "text": "Positional Levels",
         "icon": "bx bx-sitemap",
         "available": true,
-        "link": "/settings/approval-levels",
+        "link": "/settings/positional-levels",
         "permission": ["1"],
         "role": ["admin"]
       },
@@ -84,31 +84,44 @@
 
   {
     "header": "ADMINISTRATION",
+    
     "items": [
+     
       {
-        "text": "Users",
+        "text": "User Managment",
         "icon": "bx bx-group",
         "available": true,
-        "link": "/account/settings",
-        "permission": ["1"],
-        "role": ["admin"]
+        "link": "",
+        "submenu": [
+          {
+            "text": "Users",
+            "icon": "bx bx-group",
+            "available": true,
+            "link": "/users/list",
+            "permission": [""],
+            "role": ["admin"]
+          },
+          {
+            "text": "Roles",
+            "icon": "bx bx-detail",
+            "available": true,
+            "link": "/account/settings1",
+            "permission": ["1"],
+            "role": ["admin"]
+          },
+          {
+            "text": "Permissions",
+            "icon": "bx bx-box",
+            "available": true,
+            "link": "/account/settings2",
+            "permission": ["1"],
+            "role": ["admin"]
+          }
+         
+        ]
       },
-      {
-        "text": "Roles",
-        "icon": "bx bx-detail",
-        "available": true,
-        "link": "/account/settings",
-        "permission": ["1"],
-        "role": ["admin"]
-      },
-      {
-        "text": "Permissions",
-        "icon": "bx bx-box",
-        "available": true,
-        "link": "/account/settings",
-        "permission": ["1"],
-        "role": ["admin"]
-      },
+
+
       {
         "text": "Test UI",
         "icon": "bx bx-box",

@@ -33,6 +33,16 @@ const showLoginDialog = () => {
             }
 
 
+
+            React.useEffect(() => {
+                // Set focus to the password input field when the modal is rendered
+                const passwordInput = document.getElementById("refresh_password_modal");
+                if (passwordInput) {
+                    passwordInput.focus();
+                }
+            }, []);
+
+
             const handleLogin = async () => {
                 if (loading) return;
                 setLoading(true);
@@ -40,15 +50,15 @@ const showLoginDialog = () => {
 
 
                 try {
-                    const email = user?.data?.email;
-                    if (!email) {
+                    const username = user?.data?.username;
+                    if (!username) {
                         reject(true)
                         closeModal();
                     }
-                    const password = document.getElementById("password").value;
+                    const password = document.getElementById("refresh_password_modal").value;
 
                     const response = await axios.post(`${API_BASE_URL}/user/login`, {
-                        email,
+                        username,
                         password,
                     });
                     setLoading(false);
@@ -66,7 +76,6 @@ const showLoginDialog = () => {
                     setLoading(false);
 
                     if (error.status === 401) {
-                        alert("Invalid password. Try again." + errorCount);
                         if (errorCount === 2) {
                             closeModal();
                             reject(true);
@@ -88,15 +97,17 @@ const showLoginDialog = () => {
             };
 
             return (
-                <div className="modal-backdrop" style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}>
-                    <div className="modal modal-slide-in" style={{ display: "block" }} role="dialog"
+                <div className="modal-backdrop" style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.6)", zIndex: 99999999, position: "fixed",
+                }}>
+                    <div key={3456354} className="modal modal-slide-in" style={{ display: "block" }} role="dialog"
                         aria-labelledby="loginModalTitle"
                         aria-describedby="loginModalDescription">
                         <div className="modal-dialog modal-sm modal-dialog-centered">
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title"> </h5>
-                                    <button
+                                    {/* <button
                                         type="button"
                                         className="btn-close"
                                         onClick={() => {
@@ -104,7 +115,7 @@ const showLoginDialog = () => {
                                             reject(true);
                                         }}
                                         aria-label="Close"
-                                    ></button>
+                                    ></button> */}
                                 </div>
                                 <div className="modal-body">
                                     <div style={{
@@ -114,7 +125,7 @@ const showLoginDialog = () => {
                                         height: "100%", // Ensure the parent div has a height
                                     }}>
                                         <img
-                                            src={user?.data?.profile_image ?? "../assets/img/avatars/1.png"}
+                                            src={user?.data?.photo !== "" ? user?.data?.photo : "../assets/img/avatars/1.png"}
                                             alt="user-avatar"
                                             className="d-block rounded"
                                             height="100"
@@ -125,13 +136,17 @@ const showLoginDialog = () => {
                                     </div>
                                     <h5 className="text-muted text-center mt-4">VERIFY YOU IDENTITY</h5>
                                     <p className="text-center">Hello. <strong>{user?.data?.first_name}</strong>, Your session has expired. Please Enter your Password</p>
-                                    <form className="content-centered text-center align-items-center">
+                                    <form className="content-centered text-center align-items-center" >
                                         <div className="mb-3">
                                             <input
                                                 type="password"
                                                 className="form-control"
-                                                id="password"
+                                                id="refresh_password_modal"
                                                 placeholder="Enter your password"
+                                                autoFocus
+                                                required
+                                                aria-label="Enter your password"
+                                                aria-describedby="refresh_password_modal"
                                             />
                                         </div>
                                         <div className="me-1">
@@ -148,7 +163,8 @@ const showLoginDialog = () => {
                                             onClick={handleLogin}
                                             disabled={loading || errorCount > 2}
                                         >
-                                            {loading ? "Verifying..." : "Verify"}                                         </button>
+                                            {loading ? "Verifying..." : "Verify"}
+                                        </button>
                                     </form>
                                 </div>
                             </div>

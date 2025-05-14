@@ -2,7 +2,7 @@ import { createContext } from "react";
 
 const ApprovalActionContext = createContext();
 
-const ApprovalLevelContext = createContext();
+const PositionalLevelContext = createContext();
 
 const ApprovalModuleContext = createContext();
 
@@ -12,5 +12,14 @@ const DirectoryContext = createContext();
 
 const ApprovalRequestsContext = createContext();
 
+const UsersContext = createContext();
 
-export  {ApprovalActionContext, ApprovalLevelContext, DepartmentsContext,ApprovalRequestsContext,DirectoryContext, ApprovalModuleContext};
+export {
+    ApprovalActionContext,
+    PositionalLevelContext,
+    DepartmentsContext,
+    ApprovalRequestsContext,
+    DirectoryContext,
+    ApprovalModuleContext,
+    UsersContext
+};

@@ -12,7 +12,7 @@ import { login } from "../../redux/actions"
 const LoginPage = ({ isLoading, success, error, status, state, login, authUser }) => {
     const [formData, setFormData] = useState({
         password: '',
-        email: '',
+        username: '',
         rememberMe: false,
     });
 
@@ -33,7 +33,6 @@ const LoginPage = ({ isLoading, success, error, status, state, login, authUser }
     const handleSubmit = (e) => {
         e.preventDefault();
         login(formData, navigate);
-        console.log(error);
     };
 
     return (
@@ -50,16 +49,16 @@ const LoginPage = ({ isLoading, success, error, status, state, login, authUser }
 
             <form id="formAuthentication" className="mb-3" onSubmit={handleSubmit}>
                 <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
+                    <label htmlFor="username" className="form-label">Username</label>
                     <input
                         type="text"
                         className="form-control"
-                        id="email"
+                        id="username"
                         required='required'
                         value={formData.name}
                         onChange={handleChange}
-                        name="email"
-                        placeholder="Enter your email"
+                        name="username"
+                        placeholder="Enter your username"
                         autoFocus />
                 </div>
                 <div className="mb-3 form-password-toggle">

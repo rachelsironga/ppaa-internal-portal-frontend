@@ -93,7 +93,7 @@ const refreshToken = async () => {
 
   try {
     const res = await axios.post(`${API_BASE_URL}/token/refresh/`, {
-      refresh_token: refreshToken,
+      "refresh": refreshToken,
     });
 
     if (res.status === 200) {

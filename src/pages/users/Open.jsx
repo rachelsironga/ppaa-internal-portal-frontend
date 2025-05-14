@@ -4,12 +4,12 @@ import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
 import "animate.css";
 import { deleteDepartment, getDepartments } from "../department/Queries";
-import { DirectoryContext } from "../../utils/context";
+import { UsersContext } from "../../utils/context";
 import { useParams } from "react-router-dom";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { getDirectories } from "./Queries";
 import usePagination from "../../hooks/usePagination";
-import { DirectoryDepartmentModal, DirectoryModal } from "./Modal";
+import { DirectoryDepartmentModal, UserModal } from "./Modal";
 import ReactPaginate from "react-paginate";
 
 
@@ -199,7 +199,7 @@ export const DirectoryOpenPage = () => {
     }, [searchQuery, pageSize, currentPage]);
 
     return (
-        <DirectoryContext.Provider
+        <UsersContext.Provider
             value={{
                 debounceTimeout,
                 setDebounceTimeout,
@@ -234,7 +234,7 @@ export const DirectoryOpenPage = () => {
                                     type="button"
                                     className="btn btn-primary ms-auto btn-sm me-2"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#viewCreateDirectoryModal">
+                                    data-bs-target="#viewCreateUserModal">
                                     <i className="bx bx-edit-alt me-1"></i> Edit
                                 </button>
                                 <button
@@ -500,7 +500,7 @@ export const DirectoryOpenPage = () => {
                     </div>
                 </div>
             </div>
-            <DirectoryModal loadOnlyModal={true} onClose={() => setSelectedDirectory(null)} />
-        </DirectoryContext.Provider >
+            <UserModal loadOnlyModal={true} onClose={() => setSelectedDirectory(null)} />
+        </UsersContext.Provider >
     );
 };

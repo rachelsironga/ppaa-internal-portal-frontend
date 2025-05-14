@@ -2,16 +2,16 @@ import React, { useContext, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import showToast from "../../helpers/ToastHelper";
-import { createUpdateApprovalLevel } from "./Queries";
-import { ApprovalLevelContext } from "../../utils/context";
+import { createUpdatePositionalLevel } from "./Queries";
+import { PositionalLevelContext } from "../../utils/context";
 
-const ApprovalLevelModal = () => {
-    const { fetchApprovalLevels, selectApprovalLevel, setSelectedApprovalLevel } = useContext(ApprovalLevelContext)
+const PositionalLevelModal = () => {
+    const { fetchPositionalLevels, selectPositionalLevel, setSelectedPositionalLevel } = useContext(PositionalLevelContext)
     const [errors, setOtherError] = useState({});
     const initialValues = {
-        name: selectApprovalLevel?.name || "",
-        code: selectApprovalLevel?.code || "",
-        is_active: selectApprovalLevel?.is_active ?? true,
+        name: selectPositionalLevel?.name || "",
+        code: selectPositionalLevel?.code || "",
+        is_active: selectPositionalLevel?.is_active ?? true,
     };
 
     const validationSchema = Yup.object().shape({
@@ -22,17 +22,17 @@ const ApprovalLevelModal = () => {
     const handleSubmit = async (values, { setSubmitting, resetForm, setErrors }) => {
         try {
             // Check if the department is being created or updated
-            if (selectApprovalLevel) {
-                values.uid = selectApprovalLevel.uid;
+            if (selectPositionalLevel) {
+                values.uid = selectPositionalLevel.uid;
             }
             // Call the API to create or update the department
-            const result = await createUpdateApprovalLevel(values);
+            const result = await createUpdatePositionalLevel(values);
 
             if (result.status === 200 || result.status === 8000) {
                 showToast("Data Saved Successfuly", "success", "Complete");
                 handleClose();
                 resetForm();
-                fetchApprovalLevels();
+                fetchPositionalLevels();
             } else if (result.status === 8002) {
                 console.log("Validation error:", result.data);
                 showToast(`${result.message}`, "warning", "Validation Failed");
@@ -58,7 +58,7 @@ const ApprovalLevelModal = () => {
 
     const handleClose = () => {
         console.log("Modal closed");
-        setSelectedApprovalLevel(null);
+        setSelectedPositionalLevel(null);
         const modalElement = document.getElementById("viewCreateDataModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
@@ -73,14 +73,14 @@ const ApprovalLevelModal = () => {
                 className="btn btn-primary ms-auto btn-sm"
                 data-bs-toggle="modal"
                 data-bs-target="#viewCreateDataModal">
-                <i className="bx bx-edit-alt me-1"></i> Add Approval Level
+                <i className="bx bx-edit-alt me-1"></i> Add Positional Level
             </button>
 
             <div className="modal modal-slide-in" id="viewCreateDataModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-md" role="document">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h5 className="modal-title" id="exampleModalLabel3">{selectApprovalLevel === null ? 'Create New' : 'View / Update'} Approval Levels </h5>
+                            <h5 className="modal-title" id="exampleModalLabel3">{selectPositionalLevel === null ? 'Create New' : 'View / Update'} Positional Levels </h5>
                             <button
                                 type="button"
                                 className="btn-close"
@@ -168,4 +168,4 @@ const ApprovalLevelModal = () => {
     );
 };
 
-export default ApprovalLevelModal;
+export default PositionalLevelModal;
