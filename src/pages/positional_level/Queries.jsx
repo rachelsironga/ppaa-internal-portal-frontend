@@ -45,7 +45,7 @@ export const createUpdatePositionalLevel = async (departmentData) => {
 
 export const deletePositionalLevel = async (id) => {
     try {
-        const response = await axios.delete(`${API_URL}/${id}`);
+        const response = await api.delete(`${API_URL}/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error deleting Positional Level:", error);

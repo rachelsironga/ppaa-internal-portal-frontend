@@ -46,7 +46,7 @@ export const createUpdateApprovalRequest = async (formData) => {
 
 export const deleteApprovalRequest = async (id) => {
   try {
-    const response = await axios.delete(`${API_URL}/${id}`);
+    const response = await api.delete(`${API_URL}/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error deleting Approval Request:", error);

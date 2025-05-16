@@ -52,3 +52,13 @@ export const deleteUser = async (id) => {
         throw error;
     }
 };
+
+export const photoUpload = async (data) => {
+    try {
+        const response = await api.post(`${API_BASE_URL}/user/setup-photo`, data, config);
+        return response.data;
+    } catch (error) {
+        console.error(`Error while Uploading Photo`, error);
+        throw error;
+    }
+};

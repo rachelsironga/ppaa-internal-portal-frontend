@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
@@ -7,7 +7,7 @@ import { deleteDepartment, getDepartments } from "../department/Queries";
 import { UsersContext } from "../../utils/context";
 import { useParams } from "react-router-dom";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
-import { getUsers } from "./Queries";
+import { getUsers, photoUpload } from "./Queries";
 import usePagination from "../../hooks/usePagination";
 import { DirectoryDepartmentModal, UserModal } from "./Modal";
 import ReactPaginate from "react-paginate";
@@ -17,12 +17,13 @@ import ReactPaginate from "react-paginate";
 export const UserOpenPage = () => {
     const pageSizeData = [5, 10, 20, 50, 70, 100];
 
+
     const { uid } = useParams();
     const [loading, setLoading] = useState(true);
-    const [loadingDepartment, setLoadingDepartment] = useState(true);
+    const [loadingProfile, setLoadingProfile] = useState(true);
 
     const [error, setError] = useState(null);
-    const [errorDepartment, setErrorDepartment] = useState(null);
+    const [errorProfile, setErrorPosition] = useState(null);
 
     const [debounceTimeout, setDebounceTimeout] = useState(null);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -43,6 +44,20 @@ export const UserOpenPage = () => {
         updatePage(event.selected + 1);
     };
 
+    const uploadValues = {
+        uid: selectedUser?.guid,
+        based64_file: ""
+    };
+
+    const [isUploadVisible, setIsUploadVisible] = useState(false); // State to toggle visibility
+    const [previewImage, setPreviewImage] = useState(
+        selectedUser?.photo && selectedUser.photo.trim() !== ""
+            ? selectedUser.photo
+            : "/assets/img/avatars/1.png"
+    );
+    const [isFileSelected, setIsFileSelected] = useState(false);
+    const fileInputRef = useRef(null);
+
 
     const handleFetchData = async () => {
         setLoading(true);
@@ -53,6 +68,13 @@ export const UserOpenPage = () => {
             });
             if (result.status === 200 || result.status === 8000) {
                 setSelectedUser(result.data)
+                setPreviewImage(
+                    result.data.photo && result.data.photo.trim() !== ""
+                        ? result.data.photo
+                        : "/assets/img/avatars/1.png"
+                );
+                setIsFileSelected(false);
+                uploadValues.uid = result.data.guid;
             } else {
                 setError(true);
                 showToast("No User Found", "warning", "Fetch Completed");
@@ -67,8 +89,8 @@ export const UserOpenPage = () => {
     };
 
     const fetchDepartments = async () => {
-        setLoadingDepartment(true);
-        setErrorDepartment(null);
+        setLoadingProfile(true);
+        setErrorPosition(null);
         try {
             const result = await getDepartments({
                 search: searchQuery,
@@ -89,14 +111,14 @@ export const UserOpenPage = () => {
                     updatePagination({});
                 }
             } else {
-                setErrorDepartment(true);
+                setErrorPosition(true);
                 showToast("No Department Found", "warning", "Fetch Completed");
             }
         } catch (err) {
-            setErrorDepartment(true);
+            setErrorPosition(true);
             showToast("Unable to Fetch Departments", "warning", "Failed");
         } finally {
-            setLoadingDepartment(false);
+            setLoadingProfile(false);
         }
     };
 
@@ -186,6 +208,107 @@ export const UserOpenPage = () => {
     };
 
 
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const previewUrl = URL.createObjectURL(file);
+            setPreviewImage(previewUrl);
+            setIsFileSelected(true); // Enable buttons when a file is selected
+        } else {
+            setIsFileSelected(false); // Disable buttons if no file is selected
+        }
+    };
+
+    const handleResetImage = () => {
+        setPreviewImage(
+            selectedUser?.photo && selectedUser.photo.trim() !== ""
+                ? selectedUser.photo
+                : "/assets/img/avatars/1.png"
+        );
+        setIsFileSelected(false); // Disable buttons after reset
+
+        // Clear the file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    const toggleUploadVisibility = () => {
+        setIsUploadVisible((prev) => !prev);
+    };
+
+    const handleupload = async (selectedUser = null) => {
+        if (!selectedUser) {
+            Swal.fire("Error!", "Sorry Reopen this user to Fix this error.", "error");
+            return;
+        }
+
+        if (!fileInputRef.current || !fileInputRef.current.files[0]) {
+            Swal.fire("Error!", "No file selected. Please choose a file to upload.", "error");
+            return;
+        }
+
+        try {
+            const confirmation = await Swal.fire({
+                // title: "Save New Profile Photo",
+                text: "Your About to Save the new Profile Photo",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonColor: "#696cff",
+                cancelButtonColor: "#aaa",
+                confirmButtonText: "Confirm Save",
+                customClass: {
+                    confirmButton: "btn btn-sm btn-outline-primary",
+                    cancelButton: "btn btn-sm",
+                    popup: "custom-swal-popup"
+                },
+            });
+
+            if (confirmation.isConfirmed) {
+                const file = fileInputRef.current.files[0];
+
+                // Convert file to Base64
+                const toBase64 = (file) =>
+                    new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = (error) => reject(error);
+                    });
+
+                const base64File = await toBase64(file);
+
+                // Update uploadValues with Base64 string
+                uploadValues.based64_file = base64File;
+
+                console.log("Upload Values:", uploadValues);
+
+                const result = await photoUpload(uploadValues);
+                if (result.status === 200 || result.status === 8000) {
+                    Swal.fire(
+                        "Process Completed!",
+                        "Successfully Uploaded the Photo.",
+                        "success"
+                    );
+                    setSelectedUser(result.data);
+                    setIsFileSelected(false);
+                    toggleUploadVisibility();
+                } else {
+                    console.error("Error deleting Directory:", result);
+                    Swal.fire("Opps!", `${result.message}`, "error");
+                }
+            }
+        } catch (error) {
+            console.error("Error Uploading Photo:", error);
+            Swal.fire(
+                "Unsuccessful",
+                `Unable to Perform Upload. Please Try Again or Contact Support Team`,
+                "error"
+            );
+        }
+    };
+
+
     useEffect(() => {
         if (debounceTimeout) clearTimeout(debounceTimeout);
         const timeout = setTimeout(() => {
@@ -197,6 +320,9 @@ export const UserOpenPage = () => {
 
         return () => clearTimeout(timeout);
     }, [searchQuery, pageSize, currentPage]);
+
+
+
 
     return (
         <UsersContext.Provider
@@ -211,45 +337,65 @@ export const UserOpenPage = () => {
                 fetchDepartments
             }}
         >
-            <h4 className="py-3 mb-4">
-                <span className="text-muted fw-light">Home / <a
-                    className="text-link"
-                    href="/users/list"
-                >Users</a> /  </span> View
-            </h4>
-
-            <div className="card mb-4 animate__animated animate__fadeInDown animate__faster">
-                <div className="d-flex justify-content-between align-items-center card-header">
-                    <h5 className="mb-0">User Profile</h5>
-
-                    {loading || error || selectedUser == null ? (
-                        <div className="form-group"></div>
-                    ) :
-                        (
-                            <div className="form-group">
-
-                                <button
-                                    aria-label="Open Modal"
-                                    type="button"
-                                    className="btn btn-primary ms-auto btn-sm me-2"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#viewCreateUserModal">
-                                    <i className="bx bx-edit-alt me-1"></i> Edit
-                                </button>
-                                <button
-                                    aria-label="Delete Item"
-                                    className="btn btn-danger ms-auto btn-sm"
-                                    onClick={async () => {
-                                        handleDelete(selectedUser);
-                                    }}
-                                    type="button">
-                                    <i className="bx bx-trash me-1"></i>  Delete
-                                </button>
-                            </div>
-                        )
-                    }
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <h4 className="py-3 mb-4">
+                    <span className="text-muted fw-light">Home / <a
+                        className="text-link"
+                        href="/users/list"
+                    >Users</a> /  </span> View
+                </h4>
+                <div className="py-3 mb-4" style={{ marginRight: "25px" }} id="dropdown-icon-demo">
+                    <button aria-label='Click me'
+                        type="button"
+                        className="btn btn-sm btn-outline-primary  dropdown-toggle"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i className="bx bx-menu me-1"></i> Options
+                    </button>
+                    <ul className="dropdown-menu">
+                        <li>
+                            <button aria-label="dropdown action link" className="dropdown-item d-flex align-items-center" data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            ><i className="bx bx-menu me-1"></i>
+                                <i className="bx bx-chevron-right scaleX-n1-rtl"></i>Action</button>
+                        </li>
+                        <li>
+                            <a aria-label="dropdown action link" href="#" className="dropdown-item d-flex align-items-center"
+                            ><i className="bx bx-chevron-right scaleX-n1-rtl"></i>Another action</a
+                            >
+                        </li>
+                        <li>
+                            <a aria-label="dropdown action link" href="#" className="dropdown-item d-flex align-items-center"
+                            ><i className="bx bx-chevron-right scaleX-n1-rtl"></i>Something else here</a
+                            >
+                        </li>
+                        <li>
+                            <hr className="dropdown-divider" />
+                        </li>
+                        <li>
+                            <a aria-label="dropdown action link" href="#" className="dropdown-item d-flex align-items-center"
+                            ><i className="bx bx-chevron-right scaleX-n1-rtl"></i>Separated link</a
+                            >
+                        </li>
+                        <li>
+                            <a aria-label="dropdown action link" href="#" className="dropdown-item d-flex align-items-center"
+                            ><i className="bx bx-chevron-right scaleX-n1-rtl"></i>Separated link</a
+                            >
+                        </li>
+                        <li>
+                            <a aria-label="dropdown action link" href="#" className="dropdown-item d-flex align-items-center"
+                            ><i className="bx bx-chevron-right scaleX-n1-rtl"></i>Separated link</a
+                            >
+                        </li>
+                        <li>
+                            <a aria-label="dropdown action link" href="#" className="dropdown-item d-flex align-items-center"
+                            ><i className="bx bx-chevron-right scaleX-n1-rtl"></i>Separated link</a
+                            >
+                        </li>
+                    </ul>
                 </div>
             </div>
+
 
 
             <div className="content-wrapper">
@@ -290,17 +436,51 @@ export const UserOpenPage = () => {
                                                     <div className="user-avatar-section">
                                                         <div className=" d-flex align-items-center flex-column">
                                                             <img
-                                                                src={
-                                                                    selectedUser.photo !== "" || selectedUser.photo !== null
-                                                                        ? selectedUser.photo : `../../assets/img/avatars/1.png`
-                                                                }
+                                                                src={previewImage}
                                                                 alt="Avatar"
-                                                                className="img-fluid rounded mb-4"
-                                                                height="120" width="120"
+                                                                id="uploadedAvatar"
+                                                                className="img-fluid rounded mb-4 shadow  account-image-reset"
+                                                                height="120px" width="150px"
+                                                                onClick={toggleUploadVisibility} // Toggle input visibility on click
+                                                                style={{ height: "120px", width: "120px" }}
+                                                                onError={(e) => {
+                                                                    e.target.onerror = null;
+                                                                    e.target.src = "/assets/img/avatars/1.png";
+                                                                }}
+                                                                ref={fileInputRef}
                                                             />
+
                                                             <div className="user-info text-center mb-4">
                                                                 <h5>{selectedUser.first_name} {selectedUser.middle_name}{" "}
-                                                                    {selectedUser.last_name}</h5>
+                                                                    {selectedUser.last_name}
+                                                                    <div className="button-wrapper" style={{ display: "flex", justifyContent: "center" }}>
+                                                                        {isUploadVisible && (
+
+                                                                            <div className="m-3" id="card-image-div">
+                                                                                <div className="input-group">
+                                                                                    <label htmlFor="inputGroupFile04" className="btn btn-sm btn-outline-success">
+                                                                                        Choose File
+                                                                                    </label>
+                                                                                    <input
+                                                                                        type="file"
+                                                                                        name="account-file-input"
+                                                                                        className="form-control form-control-sm account-file-input visually-hidden"
+                                                                                        id="inputGroupFile04"
+                                                                                        aria-describedby="inputGroupFileAddon04"
+                                                                                        onChange={handlePhotoChange}
+                                                                                        accept=".jpg,.jpeg,.png,.gif,.ico"
+                                                                                        aria-label="Upload"
+                                                                                        ref={fileInputRef}
+                                                                                    />
+                                                                                    <button aria-label='Click me' className="btn btn-sm btn-outline-danger account-file-input" type="button" onClick={handleResetImage} disabled={!isFileSelected}><strong>X</strong></button>
+                                                                                    <button aria-label='Click me' className="btn btn-sm btn-outline-primary account-file-input" type="button" onClick={handleupload} disabled={!isFileSelected}>SAVE</button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                    </div>
+                                                                </h5>
+
                                                                 <span className="badge bg-label-primary me-3">Administratior</span>
                                                                 <span className="badge bg-label-secondary me-3">Accountant</span>
                                                                 <span className="badge bg-label-primary me-3">User</span>
@@ -441,7 +621,7 @@ export const UserOpenPage = () => {
                                                             <div>
                                                                 <div className="d-flex justify-content-between align-items-center card-header">
                                                                     <h5 className="mb-0">Directories Departments</h5>
-                                                                    {loadingDepartment || errorDepartment || selectedUser == null ? (
+                                                                    {loadingProfile || errorProfile || selectedUser == null ? (
                                                                         <div className="form-group"></div>
                                                                     ) :
                                                                         (
@@ -495,7 +675,7 @@ export const UserOpenPage = () => {
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody className="table-border-bottom-0">
-                                                                            {loadingDepartment ? (
+                                                                            {loadingProfile ? (
                                                                                 <tr>
                                                                                     <td colSpan="100%">
                                                                                         <div className="col-md-12 col-lg-12 col-sm-12 p-2">
@@ -515,7 +695,7 @@ export const UserOpenPage = () => {
                                                                                         </div>
                                                                                     </td>
                                                                                 </tr>
-                                                                            ) : errorDepartment || directoryDepartments.length === 0 ? (
+                                                                            ) : errorProfile || directoryDepartments.length === 0 ? (
                                                                                 <tr>
                                                                                     <td colSpan="100%">
                                                                                         <div className="alert alert-info" role="alert">
