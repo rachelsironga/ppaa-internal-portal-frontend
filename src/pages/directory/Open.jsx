@@ -182,7 +182,7 @@ export const DirectoryOpenPage = () => {
             );
         }
 
-        setSelectedApprovalLevelModule(null);
+        setSelectedPositionalLevelModule(null);
     };
 
 
@@ -270,7 +270,7 @@ export const DirectoryOpenPage = () => {
                                 </center>
                             </div>
                         </div>
-                    ) : error || selectedDirectory.length === null ? (
+                    ) : error || selectedDirectory === null ? (
                         // error || directory.length === 0
                         <div className="alert alert-info" role="alert">
                             <div className="alert-body text-center">

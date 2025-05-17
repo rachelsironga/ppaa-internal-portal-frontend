@@ -25,25 +25,40 @@ const showLoginDialog = () => {
         const Modal = () => {
             const [loading, setLoading] = React.useState(false);
             const user = useSelector((state) => state.userReducer);
+            const [errorMessage, setErrorMessage] = React.useState(false);
+            const [errorCount, setErrorCount] = React.useState(1);
             if (!user) {
                 reject(true)
                 closeModal();
             }
 
+
+
+            React.useEffect(() => {
+                // Set focus to the password input field when the modal is rendered
+                const passwordInput = document.getElementById("refresh_password_modal");
+                if (passwordInput) {
+                    passwordInput.focus();
+                }
+            }, []);
+
+
             const handleLogin = async () => {
                 if (loading) return;
                 setLoading(true);
 
+
+
                 try {
-                    const email = user?.data?.email;
-                    if (!email) {
+                    const username = user?.data?.username;
+                    if (!username) {
                         reject(true)
                         closeModal();
                     }
-                    const password = document.getElementById("password").value;
+                    const password = document.getElementById("refresh_password_modal").value;
 
                     const response = await axios.post(`${API_BASE_URL}/user/login`, {
-                        email,
+                        username,
                         password,
                     });
                     setLoading(false);
@@ -58,21 +73,41 @@ const showLoginDialog = () => {
                         closeModal();
                     }
                 } catch (error) {
-                    closeModal();
-                    reject(true);
+                    setLoading(false);
+
+                    if (error.status === 401) {
+                        if (errorCount === 2) {
+                            closeModal();
+                            reject(true);
+                        } else {
+                            setErrorCount(errorCount + 1);
+                            setErrorMessage(
+                                <div>
+                                    Invalid password. Try again. <br /> <small>(Last attempt)</small>
+                                </div>
+                            );
+                        }
+
+                    } else {
+                        closeModal();
+                        reject(true);
+                    }
+
                 }
             };
 
             return (
-                <div className="modal-backdrop" style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}>
-                    <div className="modal modal-slide-in" style={{ display: "block" }} role="dialog"
+                <div className="modal-backdrop" style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.6)", zIndex: 99999999, position: "fixed",
+                }}>
+                    <div key={3456354} className="modal modal-slide-in" style={{ display: "block" }} role="dialog"
                         aria-labelledby="loginModalTitle"
                         aria-describedby="loginModalDescription">
                         <div className="modal-dialog modal-sm modal-dialog-centered">
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title"> </h5>
-                                    <button
+                                    {/* <button
                                         type="button"
                                         className="btn-close"
                                         onClick={() => {
@@ -80,7 +115,7 @@ const showLoginDialog = () => {
                                             reject(true);
                                         }}
                                         aria-label="Close"
-                                    ></button>
+                                    ></button> */}
                                 </div>
                                 <div className="modal-body">
                                     <div style={{
@@ -90,7 +125,7 @@ const showLoginDialog = () => {
                                         height: "100%", // Ensure the parent div has a height
                                     }}>
                                         <img
-                                            src={user?.data?.profile_image ?? "../assets/img/avatars/1.png"}
+                                            src={user?.data?.photo !== "" ? user?.data?.photo : "../assets/img/avatars/1.png"}
                                             alt="user-avatar"
                                             className="d-block rounded"
                                             height="100"
@@ -101,23 +136,35 @@ const showLoginDialog = () => {
                                     </div>
                                     <h5 className="text-muted text-center mt-4">VERIFY YOU IDENTITY</h5>
                                     <p className="text-center">Hello. <strong>{user?.data?.first_name}</strong>, Your session has expired. Please Enter your Password</p>
-                                    <form className="content-centered text-center align-items-center">
+                                    <form className="content-centered text-center align-items-center" >
                                         <div className="mb-3">
                                             <input
                                                 type="password"
                                                 className="form-control"
-                                                id="password"
+                                                id="refresh_password_modal"
                                                 placeholder="Enter your password"
+                                                autoFocus
+                                                required
+                                                aria-label="Enter your password"
+                                                aria-describedby="refresh_password_modal"
                                             />
+                                        </div>
+                                        <div className="me-1">
+                                            {errorMessage && (
+                                                <div className="text-danger text-center" role="alert">
+                                                    {errorMessage}
+                                                </div>
+                                            )}
                                         </div>
                                         <button
                                             type="button"
                                             className="btn btn-primary mt-2"
                                             style={{ width: "200px" }}
                                             onClick={handleLogin}
-                                            disabled={loading}
+                                            disabled={loading || errorCount > 2}
                                         >
-                                            {loading ? "Signing in..." : "Sign In"}                                        </button>
+                                            {loading ? "Verifying..." : "Verify"}
+                                        </button>
                                     </form>
                                 </div>
                             </div>

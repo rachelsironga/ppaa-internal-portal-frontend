@@ -17,7 +17,7 @@ export const DirectoryPage = () => {
     const [directories, setDirectories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedDirectory, setselectedDirectory] = useState(null); //Get data for editing / deleting
+    const [selectedDirectory, setSelectedDirectory] = useState(null); //Get data for editing / deleting
     const [searchQuery, setSearchQuery] = useState("");
     const [debounceTimeout, setDebounceTimeout] = useState(null);
     const {
@@ -107,7 +107,7 @@ export const DirectoryPage = () => {
             );
         }
 
-        setselectedDirectory(null); // Reset selected Directory after deletion
+        setSelectedDirectory(null); // Reset selected Directory after deletion
     };
 
     // Fetch Directorys on initial load
@@ -126,7 +126,7 @@ export const DirectoryPage = () => {
 
     return (
         <DirectoryContext.Provider
-            value={{ fetchDirectories, selectedDirectory, setselectedDirectory }}
+            value={{ fetchDirectories, selectedDirectory, setSelectedDirectory }}
         >
             <h4 className="py-3 mb-4">
                 <span className="text-muted fw-light">Setting /</span> Directories
@@ -136,7 +136,7 @@ export const DirectoryPage = () => {
                     <h5 className="mb-0">Hospital Directories</h5>
                     <DirectoryModal
                         title="View Hospital Directories"
-                        onClose={() => setselectedDirectory(null)}
+                        onClose={() => setSelectedDirectory(null)}
                     />
                 </div>
 

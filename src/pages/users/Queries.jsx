@@ -2,7 +2,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../Costants";
 import api from "../../api";
 
-const API_URL = `${API_BASE_URL}/api/approval-level`;
+const API_URL = `${API_BASE_URL}/api/directory`;
 
 const config = {
     headers: {
@@ -15,40 +15,40 @@ const setConfig = (pagination = {}) => ({
     params: { ...pagination },
 });
 
-export const getApprovalLevels = async ({
+export const getUsers = async ({
     uid = "",
     search = "",
     pagination = {},
 }) => {
     try {
         const response = await api.get(
-            `${API_URL}${uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`
+            `${API_BASE_URL}/user/setup${uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`
             }`,
             uid == "" ? setConfig(pagination) : {}
         );
         return response.data;
     } catch (error) {
-        console.error("Error fetching Approval Levels:", error);
+        console.error("Error fetching Users:", error);
         throw error;
     }
 };
 
-export const createUpdateApprovalLevel = async (departmentData) => {
+export const createUpdateDirectory = async (departmentData) => {
     try {
         const response = await api.post(API_URL, departmentData, config);
         return response.data;
     } catch (error) {
-        console.error(`Error while changing Approval Level:`, error);
+        console.error(`Error while changing directory:`, error);
         throw error;
     }
 };
 
-export const deleteApprovalLevel = async (id) => {
+export const deleteUser = async (id) => {
     try {
         const response = await axios.delete(`${API_URL}/${id}`);
         return response.data;
     } catch (error) {
-        console.error("Error deleting Approval Level:", error);
+        console.error("Error deleting directory:", error);
         throw error;
     }
 };

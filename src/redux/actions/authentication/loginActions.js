@@ -23,25 +23,32 @@ export const login = (userData, navigation) => async (dispatch) => {
       data,
       config
     );
-    console.log("=======response.data========", response.data);
-    const { access_token, refresh_token } = response.data.data;
-    const user = response.data.user;
+    if (response.status == 200 || response.data.status === 8000) {
+      const { access_token, refresh_token } = response.data.data;
+      const user = response.data.data.user;
 
-    // Save tokens to localStorage
-    localStorage.setItem(ACCESS_TOKEN, access_token);
-    localStorage.setItem(REFRESH_TOKEN, refresh_token);
+      // Save tokens to localStorage
+      localStorage.setItem(ACCESS_TOKEN, access_token);
+      localStorage.setItem(REFRESH_TOKEN, refresh_token);
 
-    // Dispatch success action with user data
-    dispatch({
-      type: loginTypes.LOGIN_SUCCESS,
-      payload: { user, access_token, refresh_token },
-    });
-    console.log('navigate')
-    navigation("/");
+      // Dispatch success action with user data
+      dispatch({
+        type: loginTypes.LOGIN_SUCCESS,
+        payload: { user, access_token, refresh_token },
+      });
+      navigation("/");
+    } else {
+      dispatch({
+        type: loginTypes.LOGIN_FAILURE,
+        payload: response.data.data,
+      });
+      return;
+    }
+
   } catch (error) {
     dispatch({
       type: loginTypes.LOGIN_FAILURE,
-      payload: error?.response?.data,
+      payload: error?.response?.data.data,
     });
   }
 };

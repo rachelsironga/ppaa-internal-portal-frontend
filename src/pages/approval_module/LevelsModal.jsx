@@ -5,9 +5,9 @@ import showToast from "../../helpers/ToastHelper";
 import { ApprovalModuleContext } from "../../utils/context";
 import { createUpdateItemLevel } from "./Queries";
 import Select from "react-select";
-import { getApprovalLevels } from "../approval_level/Queries";
+import { getPositionalLevels } from "../positional_level/Queries";
 import { getApprovalActions } from "../approval_action/Queries";
-import { getDepartments } from "../department/Queries";
+import { getDepartments } from "../department/Queries"; 
 
 const ApprovalModuleLevelModal = () => {
   const {
@@ -15,8 +15,8 @@ const ApprovalModuleLevelModal = () => {
     debounceTimeout,
     setDebounceTimeout,
     selectApprovalModule,
-    setSelectedApprovalLevelModule,
-    selectedApprovalLevelModule,
+    setSelectedPositionalLevelModule,
+    selectedPositionalLevelModule,
   } = useContext(ApprovalModuleContext);
   const [errors, setOtherError] = useState({});
   const [loadingLevels, setLoadingLevels] = useState(false);
@@ -30,12 +30,12 @@ const ApprovalModuleLevelModal = () => {
   const resetFormRef = useRef(null);
   const initialValues = {
     module_uid: selectApprovalModule?.name || "",
-    level_uid: selectedApprovalLevelModule?.level?.uid || "",
-    action_uid: selectedApprovalLevelModule?.action?.uid || "",
-    department_uid: selectedApprovalLevelModule?.department?.uid || "",
-    order: selectedApprovalLevelModule?.order || 1,
-    is_signatory: selectedApprovalLevelModule?.is_signatory || true,
-    is_active: selectedApprovalLevelModule?.is_active || true,
+    level_uid: selectedPositionalLevelModule?.level?.uid || "",
+    action_uid: selectedPositionalLevelModule?.action?.uid || "",
+    department_uid: selectedPositionalLevelModule?.department?.uid || "",
+    order: selectedPositionalLevelModule?.order || 1,
+    is_signatory: selectedPositionalLevelModule?.is_signatory || true,
+    is_active: selectedPositionalLevelModule?.is_active || true,
   };
 
   const validationSchema = Yup.object().shape({
@@ -52,8 +52,8 @@ const ApprovalModuleLevelModal = () => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (selectedApprovalLevelModule) {
-        values.uid = selectedApprovalLevelModule.uid;
+      if (selectedPositionalLevelModule) {
+        values.uid = selectedPositionalLevelModule.uid;
       }
       values.module_uid = selectApprovalModule.uid;
       const result = await createUpdateItemLevel(values);
@@ -81,7 +81,7 @@ const ApprovalModuleLevelModal = () => {
   };
 
   const handleClose = () => {
-    setSelectedApprovalLevelModule(null);
+    setSelectedPositionalLevelModule(null);
     if (resetFormRef.current) {
       resetFormRef.current();
       // Clear all Select components with the class name 'fetched-select2'
@@ -103,7 +103,7 @@ const ApprovalModuleLevelModal = () => {
   const handleFetchLevels = async (searchValue = "") => {
     setLoadingLevels(true);
     try {
-      const result = await getApprovalLevels({
+      const result = await getPositionalLevels({
         search: searchValue,
         pagination: {
           page: 1,
@@ -172,14 +172,14 @@ const ApprovalModuleLevelModal = () => {
   };
 
   useEffect(() => {
-    if (!selectedApprovalLevelModule) {
+    if (!selectedPositionalLevelModule) {
       handleFetchLevels();
       handleFetchActions();
       fetchDepartments();
     } else {
-      values.level_uid = selectedApprovalLevelModule?.level?.uid;
-      values.action_uid = selectedApprovalLevelModule?.action?.uid;
-      values.department_uid = selectedApprovalLevelModule?.department?.uid;
+      values.level_uid = selectedPositionalLevelModule?.level?.uid;
+      values.action_uid = selectedPositionalLevelModule?.action?.uid;
+      values.department_uid = selectedPositionalLevelModule?.department?.uid;
     }
   }, []);
 
@@ -205,7 +205,7 @@ const ApprovalModuleLevelModal = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="exampleModalLabel3">
-                {selectedApprovalLevelModule === null
+                {selectedPositionalLevelModule === null
                   ? "Add New"
                   : "View / Update"}{" "}
                 Approval Module Level
@@ -342,8 +342,8 @@ const ApprovalModuleLevelModal = () => {
                                 ) || null
                             }
 
-                            // defaultValue={selectedApprovalLevelModule?.level?.uid || ""}
-                            // defaultInputValue={selectedApprovalLevelModule ? `${selectedApprovalLevelModule?.level?.name} (${selectedApprovalLevelModule?.level?.code})` : values.level_uid}
+                            // defaultValue={selectedPositionalLevelModule?.level?.uid || ""}
+                            // defaultInputValue={selectedPositionalLevelModule ? `${selectedPositionalLevelModule?.level?.name} (${selectedPositionalLevelModule?.level?.code})` : values.level_uid}
                           />
                           {/* <Field type="hidden" name="level_uid" id="actionUidLarge" /> */}
                           <ErrorMessage
@@ -391,8 +391,8 @@ const ApprovalModuleLevelModal = () => {
                                   (option) => option.value === values.action_uid
                                 ) || null
                             }
-                            // defaultValue={selectedApprovalLevelModule?.action?.uid || ""}
-                            // defaultInputValue={selectedApprovalLevelModule ? `${selectedApprovalLevelModule.action?.name} (${selectedApprovalLevelModule.action?.code})` : ""}
+                            // defaultValue={selectedPositionalLevelModule?.action?.uid || ""}
+                            // defaultInputValue={selectedPositionalLevelModule ? `${selectedPositionalLevelModule.action?.name} (${selectedPositionalLevelModule.action?.code})` : ""}
                             isClearable
                           />
                           <Field

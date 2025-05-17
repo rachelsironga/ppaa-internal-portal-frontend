@@ -9,16 +9,14 @@ const Sidebar = () => {
     const userRoles = user?.groups;
 
 
-    console.log('userPermissions', userPermissions);
-    console.log('userRoles', userRoles);
-
     const hasPermission = (itemPermissions, itemRoles, userPermissions, userRoles) => {
-        const hasRequiredPermission = !itemPermissions || itemPermissions.some(permission => userPermissions?.includes(permission));
-        const hasRequiredRole = !itemRoles || itemRoles.some(role => userRoles.includes(role));
+        const hasRequiredPermission =
+            !itemPermissions || itemPermissions.some(permission => userPermissions?.includes(permission));
+        const hasRequiredRole =
+            !itemRoles || itemRoles.some(role => userRoles?.includes(role));
         return hasRequiredPermission || hasRequiredRole;
     };
 
-    console.log('user', user);
     return (
         <aside id="layout-menu" className="layout-menu menu-vertical menu bg-menu-theme">
             <div className="app-brand demo">
@@ -36,6 +34,9 @@ const Sidebar = () => {
                 <a href="#" className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
                     <i className="bx bx-chevron-left bx-sm align-middle"></i>
                 </a>
+                <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+                    <i className="bx bx-chevron-left bx-sm align-middle"></i>
+                </a>
             </div>
             <div style={{ alignContent: "center", textAlign: "center" }}>
                 <span className="app-brand-text demo menu-text fw-bold ms-2">E-APPROVAL</span>
@@ -45,15 +46,20 @@ const Sidebar = () => {
 
 
             <ul className="menu-inner py-1">
-                {menuData.map((section) => (
-                    <React.Fragment key={section.header}>
-                        {section.header && section.items.length > 0 && (
+                {menuData.map((section, sectionIndex) => (
+                    <React.Fragment key={"header-" + sectionIndex}>
+                        {section.header && section.items
+                            .filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles)).length > 0 && (
                             <li className="menu-header small text-uppercase">
-                                <span className="menu-header-text">{section.header}</span>
+                                <span className="menu-header-text">{section.header} </span>
                             </li>
                         )}
-                        {section.items.filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles)).map(MenuItem)}
-                    </React.Fragment>
+                        {section.items
+                            .filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles))
+                            .map((item, intemIndex) => (
+                                <MenuItem key={item.id || intemIndex} {...item} />
+                            ))}
+                    </React.Fragment> 
                 ))}
             </ul>
         </aside>
@@ -82,9 +88,13 @@ const MenuItem = (item) => {
                 )}
             </NavLink>
             {item.submenu && (
-                <ul key={item.submenu} className="menu-sub">{item.submenu.map(MenuItem)}</ul>
+                <ul key={`submenu-${item.id || item.text}`} className="menu-sub">
+                    {item.submenu.map((subitem, subitemIndex) => (
+                        <MenuItem key={subitem.id || `${item.id || item.text}-${subitemIndex}`} {...subitem} />
+                    ))}
+                </ul>
             )}
-        </li>
+        </li> 
     );
 };
 

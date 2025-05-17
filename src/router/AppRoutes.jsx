@@ -49,13 +49,15 @@ import { PerfectScrollbarPage } from "../pages/extended-ui/PerfectScrollbar";
 import { TextDividerPage } from "../pages/extended-ui/TextDividerPage";
 import ChangePassword from "../pages/account/ChangePassword";
 import { DepartmentPage } from "../pages/department/View";
-import { ApprovalLevelPage } from "../pages/approval_level/View";
+import { PositionalLevelPage } from "../pages/positional_level/View";
 import { ApprovalActionPage } from "../pages/approval_action/View";
 import { ApprovalModulePage } from "../pages/approval_module/View";
 import { ApprovalModuleOpenPage } from "../pages/approval_module/Open";
 import { ApprovalRequestPage } from "../pages/approval_request/View";
 import { DirectoryPage } from "../pages/directory/View";
 import { DirectoryOpenPage } from "../pages/directory/Open";
+import { UserListPage } from "../pages/users/View";
+import { UserOpenPage } from "../pages/users/Open";
 
 
 
@@ -84,10 +86,14 @@ const AppRoutes = () => {
             <Route path="/settings/directories" element={<DirectoryPage />} />
             <Route path="/settings/directory-open/:uid" element={<DirectoryOpenPage />} />
             <Route path="/settings/departments" element={<DepartmentPage />} />
-            <Route path="/settings/approval-levels" element={<ApprovalLevelPage />} />
+            <Route path="/settings/positional-levels" element={<PositionalLevelPage />} />
             <Route path="/settings/approval-actions" element={<ApprovalActionPage />} />
             <Route path="/settings/approval-modules" element={<ApprovalModulePage />} />
             <Route path="/settings/approval-modules-open/:uid" element={<ApprovalModuleOpenPage />} />
+
+            {/* Users */}
+            <Route path="/users/list" element={<UserListPage />} />
+            <Route path="/users/view/:uid" element={<UserOpenPage />} />
 
             {/* Requestes */}
             <Route path="/requests" element={<ApprovalRequestPage />} />

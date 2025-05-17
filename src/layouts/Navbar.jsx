@@ -17,7 +17,7 @@ const Navbar = () => {
 
   return (
     <nav
-      className="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+      className="layout-navbar navbar-detached navbar navbar-expand-xl align-items-center bg-navbar-theme container-fluid"
       id="layout-navbar">
       <div className="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
         <a aria-label='toggle for sidebar' className="nav-item nav-link px-0 me-xl-4" href="#">

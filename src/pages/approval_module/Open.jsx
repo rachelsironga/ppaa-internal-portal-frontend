@@ -18,7 +18,7 @@ export const ApprovalModuleOpenPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectApprovalModule, setSelectedApprovalModule] = useState(null);
-    const [selectedApprovalLevelModule, setSelectedApprovalLevelModule] = useState(null);
+    const [selectedPositionalLevelModule, setSelectedPositionalLevelModule] = useState(null);
     const [debounceTimeout, setDebounceTimeout] = useState(null);
     const [moduleLevels, setModuleLevels] = useState([]);
     const [isSorted, setIsSorted] = useState(false);
@@ -131,7 +131,7 @@ export const ApprovalModuleOpenPage = () => {
             );
         }
 
-        setSelectedApprovalLevelModule(null); // Reset selected approvalModule after deletion
+        setSelectedPositionalLevelModule(null); // Reset selected approvalModule after deletion
     };
 
     const handleSaveSorting = async () => {
@@ -193,7 +193,7 @@ export const ApprovalModuleOpenPage = () => {
 
 
     useEffect(() => {
-        console.log(`Approval Module Open Page Mounted ${selectedApprovalLevelModule?.uid}`);
+        console.log(`Approval Module Open Page Mounted ${selectedPositionalLevelModule?.uid}`);
         if (debounceTimeout) clearTimeout(debounceTimeout);
 
         const timeout = setTimeout(() => {
@@ -213,8 +213,8 @@ export const ApprovalModuleOpenPage = () => {
                 handleFetchData,
                 selectApprovalModule,
                 setSelectedApprovalModule,
-                selectedApprovalLevelModule,
-                setSelectedApprovalLevelModule
+                selectedPositionalLevelModule,
+                setSelectedPositionalLevelModule
             }}
         >
             <h4 className="py-3 mb-4">
@@ -330,7 +330,7 @@ export const ApprovalModuleOpenPage = () => {
                                     )}
                                     <ApprovalModuleLevelModal
                                         title="View Approval Modules"
-                                        onClose={() => setSelectedApprovalLevelModule(null)}
+                                        onClose={() => setSelectedPositionalLevelModule(null)}
                                     />
                                 </div>
 
@@ -456,7 +456,7 @@ export const ApprovalModuleOpenPage = () => {
                                                                                 className="dropdown-item"
                                                                                 href="#"
                                                                                 onClick={() => {
-                                                                                    setSelectedApprovalLevelModule(dataRows);
+                                                                                    setSelectedPositionalLevelModule(dataRows);
                                                                                 }}
                                                                                 data-bs-toggle="modal"
                                                                                 data-bs-target="#viewCreateDataLevelModal"
@@ -492,7 +492,7 @@ export const ApprovalModuleOpenPage = () => {
                     </div>
                 </div>
             </div>
-            <ApprovalModuleModal loadOnlyModal={true} onClose={() => setSelectedApprovalLevelModule(null)} />
+            <ApprovalModuleModal loadOnlyModal={true} onClose={() => setSelectedPositionalLevelModule(null)} />
         </ApprovalModuleContext.Provider >
     );
 };

@@ -6,7 +6,7 @@ import { createUpdateApprovalRequest } from "./Queries";
 import { ApprovalRequestsContext } from "../../utils/context";
 import requestTypes from "../../data/requestTypes.json";
 import { getDepartments } from "../department/Queries";
-import { getApprovalLevels } from "../approval_level/Queries";
+import { getPositionalLevels } from "../positional_level/Queries";
 
 const ApprovalRequestModal = () => {
   const {
@@ -79,7 +79,7 @@ const ApprovalRequestModal = () => {
   const handleFetchLevels = async (searchValue = "") => {
     setLoadingLevels(true);
     try {
-      const result = await getApprovalLevels({
+      const result = await getPositionalLevels({
         search: searchValue,
         pagination: {
           page: 1,
