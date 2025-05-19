@@ -55,7 +55,7 @@ export const createUpdateDepartment = async (departmentData) => {
 
 export const deleteDepartment = async (id) => {
     try {
-        const response = await axios.delete(`${API_URL}/${id}`);
+        const response = await api.delete(`${API_URL}/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error deleting department:", error);

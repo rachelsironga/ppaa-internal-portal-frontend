@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Swal from "sweetalert2";
-import { createUpdateDirectory, getUsers } from "./Queries";
+import { createUpdateUser, getUsers } from "./Queries";
 import { toast } from "react-toastify";
 import showToast from "../../helpers/ToastHelper";
 import { UsersContext } from "../../utils/context";
@@ -31,7 +31,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                 values.uid = selectedUser.uid;
             }
             // Call the API to create or update the Directory
-            const result = await createUpdateDirectory(values);
+            const result = await createUpdateUser(values);
 
             if (result.status === 200 || result.status === 8000) {
                 showToast("Data Saved Successfuly", "success", "Complete");
@@ -86,7 +86,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                 </button>
             )}
 
-            <div className="modal modal-slide-in" id="viewCreateUserModal" tabIndex="-1" aria-hidden="true">
+            {/* <div className="modal modal-slide-in" id="viewCreateUserModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-md" role="document">
                     <div className="modal-content">
                         <div className="modal-header">
@@ -162,7 +162,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                         </Formik>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </>
     );
 };

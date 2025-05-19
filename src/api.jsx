@@ -26,7 +26,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.config.url && error.config.url.includes("/user/") || error.config.url.includes("/token/")) {
+    if (error.config.url &&
+      error.config.url.includes("/user/login") ||
+      error.config.url.includes("/user/register") ||
+      error.config.url.includes("/user/refresh") ||
+      error.config.url.includes("/user/logout") ||
+      error.config.url.includes("/token/")) {
       return Promise.reject(error);
     }
 
