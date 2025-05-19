@@ -391,7 +391,7 @@ export const UserListPage = () => {
                                                                 {userData.status}
                                                             </span>
                                                 </td>
-                                                <td>
+                                                        <td className="text-center">
                                                     <div className="dropdown">
                                                         <button
                                                             aria-label="Click me"
@@ -399,7 +399,7 @@ export const UserListPage = () => {
                                                             className="btn p-0 dropdown-toggle hide-arrow"
                                                             data-bs-toggle="dropdown"
                                                         >
-                                                            <i className="bx bx-dots-vertical-rounded"></i>
+                                                                    <i className="bx bx-menu"></i>
                                                         </button>
                                                         <div className="dropdown-menu">
                                                             <button

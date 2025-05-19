@@ -252,7 +252,7 @@ export const ApprovalModulePage = () => {
                                                     ? `${dataRows.description.slice(0, 70)}...`
                                                     : dataRows.description}
                                             </td>
-                                            <td>
+                                            <td className="text-center">
                                                 <div className="dropdown">
                                                     <button
                                                         aria-label="Click me"
@@ -260,7 +260,7 @@ export const ApprovalModulePage = () => {
                                                         className="btn p-0 dropdown-toggle hide-arrow"
                                                         data-bs-toggle="dropdown"
                                                     >
-                                                        <i className="bx bx-dots-vertical-rounded"></i>
+                                                        <i className="bx bx-menu"></i>
                                                     </button>
                                                     <div className="dropdown-menu">
                                                         <button

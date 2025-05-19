@@ -56,7 +56,12 @@ const showLoginDialog = () => {
                         closeModal();
                     }
                     const password = document.getElementById("refresh_password_modal").value;
-
+                    if (password === "") {
+                        setLoading(false);
+                        setErrorMessage("Please enter your password");
+                        return;
+                    }
+                    // Make the API call to verify the password
                     const response = await axios.post(`${API_BASE_URL}/user/login`, {
                         username,
                         password,
@@ -137,18 +142,16 @@ const showLoginDialog = () => {
                                     <h5 className="text-muted text-center mt-4">VERIFY YOU IDENTITY</h5>
                                     <p className="text-center">Hello. <strong>{user?.data?.first_name}</strong>, Your session has expired. Please Enter your Password</p>
                                     <form className="content-centered text-center align-items-center" >
-                                        <div className="mb-3">
-                                            <input
-                                                type="password"
-                                                className="form-control"
-                                                id="refresh_password_modal"
-                                                placeholder="Enter your password"
-                                                autoFocus
-                                                required
-                                                aria-label="Enter your password"
-                                                aria-describedby="refresh_password_modal"
-                                            />
-                                        </div>
+                                        <input
+                                            type="password"
+                                            className="form-control mb-3"
+                                            id="refresh_password_modal"
+                                            placeholder="Enter your password"
+                                            autoFocus
+                                            required
+                                            aria-label="Enter your password"
+                                            aria-describedby="refresh_password_modal"
+                                        />
                                         <div className="me-1">
                                             {errorMessage && (
                                                 <div className="text-danger text-center" role="alert">

@@ -190,8 +190,9 @@ export const DepartmentPage = () => {
                         </div>
                     </div>
 
-                    <div className="table-responsive text-nowrap animate__animated animate__fadeInUp animate__faster">
-                        <table className="table table-hover table-align-middle mb-0 table-bordered">
+                    <div className=" text-nowrap animate__animated animate__fadeInUp animate__faster">
+                        <div className="table-responsive">
+                            <table className="table table-hover table-align-middle mb-0 table-bordered">
                             <thead style={{ backgroundColor: "#f1f1f1" }}>
                                 <tr>
                                     <th style={{ width: "50px" }}>S/N</th>
@@ -249,7 +250,7 @@ export const DepartmentPage = () => {
                                                     {dept.is_active ? "Active" : "Disabled"}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td className="text-center">
                                                 <div className="dropdown">
                                                     <button
                                                         aria-label="Click me"
@@ -257,7 +258,8 @@ export const DepartmentPage = () => {
                                                         className="btn p-0 dropdown-toggle hide-arrow"
                                                         data-bs-toggle="dropdown"
                                                     >
-                                                        <i className="bx bx-dots-vertical-rounded"></i>
+                                                        <i className="bx bx-menu"></i>
+
                                                     </button>
                                                     <div className="dropdown-menu">
                                                         <a
@@ -289,7 +291,9 @@ export const DepartmentPage = () => {
                                     ))
                                 )}
                             </tbody>
-                        </table>
+                            </table> 
+                        </div>
+
 
 
                         <div className="d-flex justify-content-between align-items-center mt-3">

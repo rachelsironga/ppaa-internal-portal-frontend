@@ -247,7 +247,7 @@ export const DirectoryPage = () => {
                                                         ? `${dept.description.slice(0, 40)}...`
                                                         : dept.description}
                                                 </td>
-                                                <td>
+                                                <td className="text-center">
                                                     <div className="dropdown">
                                                         <button
                                                             aria-label="Click me"
@@ -255,7 +255,8 @@ export const DirectoryPage = () => {
                                                             className="btn p-0 dropdown-toggle hide-arrow"
                                                             data-bs-toggle="dropdown"
                                                         >
-                                                            <i className="bx bx-dots-vertical-rounded"></i>
+                                                            <i className="bx bx-menu"></i>
+
                                                         </button>
                                                         <div className="dropdown-menu">
                                                             <button

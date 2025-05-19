@@ -37,7 +37,8 @@ const Navbar = () => {
                       ? user.photo
                       : "/assets/img/avatars/1.png"
                   }
-                  className="w-px-40 h-auto rounded-circle"
+                  style={{ width: '40px', height: '40px' }}
+                  className="w-px-40 rounded-circle"
                   alt="avatar-image"
                   aria-label='Avatar Image'
                 />
@@ -55,7 +56,8 @@ const Navbar = () => {
                               ? user.photo
                               : "/assets/img/avatars/1.png"
                           }
-                          className="w-px-40 h-auto rounded-circle"
+                          style={{ width: '40px', height: '40px' }}
+                          className="w-px-40  rounded-circle"
                           alt='avatar-image' aria-label='Avatar Image'
                         />
                       </div>
