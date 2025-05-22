@@ -18,8 +18,7 @@ const setConfig = (pagination = {}) => ({
 export const getUsers = async ({ uid = "", search = "", pagination = {} }) => {
     try {
         const response = await api.get(
-            `${API_BASE_URL}/user/setup${uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`
-            }`,
+            `${API_BASE_URL}/user/setup${uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`}`,
             uid == "" ? setConfig(pagination) : {}
         );
         return response.data;
@@ -31,9 +30,13 @@ export const getUsers = async ({ uid = "", search = "", pagination = {} }) => {
 
 
 
-export const createUpdateUser = async (departmentData) => {
+export const createUpdateUser = async (userData) => {
     try {
-        const response = await api.post(API_URL, departmentData, config);
+        const response = await api.post(
+            `${API_BASE_URL}/user/setup`,
+            userData,
+            config
+        );
         return response.data;
     } catch (error) {
         console.error(`Error while changing User:`, error);

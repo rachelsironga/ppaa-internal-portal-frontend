@@ -74,6 +74,7 @@ export const UserOpenPage = () => {
                 );
                 setIsFileSelected(false);
                 uploadValues.uid = result.data.guid;
+                fetchPositions(result.data.guid);
             } else {
                 setError(true);
                 showToast("No User Found", "warning", "Fetch Completed");
@@ -86,13 +87,13 @@ export const UserOpenPage = () => {
         }
     };
 
-    const fetchPositions = async () => {
+    const fetchPositions = async (guid = "") => {
         setLoadingPositions(true);
         setErrorPositions(null);
         try {
             const result = await getPositions({
                 search: searchQuery,
-                user_uid: selectedUser?.guid,
+                user_uid: guid,
                 old_only: true,
                 pagination: {
                     page: 1,
@@ -228,7 +229,6 @@ export const UserOpenPage = () => {
         if (debounceTimeout) clearTimeout(debounceTimeout);
         const timeout = setTimeout(() => {
             handleFetchData();
-            fetchPositions();
         }, 1000);
 
         setDebounceTimeout(timeout);

@@ -222,10 +222,10 @@ export const UserListPage = () => {
             <div className="card">
                 <div className="d-flex justify-content-between align-items-center card-header mb-1">
                     <h5 className="mb-0">User Managments</h5>
-                    {/* <UserModal
+                    <UserModal
                         title="View User Managment"
                         onClose={() => setSelectedUser(null)}
-                    /> */}
+                    />
                 </div>
 
                 <div className="card-body">
@@ -286,7 +286,7 @@ export const UserListPage = () => {
                         <div className="table-responsive text-nowrap">
                             <table className="table table-hover table-align-middle mb-0 table-bordered">
                                 <thead style={{ backgroundColor: "#f1f1f1" }}>
-                                    <tr>
+                                    <tr key={"header-user-table"}>
                                         <th style={{ width: "50px" }}>S/N</th>
                                         <th style={{ width: "400px" }}>Name</th>
                                         <th style={{ width: "80px" }}>PF-Number</th>
