@@ -11,6 +11,7 @@ import ApprovalRequestModal from "./Modal";
 
 export const ApprovalRequestPage = () => {
   const pageSizeData = [5, 10, 20, 50, 70, 100];
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [approvalRequests, setApprovalRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -134,6 +135,8 @@ export const ApprovalRequestPage = () => {
         handleFetchData,
         selectApprovalRequest,
         setSelectedApprovalRequest,
+        isModalOpen,
+        setIsModalOpen,
       }}
     >
       <h4 className="py-3 mb-4">

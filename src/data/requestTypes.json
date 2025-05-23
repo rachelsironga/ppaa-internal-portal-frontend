@@ -1,7 +1,7 @@
 [
     {
         "title": "Internet & Email Connectivity",
-        "type": "INTERNET_EMAIL_CONNECTIVITY",
+        "type": "INTERNET_EMAIL_ACCESS",
         "color": "#FF5733",
         "icon": "bx-subdirectory-right",
         "description": "Issues related to internet connectivity or email access."

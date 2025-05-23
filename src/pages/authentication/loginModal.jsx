@@ -27,6 +27,8 @@ const showLoginDialog = () => {
             const user = useSelector((state) => state.userReducer);
             const [errorMessage, setErrorMessage] = React.useState(false);
             const [errorCount, setErrorCount] = React.useState(1);
+            const passwordRef = React.useRef(null);
+
             if (!user) {
                 reject(true)
                 closeModal();
@@ -35,10 +37,10 @@ const showLoginDialog = () => {
 
 
             React.useEffect(() => {
-                // Set focus to the password input field when the modal is rendered
-                const passwordInput = document.getElementById("refresh_password_modal");
-                if (passwordInput) {
-                    passwordInput.focus();
+                passwordRef.current.focus();
+                // Focus input when modal appears
+                if (passwordRef.current) {
+                    passwordRef.current.focus();
                 }
             }, []);
 
@@ -141,12 +143,13 @@ const showLoginDialog = () => {
                                     </div>
                                     <h5 className="text-muted text-center mt-4">VERIFY YOU IDENTITY</h5>
                                     <p className="text-center">Hello. <strong>{user?.data?.first_name}</strong>, Your session has expired. Please Enter your Password</p>
-                                    <form className="content-centered text-center align-items-center" >
+                                    <form className="content-centered text-center align-items-center" id="loginVerifyForm">
                                         <input
                                             type="password"
                                             className="form-control mb-3"
                                             id="refresh_password_modal"
                                             placeholder="Enter your password"
+                                            ref={passwordRef}
                                             autoFocus
                                             required
                                             aria-label="Enter your password"
