@@ -3,7 +3,7 @@ import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
 import "animate.css";
-import { deleteItem, deleteItemLevel, getItems, sortItemLevels } from "./Queries";
+import { deleteItem, deleteItemLevel, getModules, sortItemLevels } from "./Queries";
 import { ApprovalModuleContext } from "../../utils/context";
 import { useParams } from "react-router-dom";
 import ApprovalModuleLevelModal from "./LevelsModal";
@@ -28,7 +28,7 @@ export const ApprovalModuleOpenPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getItems({
+            const result = await getModules({
                 uid: uid
             });
             if (result.status === 200 || result.status === 8000) {

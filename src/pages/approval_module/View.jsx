@@ -5,7 +5,7 @@ import ReactLoading from "react-loading";
 import usePagination from "../../hooks/usePagination";
 import ReactPaginate from "react-paginate";
 import "animate.css";
-import { deleteItem, getItems } from "./Queries";
+import { deleteItem, getModules } from "./Queries";
 import { ApprovalModuleContext } from "../../utils/context";
 import ApprovalModuleModal from "./Modal";
 import { useNavigate } from "react-router-dom";
@@ -42,7 +42,7 @@ export const ApprovalModulePage = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getItems({
+            const result = await getModules({
                 search: searchQuery,
                 pagination: {
                     page: currentPage,

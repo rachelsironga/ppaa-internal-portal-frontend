@@ -63,7 +63,7 @@ export const DirectoryModal = ({ loadOnlyModal = false }) => {
     const handleClose = () => {
         console.log("Modal closed");
         setSelectedDirectory(null);
-        const modalElement = document.getElementById("viewCreateDataModal");
+        const modalElement = document.getElementById("viewCreateDirectoryModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
     };

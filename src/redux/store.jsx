@@ -1,10 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { thunk } from "redux-thunk";
-import storage from "redux-persist/lib/storage"; // Use localStorage
+import storage from "redux-persist/lib/storage";
 import { persistReducer, persistStore } from "redux-persist";
-import { rootReducer } from "./reducer"; // Import your root reducer
+import { rootReducer } from "./reducer";
 
-// Redux Persist Configuration
 const persistConfig = {
     key: "root",
     storage,
@@ -13,11 +11,11 @@ const persistConfig = {
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 const store = configureStore({
-    reducer: persistedReducer, // Use persisted reducer
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(thunk),
+    reducer: persistedReducer,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware(), // No need to concat thunk
     devTools: process.env.NODE_ENV !== "production",
 });
 
-export const persistor = persistStore(store); // Create persistor
+export const persistor = persistStore(store);
 
 export default store;

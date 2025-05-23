@@ -94,6 +94,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     const handleClose = () => {
         console.log("Modal closed");
         setSelectedUser(null);
+        setIsFirstTabChange(true);
         const modalElement = document.getElementById("viewCreateUserModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();

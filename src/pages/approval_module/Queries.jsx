@@ -17,7 +17,7 @@ const setConfig = (pagination = {}) => ({
     params: { ...pagination },
 });
 
-export const getItems = async ({
+export const getModules = async ({
     uid = "",
     search = "",
     pagination = {},
