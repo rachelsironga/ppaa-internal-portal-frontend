@@ -9,9 +9,11 @@ import { getDepartments } from "../department/Queries";
 import { getPositionalLevels } from "../positional_level/Queries";
 import FormWizard from "react-form-wizard-component";
 import "react-form-wizard-component/dist/style.css";
-import Select from "react-select";
+import Select, { components } from "react-select";
 import { getModules } from "../approval_module/Queries";
 import PDFViewer from "../../components/common/PDFViewer";
+import jeevaData from "../../data/jeevaData.json";
+import AccordionContainer from "../../components/accordion/AccordionContainer";
 
 const ApprovalRequestModal = () => {
   const {
@@ -22,6 +24,95 @@ const ApprovalRequestModal = () => {
     setIsModalOpen,
   } = useContext(ApprovalRequestsContext);
   const [errors, setOtherError] = useState({});
+
+  const [activeChip, setActiveChip] = useState(null);
+  const [activeChipLabel, setActiveChipLabel] = useState(null);
+
+  const [selectedLeft, setSelectedLeft] = useState([]);
+  const [selectedRight, setSelectedRight] = useState([]);
+  const [leftOptions, setLeftOptions] = useState([]);
+  const [rightOptions, setRightOptions] = useState([
+    { label: "Modules", options: [] },
+    { label: "Permissions", options: [] },
+  ]);
+
+  // Inside Select component:
+  const CustomMultiValue = (props) => {
+    const isActive = activeChip && props.data.value === activeChip;
+    return (
+      <div
+        style={{
+          background: isActive ? "#696CFF" : "#e2e3e5",
+          borderRadius: "2px",
+          margin: "3px",
+          display: "flex",
+          alignItems: "center",
+          cursor: "pointer",
+          padding: "1px 3px",
+        }}
+        onClick={() => {
+          setActiveChip(props.data.value);
+          setActiveChipLabel(props.data.label)
+          // window.alert(`You clicked: ${props.data.label}`);
+        }}
+      >
+        <components.MultiValue {...props} />
+      </div>
+    );
+  };
+
+  // Helpers
+  const removeFromGrouped = (grouped, items) =>
+    grouped.map(group => ({
+      ...group,
+      options: group.options.filter(
+        opt => !items.some(sel => sel.value === opt.value)
+      ),
+    }));
+
+  const addToGrouped = (grouped, items) =>
+    grouped.map(group => ({
+      ...group,
+      options: [
+        ...group.options,
+        ...items.filter(
+          item =>
+            item.group === group.label &&
+            !group.options.some(opt => opt.value === item.value)
+        ),
+      ],
+    }));
+
+  // Assign: left -> right
+  const handleAssign = () => {
+    // Get selected with group info
+    const selectedWithGroup = [];
+    leftOptions.forEach(group => {
+      group.options.forEach(opt => {
+        if (selectedLeft.some(sel => sel.value === opt.value)) {
+          selectedWithGroup.push({ ...opt, group: group.label });
+        }
+      });
+    });
+    setLeftOptions(removeFromGrouped(leftOptions, selectedLeft));
+    setSelectedLeft([]);
+    setRightOptions(addToGrouped(rightOptions, selectedWithGroup));
+  };
+
+  // Remove: right -> left
+  const handleRemove = () => {
+    const selectedWithGroup = [];
+    rightOptions.forEach(group => {
+      group.options.forEach(opt => {
+        if (selectedRight.some(sel => sel.value === opt.value)) {
+          selectedWithGroup.push({ ...opt, group: group.label });
+        }
+      });
+    });
+    setRightOptions(removeFromGrouped(rightOptions, selectedRight));
+    setSelectedRight([]);
+    setLeftOptions(addToGrouped(leftOptions, selectedWithGroup));
+  };
 
 
   const [loadingModules, setLoadingModules] = useState(false);
@@ -36,6 +127,7 @@ const ApprovalRequestModal = () => {
   const [isFirstTabChange, setIsFirstTabChange] = useState(true);
   const [tabIndex, setTabIndex] = useState(0); // current tab index
 
+
   const initialValues = {
     title: selectApprovalRequests?.title || "",
     type: selectApprovalRequests?.type || "",
@@ -45,6 +137,9 @@ const ApprovalRequestModal = () => {
       purpose: selectApprovalRequests?.request_data?.purpose || "",
       start_date: selectApprovalRequests?.request_data?.start_date || "",
       end_date: selectApprovalRequests?.request_data?.end_date || "",
+      expire_at: selectApprovalRequests?.request_data?.expire_at || "",
+      grants: selectApprovalRequests?.request_data?.grants || [],
+      revork: selectApprovalRequests?.request_data?.revork || [],
       is_read_term: selectApprovalRequests?.request_data?.is_read_term || false,
     },
   };
@@ -58,6 +153,9 @@ const ApprovalRequestModal = () => {
       purpose: Yup.string().required("Purpose is required"),
       start_date: Yup.date().required("Access Start Date is required").typeError("Please enter a valid date"),
       end_date: Yup.date().required("Access End Date is required").typeError("Please enter a valid date"),
+      expire_at: Yup.date().required("Expire At is required").typeError("Please enter a valid date"),
+      grants: Yup.array().min(1, "At least one grant is required"),
+      revork: Yup.array().min(0),
       is_read_term: Yup.boolean()
         .oneOf([true], "You must agree to the terms and conditions")
         .required("Read term is required")
@@ -158,6 +256,24 @@ const ApprovalRequestModal = () => {
     }
   };
 
+  // Map Modules and Permissions to grouped options
+  const groupedOptions = [
+    {
+      label: "Modules",
+      options: jeevaData.Modules.map((mod) => ({
+        value: mod.codename,
+        label: mod.name,
+      })),
+    },
+    // {
+    //   label: "Permissions",
+    //   options: jeevaData.Permissions.map((perm) => ({
+    //     value: perm.codename,
+    //     label: perm.name,
+    //   })),
+    // },
+  ];
+
   //for Wizard tab validation & Control
   const validateTab = async (values, setFieldError, setTouched) => {
     try {
@@ -169,9 +285,15 @@ const ApprovalRequestModal = () => {
       }
       if (tabIndex === 2) {
         if (values.type === "INTERNET_EMAIL_ACCESS") {
-          await validationSchema.validateAt("request_data.start_date", values);
-          await validationSchema.validateAt("request_data.end_date", values);
-          await validationSchema.validateAt("request_data.purpose", values);
+          // await validationSchema.validateAt("request_data.access_period", values);
+          // await validationSchema.validateAt("request_data.grants", values);
+          // await validationSchema.validateAt("request_data.revork", values);
+        }
+
+        if (values.type === "JEEVA_ACCESS") {
+          // await validationSchema.validateAt("request_data.expire_at", values);
+          await validationSchema.validateAt("request_data.grants", values);
+        // await validationSchema.validateAt("request_data.revork", values);
         }
         // Add more tab-specific validation as needed
         // await validationSchema.validateAt("email", values);
@@ -249,6 +371,11 @@ const ApprovalRequestModal = () => {
 
   useEffect(() => {
     if (isModalOpen) {
+      setLeftOptions(groupedOptions);
+      setRightOptions([
+        { label: "Modules", options: [] },
+        { label: "Permissions", options: [] },
+      ]);
       fetchDepartments();
       handleFetchModule();
     }
@@ -308,6 +435,7 @@ const ApprovalRequestModal = () => {
                   <FormWizard
                     shape="circle"
                     inlineStep={true}
+                    showProggressBar={true}
                     color="#696cff"
                     stepSize="xs"
                     onTabChange={({ prevIndex, nextIndex }) => {
@@ -661,9 +789,230 @@ const ApprovalRequestModal = () => {
                           </div>
                         </>
                       )}
-                      {values.type !== "INTERNET_EMAIL_ACCESS" && (
+                      {values.type == "JEEVA_ACCESS" && (
                         <>
-                          <h1>other types handle</h1>
+                          <div className="ibox-content" >
+                            <div className="ibox-content-body" >
+                              <div className="row">
+                                <div className="col-sm-11 text-start" >
+                                  <AccordionContainer
+                                    className="text-start"
+                                    style={{ border: "0.1px solid #dfd9d7", borderRadius: "7px" }}
+                                    items={[
+                                      {
+                                        id: 3,
+                                        title: 'Instructions for Selecting JEEVA Modules and Permissions',
+                                        active: true,
+
+                                        content: `On the left, you will find all available JEEVA Modules and Permissions you can request. Please make your selections, then click the green button to confirm your choices. On the right, your selected items will appear. You may also remove selections at any time by clicking the red button. You can use the search feature at any time to make your selection process easier.`,
+                                      },
+                                    ]}
+                                  />
+                                </div>
+                                <div className="col-sm-4" style={{ minWidth: "300px" }} >
+                                  <Select
+                                    isLoading={loadingDepartments}
+                                    closeMenuOnSelect={false}
+                                    expandOnFocus={false}
+                                    isSearchable
+                                    isMulti
+                                    menuIsOpen={true}
+                                    className="select2-selection fetched-select2"
+                                    options={leftOptions}
+                                    value={selectedLeft}
+                                    onChange={(selected, action) => {
+                                      console.log(action.option)
+                                      setSelectedLeft(selected);
+                                      // Remove highlight if chip is removed
+                                      if (action && action.removedValue && activeChip === action.removedValue.value) {
+                                        setActiveChip(null);
+                                      }
+
+                                      if (action && action.option) {
+                                        console.log(action);
+                                        console.log(action.option);
+
+                                        setActiveChip(action.option.value);
+                                        setActiveChipLabel(action.option.label)
+                                      }
+
+                                    }}
+                                    onInputChange={(e) => {
+                                      // fetchDepartments(e);
+                                    }}
+                                    label="Select New Grants"
+                                    styles={{
+                                      menu: (base) => ({
+                                        ...base,
+                                        position: "relative",
+                                        zIndex: 9999,
+                                        textAlign: "left",
+                                        padding: "8px",
+                                        minHeight: "350px"
+                                      }),
+                                      groupHeading: (base) => ({
+                                        ...base,
+                                        fontWeight: "bolder",
+                                        fontSize: "0.85rem",
+                                        color: "#6f6c6b",
+                                      }),
+                                      placeholder: (base) => ({
+                                        ...base,
+                                        textAlign: "left",
+                                      }),
+                                      option: (base) => ({
+                                        ...base,
+                                        paddingLeft: "20px",
+                                      }),
+                                    }}
+                                    isClearable
+                                    components={{ MultiValue: CustomMultiValue }}
+                                  />
+                                </div>
+
+                                <div className="col-sm-4 text-start pe-3" style={{ minWidth: "300px", marginTop: "50px" }} >
+                                  <button type="Button" className="btn btn-outline-info btn-secondary btn-sm btn-block">
+                                    <span className="fw-medium" style={{ fontSize: "16px" }}>Permisions for {activeChipLabel}</span>
+                                  </button>
+
+                                  {/* <div className="demo-inline-spacing shadow text-center" style={{ minHeight: "300px", display: "flex", alignItems: "center", fontSize: "16px" }} >
+                                    <div className="w-100 text-center text-light">No Selected Module</div>
+                                  </div> */}
+
+                                  <div className="list-group list-group-flush mt-3 shadow " style={{ minHeight: "300px", maxHeight: "200px", overflowY: "scroll" }}>
+                                    <label className="list-group-item me-3">
+                                      <input className="form-check-input me-1" type="checkbox" value="" />
+                                      Select All Permission
+                                    </label>
+                                    <div className="list-group pe-3">
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Soufflé pastry pie ice
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Bear claw cake biscuit
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Tart tiramisu cake
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Bonbon toffee muffin
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Dragée tootsie roll
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Tart tiramisu cake
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Bonbon toffee muffin
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Dragée tootsie roll
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Tart tiramisu cake
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Bonbon toffee muffin
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Dragée tootsie roll
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Tart tiramisu cake
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Bonbon toffee muffin
+                                      </label>
+                                      <label className="list-group-item">
+                                        <input className="form-check-input me-1" type="checkbox" value="" />
+                                        Dragée tootsie roll
+                                      </label>
+                                    </div>
+                                  </div>
+
+                                  {/* <Select
+                                    isLoading={loadingDepartments}
+                                    closeMenuOnSelect={false}
+                                    expandOnFocus={false}
+                                    isSearchable
+                                    isMulti
+                                    placeholder="Selected Grants"
+                                    menuIsOpen={true} // Always show options
+                                    className="select2-selection fetched-select2"
+                                    options={rightOptions}
+                                    value={selectedRight}
+                                    onChange={setSelectedRight}
+                                    onInputChange={(e) => {
+                                      // fetchDepartments(e);
+                                    }}
+                                    styles={{
+                                      menu: (base) => ({
+                                        ...base,
+                                        position: "relative",
+                                        zIndex: 9999,
+                                        textAlign: "left",
+                                        padding: "8px",
+                                        minHeight: "300px"
+
+                                      }),
+                                      groupHeading: (base) => ({
+                                        ...base,
+                                        fontWeight: "bolder",
+                                        fontSize: "0.85rem",
+                                        color: "#6f6c6b",
+
+                                      }),
+                                      placeholder: (base) => ({
+                                        ...base,
+                                        textAlign: "left",
+                                      }),
+                                      option: (base) => ({
+                                        ...base,
+                                        paddingLeft: "20px",
+                                      }),
+                                    }}
+                                    isClearable
+                                  /> */}
+                                </div>
+
+                                <div className="col-sm-1">
+                                  <br /><br /><br />
+                                  <button
+                                    id="assignButton"
+                                    className="btn btn-success btn-sm btn-assign"
+                                    onClick={handleAssign}
+                                    title="Assign" >
+                                    <i className="bx bx-right-arrow-alt" ></i>
+                                  </button>
+                                  <br /><br />
+                                  <button
+                                    id="removeButton"
+                                    className="btn btn-danger btn-sm btn-assign"
+                                    onClick={() => {
+                                      handleRemove();
+                                    }
+                                    }
+                                    title="Remove">
+                                    <i className="bx bx-left-arrow-alt" ></i>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </>
                       )}
                     </FormWizard.TabContent>

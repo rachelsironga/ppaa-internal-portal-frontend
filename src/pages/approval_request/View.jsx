@@ -32,6 +32,10 @@ export const ApprovalRequestPage = () => {
     updatePage(event.selected + 1);
   };
 
+  const handleTopBarClick = () => {
+    alert('You clicked the grey top bar!');
+  };
+
   const handleFetchData = async () => {
     setLoading(true);
     setError(null);
@@ -333,6 +337,7 @@ export const ApprovalRequestPage = () => {
                   )}
                 </tbody>
               </table>
+
             </div>
 
             <div className="d-flex justify-content-between align-items-center mt-3">

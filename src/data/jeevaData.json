@@ -1,0 +1,90 @@
+{
+  "Modules": [
+    {
+      "codename": "01e5-4c97-a50",
+      "name": "Doctor Consultation"
+    },
+    {
+      "codename": "1e1cdef0-abd8",
+      "name": "Nursing Station"
+    },
+    {
+      "codename": "a2b3c4d5-e6f7",
+      "name": "Pharmacy Management"
+    },
+    {
+      "codename": "b7c8d9e0-f1a2",
+      "name": "Laboratory Services"
+    },
+    {
+      "codename": "c3d4e5f6-a7b8",
+      "name": "Patient Registration"
+    },
+    {
+      "codename": "d9e8f7a6-b5c4",
+      "name": "Billing & Accounts"
+    }
+  ],
+  "Permissions": [
+    {
+      "codename": "perm-001",
+      "name": "Add Doctors"
+    },
+    {
+      "codename": "perm-002",
+      "name": "Edit Doctor Profile"
+    },
+    {
+      "codename": "perm-003",
+      "name": "Delete Doctor"
+    },
+    {
+      "codename": "perm-004",
+      "name": "Approve Receipt"
+    },
+    {
+      "codename": "perm-005",
+      "name": "View Patient Records"
+    },
+    {
+      "codename": "perm-006",
+      "name": "Edit Patient Records"
+    },
+    {
+      "codename": "perm-007",
+      "name": "Add Prescription"
+    },
+    {
+      "codename": "perm-008",
+      "name": "Dispense Medication"
+    },
+    {
+      "codename": "perm-009",
+      "name": "Request Lab Test"
+    },
+    {
+      "codename": "perm-010",
+      "name": "Approve Lab Results"
+    },
+    {
+      "codename": "perm-011",
+      "name": "Register New Patient"
+    },
+    {
+      "codename": "perm-012",
+      "name": "Edit Billing Information"
+    },
+    {
+      "codename": "perm-013",
+      "name": "View Billing Reports"
+    },
+    {
+      "codename": "perm-014",
+      "name": "Manage User Roles"
+    },
+    {
+      "codename": "perm-015",
+      "name": "Access System Settings"
+    }
+  ]
+}
