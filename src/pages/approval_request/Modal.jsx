@@ -14,6 +14,7 @@ import { getModules } from "../approval_module/Queries";
 import PDFViewer from "../../components/common/PDFViewer";
 import jeevaData from "../../data/jeevaData.json";
 import AccordionContainer from "../../components/accordion/AccordionContainer";
+import { Button } from "reactstrap";
 
 const ApprovalRequestModal = () => {
   const {
@@ -36,6 +37,115 @@ const ApprovalRequestModal = () => {
     { label: "Permissions", options: [] },
   ]);
 
+
+
+  const [activeModulePermissions, setActiveModulePermissions] = useState([]);
+  const [selectedModules, setSelectedModules] = useState([]); // [{ codename, name, Permissions: [...] }]
+
+
+  // When a module chip is clicked, show its permissions
+  const handleChipClick = (moduleCodename, moduleLabel) => {
+    setActiveChip(moduleCodename);
+    setActiveChipLabel(moduleLabel);
+    // Find the module
+    const module = jeevaData.Modules.find(module => module.codename === moduleCodename);
+    setActiveModulePermissions(module ? module.Permissions : []);
+  };
+
+
+  const handlePermissionToggle = (perm, checked) => {
+    setSelectedModules(prev => {
+      // Find the active module
+      const moduleIdx = prev.findIndex(m => m.codename === activeChip);
+      if (moduleIdx === -1) {
+        // If not present, add it with this permission
+        if (checked) {
+          return [
+            ...prev,
+            {
+              codename: activeChip,
+              name: activeChipLabel,
+              Permissions: [perm],
+            },
+          ];
+        }
+        return prev;
+      }
+      // If present, update its permissions
+      const updated = [...prev];
+      const perms = updated[moduleIdx].Permissions || [];
+      if (checked) {
+        // Add if not present
+        if (!perms.some(p => p.codename === perm.codename)) {
+          updated[moduleIdx] = {
+            ...updated[moduleIdx],
+            Permissions: [...perms, perm],
+          };
+        }
+      } else {
+        // Remove
+        const newPerms = perms.filter(p => p.codename !== perm.codename);
+        if (newPerms.length === 0) {
+          // Remove module if no permissions left
+          updated.splice(moduleIdx, 1);
+        } else {
+          updated[moduleIdx] = {
+            ...updated[moduleIdx],
+            Permissions: newPerms,
+          };
+        }
+      }
+      return updated;
+    });
+  };
+
+  // For checkbox checked state:
+  const isPermissionChecked = (perm) => {
+    const mod = selectedModules.find(m => m.codename === activeChip);
+    return !!mod && mod.Permissions.some(p => p.codename === perm.codename);
+  };
+
+  const isAllPermissionsChecked = () => {
+    if (!activeChip || activeModulePermissions.length === 0) return false;
+    const mod = selectedModules.find(m => m.codename === activeChip);
+    if (!mod) return false;
+    return activeModulePermissions.every(perm =>
+      mod.Permissions.some(p => p.codename === perm.codename)
+    );
+  };
+
+  const handleSelectAllPermissions = (checked) => {
+    setSelectedModules(prev => {
+      const moduleIdx = prev.findIndex(m => m.codename === activeChip);
+      if (moduleIdx === -1) {
+        // Add module with all permissions
+        if (checked) {
+          return [
+            ...prev,
+            {
+              codename: activeChip,
+              name: activeChipLabel,
+              Permissions: [...activeModulePermissions],
+            },
+          ];
+        }
+        return prev;
+      }
+      // Update existing module
+      const updated = [...prev];
+      if (checked) {
+        updated[moduleIdx] = {
+          ...updated[moduleIdx],
+          Permissions: [...activeModulePermissions],
+        };
+      } else {
+        // Remove all permissions = remove module
+        updated.splice(moduleIdx, 1);
+      }
+      return updated;
+    });
+  };
+
   // Inside Select component:
   const CustomMultiValue = (props) => {
     const isActive = activeChip && props.data.value === activeChip;
@@ -50,11 +160,8 @@ const ApprovalRequestModal = () => {
           cursor: "pointer",
           padding: "1px 3px",
         }}
-        onClick={() => {
-          setActiveChip(props.data.value);
-          setActiveChipLabel(props.data.label)
-          // window.alert(`You clicked: ${props.data.label}`);
-        }}
+        onClick={() => handleChipClick(props.data.value, props.data.label)}
+
       >
         <components.MultiValue {...props} />
       </div>
@@ -794,220 +901,211 @@ const ApprovalRequestModal = () => {
                           <div className="ibox-content" >
                             <div className="ibox-content-body" >
                               <div className="row">
-                                <div className="col-sm-11 text-start" >
-                                  <AccordionContainer
-                                    className="text-start"
-                                    style={{ border: "0.1px solid #dfd9d7", borderRadius: "7px" }}
-                                    items={[
-                                      {
-                                        id: 3,
-                                        title: 'Instructions for Selecting JEEVA Modules and Permissions',
-                                        active: true,
-
-                                        content: `On the left, you will find all available JEEVA Modules and Permissions you can request. Please make your selections, then click the green button to confirm your choices. On the right, your selected items will appear. You may also remove selections at any time by clicking the red button. You can use the search feature at any time to make your selection process easier.`,
-                                      },
-                                    ]}
-                                  />
-                                </div>
-                                <div className="col-sm-4" style={{ minWidth: "300px" }} >
-                                  <Select
-                                    isLoading={loadingDepartments}
-                                    closeMenuOnSelect={false}
-                                    expandOnFocus={false}
-                                    isSearchable
-                                    isMulti
-                                    menuIsOpen={true}
-                                    className="select2-selection fetched-select2"
-                                    options={leftOptions}
-                                    value={selectedLeft}
-                                    onChange={(selected, action) => {
-                                      console.log(action.option)
-                                      setSelectedLeft(selected);
-                                      // Remove highlight if chip is removed
-                                      if (action && action.removedValue && activeChip === action.removedValue.value) {
-                                        setActiveChip(null);
-                                      }
-
-                                      if (action && action.option) {
-                                        console.log(action);
-                                        console.log(action.option);
-
-                                        setActiveChip(action.option.value);
-                                        setActiveChipLabel(action.option.label)
-                                      }
-
-                                    }}
-                                    onInputChange={(e) => {
-                                      // fetchDepartments(e);
-                                    }}
-                                    label="Select New Grants"
-                                    styles={{
-                                      menu: (base) => ({
-                                        ...base,
-                                        position: "relative",
-                                        zIndex: 9999,
-                                        textAlign: "left",
-                                        padding: "8px",
-                                        minHeight: "350px"
-                                      }),
-                                      groupHeading: (base) => ({
-                                        ...base,
-                                        fontWeight: "bolder",
-                                        fontSize: "0.85rem",
-                                        color: "#6f6c6b",
-                                      }),
-                                      placeholder: (base) => ({
-                                        ...base,
-                                        textAlign: "left",
-                                      }),
-                                      option: (base) => ({
-                                        ...base,
-                                        paddingLeft: "20px",
-                                      }),
-                                    }}
-                                    isClearable
-                                    components={{ MultiValue: CustomMultiValue }}
-                                  />
+                                <div className="col-sm-11 text-start mb-4" >
+                                  <h5 className="text-muted">Instructions for Selecting JEEVA Modules and Permissions</h5>
+                                  <p className="">
+                                    Select a module from the left to view its permissions. Check the permissions you want to request, then click the green button to add them to your selection. Your selected modules and permissions will appear on the right. To remove any selection, use the red button. You can also use the search box to quickly find modules or permissions.
+                                  </p>
                                 </div>
 
-                                <div className="col-sm-4 text-start pe-3" style={{ minWidth: "300px", marginTop: "50px" }} >
-                                  <button type="Button" className="btn btn-outline-info btn-secondary btn-sm btn-block">
-                                    <span className="fw-medium" style={{ fontSize: "16px" }}>Permisions for {activeChipLabel}</span>
-                                  </button>
+                                <div className="col-sm-8">
+                                  {/* <div className="row h-100">
+                                    <div className="col-sm-6" style={{ minWidth: "280px" }} >
+                                      <Select
+                                        isLoading={loadingDepartments}
+                                        closeMenuOnSelect={false}
+                                        expandOnFocus={false}
+                                        isSearchable
+                                        isMulti
+                                        menuIsOpen={true}
+                                        className="select2-selection fetched-select2"
+                                        options={leftOptions}
+                                        value={selectedLeft}
+                                        onChange={(selected, action) => {
+                                          setSelectedLeft(selected);
+                                          // Remove highlight if chip is removed
+                                          if (action && action.removedValue && activeChip === action.removedValue.value) {
+                                            setActiveChip(null);
+                                            setActiveModulePermissions([]);
+                                            setActiveChip(null);
+                                            setActiveChipLabel(null);
+                                          }
 
-                                  {/* <div className="demo-inline-spacing shadow text-center" style={{ minHeight: "300px", display: "flex", alignItems: "center", fontSize: "16px" }} >
-                                    <div className="w-100 text-center text-light">No Selected Module</div>
+                                          // Clear all selected modules if Select is cleared
+                                          if (action && action.action === "clear") {
+                                            setSelectedModules([]);
+                                            setActiveChip(null);
+                                            setActiveModulePermissions([]);
+                                            setActiveChip(null);
+                                            setActiveChipLabel(null);
+                                          }
+
+                                          if (action && action.option) {
+                                            handleChipClick(action.option.value, action.option.label)
+                                          }
+
+                                        }}
+                                        onInputChange={(e) => {
+                                          // fetchDepartments(e);
+                                        }}
+                                        label="Select New Grants"
+                                        styles={{
+                                          menu: (base) => ({
+                                            ...base,
+                                            position: "relative",
+                                            zIndex: 9999,
+                                            textAlign: "left",
+                                            padding: "8px",
+                                            minHeight: "300px"
+                                          }),
+                                          groupHeading: (base) => ({
+                                            ...base,
+                                            fontWeight: "bolder",
+                                            fontSize: "0.85rem",
+                                            color: "#6f6c6b",
+                                          }),
+                                          placeholder: (base) => ({
+                                            ...base,
+                                            textAlign: "left",
+                                          }),
+                                          option: (base) => ({
+                                            ...base,
+                                            paddingLeft: "20px",
+                                          }),
+                                        }}
+                                        isClearable
+                                        components={{ MultiValue: CustomMultiValue }}
+                                      />
+                                    </div>
+
+                                    <div className="col-sm-6 text-start pe-3" style={{ minWidth: "300px", marginTop: "0px" }} >
+                                      <div className="d-grid gap-2 col-lg-12 mx-auto">
+                                        <button type="Button" className="btn btn-outline-info btn-secondary btn-sm btn-block">
+                                          <span className="fw-medium" style={{ fontSize: "16px" }}> {activeChipLabel ? `Permisions For ${activeChipLabel}` : `No Selected Module`}</span>
+                                        </button>
+                                      </div>
+                                      <div className="list-group list-group-flush mt-3 shadow " style={{ height: "300px", overflowY: "hidden" }}>
+                                        <label className="list-group-item me-3 text-secondary btn-outline-info">
+                                          {activeModulePermissions.length === 0 ? (
+                                            <input className="form-check-input me-1" type="checkbox" disabled readOnly />
+
+                                          ) : (
+                                            <input
+                                              className="form-check-input me-1 p-2 bg-secondary"
+                                              type="checkbox"
+                                              disabled={activeModulePermissions.length === 0}
+                                              checked={isAllPermissionsChecked()}
+                                              onChange={e => handleSelectAllPermissions(e.target.checked)}
+                                            />
+
+                                          )}
+                                          Select All Permission
+                                      </label>
+
+
+                                        <div className="list-group list-group-flush mt-3 shadow  pe-3" style={{ height: "250px", overflowY: "auto" }}>
+                                          {activeModulePermissions.length === 0 ? (
+                                            <div className="demo-inline-spacing shadow text-center" style={{ height: "240px", display: "flex", alignItems: "center", fontSize: "16px" }} >
+                                              <div className="w-100 text-center text-light p-4">Select a Module to view Permissions</div>
+                                            </div>
+                                          ) : (
+
+                                              activeModulePermissions.map((perm) => (
+                                                <label className="list-group-item" key={perm.codename}>
+                                                  <input
+                                                    className="form-check-input me-1"
+                                                    type="checkbox"
+                                                    value={perm.codename}
+                                                    checked={isPermissionChecked(perm)}
+                                                    onChange={e => handlePermissionToggle(perm, e.target.checked)}
+                                                  />
+                                                  {perm.name}
+                                                </label>
+                                              ))
+
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div> */}
+                                  <div className="row h-100 center">
+                                    <div className="col-sm-11">
+                                      <form className="d-flex" style={{ marginLeft: "50px" }}>
+                                        <div className="input-group">
+                                          <span className="input-group-text">
+                                            <i className="tf-icons bx bx-search"></i>
+                                          </span>
+                                          <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Search..."
 
-                                  <div className="list-group list-group-flush mt-3 shadow " style={{ minHeight: "300px", maxHeight: "200px", overflowY: "scroll" }}>
-                                    <label className="list-group-item me-3">
-                                      <input className="form-check-input me-1" type="checkbox" value="" />
-                                      Select All Permission
-                                    </label>
-                                    <div className="list-group pe-3">
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Soufflé pastry pie ice
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Bear claw cake biscuit
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Tart tiramisu cake
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Bonbon toffee muffin
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Dragée tootsie roll
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Tart tiramisu cake
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Bonbon toffee muffin
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Dragée tootsie roll
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Tart tiramisu cake
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Bonbon toffee muffin
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Dragée tootsie roll
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Tart tiramisu cake
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Bonbon toffee muffin
-                                      </label>
-                                      <label className="list-group-item">
-                                        <input className="form-check-input me-1" type="checkbox" value="" />
-                                        Dragée tootsie roll
-                                      </label>
+                                          />
+                                        </div>
+                                      </form>
+                                    </div>
+                                    <div
+                                      className="col-sm-12 row g-3 shadow m-3 p-4"
+                                      style={{
+                                        height: "400px",
+                                        minWidth: "400px",
+                                        border: "1px solid rgba(142, 145, 148, 0.45)",
+                                        borderRadius: "10px",
+                                        overflowY: "auto",
+
+                                    }}
+                                    >
+
+                                      {[1, 2, 3, 4, 5, 6, 7, 8].map((item, idx) => (
+                                        <div key={idx} className="col-12 col-sm-6">
+                                          <button className="btn btn-md btn-outline-secondary w-100">
+                                            <div className="m-1 p-1 d-flex justify-content-center">
+                                              <i className="bx bx-user bx-x1 bx-lg"></i>
+                                            </div>
+                                            <div className="d-flex flex-column text-start">
+                                              <span className="fw-bold">Assistant Nurse II</span>
+                                              <span className="small">New OPD</span>
+                                            </div>
+                                          </button>
+                                        </div>
+                                      ))}
+
                                     </div>
                                   </div>
 
-                                  {/* <Select
-                                    isLoading={loadingDepartments}
-                                    closeMenuOnSelect={false}
-                                    expandOnFocus={false}
-                                    isSearchable
-                                    isMulti
-                                    placeholder="Selected Grants"
-                                    menuIsOpen={true} // Always show options
-                                    className="select2-selection fetched-select2"
-                                    options={rightOptions}
-                                    value={selectedRight}
-                                    onChange={setSelectedRight}
-                                    onInputChange={(e) => {
-                                      // fetchDepartments(e);
-                                    }}
-                                    styles={{
-                                      menu: (base) => ({
-                                        ...base,
-                                        position: "relative",
-                                        zIndex: 9999,
-                                        textAlign: "left",
-                                        padding: "8px",
-                                        minHeight: "300px"
 
-                                      }),
-                                      groupHeading: (base) => ({
-                                        ...base,
-                                        fontWeight: "bolder",
-                                        fontSize: "0.85rem",
-                                        color: "#6f6c6b",
-
-                                      }),
-                                      placeholder: (base) => ({
-                                        ...base,
-                                        textAlign: "left",
-                                      }),
-                                      option: (base) => ({
-                                        ...base,
-                                        paddingLeft: "20px",
-                                      }),
-                                    }}
-                                    isClearable
-                                  /> */}
                                 </div>
+                                <div
+                                  className="col-sm-4 text"
+                                  style={{
+                                    minHeight: "350px",
+                                    display: "flex",
+                                    flexDirection: "column", // Stack buttons vertically
+                                    justifyContent: "center", // Center vertically
+                                    alignItems: "center",     // Center horizontally
+                                  }}>
 
-                                <div className="col-sm-1">
-                                  <br /><br /><br />
                                   <button
                                     id="assignButton"
-                                    className="btn btn-success btn-sm btn-assign"
-                                    onClick={handleAssign}
+                                    type="button"
+                                    className="btn btn-primary btn-sm btn-assign m-2"
                                     title="Assign" >
-                                    <i className="bx bx-right-arrow-alt" ></i>
+                                    <i className="bx bx-list-ol" ></i> Preview All Selected
                                   </button>
-                                  <br /><br />
+
                                   <button
-                                    id="removeButton"
-                                    className="btn btn-danger btn-sm btn-assign"
-                                    onClick={() => {
-                                      handleRemove();
-                                    }
-                                    }
-                                    title="Remove">
-                                    <i className="bx bx-left-arrow-alt" ></i>
+                                    id="assignButton"
+                                    type="button"
+                                    className="btn btn-info btn-outline-primary btn-sm btn-assign m-2"
+                                    title="Assign" >
+                                    <i className="bx bx-group" ></i> Copy Permition From Group
+                                  </button>
+                                  <button
+                                    id="assignButton"
+                                    type="button"
+                                    className="btn btn-danger btn-sm btn-assign m-2"
+                                    title="Assign" >
+                                    <i className="bx bx-trash-alt" ></i> Clear Selection
                                   </button>
                                 </div>
                               </div>
