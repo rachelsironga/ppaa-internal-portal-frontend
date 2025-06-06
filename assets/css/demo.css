@@ -1,0 +1,4 @@
+.swal2-container,
+.swal2-popup {
+  z-index: 9999999 !important;
+}

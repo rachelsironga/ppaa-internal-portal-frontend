@@ -19,8 +19,8 @@ export const TooltipPopoverPage = () => {
                                 data-bs-offset="0,4"
                                 data-bs-placement="right"
                                 data-bs-html="true"
-                                title="<i className='bx bx-trending-up bx-xs' ></i> <span>Tooltip on right</span>">
-                                Right
+                                title="<i className='bx bx-trending-up bx-xs' ></i> <ul><li><span>Tooltip on right </span></li><li><span>Tooltip on right </span></li></ul>">
+                                Right dfd
                             </button>
                         </div>
                         <div className="col">

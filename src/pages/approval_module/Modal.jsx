@@ -10,11 +10,13 @@ const ApprovalModuleModal = ({ loadOnlyModal = false }) => {
     const [errors, setOtherError] = useState({});
     const initialValues = {
         name: selectApprovalModule?.name || "",
+        code: selectApprovalModule?.code || "",
         description: selectApprovalModule?.description || "",
     };
 
     const validationSchema = Yup.object().shape({
         name: Yup.string().required("Name is required"),
+        code: Yup.string().required("Name is required"),
         description: Yup.string().required("Description is required"),
     });
 
@@ -101,6 +103,13 @@ const ApprovalModuleModal = ({ loadOnlyModal = false }) => {
                                                 <label htmlFor="nameLarge" className="form-label">Name</label>
                                                 <Field type="text" name="name" id="nameLarge" className="form-control" placeholder="Enter Name" />
                                                 <ErrorMessage name="name" component="div" className="text-danger" />
+                                            </div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col mb-3">
+                                                <label htmlFor="codeLarge" className="form-label">Code</label>
+                                                <Field type="text" name="code" id="codeLarge" className="form-control" placeholder="Enter Code / Type" />
+                                                <ErrorMessage name="code" component="div" className="text-danger" />
                                             </div>
                                         </div>
                                         <div className="row">
