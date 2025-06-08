@@ -11,6 +11,9 @@ import usePagination from "../../hooks/usePagination";
 import ReactPaginate from "react-paginate";
 import { formatDate } from "../../helpers/DateFormater";
 import PositionsModal from "./PositionsModal";
+import AccordionContainer from "../../components/accordion/AccordionContainer";
+import Select from "react-select";
+
 
 export const UserOpenPage = () => {
     const pageSizeData = [5, 10, 20, 50, 70, 100];
@@ -44,6 +47,71 @@ export const UserOpenPage = () => {
         updatePage(event.selected + 1);
     };
 
+
+    const [loadingLeftSelect, setLoadingLeftSelect] = useState(false);
+    const [loadingRightSelect, setLoadingRightSelect] = useState(false);
+    const [selectedLeft, setSelectedLeft] = useState([]);
+    const [selectedRight, setSelectedRight] = useState([]);
+    const [leftOptions, setLeftOptions] = useState([]);
+    const [rightOptions, setRightOptions] = useState([
+        { label: "Roles", options: [] },
+        { label: "Permissions", options: [] },
+    ]);
+
+    // Helpers
+    const removeFromGrouped = (grouped, items) =>
+        grouped.map(group => ({
+            ...group,
+            options: group.options.filter(
+                opt => !items.some(sel => sel.value === opt.value)
+            ),
+        }));
+
+    const addToGrouped = (grouped, items) =>
+        grouped.map(group => ({
+            ...group,
+            options: [
+                ...group.options,
+                ...items.filter(
+                    item =>
+                        item.group === group.label &&
+                        !group.options.some(opt => opt.value === item.value)
+                ),
+            ],
+        }));
+
+    // Assign: left -> right
+    const handleAssign = () => {
+        // Get selected with group info
+        const selectedWithGroup = [];
+        leftOptions.forEach(group => {
+            group.options.forEach(opt => {
+                if (selectedLeft.some(sel => sel.value === opt.value)) {
+                    selectedWithGroup.push({ ...opt, group: group.label });
+                }
+            });
+        });
+        setLeftOptions(removeFromGrouped(leftOptions, selectedLeft));
+        setSelectedLeft([]);
+        setRightOptions(addToGrouped(rightOptions, selectedWithGroup));
+    };
+
+    // Remove: right -> left
+    const handleRemove = () => {
+        const selectedWithGroup = [];
+        rightOptions.forEach(group => {
+            group.options.forEach(opt => {
+                if (selectedRight.some(sel => sel.value === opt.value)) {
+                    selectedWithGroup.push({ ...opt, group: group.label });
+                }
+            });
+        });
+        setRightOptions(removeFromGrouped(rightOptions, selectedRight));
+        setSelectedRight([]);
+        setLeftOptions(addToGrouped(leftOptions, selectedWithGroup));
+    };
+
+
     const uploadValues = {
         uid: selectedUser?.guid,
         based64_file: "",
@@ -73,6 +141,10 @@ export const UserOpenPage = () => {
                         : "/assets/img/avatars/1.png"
                 );
                 setIsFileSelected(false);
+                setRightOptions([
+                    { label: "Roles", options: result.data.groups.map(g => ({ label: g, value: g })) },
+                    { label: "Permissions", options: result.data.user_permissions.map(p => ({ label: p, value: p })) },
+                ]);
                 uploadValues.uid = result.data.guid;
                 fetchPositions(result.data.guid);
             } else {
@@ -1015,18 +1087,137 @@ export const UserOpenPage = () => {
                                                         id="navs-pills-top-role-permissions"
                                                         role="tabpanel"
                                                     >
-                                                        <p>
-                                                            Oat cake chupa chups dragée donut toffee. Sweet cotton
-                                                            candy jelly beans macaroon gummies cupcake gummi bears
-                                                            cake chocolate.
-                                                        </p>
-                                                        <p className="mb-0">
-                                                            Cake chocolate bar cotton candy apple pie tootsie roll
-                                                            ice cream apple pie brownie cake. Sweet roll icing
-                                                            sesame snaps caramels danish toffee. Brownie biscuit
-                                                            dessert dessert. Pudding jelly jelly-o tart brownie
-                                                            jelly.
-                                                        </p>
+
+                                                        <div className="ibox-content" >
+                                                            <div className="ibox-content-body" >
+                                                                <div className="row">
+                                                                    <div className="col-sm-11" >
+                                                                        <AccordionContainer
+
+                                                                            style={{ border: "0.1px solid #dfd9d7", borderRadius: "7px" }}
+                                                                            items={[
+                                                                                {
+                                                                                    id: 3,
+                                                                                    title: 'Instructions for Selecting JEEVA Modules and Permissions',
+                                                                                    active: false,
+                                                                                    content: `On the left, you will find all available JEEVA Modules and Permissions you can request. Please make your selections, then click the green button to confirm your choices. On the right, your selected items will appear. You may also remove selections at any time by clicking the red button. You can use the search feature at any time to make your selection process easier.`,
+                                                                                },
+                                                                            ]}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="col-sm-5" >
+                                                                        <Select
+                                                                            isLoading={loadingLeftSelect}
+                                                                            closeMenuOnSelect={false}
+                                                                            expandOnFocus={false}
+                                                                            isSearchable
+                                                                            isMulti
+                                                                            menuIsOpen={true} // Always show options
+                                                                            className="select2-selection fetched-select2"
+                                                                            options={leftOptions}
+                                                                            value={selectedLeft}
+                                                                            onChange={setSelectedLeft}
+                                                                            onInputChange={(e) => {
+                                                                                // fetchDepartments(e);
+                                                                            }}
+                                                                            label="Select New Grants"
+                                                                            styles={{
+                                                                                menu: (base) => ({
+                                                                                    ...base,
+                                                                                    position: "relative",
+                                                                                    zIndex: 9999,
+                                                                                    textAlign: "left",
+                                                                                    padding: "8px",
+                                                                                    minHeight: "300px"
+                                                                                }),
+                                                                                groupHeading: (base) => ({
+                                                                                    ...base,
+                                                                                    fontWeight: "bolder",
+                                                                                    fontSize: "0.85rem",
+                                                                                    color: "#6f6c6b",
+
+                                                                                }),
+                                                                                placeholder: (base) => ({
+                                                                                    ...base,
+                                                                                    textAlign: "left",
+                                                                                }),
+                                                                                option: (base) => ({
+                                                                                    ...base,
+                                                                                    paddingLeft: "20px",
+                                                                                }),
+                                                                            }}
+                                                                            isClearable
+                                                                        />
+                                                                    </div>
+                                                                    <div className="col-sm-1">
+                                                                        <br /><br /><br />
+                                                                        <button
+                                                                            id="assignButton"
+                                                                            className="btn btn-success btn-sm btn-assign"
+                                                                            onClick={handleAssign}
+                                                                            title="Assign" >
+                                                                            <i className="bx bx-right-arrow-alt" ></i>
+                                                                        </button>
+                                                                        <br /><br />
+                                                                        <button
+                                                                            id="removeButton"
+                                                                            className="btn btn-danger btn-sm btn-assign"
+                                                                            onClick={() => {
+                                                                                handleRemove();
+                                                                            }
+                                                                            }
+                                                                            title="Remove">
+                                                                            <i className="bx bx-left-arrow-alt" ></i>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="col-sm-5" >
+                                                                        <Select
+                                                                            isLoading={loadingRightSelect}
+                                                                            closeMenuOnSelect={false}
+                                                                            expandOnFocus={false}
+                                                                            isSearchable
+                                                                            isMulti
+                                                                            placeholder="Selected Grants"
+                                                                            menuIsOpen={true} // Always show options
+                                                                            className="select2-selection fetched-select2"
+                                                                            options={rightOptions}
+                                                                            value={selectedRight}
+                                                                            onChange={setSelectedRight}
+                                                                            onInputChange={(e) => {
+                                                                                // fetchDepartments(e);
+                                                                            }}
+                                                                            styles={{
+                                                                                menu: (base) => ({
+                                                                                    ...base,
+                                                                                    position: "relative",
+                                                                                    zIndex: 9999,
+                                                                                    textAlign: "left",
+                                                                                    padding: "8px",
+                                                                                    minHeight: "300px"
+
+                                                                                }),
+                                                                                groupHeading: (base) => ({
+                                                                                    ...base,
+                                                                                    fontWeight: "bolder",
+                                                                                    fontSize: "0.85rem",
+                                                                                    color: "#6f6c6b",
+
+                                                                                }),
+                                                                                placeholder: (base) => ({
+                                                                                    ...base,
+                                                                                    textAlign: "left",
+                                                                                }),
+                                                                                option: (base) => ({
+                                                                                    ...base,
+                                                                                    paddingLeft: "20px",
+                                                                                }),
+                                                                            }}
+                                                                            isClearable
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

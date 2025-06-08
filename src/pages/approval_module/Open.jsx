@@ -295,6 +295,14 @@ export const ApprovalModuleOpenPage = () => {
                             </div>
                             <div className="row mb-3">
                                 <div className="col-md-1 col-sm-12" style={{ minWidth: "120px" }}>
+                                            <h6 className="text-muted">Code:</h6>
+                                        </div>
+                                        <div className="col-md-9 col-sm-12" >
+                                            <p className="text-justify">{approvalModule?.code || ""}</p>
+                                        </div>
+                                    </div>
+                                    <div className="row mb-3">
+                                        <div className="col-md-1 col-sm-12" style={{ minWidth: "120px" }}>
                                     <h6 className="text-muted">Description:</h6>
                                 </div>
                                 <div className="col-md-9 col-sm-12">

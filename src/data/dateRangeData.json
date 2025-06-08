@@ -1,0 +1,18 @@
+[
+  {
+    "title": "Days",
+    "type": "D"
+  },
+  {
+    "title": "Weeks",
+    "type": "W"
+  },
+  {
+    "title": "Months",
+    "type": "M"
+  },
+  {
+    "title": "Years",
+    "type": "Y"
+  }
+]

@@ -58,6 +58,7 @@ import { DirectoryPage } from "../pages/directory/View";
 import { DirectoryOpenPage } from "../pages/directory/Open";
 import { UserListPage } from "../pages/users/View";
 import { UserOpenPage } from "../pages/users/Open";
+import { DateRangePage } from "../pages/date_range/View";
 
 
 
@@ -90,6 +91,7 @@ const AppRoutes = () => {
             <Route path="/settings/approval-actions" element={<ApprovalActionPage />} />
             <Route path="/settings/approval-modules" element={<ApprovalModulePage />} />
             <Route path="/settings/approval-modules-open/:uid" element={<ApprovalModuleOpenPage />} />
+            <Route path="/settings/date-ranges" element={<DateRangePage />} />
 
             {/* Users */}
             <Route path="/users/list" element={<UserListPage />} />

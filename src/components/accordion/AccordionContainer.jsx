@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import AccordionItem from './AccordionItem';
 
-const AccordionContainer = ({ title, items }) => {
+const AccordionContainer = ({ title, items, style = null }) => {
   const [activeItem, setActiveItem] = useState(1);
 
   const handleToggle = (id) => {
@@ -11,8 +11,8 @@ const AccordionContainer = ({ title, items }) => {
 
   return (
     <div className="col-md mb-4 mb-md-2">
-      <small className="text-light fw-medium">{title}</small>
-      <div className="accordion mt-3" id="accordionExample">
+      <small className="text-light fw-medium" >{title}</small>
+      <div className="accordion mt-3" id="accordionExample" style={style || {}}>
         {items.map((item) => (
           <AccordionItem
             key={item.id}

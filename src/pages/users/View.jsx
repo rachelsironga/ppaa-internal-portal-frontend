@@ -410,7 +410,7 @@ export const UserListPage = () => {
                                                             >
                                                                 <i className="bx bx-edit-alt me-1"></i> View
                                                             </button>
-                                                            <a
+                                                                    {/* <a
                                                                 aria-label="dropdown action option"
                                                                 className="dropdown-item text-danger"
                                                                 href="#"
@@ -419,7 +419,7 @@ export const UserListPage = () => {
                                                                 }}
                                                             >
                                                                 <i className="bx bx-trash me-1"></i> Delete
-                                                            </a>
+                                                            </a> */}
                                                         </div>
                                                     </div>
                                                 </td>

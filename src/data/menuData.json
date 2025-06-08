@@ -78,6 +78,14 @@
         "link": "/settings/approval-modules",
         "permission": ["1"],
         "role": ["admin"]
+      },
+      {
+        "text": "Date Range",
+        "icon": "bx bx-calendar",
+        "available": true,
+        "link": "/settings/date-ranges",
+        "permission": ["1"],
+        "role": ["admin"]
       }
     ]
   },

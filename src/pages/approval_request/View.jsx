@@ -32,6 +32,10 @@ export const ApprovalRequestPage = () => {
     updatePage(event.selected + 1);
   };
 
+  const handleTopBarClick = () => {
+    alert('You clicked the grey top bar!');
+  };
+
   const handleFetchData = async () => {
     setLoading(true);
     setError(null);
@@ -214,9 +218,9 @@ export const ApprovalRequestPage = () => {
                   <tr>
                     <th style={{ width: "50px" }}>S/N</th>
                     <th>DATE</th>
-                    <th>Request Type</th>
-                    <th>Request Title</th>
                     <th>Requested By</th>
+                    <th style={{ width: "30%" }}>Request Title</th>
+                    <th>Request Type</th>
                     <th>Department</th>
                     <th style={{ width: "100px" }}>Status</th>
                     <th style={{ width: "60px" }}>Actions</th>
@@ -267,9 +271,9 @@ export const ApprovalRequestPage = () => {
                                 }
                               )}
                             </td>
-                            <td className="fw-medium">{dataRows.type}</td>
+                            <td className="fw-medium">{dataRows.requester_name}</td>
                             <td className="fw-medium">{dataRows.title}</td>
-                            <td className="fw-medium">{dataRows.created_by}</td>
+                            <td className="fw-medium">{dataRows.type}</td>
                             <td className="fw-medium">
                               {dataRows.department.code}
                             </td>
@@ -333,6 +337,7 @@ export const ApprovalRequestPage = () => {
                   )}
                 </tbody>
               </table>
+
             </div>
 
             <div className="d-flex justify-content-between align-items-center mt-3">

@@ -47,7 +47,7 @@ export const createUpdateItem = async (formData) => {
 
 export const deleteItem = async (id) => {
     try {
-        const response = await axios.delete(`${API_URL}/${id}`);
+        const response = await api.delete(`${API_URL}/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error deleting Item:", error);
@@ -58,7 +58,7 @@ export const deleteItem = async (id) => {
 
 export const deleteItemLevel = async (id) => {
     try {
-        const response = await axios.delete(`${API_URL_LEVEL}/${id}`);
+        const response = await api.delete(`${API_URL_LEVEL}/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error deleting Module Level:", error);
@@ -79,7 +79,7 @@ export const createUpdateItemLevel = async (formData) => {
 export const sortItemLevels = async (sortData) => {
     try {
         console.log("sortData", sortData);
-        const response = await axios.post(API_URL_LEVEL, sortData, config);
+        const response = await api.post(API_URL_LEVEL, sortData, config);
         return response.data;
     } catch (error) {
         console.error("Error sorting levels:", error);
