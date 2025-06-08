@@ -1,32 +1,18 @@
 [
   {
-    "title": "2 Weeks",
-    "value": 2,
+    "title": "Days",
+    "type": "D"
+  },
+  {
+    "title": "Weeks",
     "type": "W"
   },
   {
-    "title": "1 Month",
-    "value": 1,
+    "title": "Months",
     "type": "M"
   },
   {
-    "title": "6 Months",
-    "value": 6,
-    "type": "M"
-  },
-  {
-    "title": "1 Year",
-    "value": 1,
-    "type": "Y"
-  },
-  {
-    "title": "2 Years",
-    "value": 2,
-    "type": "Y"
-  },
-  {
-    "title": "Long Term (Until Retirement)",
-    "value": 50,
+    "title": "Years",
     "type": "Y"
   }
 ]

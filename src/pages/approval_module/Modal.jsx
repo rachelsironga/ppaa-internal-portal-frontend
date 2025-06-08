@@ -107,7 +107,7 @@ const ApprovalModuleModal = ({ loadOnlyModal = false }) => {
                                         </div>
                                         <div className="row">
                                             <div className="col mb-3">
-                                                <label htmlFor="codeLarge" className="form-label">Code</label>
+                                                <label htmlFor="codeLarge" className="form-label">Code <small className="text-info">* ask the code from System Administrator</small></label>
                                                 <Field type="text" name="code" id="codeLarge" className="form-control" placeholder="Enter Code / Type" />
                                                 <ErrorMessage name="code" component="div" className="text-danger" />
                                             </div>

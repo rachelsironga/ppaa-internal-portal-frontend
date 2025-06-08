@@ -8,7 +8,65 @@
         "name": "Doctor Consultation",
         "Permissions": [
           { "codename": "perm-001", "name": "Add Doctors" },
-          { "codename": "perm-002", "name": "Edit Doctor Profile" }
+          { "codename": "perm-002", "name": "Edit Doctor Profile" },
+          { "codename": "perm-003", "name": "Delete Doctor" },
+          { "codename": "perm-004", "name": "Approve Receipt" },
+          { "codename": "perm-005", "name": "View Patient Records" },
+          { "codename": "perm-006", "name": "Schedule Appointments" },
+          { "codename": "perm-007", "name": "Cancel Appointments" },
+          { "codename": "perm-008", "name": "View Doctor Schedule" },
+          { "codename": "perm-009", "name": "Assign Patients" },
+          { "codename": "perm-010", "name": "Discharge Patient" },
+          { "codename": "perm-011", "name": "View Consultation History" }
+        ]
+      },
+      {
+        "codename": "b7c8d9e0-f1a2",
+        "name": "Laboratory Services",
+        "Permissions": [
+          { "codename": "perm-301", "name": "Add Lab Test" },
+          { "codename": "perm-305", "name": "View Test Results" }
+        ]
+      },
+      {
+        "codename": "d9e8f7a6-b5c4",
+        "name": "Billing & Accounts",
+        "Permissions": [
+          { "codename": "perm-501", "name": "Create Invoice" },
+          { "codename": "perm-502", "name": "Edit Invoice" },
+          { "codename": "perm-503", "name": "Delete Invoice" },
+          { "codename": "perm-504", "name": "Process Payment" },
+          { "codename": "perm-505", "name": "Refund Payment" },
+          { "codename": "perm-506", "name": "View Billing History" },
+          { "codename": "perm-507", "name": "Generate Financial Report" },
+          { "codename": "perm-508", "name": "Manage Insurance Claims" },
+          { "codename": "perm-509", "name": "Approve Discounts" },
+          { "codename": "perm-510", "name": "View Outstanding Balances" },
+          { "codename": "perm-511", "name": "Export Billing Data" }
+        ]
+      }
+    ]
+  },
+
+   {
+    "uid": "group-007",
+    "name": "Doctors Group 1",
+    "modules": [
+      {
+        "codename": "01e5-4c97-a50",
+        "name": "Doctor Consultation",
+        "Permissions": [
+          { "codename": "perm-001", "name": "Add Doctors" },
+          { "codename": "perm-002", "name": "Edit Doctor Profile" },
+          { "codename": "perm-003", "name": "Delete Doctor" },
+          { "codename": "perm-004", "name": "Approve Receipt" },
+          { "codename": "perm-005", "name": "View Patient Records" },
+          { "codename": "perm-006", "name": "Schedule Appointments" },
+          { "codename": "perm-007", "name": "Cancel Appointments" },
+          { "codename": "perm-008", "name": "View Doctor Schedule" },
+          { "codename": "perm-009", "name": "Assign Patients" },
+          { "codename": "perm-010", "name": "Discharge Patient" },
+          { "codename": "perm-011", "name": "View Consultation History" }
         ]
       },
       {

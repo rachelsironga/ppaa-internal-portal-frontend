@@ -17,7 +17,8 @@ import jeevaGroupData from "../../data/jeevaGroupData.json";
 import requestTypes from "../../data/requestTypes.json";
 import dateRangeData from "../../data/dateRangeData.json";
 import AccordionContainer from "../../components/accordion/AccordionContainer";
-import { Button } from "reactstrap";
+import { Provider, useSelector } from "react-redux";
+import { getDateRanges } from "../date_range/Queries";
 
 const ApprovalRequestModal = () => {
   const {
@@ -27,11 +28,14 @@ const ApprovalRequestModal = () => {
     isModalOpen,
     setIsModalOpen,
   } = useContext(ApprovalRequestsContext);
+  const user = useSelector((state) => state.userReducer);
+
   const [errors, setOtherError] = useState({});
-  const [loadingDateRange, setLoadingDateRange] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showTermConditionModal, setShowTermConditionModal] = useState(false);
   const [isSelectModuleView, setIsSelectModuleView] = useState(false);
   const [selectedPermissionGroup, setSelectedPermissionGroup] = useState(null);
+  const [isAgreedTerms, setIsAgreedTerms] = useState(false)
 
 
 
@@ -234,8 +238,12 @@ const ApprovalRequestModal = () => {
   const [loadingModules, setLoadingModules] = useState(false);
   const [modules, setModules] = useState([]);
 
+  const [loadingPermissions, stLoadingPermissions] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [departments, setDepartments] = useState([]);
+
+  const [loadingDateRanges, setLoadingDateRanges] = useState(false);
+  const [dateRanges, setDateRanges] = useState([]);
 
 
   //for Wizard tab validation & Control
@@ -264,40 +272,27 @@ const ApprovalRequestModal = () => {
   const initialValues = {
     title: selectApprovalRequests?.title || "",
     module_uid: selectApprovalRequests?.module?.uid || "",
-    department_uid: selectApprovalRequests?.department_uid || "",
-    date_range: selectApprovalRequests?.request_data?.date_range || "",
-    date_from: selectApprovalRequests?.request_data?.date_from || "",
-    date_to: selectApprovalRequests?.request_data?.date_to || "",
+    department_uid: selectApprovalRequests?.department_uid || user?.data?.position?.department_uid || "",
+    date_range_uid: selectApprovalRequests?.request_data?.date_range_uid || "",
     request_data: {
-      purpose: selectApprovalRequests?.request_data?.purpose || "",
-      start_date: selectApprovalRequests?.request_data?.start_date || "",
-      end_date: selectApprovalRequests?.request_data?.end_date || "",
-      expire_at: selectApprovalRequests?.request_data?.expire_at || "",
+      attachment: selectApprovalRequests?.request_data?.attachment || "",
       grants: selectApprovalRequests?.request_data?.grants || [],
-      revork: selectApprovalRequests?.request_data?.revork || [],
+      is_edited: selectApprovalRequests?.request_data?.is_edited || false,
       is_read_term: selectApprovalRequests?.request_data?.is_read_term || false,
     },
   };
 
   const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required"),
-    date_range: Yup.object({
-      title: Yup.string().required(),
-      value: Yup.number().required(),
-      type: Yup.string().required(),
-    }).required("Date range is required").typeError("Please enter Select Date Range for your Request"),
+    date_range_uid: Yup.string().required("Please enter Select Date Range for your Request"),
     module_uid: Yup.string().required("Approval Module is required"),
     department_uid: Yup.string().required("Department is required"),
+    description: Yup.string().required("Description is required"),
     request_data: Yup.object().shape({
-      purpose: Yup.string().required("Purpose is required"),
-      start_date: Yup.date().required("Access Start Date is required").typeError("Please enter a valid date"),
-      end_date: Yup.date().required("Access End Date is required").typeError("Please enter a valid date"),
-      expire_at: Yup.date().required("Expire At is required").typeError("Please enter a valid date"),
-      grants: Yup.array().min(1, "At least one grant is required"),
-      revork: Yup.array().min(0),
-      is_read_term: Yup.boolean()
-        .oneOf([true], "You must agree to the terms and conditions")
-        .required("Read term is required")
+      attachment: Yup.string().typeError("Attachment should be File Not great than 5 Mb"),
+      grants: Yup.array().min(1, "Your Must Select Group or Manual Select Module with its permitions"),
+      is_edited: Yup.boolean().default(false),
+      is_read_term: Yup.boolean().oneOf([true], "You must agree to the terms and conditions").required("Read term is required")
     }),
   });
 
@@ -395,6 +390,29 @@ const ApprovalRequestModal = () => {
     }
   };
 
+  const fetchDateRanges = async (searchValue = "") => {
+    setLoadingDateRanges(true);
+    try {
+      const result = await getDateRanges({
+        search: searchValue,
+        pagination: {
+          page: 1,
+          page_size: 10,
+          paginated: true,
+        },
+      });
+      if (result.status === 200 || result.status === 8000) {
+        setDateRanges(result.data);
+      } else {
+        setDateRanges(null);
+      }
+    } catch (err) {
+      setDateRanges(null);
+    } finally {
+      setLoadingDateRanges(false);
+    }
+  };
+
   // Map Modules and Permissions to grouped options
   const groupedOptions = [
     {
@@ -414,33 +432,39 @@ const ApprovalRequestModal = () => {
   ];
 
   //for Wizard tab validation & Control
-  const validateTab = async (values, setFieldError, setTouched) => {
+  const validateTab = async (values, setFieldError, setFieldValue, setTouched) => {
     try {
       if (tabIndex === 1) {
         await validationSchema.validateAt("module_uid", values);
         await validationSchema.validateAt("title", values);
-        await validationSchema.validateAt("date_range", values);
+        await validationSchema.validateAt("date_range_uid", values);
         await validationSchema.validateAt("department_uid", values);
+        await validationSchema.validateAt("description", values);
       }
       if (tabIndex === 2) {
         if (selectedModule?.code === "INTERNET_EMAIL_ACCESS") {
-          // await validationSchema.validateAt("request_data.access_period", values);
-          // await validationSchema.validateAt("request_data.grants", values);
-          // await validationSchema.validateAt("request_data.revork", values);
+          // await validationSchema.validateAt("request_data.attachment", values);
         }
 
-        if (selectedModule?.code === "JEEVA_ACCESS") {
-          // await validationSchema.validateAt("request_data.expire_at", values);
-          await validationSchema.validateAt("request_data.grants", values);
-        // await validationSchema.validateAt("request_data.revork", values);
+        if (selectedModule?.code === "JEEVA_ACCESS" || selectedModule?.code === "EDMS_ACCESS") {
+          if (selectedModules.length === 0) {
+            setFieldValue("request_data.grants", []);
+            setFieldError("request_data.grants", "Your Must Select Group or Manual Select Module with its permitions");
+            await validationSchema.validateAt("request_data.grants", values);
+            return false;
+          } else {
+            setTouched({ "request_data.grants": true }, false);
+            setFieldValue("request_data.grants", selectedModules);
+            return true;
+          }
+
         }
         // Add more tab-specific validation as needed
         // await validationSchema.validateAt("email", values);
       }
       if (tabIndex === 3) {
-        if (selectedModule?.code === "INTERNET_EMAIL_ACCESS") {
-          await validationSchema.validateAt("request_data.is_read_term", values);
-        }
+        await validationSchema.validateAt("request_data.is_read_term", values);
+
       }
 
       // Add more tab-specific validation as needed
@@ -459,6 +483,7 @@ const ApprovalRequestModal = () => {
     { handleNext },
     values,
     setSubmitting,
+    setFieldValue,
     resetForm,
     setErrors,
     setFieldError,
@@ -469,7 +494,8 @@ const ApprovalRequestModal = () => {
       setIsFirstTabChange(false);
     }
 
-    const isValid = await validateTab(values, setFieldError, setTouched);
+    const isValid = await validateTab(values, setFieldError, setFieldValue, setTouched);
+
     if (isValid) {
       setSInValidTab((prev) => {
         const updated = [...prev];
@@ -517,6 +543,7 @@ const ApprovalRequestModal = () => {
       ]);
       fetchDepartments();
       handleFetchModule();
+      fetchDateRanges();
     }
   }, [isModalOpen]); 
 
@@ -556,7 +583,9 @@ const ApprovalRequestModal = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="exampleModalLabel3">
-                Approval Request
+                Approval Request {selectedModule && (
+                  <span className="text-info"> &nbsp;( {selectedModule?.name} )</span>
+                )}
               </h5>
               <button
                 type="button"
@@ -581,6 +610,8 @@ const ApprovalRequestModal = () => {
                 setErrors,
                 setFieldError,
                 setTouched,
+                errors,
+                touched
               }) => (
                 <Form>
                   <FormWizard
@@ -594,7 +625,7 @@ const ApprovalRequestModal = () => {
                     }}
                     backButtonTemplate={(handlePrevious) => (
                       <button
-                        type={"button"}
+                        type="button"
                         className="base-button btn btn-sm btn-primary float-right"
                         style={{ width: "100px", alignItems: "right" }}
                         onClick={handlePrevious}
@@ -604,7 +635,7 @@ const ApprovalRequestModal = () => {
                     )}
                     nextButtonTemplate={(handleNext) => (
                       <button
-                        type={"button"}
+                        type="button"
                         className="base-button btn btn-sm btn-primary"
                         style={{ width: "100px", marginLeft: "80%" }}
                         onClick={async () =>
@@ -612,6 +643,7 @@ const ApprovalRequestModal = () => {
                             { handleNext },
                             values,
                             setSubmitting,
+                            setFieldValue,
                             resetForm,
                             setErrors,
                             setFieldError,
@@ -625,7 +657,7 @@ const ApprovalRequestModal = () => {
                     )}
                     finishButtonTemplate={(handleNext) => (
                       <button
-                        type={"button"}
+                        type="button"
                         className="base-button btn btn-sm btn-primary"
                         style={{ width: "150px", marginLeft: "70%" }}
                         disabled={isSubmitting}
@@ -634,6 +666,7 @@ const ApprovalRequestModal = () => {
                             { handleNext },
                             values,
                             setSubmitting,
+                            setFieldValue,
                             resetForm,
                             setErrors,
                             setFieldError,
@@ -655,6 +688,7 @@ const ApprovalRequestModal = () => {
                       </button>
                     )}
                   >
+                    {/* Tab 1 content */}
                     <FormWizard.TabContent
                       title={
                         <div className="d-flex flex-column text-start">
@@ -667,7 +701,7 @@ const ApprovalRequestModal = () => {
                       icon="ti-user"
                       showErrorOnTab={tabsError[0]}
                     >
-                      {/* Tab 1 content */}
+
                       <div className="row text-start">
                         <div className="col-md-6  mb-3">
                           <label htmlFor="module_uid" className="form-label">
@@ -744,17 +778,25 @@ const ApprovalRequestModal = () => {
 
                       <div className="row text-start">
                         <div className="col-md-6  mb-3">
-                          <label htmlFor="date_range" className="form-label">
+                          <label htmlFor="date_range_uid" className="form-label">
                             Access For Period Of
                           </label>
                           <Select
+                            isLoading={loadingDateRanges}
                             className="select2-selection fetched-select2"
                             onChange={(e) => {
-                              setFieldValue("date_range", e ? e.value : "");
+                              if (e === null || e.value == "") {
+                                setFieldValue("date_range_uid", "");
+                              } else {
+                                setFieldValue("date_range_uid", e.value);
+                              }
                             }}
-                            options={dateRangeData.map((item) => ({
-                              value: item, // value is the whole object
-                              label: item.title,
+                            onInputChange={(e) => {
+                              fetchDateRanges(e);
+                            }}
+                            options={dateRanges?.map((item) => ({
+                              value: item.uid,
+                              label: `${item.name}`,
                             }))}
                             styles={{
                               menu: (base) => ({
@@ -764,22 +806,20 @@ const ApprovalRequestModal = () => {
                               }),
                             }}
                             value={
-                              dateRangeData
-                                .map((item) => ({
-                                  value: item,
-                                  label: item.title,
+                              dateRanges
+                                ?.map((item) => ({
+                                  value: item.uid,
+                                  label: `${item.name}`,
                                 }))
-                                .find((option) =>
-                                  // Compare by value, type, and title for object equality
-                                  option.value.value === values.date_range?.value &&
-                                  option.value.type === values.date_range?.type &&
-                                  option.value.title === values.date_range?.title
+                                .find(
+                                  (option) =>
+                                    option.value === values.date_range_uid
                                 ) || null
                             }
                             isClearable
                           />
                           <ErrorMessage
-                            name="date_range"
+                            name="date_range_uid"
                             component="div"
                             className="text-danger"
                           />
@@ -827,13 +867,34 @@ const ApprovalRequestModal = () => {
                             }
                             isClearable
                           />
-                          <Field
-                            type="hidden"
-                            name="department_uid"
-                            id="departmentUidLarge"
-                          />
+
                           <ErrorMessage
                             name="department_uid"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="row text-start">
+                        <div className="col mb-3">
+                          <label
+                            htmlFor="descriptionLarge"
+                            className="form-label"
+                          >
+                            Description
+                          </label>
+                          <Field
+                            as="textarea"
+                            name="description"
+                            id="descriptionLarge"
+                            className="form-control"
+                            style={{ height: "150px" }}
+                            rows="4"
+                            placeholder="Enter Description"
+                          />
+                          <ErrorMessage
+                            name="description"
                             component="div"
                             className="text-danger"
                           />
@@ -843,6 +904,7 @@ const ApprovalRequestModal = () => {
 
                     </FormWizard.TabContent>
 
+                    {/* Tab 2 content */}
                     <FormWizard.TabContent
                       title={
                         <div className="d-flex flex-column text-start">
@@ -854,111 +916,66 @@ const ApprovalRequestModal = () => {
                       isValid={isValidTab[0]}
                       showErrorOnTab={tabsError[1]}
                     >
-                      {/* Tab 2 content */}
+
+
                       {selectedModule?.code === "INTERNET_EMAIL_ACCESS" && (
-                        <>
+                        <div style={{ minHeight: "300px" }}>
                           <div className="row text-start">
-                            <div className="col-md-6 mb-3">
+                            <div className="col mb-3">
                               <label
-                                htmlFor="startDateLarge"
+                                htmlFor="attachmentFile"
                                 className="form-label"
                               >
-                                Access From
+                                Attachement ( <small className="text-muted">Not Mandatory</small> )
                               </label>
                               <Field
-                                type="date"
-                                name="request_data.start_date"
-                                id="startDateLarge"
+                                type="file"
+                                name="request_data.attachment"
+                                id="attachmentFile"
                                 className="form-control"
                                 placeholder="Enter Access Start Date"
-                                min={new Date().toISOString().split("T")[0]}
-                                max={
-                                  new Date(
-                                    Date.now() + 10 * 24 * 60 * 60 * 1000
-                                  ) // today + 10 days
-                                    .toISOString()
-                                    .split("T")[0]
-                                }
                               />
                               <ErrorMessage
-                                name="request_data.start_date"
-                                component="div"
-                                className="text-danger"
-                              />
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label
-                                htmlFor="endDateLarge"
-                                className="form-label"
-                              >
-                                Access Until
-                              </label>
-                              <Field
-                                type="date"
-                                name="request_data.end_date"
-                                id="endDateLarge"
-                                className="form-control"
-                                placeholder="Enter Access End Date"
-                                min={
-                                  values.start_date ||
-                                  new Date().toISOString().split("T")[0]
-                                } // ensure it's at least start_date
-                              />
-                              <ErrorMessage
-                                name="request_data.end_date"
+                                name="request_data.attachment"
                                 component="div"
                                 className="text-danger"
                               />
                             </div>
                           </div>
-                          <div className="row text-start">
-                            <div className="row">
-                              <div className="col mb-3">
-                                <label
-                                  htmlFor="purposeLarge"
-                                  className="form-label"
-                                >
-                                  Description
-                                </label>
-                                <Field
-                                  as="textarea"
-                                  name="request_data.purpose"
-                                  id="purposeLarge"
-                                  className="form-control"
-                                  style={{ height: "100px" }}
-                                  rows="4"
-                                  placeholder="Enter Description"
-                                />
-                                <ErrorMessage
-                                  name="request_data.purpose"
-                                  component="div"
-                                  className="text-danger"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </>
+
+
+
+                        </ div>
                       )}
-                      {selectedModule?.code === "JEEVA_ACCESS" && (
+                      {(selectedModule?.code === "JEEVA_ACCESS" || selectedModule?.code === "EDMS_ACCESS") && (
                         <>
 
                           <div className="ibox-content" >
                             <div className="ibox-content-body" >
                               <div className="row">
                                 <div className="col-sm-11 text-start mb-4" >
-                                  <h5 className="text-muted">Instructions for Selecting Modules and Permissions</h5>
+                                  <h5 className="text-muted">Instructions for Selecting Groups, Modules and Permissions</h5>
                                   <p className="">
-                                    Select a module from the left to view its permissions. Check the permissions you want to request. Click the Preview button to see a list of your selected modules and permissions. You may also select permissions by choosing your associated group.                                  </p>
+                                    {isSelectModuleView
+                                      ? `Select a module from the left to view its permissions. Check the permissions you want to request. Click the Preview button to see a list of your selected modules and permissions. You may also select permissions by choosing your associated group.`
+                                      : `Select permissions by choosing your associated group then click the Preview button to check Associated Modules and Permissions. You can edit or change option using right buttons.`}
+                                  </p>
                                 </div>
 
                                 <div className="col-sm-8">
+                                  {(errors?.request_data?.grants || selectedModules.length === 0) && touched['request_data.grants'] && (
+                                    <div className="alert alert-danger">
+                                      {errors.request_data.grants}
+                                    </div>
+                                  )}
                                   {isSelectModuleView ? (
                                     <div className="row h-100">
                                     <div className="col-sm-6" style={{ minWidth: "280px" }} >
                                       <Select
-                                        isLoading={loadingDepartments}
+                                          isLoading={loadingPermissions}
                                         closeMenuOnSelect={false}
                                         expandOnFocus={false}
+                                          name="request_data.grants"
                                         isSearchable
                                         isMulti
                                         menuIsOpen={true}
@@ -969,6 +986,7 @@ const ApprovalRequestModal = () => {
                                           setSelectedLeft(selected);
                                           // Remove highlight if chip is removed
                                           if (action && action.removedValue && activeChip === action.removedValue.value) {
+                                            setSelectedModules([]);
                                             setActiveChip(null);
                                             setActiveModulePermissions([]);
                                             setActiveChipLabel(null);
@@ -1022,7 +1040,7 @@ const ApprovalRequestModal = () => {
 
                                     <div className="col-sm-6 text-start pe-3" style={{ minWidth: "300px", marginTop: "0px" }} >
                                       <div className="d-grid gap-2 col-lg-12 mx-auto">
-                                        <button type="Button" className="btn btn-outline-info btn-secondary btn-sm btn-block">
+                                          <button type="button" className="btn btn-outline-info btn-secondary btn-sm btn-block">
                                             <span className="fw-medium" style={{ fontSize: "16px" }}> {activeChipLabel ? `Permissions For ${activeChipLabel}` : `No Selected Module`}</span>
                                         </button>
                                       </div>
@@ -1098,67 +1116,12 @@ const ApprovalRequestModal = () => {
 
                                           }}
                                         >
-                                          {/*
-                                          {jeevaGroupData.map((group, idx) => (
-                                            <div key={group.uid} className="col-12 col-sm-6" >
-                                              <button
-                                                onClick={() => {
-                                                  setSelectedPermissionGroup(idx);
 
-                                                  // Select all modules in Select
-                                                  const groupModuleOptions = group.modules.map(mod => ({
-                                                    value: mod.codename,
-                                                    label: mod.name,
-                                                  }));
-                                                  setSelectedLeft(groupModuleOptions);
-
-                                                  // Select all modules and permissions (for checked state)
-                                                  setSelectedModules(
-                                                    group.modules.map(mod => ({
-                                                      codename: mod.codename,
-                                                      name: mod.name,
-                                                      Permissions: [...mod.Permissions],
-                                                    }))
-                                                  );
-
-                                                  // Set first module as active chip and show all possible permissions
-                                                  if (group.modules.length > 0) {
-                                                    const firstModule = group.modules[0];
-                                                    setActiveChip(firstModule.codename);
-                                                    setActiveChipLabel(firstModule.name);
-
-                                                    // Find all possible permissions for this module from jeevaData
-                                                    const allPermsModule = jeevaData.Modules.find(m => m.codename === firstModule.codename);
-                                                    setActiveModulePermissions(allPermsModule ? allPermsModule.Permissions : []);
-                                                  } else {
-                                                    setActiveChip(null);
-                                                    setActiveChipLabel(null);
-                                                    setActiveModulePermissions([]);
-                                                  }
-                                                }}
-                                                className={`btn btn-md btn-outline-secondary ${idx === selectedPermissionGroup ? "active" : ""} w-100`}
-                                              >
-                                                <div className="m-1 p-1 d-flex justify-content-center">
-                                                  <i className="bx bx-user bx-x1 bx-lg"></i>
-                                                </div>
-                                                <div className="d-flex flex-column text-start" style={{ width: "85%" }}>
-                                                  <span className="fw-bold">{group.name}</span>
-                                                  <span className="small">Modules Assigned: {group.modules.length}</span>
-                                                  <span className="small">
-                                                    (&nbsp;
-                                                    {group.modules.map((module, modid) => {
-                                                      { module.name }
-                                                    })}
-                                                    &nbsp;)
-                                                  </span>
-                                                </div>
-                                              </button>
-                                            </div>
-                                          ))} */}
 
                                           {jeevaGroupData.map((group, idx) => (
                                             <div key={group.uid} className="col-12 col-sm-6 mb-3">
                                               <button
+                                                type="button"
                                                 onClick={() => {
                                                   setSelectedPermissionGroup(idx);
 
@@ -1228,6 +1191,7 @@ const ApprovalRequestModal = () => {
                                         </div>
                                       </div>
                                   )}
+
                                 </div>
                                 <div
                                   className="col-sm-4 text"
@@ -1264,17 +1228,19 @@ const ApprovalRequestModal = () => {
                                         });
 
                                         if (confirmation.isConfirmed) {
-                                          setIsSelectModuleView(false);
                                           setSelectedModules([]);
                                           setActiveChip(null);
                                           setActiveModulePermissions([]);
                                           setActiveChipLabel(null);
+                                          setIsSelectModuleView(false);
+                                          setSelectedLeft([]); // <- CLEAR SELECTED MODULES IN SELECT
+                                          setFieldValue("request_data.grants", []);
                                         }
                                       }}
                                       title="Assign" >
                                       <i className="bx bx-group" ></i> Copy Permission From Group
                                     </button>
-                                  ) : isSelectModuleView === false && selectedPermissionGroup ? (
+                                  ) : isSelectModuleView === false && selectedPermissionGroup !== null && selectedPermissionGroup !== undefined ? (
                                     // show button to edit permittion when user selest one group
                                     <button
                                       type="button"
@@ -1292,12 +1258,10 @@ const ApprovalRequestModal = () => {
                                         });
 
                                           if (confirmation.isConfirmed) {
+                                            setActiveChip(null);
+                                            setActiveModulePermissions([]);
+                                            setActiveChipLabel(null);
                                             setIsSelectModuleView(true);
-                                            // setSelectedModules([]);
-                                            // setActiveChip(null);
-                                            // setActiveModulePermissions([]);
-                                            // setActiveChip(null);
-                                            // setActiveChipLabel(null);
                                           }
                                         }}
                                         title="Assign" >
@@ -1342,12 +1306,13 @@ const ApprovalRequestModal = () => {
                                       type="button"
                                       className="btn btn-danger btn-sm btn-assign m-2"
                                       onClick={() => {
-                                        setIsSelectModuleView(false);
                                         setSelectedModules([]);
                                         setActiveChip(null);
                                         setActiveModulePermissions([]);
                                         setActiveChipLabel(null);
-                                        setSelectedPermissionGroup(null)
+                                        setSelectedPermissionGroup(null);
+                                        setSelectedLeft([]); // <- CLEAR SELECTED MODULES IN SELECT
+
                                       }}
                                       title="Assign" >
                                       <i className="bx bx-trash-alt" ></i> Clear Selection
@@ -1367,7 +1332,7 @@ const ApprovalRequestModal = () => {
                       title={
                         <div className="d-flex flex-column text-start">
                           <span className="fw-bold">Submition</span>
-                          <span className="small">Review & Submit</span>
+                          <span className="small">Declaration & Submit</span>
                         </div>
                       }
                       icon="ti-check"
@@ -1376,26 +1341,85 @@ const ApprovalRequestModal = () => {
                     >
                       {/* Tab 3 content */}
                       <div className="row text-start">
-                        <div className="col-md-12 mb-4">
-                          <label className="form-label fw-bold">Terms and Conditions</label>
-                          <PDFViewer fileUrl="/assets/doc/MNH_ICT_Security_Policy.pdf" />
+                        <div className="col-sm-12 text-start mb-4" >
+                          <h5 className="text-bold mb-2">APPENDIX</h5>
+                          <div className="p-3">
+                            <h5 className="text-bold mb-2">Declarations by Staff </h5>
+                            <p className="me-2 text-justify">
+                              These declarations have been designed to certify that users acknowledge that they are
+                              aware of <strong className="text-bold">MNH</strong>, Acceptable information and communication technology use policy, and agree
+                              to abide by their terms.
+                            </p>
+                            <p className="me-2 text-justify">
+                              I <span style={{
+                                display: "inline-block",
+                                fontWeight: "bold",
+                                borderBottom: "1px solid rgb(111, 121, 133)",
+                                textAlign: "center",
+                                paddingLeft: "10px",
+                                paddingRight: "10px"
+                              }}>
+                                &nbsp;   &nbsp; {`${user?.data?.first_name} ${user?.data?.middle_name} ${user?.data?.last_name}`} &nbsp;   &nbsp;
+                              </span>  acknowledge that <strong className="text-bold">MNH</strong>,
+                              acceptable ICT use policy has been made available to me for adequate review and
+                              understanding. I certify that I have been given ample opportunity to read and understand it
+                              and ask questions about my responsibilities on it. Therefore, I am aware that I am countable
+                              to all its terms and requirements; and shall abide by them. I also understand that failure to
+                              abide by them; <strong className="text-bold">MNH</strong>, shall take against me appropriate disciplinary action or legal action, or
+                              both.
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <div className="form-check mb-3">
+
+
+                        <div className="row">
+                          <div className="col-sm-1"></div>
+                          <div
+                            onClick={() => {
+                              setShowTermConditionModal(true);
+                            }}
+                            style={{ cursor: "pointer", display: "flex", borderRight: "0.5px solid rgb(141, 184, 233)" }}
+                            className="col-sm-4  me-3">
+                            <span className="me-2">
+                              <i className="bx bx-check-shield bx-md"></i>
+                            </span>
+                            <div className="d-flex flex-column text-start">
+                              <span className="fw-bold">Read Terms & Conditions</span>
+                              <span className="small">
+                                Read before Submitting Form
+                              </span>
+                            </div>
+
+                          </div>
+                          <div
+                            style={{ cursor: "pointer" }}
+                            className="col-sm-6 form-check mb-3"
+                          >
                             <Field
                               type="checkbox"
                               name="request_data.is_read_term"
                               id="isReadTerm"
                               className="form-check-input"
+                              checked={values.request_data?.is_read_term || false}
+                              onChange={() => {
+                                setTouched({ "request_data.is_read_term": true }, false);
+                                if (isAgreedTerms) {
+                                  setIsAgreedTerms(false);
+                                  setFieldValue("request_data.is_read_term", false);
+                                } else {
+                                  setIsAgreedTerms(true);
+                                  setFieldValue("request_data.is_read_term", true);
+                                }
+                              }}
                             />
-                            <label htmlFor="isReadTerm" className="form-check-label">
+                            <label htmlFor="isReadTerm" className="form-check-label fw-bold">
                               I have read and understood the Terms and Conditions
                             </label>
-                            <ErrorMessage
-                              name="request_data.is_read_term"
-                              component="div"
-                              className="text-danger"
-                            />
+                            {!isAgreedTerms && touched['request_data.is_read_term'] && (
+                              <div className="text-danger">
+                                {errors?.request_data?.is_read_term}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1519,6 +1543,57 @@ const ApprovalRequestModal = () => {
           </div>
         </div>
       )}
+
+      {showTermConditionModal && (
+        <div
+          className="modal fade show"
+          tabIndex="-1"
+          style={{
+            display: "block",
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 2000,
+          }}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div className="modal-dialog modal-xl" id="previewTermConditions" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Terms and Conditions</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowTermConditionModal(false);
+                  }}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                {showTermConditionModal === true && (
+                  <div className="col-md-12 mb-4" style={{ minHeight: "500px;" }}>
+                    <p className="p fw-bold mb-3">Read Carefull and Accept all part before submitting your form</p>
+                    <PDFViewer fileUrl="/assets/doc/MNH_ICT_Security_Policy.pdf" />
+                  </div>
+                )}
+                <div className="text-center">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm btn-close-preview m-2"
+                    onClick={() => {
+                      setShowTermConditionModal(false);
+                    }}
+                  >
+                    <i className="bx bx-check-shield"></i> &nbsp;Continue with Form
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </>
   );
 };
