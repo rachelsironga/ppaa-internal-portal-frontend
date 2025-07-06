@@ -14,6 +14,8 @@ const ApprovalRequestsContext = createContext();
 
 const UsersContext = createContext();
 
+const AccountContext = createContext();
+
 const DateRangeContext = createContext();
 
 export {
@@ -24,5 +26,6 @@ export {
     DirectoryContext,
     ApprovalModuleContext,
     DateRangeContext,
+    AccountContext,
     UsersContext
 };

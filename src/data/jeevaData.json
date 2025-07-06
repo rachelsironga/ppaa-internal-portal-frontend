@@ -1,105 +1,614 @@
 {
   "Modules": [
     {
-      "codename": "01e5-4c97-a50",
-      "name": "Doctor Consultation",
+      "codename": "01",
+      "name": "SECURITY",
       "Permissions": [
-        { "codename": "perm-001", "name": "Add Doctors" },
-        { "codename": "perm-002", "name": "Edit Doctor Profile" },
-        { "codename": "perm-003", "name": "Delete Doctor" },
-        { "codename": "perm-004", "name": "Approve Receipt" },
-        { "codename": "perm-005", "name": "View Patient Records" },
-        { "codename": "perm-006", "name": "Schedule Appointments" },
-        { "codename": "perm-007", "name": "Cancel Appointments" },
-        { "codename": "perm-008", "name": "View Doctor Schedule" },
-        { "codename": "perm-009", "name": "Assign Patients" },
-        { "codename": "perm-010", "name": "Discharge Patient" },
-        { "codename": "perm-011", "name": "View Consultation History" }
+        { "codename": "0100", "name": "SECURITY LOGIN" },
+        { "codename": "0101", "name": "MODULE ENTRY" },
+        { "codename": "010101", "name": "MODULE ENTRY - NEW" },
+        { "codename": "010102", "name": "MODULE ENTRY - CHANGE" },
+        { "codename": "010103", "name": "MODULE ENTRY - DELETE" },
+        { "codename": "0102", "name": "USER GROUP" },
+        { "codename": "010201", "name": "USER GROUP - NEW" },
+        { "codename": "010202", "name": "USER GROUP - CHANGE" },
+        { "codename": "010203", "name": "USER GROUP - DELETE" },
+        { "codename": "0103", "name": "USER PROFILE" },
+        { "codename": "010301", "name": "USER PROFILE - NEW" },
+        { "codename": "010302", "name": "USER PROFILE - CHANGE" },
+        { "codename": "010303", "name": "USER PROFILE - DELETE" },
+        { "codename": "010304", "name": "USER PROFILE - SAVE" },
+        { "codename": "010305", "name": "USER PROFILE - RECOVER PASSWORD" },
+        { "codename": "0104", "name": "ACCESS RIGHTS" },
+        { "codename": "010401", "name": "ACCESS RIGHTS - SAVE" },
+        { "codename": "0105", "name": "CHANGE PASSWORD" },
+        { "codename": "010501", "name": "CHANGE PASSWORD - RECORD" },
+        { "codename": "0106", "name": "Exit" }
       ]
     },
     {
-      "codename": "1e1cdef0-abd8",
-      "name": "Nursing Station",
+      "codename": "02",
+      "name": "BACK OFFICE",
       "Permissions": [
-        { "codename": "perm-101", "name": "Add Nurse" },
-        { "codename": "perm-102", "name": "Edit Nurse Profile" },
-        { "codename": "perm-103", "name": "Delete Nurse" },
-        { "codename": "perm-104", "name": "Assign Beds" },
-        { "codename": "perm-105", "name": "Monitor Vitals" },
-        { "codename": "perm-106", "name": "Record Medication" },
-        { "codename": "perm-107", "name": "View Shift Schedule" },
-        { "codename": "perm-108", "name": "Request Supplies" },
-        { "codename": "perm-109", "name": "Patient Transfer" },
-        { "codename": "perm-110", "name": "View Patient List" },
-        { "codename": "perm-111", "name": "Update Patient Status" }
+        { "codename": "0200", "name": "Login Form" },
+        { "codename": "0201", "name": "Masters Menu" },
+        { "codename": "020101", "name": "Masters - Countries" },
+        { "codename": "02010101", "name": "Masters - Countries - New Button" },
+        {
+          "codename": "02010102",
+          "name": "Masters - Countries - Change Button"
+        },
+        {
+          "codename": "02010103",
+          "name": "Masters - Countries - Delete Button"
+        },
+        {
+          "codename": "02010104",
+          "name": "Masters - Countries - Print Button"
+        },
+        { "codename": "020102", "name": "Masters - Regions" },
+        { "codename": "02010201", "name": "Masters - Regions - New Button" },
+        { "codename": "02010202", "name": "Masters - Regions - Change Button" },
+        { "codename": "02010203", "name": "Masters - Regions - Delete Button" },
+        { "codename": "02010204", "name": "Masters - Regions - Print Button" },
+        { "codename": "020103", "name": "Masters - Districts" },
+        { "codename": "02010301", "name": "Masters - Districts - New Button" },
+        {
+          "codename": "02010302",
+          "name": "Masters - Districts - Change Button"
+        },
+        {
+          "codename": "02010303",
+          "name": "Masters - Districts - Delete Button"
+        },
+        {
+          "codename": "02010304",
+          "name": "Masters - Districts - Print Button"
+        },
+        { "codename": "020104", "name": "Masters - Cities" },
+        { "codename": "02010401", "name": "Masters - Cities - New Button" },
+        { "codename": "02010402", "name": "Masters - Cities - Change Button" },
+        { "codename": "02010403", "name": "Masters - Cities - Delete Button" },
+        { "codename": "02010404", "name": "Masters - Cities - Print Button" },
+        { "codename": "020105", "name": "Masters - Religions" },
+        { "codename": "02010501", "name": "Masters - Religions - New Button" },
+        {
+          "codename": "02010502",
+          "name": "Masters - Religions - Change Button"
+        },
+        {
+          "codename": "02010503",
+          "name": "Masters - Religions - Delete Button"
+        },
+        {
+          "codename": "02010504",
+          "name": "Masters - Religions - Print Button"
+        },
+        { "codename": "020106", "name": "Masters - Tribes" },
+        { "codename": "02010601", "name": "Masters - Tribes - New Button" },
+        { "codename": "02010602", "name": "Masters - Tribes - Change Button" },
+        { "codename": "02010603", "name": "Masters - Tribes - Delete Button" },
+        { "codename": "02010604", "name": "Masters - Tribes - Print Button" },
+        { "codename": "020107", "name": "Masters - Occupations" },
+        {
+          "codename": "02010701",
+          "name": "Masters - Occupations - New Button"
+        },
+        {
+          "codename": "02010702",
+          "name": "Masters - Occupations - Change Button"
+        },
+        {
+          "codename": "02010703",
+          "name": "Masters - Occupations - Delete Button"
+        },
+        {
+          "codename": "02010704",
+          "name": "Masters - Occupations - Print Button"
+        },
+        { "codename": "020108", "name": "Masters - Income Groups" },
+        {
+          "codename": "02010801",
+          "name": "Masters - Income Groups - New Button"
+        },
+        {
+          "codename": "02010802",
+          "name": "Masters - Income Groups - Change Button"
+        },
+        {
+          "codename": "02010803",
+          "name": "Masters - Income Groups - Delete Button"
+        },
+        {
+          "codename": "02010804",
+          "name": "Masters - Income Groups - Print Button"
+        },
+        { "codename": "020109", "name": "Masters - Tariff Categories" },
+        {
+          "codename": "02010901",
+          "name": "Masters - Tariff Categories - New Button"
+        },
+        {
+          "codename": "02010902",
+          "name": "Masters - Tariff Categories - Change Button"
+        },
+        {
+          "codename": "02010903",
+          "name": "Masters - Tariff Categories - Delete Button"
+        },
+        {
+          "codename": "02010903",
+          "name": "Masters - Tariff Categories - Print Button"
+        },
+        { "codename": "02011", "name": "Masters - Counters" },
+        { "codename": "020110", "name": "Masters - Ledger Groups" },
+        {
+          "codename": "02011001",
+          "name": "Masters - Ledger Groups - New Button"
+        },
+        {
+          "codename": "02011002",
+          "name": "Masters - Ledger Groups - Change Button"
+        },
+        {
+          "codename": "02011003",
+          "name": "Masters - Ledger Groups - Delete Button"
+        },
+        {
+          "codename": "02011004",
+          "name": "Masters - Ledger Groups - Print Button"
+        },
+        { "codename": "020111", "name": "Masters - Document Numbers" },
+        {
+          "codename": "02011101",
+          "name": "Masters - Document Numbers - New Button"
+        },
+        {
+          "codename": "02011102",
+          "name": "Masters - Document Numbers - Change Button"
+        },
+        {
+          "codename": "02011103",
+          "name": "Masters - Document Numbers - Delete Button"
+        },
+        {
+          "codename": "02011104",
+          "name": "Masters - Document Numbers - Print Button"
+        },
+        { "codename": "020112", "name": "Masters - Salutations" },
+        {
+          "codename": "02011201",
+          "name": "Masters - Salutations - New Button"
+        },
+        {
+          "codename": "02011202",
+          "name": "Masters - Salutations - Change Button"
+        },
+        {
+          "codename": "02011203",
+          "name": "Masters - Salutations - Delete Button"
+        },
+        {
+          "codename": "02011204",
+          "name": "Masters - Salutations - Print Button"
+        },
+        { "codename": "020113", "name": "Masters - Charge Master" },
+        {
+          "codename": "02011301",
+          "name": "Masters - Charge Master - New Button"
+        },
+        {
+          "codename": "02011302",
+          "name": "Masters - Charge Master - Change Button"
+        },
+        {
+          "codename": "02011303",
+          "name": "Masters - Charge Master - Delete Button"
+        },
+        {
+          "codename": "02011304",
+          "name": "Masters - Charge Master - Print Button"
+        },
+        { "codename": "020114", "name": "Masters - National Holidays" },
+        {
+          "codename": "02011401",
+          "name": "Masters - National Holidays - New Button"
+        },
+        {
+          "codename": "02011402",
+          "name": "Masters - National Holidays - Change Button"
+        },
+        {
+          "codename": "02011403",
+          "name": "Masters - National Holidays - Delete Button"
+        },
+        {
+          "codename": "02011404",
+          "name": "Masters - National Holidays - Print Button"
+        },
+        { "codename": "020115", "name": "Masters - Payment Types" },
+        {
+          "codename": "02011501",
+          "name": "Masters - Payment Types - New Button"
+        },
+        {
+          "codename": "02011502",
+          "name": "Masters - Payment Types - Change Button"
+        },
+        {
+          "codename": "02011503",
+          "name": "Masters - Payment Types - Delete Button"
+        },
+        {
+          "codename": "02011504",
+          "name": "Masters - Payment Types - Print Button"
+        },
+        { "codename": "020116", "name": "Masters - Referral Hospital Types" },
+        {
+          "codename": "02011601",
+          "name": "Masters - Referral Hospital Types - New Button"
+        },
+        {
+          "codename": "02011602",
+          "name": "Masters - Referral Hospital Types - Change Button"
+        },
+        {
+          "codename": "02011603",
+          "name": "Masters - Referral Hospital Types - Delete Button"
+        },
+        {
+          "codename": "02011604",
+          "name": "Masters - Referral Hospital Types - Print Button"
+        },
+        { "codename": "020117", "name": "Masters - Registration Counters" },
+        {
+          "codename": "02011701",
+          "name": "Masters - Registration Counters - New"
+        },
+        {
+          "codename": "02011702",
+          "name": "Masters - Registration Counters - Change"
+        },
+        {
+          "codename": "02011703",
+          "name": "Masters - Registration Counters - Delete"
+        },
+        {
+          "codename": "02011704",
+          "name": "Masters - Registration Counters - Print"
+        },
+        { "codename": "020118", "name": "Masters - Cash Counters" },
+        { "codename": "02011801", "name": "Masters - Cash Counters - New" },
+        { "codename": "02011802", "name": "Masters - Cash Counters - Change" },
+        { "codename": "02011803", "name": "Masters - Cash Counters - Delete" },
+        { "codename": "02011804", "name": "Masters - Cash Counters - Print" },
+        { "codename": "0202", "name": "Doctor Details" },
+        { "codename": "020201", "name": "Doctor Details - Specialization" },
+        {
+          "codename": "02020101",
+          "name": "Doctor Details - Specialization - New Button"
+        },
+        {
+          "codename": "02020102",
+          "name": "Doctor Details - Specialization - Change Button"
+        },
+        {
+          "codename": "02020103",
+          "name": "Doctor Details - Specialization - Delete Button"
+        },
+        {
+          "codename": "02020104",
+          "name": "Doctor Details - Specialization - Print Button"
+        },
+        { "codename": "020202", "name": "Doctor Details - Categories" },
+        {
+          "codename": "02020201",
+          "name": "Doctor Details - Categories - New Button"
+        },
+        {
+          "codename": "02020202",
+          "name": "Doctor Details - Categories - Change Button"
+        },
+        {
+          "codename": "02020203",
+          "name": "Doctor Details - Categories - Delete Button"
+        },
+        {
+          "codename": "02020204",
+          "name": "Doctor Details - Categories - Print Button"
+        },
+        {
+          "codename": "020203",
+          "name": "Doctor Details - Doctor Registration"
+        },
+        {
+          "codename": "02020301",
+          "name": "Doctor Details - Doctor Registration - New Button"
+        },
+        {
+          "codename": "02020302",
+          "name": "Doctor Details - Doctor Registration - Change Button"
+        },
+        {
+          "codename": "02020303",
+          "name": "Doctor Details - Doctor Registration - Delete Button"
+        },
+        {
+          "codename": "02020304",
+          "name": "Doctor Details - Doctor Registration - Print Button"
+        }
       ]
     },
     {
-      "codename": "a2b3c4d5-e6f7",
-      "name": "Pharmacy Management",
+      "codename": "03",
+      "name": "FINANCIAL ACCOUNTING",
       "Permissions": [
-        { "codename": "perm-201", "name": "Add Medication" },
-        { "codename": "perm-202", "name": "Edit Medication" },
-        { "codename": "perm-203", "name": "Delete Medication" },
-        { "codename": "perm-204", "name": "Dispense Medication" },
-        { "codename": "perm-205", "name": "View Inventory" },
-        { "codename": "perm-206", "name": "Order Supplies" },
-        { "codename": "perm-207", "name": "Receive Supplies" },
-        { "codename": "perm-208", "name": "Return Medication" },
-        { "codename": "perm-209", "name": "View Expiry Dates" },
-        { "codename": "perm-210", "name": "Manage Suppliers" },
-        { "codename": "perm-211", "name": "Generate Reports" }
+        { "codename": "perm-03-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-03-CREATE", "name": "Create FINANCIAL ACCOUNTING" }
       ]
     },
     {
-      "codename": "b7c8d9e0-f1a2",
-      "name": "Laboratory Services",
+      "codename": "04",
+      "name": "PHARMACY",
       "Permissions": [
-        { "codename": "perm-301", "name": "Add Lab Test" },
-        { "codename": "perm-302", "name": "Edit Lab Test" },
-        { "codename": "perm-303", "name": "Delete Lab Test" },
-        { "codename": "perm-304", "name": "Assign Lab Technician" },
-        { "codename": "perm-305", "name": "View Test Results" },
-        { "codename": "perm-306", "name": "Approve Test Results" },
-        { "codename": "perm-307", "name": "Reject Test Results" },
-        { "codename": "perm-308", "name": "Print Test Reports" },
-        { "codename": "perm-309", "name": "Sample Collection" },
-        { "codename": "perm-310", "name": "Manage Equipment" },
-        { "codename": "perm-311", "name": "View Lab Inventory" }
+        { "codename": "perm-04-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-04-CREATE", "name": "Create PHARMACY" }
       ]
     },
     {
-      "codename": "c3d4e5f6-a7b8",
-      "name": "Patient Registration",
+      "codename": "05",
+      "name": "GENERAL STORES",
       "Permissions": [
-        { "codename": "perm-401", "name": "Register Patient" },
-        { "codename": "perm-402", "name": "Edit Patient Info" },
-        { "codename": "perm-403", "name": "Delete Patient" },
-        { "codename": "perm-404", "name": "Assign Patient ID" },
-        { "codename": "perm-405", "name": "View Patient List" },
-        { "codename": "perm-406", "name": "Print Patient Card" },
-        { "codename": "perm-407", "name": "Update Patient Status" },
-        { "codename": "perm-408", "name": "Merge Patient Records" },
-        { "codename": "perm-409", "name": "View Registration History" },
-        { "codename": "perm-410", "name": "Export Patient Data" },
-        { "codename": "perm-411", "name": "Import Patient Data" }
+        { "codename": "perm-05-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-05-CREATE", "name": "Create GENERAL STORES" }
       ]
     },
     {
-      "codename": "d9e8f7a6-b5c4",
-      "name": "Billing & Accounts",
+      "codename": "06",
+      "name": "PURCHASE",
       "Permissions": [
-        { "codename": "perm-501", "name": "Create Invoice" },
-        { "codename": "perm-502", "name": "Edit Invoice" },
-        { "codename": "perm-503", "name": "Delete Invoice" },
-        { "codename": "perm-504", "name": "Process Payment" },
-        { "codename": "perm-505", "name": "Refund Payment" },
-        { "codename": "perm-506", "name": "View Billing History" },
-        { "codename": "perm-507", "name": "Generate Financial Report" },
-        { "codename": "perm-508", "name": "Manage Insurance Claims" },
-        { "codename": "perm-509", "name": "Approve Discounts" },
-        { "codename": "perm-510", "name": "View Outstanding Balances" },
-        { "codename": "perm-511", "name": "Export Billing Data" }
+        { "codename": "perm-06-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-06-CREATE", "name": "Create PURCHASE" }
+      ]
+    },
+    {
+      "codename": "07",
+      "name": "OP REGISTRATION",
+      "Permissions": [
+        { "codename": "perm-07-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-07-CREATE", "name": "Create OP REGISTRATION" }
+      ]
+    },
+    {
+      "codename": "08",
+      "name": "IP REGISTRATION",
+      "Permissions": [
+        { "codename": "perm-08-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-08-CREATE", "name": "Create IP REGISTRATION" }
+      ]
+    },
+    {
+      "codename": "09",
+      "name": "MEDICAL RECORDS",
+      "Permissions": [
+        { "codename": "perm-09-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-09-CREATE", "name": "Create MEDICAL RECORDS" }
+      ]
+    },
+    {
+      "codename": "10",
+      "name": "CASHIER",
+      "Permissions": [
+        { "codename": "perm-10-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-10-CREATE", "name": "Create CASHIER" }
+      ]
+    },
+    {
+      "codename": "11",
+      "name": "LABORATORY",
+      "Permissions": [
+        { "codename": "perm-11-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-11-CREATE", "name": "Create LABORATORY" }
+      ]
+    },
+    {
+      "codename": "12",
+      "name": "OPERATION THEATRE",
+      "Permissions": [
+        { "codename": "perm-12-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-12-CREATE", "name": "Create OPERATION THEATRE" }
+      ]
+    },
+    {
+      "codename": "13",
+      "name": "IP BILLING",
+      "Permissions": [
+        { "codename": "perm-13-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-13-CREATE", "name": "Create IP BILLING" }
+      ]
+    },
+    {
+      "codename": "14",
+      "name": "RADIOLOGY",
+      "Permissions": [
+        { "codename": "perm-14-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-14-CREATE", "name": "Create RADIOLOGY" }
+      ]
+    },
+    {
+      "codename": "15",
+      "name": "PERSONNEL",
+      "Permissions": [
+        { "codename": "perm-15-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-15-CREATE", "name": "Create PERSONNEL" }
+      ]
+    },
+    {
+      "codename": "16",
+      "name": "IP CASHIER",
+      "Permissions": [
+        { "codename": "perm-16-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-16-CREATE", "name": "Create IP CASHIER" }
+      ]
+    },
+    {
+      "codename": "17",
+      "name": "NURSING STATION",
+      "Permissions": [
+        { "codename": "perm-17-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-17-CREATE", "name": "Create NURSING STATION" }
+      ]
+    },
+    {
+      "codename": "18",
+      "name": "DOCTOR CONSULTATION",
+      "Permissions": [
+        { "codename": "perm-18-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-18-CREATE", "name": "Create DOCTOR CONSULTATION" }
+      ]
+    },
+    {
+      "codename": "19",
+      "name": "CSSD",
+      "Permissions": [
+        { "codename": "perm-19-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-19-CREATE", "name": "Create CSSD" }
+      ]
+    },
+    {
+      "codename": "20",
+      "name": "MAINTENANCE",
+      "Permissions": [
+        { "codename": "perm-20-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-20-CREATE", "name": "Create MAINTENANCE" }
+      ]
+    },
+    {
+      "codename": "21",
+      "name": "BLOOD BANK",
+      "Permissions": [
+        { "codename": "perm-21-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-21-CREATE", "name": "Create BLOOD BANK" }
+      ]
+    },
+    {
+      "codename": "22",
+      "name": "MORTUARY",
+      "Permissions": [
+        { "codename": "perm-22-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-22-CREATE", "name": "Create MORTUARY" }
+      ]
+    },
+    {
+      "codename": "23",
+      "name": "LINEN & LAUNDRY",
+      "Permissions": [
+        { "codename": "perm-23-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-23-CREATE", "name": "Create LINEN & LAUNDRY" }
+      ]
+    },
+    {
+      "codename": "24",
+      "name": "ORDER MANAGEMENT",
+      "Permissions": [
+        { "codename": "perm-24-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-24-CREATE", "name": "Create ORDER MANAGEMENT" }
+      ]
+    },
+    {
+      "codename": "36",
+      "name": "HIV",
+      "Permissions": [
+        { "codename": "perm-36-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-36-CREATE", "name": "Create HIV" }
+      ]
+    },
+    {
+      "codename": "25",
+      "name": "PAYROLL",
+      "Permissions": [
+        { "codename": "perm-25-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-25-CREATE", "name": "Create PAYROLL" }
+      ]
+    },
+    {
+      "codename": "39",
+      "name": "GENERAL MAINTENANCE",
+      "Permissions": [
+        { "codename": "perm-39-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-39-CREATE", "name": "Create GENERAL MAINTENANCE" }
+      ]
+    },
+    {
+      "codename": "27",
+      "name": "MIS STATISTICS",
+      "Permissions": [
+        { "codename": "perm-27-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-27-CREATE", "name": "Create MIS STATISTICS" }
+      ]
+    },
+    {
+      "codename": "38",
+      "name": "PMTCT",
+      "Permissions": [
+        { "codename": "perm-38-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-38-CREATE", "name": "Create PMTCT" }
+      ]
+    },
+    {
+      "codename": "26",
+      "name": "FIXED ASSETS",
+      "Permissions": [
+        { "codename": "perm-26-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-26-CREATE", "name": "Create FIXED ASSETS" }
+      ]
+    },
+    {
+      "codename": "28",
+      "name": "SCROLLING",
+      "Permissions": [
+        { "codename": "perm-28-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-28-CREATE", "name": "Create SCROLLING" }
+      ]
+    },
+    {
+      "codename": "29",
+      "name": "BILLNOTE",
+      "Permissions": [
+        { "codename": "perm-29-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-29-CREATE", "name": "Create BILLNOTE" }
+      ]
+    },
+    {
+      "codename": "40",
+      "name": "PRIVATE CREDIT",
+      "Permissions": [
+        { "codename": "perm-40-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-40-CREATE", "name": "Create PRIVATE CREDIT" }
+      ]
+    },
+    {
+      "codename": "41",
+      "name": "CMS",
+      "Permissions": [
+        { "codename": "perm-41-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-41-CREATE", "name": "Create CMS" }
+      ]
+    },
+    {
+      "codename": "45",
+      "name": "WEB INDENT",
+      "Permissions": [
+        { "codename": "perm-45-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-45-CREATE", "name": "Create WEB INDENT" }
+      ]
+    },
+    {
+      "codename": "46",
+      "name": "Dietry",
+      "Permissions": [
+        { "codename": "perm-46-ALL", "name": "All Associated Permissions" },
+        { "codename": "perm-46-CREATE", "name": "Create Dietry" }
       ]
     }
   ]

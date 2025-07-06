@@ -18,51 +18,93 @@ const Sidebar = () => {
     };
 
     return (
-        <aside id="layout-menu" className="layout-menu menu-vertical menu bg-menu-theme">
-            <div className="app-brand demo">
-                <Link aria-label='Navigate to sneat homepage' to="/" className="app-brand-link">
-                    <span className="app-brand-logo demo" >
-                        <img src="/assets/img/nembo.jpg" alt="sneat-logo" width={"70px"} height={"70px"} aria-label='Sneat logo image' />
-                    </span>
-                    <span style={{ width: "70px" }}></span>
-                    <span className="app-brand-logo demo">
-                        <img src="/assets/img/mnhlogo.png" alt="sneat-logo" width={"70px"} height={"70px"} aria-label='Sneat logo image' />
-                    </span>
-                </Link>
+      <aside
+        id="layout-menu"
+        className="layout-menu menu-vertical menu bg-menu-theme"
+      >
+        <div className="app-brand demo">
+          <Link
+            aria-label="Navigate to sneat homepage"
+            to="/"
+            className="app-brand-link"
+          >
+            <span className="app-brand-logo demo">
+              <img
+                src="/assets/img/nembo.jpg"
+                alt="sneat-logo"
+                width={"70px"}
+                height={"70px"}
+                aria-label="Sneat logo image"
+              />
+            </span>
+            <span style={{ width: "70px" }}></span>
+            <span className="app-brand-logo demo">
+              <img
+                src="/assets/img/mnhlogo.png"
+                alt="sneat-logo"
+                width={"70px"}
+                height={"70px"}
+                aria-label="Sneat logo image"
+              />
+            </span>
+          </Link>
 
+          <a
+            href="#"
+            className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none"
+          >
+            <i className="bx bx-chevron-left bx-sm align-middle"></i>
+          </a>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+            }}
+            className="layout-menu-toggle menu-link text-large ms-auto"
+          >
+            <i className="bx bx-chevron-left bx-sm align-middle"></i>
+          </a>
+        </div>
+        <div style={{ alignContent: "center", textAlign: "center" }}>
+          <span className="app-brand-text demo menu-text fw-bold ms-2">
+            E-APPROVAL
+          </span>
+        </div>
 
-                <a href="#" className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
-                    <i className="bx bx-chevron-left bx-sm align-middle"></i>
-                </a>
-                <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-                    <i className="bx bx-chevron-left bx-sm align-middle"></i>
-                </a>
-            </div>
-            <div style={{ alignContent: "center", textAlign: "center" }}>
-                <span className="app-brand-text demo menu-text fw-bold ms-2">E-APPROVAL</span>
-            </div>
+        <div className="menu-inner-shadow"></div>
 
-            <div className="menu-inner-shadow"></div>
-
-
-            <ul className="menu-inner py-1">
-                {menuData.map((section, sectionIndex) => (
-                    <React.Fragment key={"header-" + sectionIndex}>
-                        {section.header && section.items
-                            .filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles)).length > 0 && (
-                            <li className="menu-header small text-uppercase">
-                                <span className="menu-header-text">{section.header} </span>
-                            </li>
-                        )}
-                        {section.items
-                            .filter(item => hasPermission(item.permission, item.role, userPermissions, userRoles))
-                            .map((item, intemIndex) => (
-                                <MenuItem key={item.id || intemIndex} {...item} />
-                            ))}
-                    </React.Fragment> 
+        <ul className="menu-inner py-1">
+          {menuData.map((section, sectionIndex) => (
+            <React.Fragment key={"header-" + sectionIndex}>
+              {section.header &&
+                section.items.filter((item) =>
+                  hasPermission(
+                    item.permission,
+                    item.role,
+                    userPermissions,
+                    userRoles
+                  )
+                ).length > 0 && (
+                  <li className="menu-header small text-uppercase">
+                    <span className="menu-header-text">{section.header} </span>
+                  </li>
+                )}
+              {section.items
+                .filter((item) =>
+                  hasPermission(
+                    item.permission,
+                    item.role,
+                    userPermissions,
+                    userRoles
+                  )
+                )
+                .map((item, intemIndex) => (
+                  <MenuItem key={item.id || intemIndex} {...item} />
                 ))}
-            </ul>
-        </aside>
+            </React.Fragment>
+          ))}
+        </ul>
+      </aside>
     );
 };
 

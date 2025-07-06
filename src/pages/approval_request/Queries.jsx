@@ -39,7 +39,7 @@ export const createUpdateApprovalRequest = async (formData) => {
     const response = await api.post(API_URL, formData, config);
     return response.data;
   } catch (error) {
-    console.error(`Error while changing Approval Request:`, error);
+    console.error(`Error while changing Approval Request: `, error);
     throw error;
   }
 };
@@ -50,6 +50,20 @@ export const deleteApprovalRequest = async (id) => {
     return response.data;
   } catch (error) {
     console.error("Error deleting Approval Request:", error);
+    throw error;
+  }
+};
+
+export const approveRejectRequest = async (formData) => {
+  try {
+    const response = await api.post(
+      `${API_BASE_URL}/api/approve-reject-request`,
+      formData,
+      config
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error while changing Approval Request: `, error);
     throw error;
   }
 };

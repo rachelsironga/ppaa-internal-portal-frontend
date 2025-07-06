@@ -1,190 +1,1193 @@
-import { useLocation } from "react-router-dom";
-import { AccountWrapper } from "../../components/wrapper/AccountWrapper";
-import { useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import Swal from "sweetalert2";
+import showToast from "../../helpers/ToastHelper";
+import ReactLoading from "react-loading";
+import "animate.css";
+import { AccountContext } from "../../utils/context";
+import { useParams } from "react-router-dom";
+import {
+  getPositions,
+  getUsers,
+  photoUpload,
+  signatureUpload,
+} from "./Queries";
+import usePagination from "../../hooks/usePagination";
+// import { UserModal } from "./Modal";
+import ReactPaginate from "react-paginate";
+import { formatDate } from "../../helpers/DateFormater";
+import AccordionContainer from "../../components/accordion/AccordionContainer";
+import Select from "react-select";
 import { useSelector } from "react-redux";
+import { Badge } from "reactstrap";
 
 export const AccountPage = () => {
-    const user = useSelector((state) => state.userReducer?.data);
-    useEffect(() => {
-        const deactivateAcc = document.querySelector('#formAccountDeactivation');
+  const pageSizeData = [5, 10, 20, 50, 70, 100];
 
-        // Update/reset user image of account page
-        let accountUserImage = document.getElementById('uploadedAvatar');
-        const fileInput = document.querySelector('.account-file-input');
-        const resetFileInput = document.querySelector('.account-image-reset');
+  // Place this above your component or inside the component before the return
+  const badgeColors = [
+    "bg-label-primary",
+    "bg-label-success",
+    "bg-label-danger",
+    "bg-label-warning",
+    "bg-label-info",
+    "bg-label-secondary",
+    "bg-label-dark",
+  ];
 
-        if (accountUserImage) {
-            const resetImage = accountUserImage.src;
+  const user = useSelector((state) => state.userReducer?.data);
 
-            fileInput.onchange = () => {
-                if (fileInput.files[0]) {
-                    accountUserImage.src = window.URL.createObjectURL(fileInput.files[0]);
-                }
-            };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-            resetFileInput.onclick = () => {
-                fileInput.value = '';
-                accountUserImage.src = resetImage;
-            };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [loadingPositions, setLoadingPositions] = useState(true);
+  const [errorPositions, setErrorPositions] = useState(null);
+  const [positions, setPositions] = useState(null);
+
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    currentPage,
+    totalCount,
+    pageSize,
+    updatePage,
+    updatePageSize,
+    updatePagination,
+    updateTotalCount,
+  } = usePagination(10, 1, true);
+
+  const handlePageClick = (event) => {
+    updatePage(event.selected + 1);
+  };
+
+  const uploadValues = {
+    uid: selectedUser?.guid,
+    based64_file: "",
+  };
+
+  const [isUploadVisible, setIsUploadVisible] = useState(false);
+  const [isUploadSignVisible, setIsUploadSignVisible] = useState(false);
+  const [isSignSelected, setIsSignSelected] = useState(false);
+
+  const [previewImage, setPreviewImage] = useState(
+    selectedUser?.photo && selectedUser.photo.trim() !== ""
+      ? selectedUser.photo
+      : "/assets/img/avatars/1.png"
+  );
+  const [previewSign, setPreviewSign] = useState(
+    selectedUser?.signature && selectedUser.signature.trim() !== ""
+      ? selectedUser.signature
+      : "/assets/img/avatars/signature.png"
+  );
+  const [isFileSelected, setIsFileSelected] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const [isSignUploading, setIsSignUploading] = useState(false);
+  const fileSignInputRef = useRef(null);
+
+  const handleFetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (user !== null) {
+        setSelectedUser(user);
+        setPreviewImage(
+          user.photo && user.photo.trim() !== ""
+            ? user.photo
+            : "/assets/img/avatars/1.png"
+        );
+        setPreviewSign(
+          user.signature && user.signature.trim() !== ""
+            ? user.signature
+            : "/assets/img/avatars/signature.png"
+        );
+        setIsFileSelected(false);
+        uploadValues.uid = user.guid;
+        fetchPositions(user.guid);
+      } else {
+        setError(true);
+        showToast("No User Found", "warning", "Fetch Completed");
+      }
+    } catch (err) {
+      setError(true);
+      showToast("Unable to Fetch User", "warning", "Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPositions = async (guid = "") => {
+    setLoadingPositions(true);
+    setErrorPositions(null);
+    try {
+      const result = await getPositions({
+        search: searchQuery,
+        user_uid: guid,
+        old_only: true,
+        pagination: {
+          page: 1,
+          page_size: 15,
+          paginated: true,
+        },
+      });
+      if (result.status === 200 || result.status === 8000) {
+        setPositions(result.data);
+
+        if (result.pagination) {
+          updatePagination(result.pagination);
+          updateTotalCount(result.pagination.total || 0);
+        } else {
+          updatePagination({});
         }
-    }, []);
-    return (
-        <AccountWrapper title="Account" >
-            <>
+      } else {
+        setErrorPositions(true);
+      }
+    } catch (err) {
+      setErrorPositions(true);
+    } finally {
+      setLoadingPositions(false);
+    }
+  };
 
-                <div className="card mb-4">
-                    <h5 className="card-header">Profile Details</h5>
-                    <div className="card-body">
-                        <div className="d-flex align-items-start align-items-sm-center gap-4">
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewImage(previewUrl);
+      setIsFileSelected(true); // Enable buttons when a file is selected
+    } else {
+      setIsFileSelected(false); // Disable buttons if no file is selected
+    }
+  };
+
+  const handleResetImage = () => {
+    setPreviewImage(
+      selectedUser?.photo && selectedUser.photo.trim() !== ""
+        ? selectedUser.photo
+        : "/assets/img/avatars/1.png"
+    );
+    setIsFileSelected(false); // Disable buttons after reset
+
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleChangeSign = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewSign(previewUrl);
+      setIsSignSelected(true); // Enable buttons when a file is selected
+    } else {
+      setIsSignSelected(false); // Disable buttons if no file is selected
+    }
+  };
+
+  const handleResetImageSign = () => {
+    setPreviewSign(
+      selectedUser?.signature && selectedUser.signature.trim() !== ""
+        ? selectedUser.signature
+        : "/assets/img/avatars/signature.png"
+    );
+    setIsSignSelected(false); // Disable buttons after reset
+    setIsUploadSignVisible(false); // Hide the upload UI
+    // Clear the file input for signature
+    if (fileSignInputRef.current) {
+      fileSignInputRef.current.value = "";
+    }
+  };
+
+  const toggleUploadVisibility = () => {
+    setIsUploadVisible((prev) => !prev);
+  };
+
+  const handleUpload = async (selectedUser = null) => {
+    if (!selectedUser) {
+      Swal.fire("Error!", "Sorry Reopen this user to Fix this error.", "error");
+      return;
+    }
+
+    if (!fileInputRef.current || !fileInputRef.current.files[0]) {
+      Swal.fire(
+        "Error!",
+        "No file selected. Please choose a file to upload.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const confirmation = await Swal.fire({
+        // title: "Save New Profile Photo",
+        text: "Your About to Save the new Profile Photo",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#696cff",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Confirm Save",
+        customClass: {
+          confirmButton: "btn btn-sm btn-outline-primary",
+          cancelButton: "btn btn-sm",
+          popup: "custom-swal-popup",
+        },
+      });
+
+      if (confirmation.isConfirmed) {
+        const file = fileInputRef.current.files[0];
+
+        // Convert file to Base64
+        const toBase64 = (file) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+          });
+
+        const base64File = await toBase64(file);
+
+        // Update uploadValues with Base64 string
+        uploadValues.based64_file = base64File;
+
+        console.log("Upload Values:", uploadValues);
+
+        const result = await photoUpload(uploadValues);
+        if (result.status === 200 || result.status === 8000) {
+          Swal.fire(
+            "Process Completed!",
+            "Successfully Uploaded the Photo.",
+            "success"
+          );
+          setSelectedUser(result.data);
+          setIsFileSelected(false);
+          toggleUploadVisibility();
+        } else {
+          console.error("Error deleting Directory:", result);
+          Swal.fire("Opps!", `${result.message}`, "error");
+        }
+      }
+    } catch (error) {
+      console.error("Error Uploading Photo:", error);
+      Swal.fire(
+        "Unsuccessful",
+        `Unable to Perform Upload. Please Try Again or Contact Support Team`,
+        "error"
+      );
+    }
+  };
+
+  // Signature upload handler
+  const handleUploadSign = async (selectedUserParam = null) => {
+    const userToUse = selectedUserParam || selectedUser;
+    if (!userToUse) {
+      Swal.fire(
+        "Error!",
+        "Sorry, reopen this user to fix this error.",
+        "error"
+      );
+      return;
+    }
+    if (!fileSignInputRef.current || !fileSignInputRef.current.files[0]) {
+      Swal.fire(
+        "Error!",
+        "No file selected. Please choose a file to upload.",
+        "error"
+      );
+      return;
+    }
+    try {
+      setIsSignUploading(true);
+      const confirmation = await Swal.fire({
+        text: "You are about to save the new Signature",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#696cff",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Confirm Save",
+        customClass: {
+          confirmButton: "btn btn-sm btn-outline-primary",
+          cancelButton: "btn btn-sm",
+          popup: "custom-swal-popup",
+        },
+      });
+
+      if (confirmation.isConfirmed) {
+        const file = fileSignInputRef.current.files[0];
+        const toBase64 = (file) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+          });
+        const base64File = await toBase64(file);
+
+        const uploadSignValues = {
+          uid: userToUse?.guid,
+          based64_file: base64File,
+        };
+
+        const result = await signatureUpload(uploadSignValues);
+        if (result.status === 200 || result.status === 8000) {
+          Swal.fire(
+            "Process Completed!",
+            "Successfully Uploaded the Signature.",
+            "success"
+          );
+          setSelectedUser((prev) => ({
+            ...prev,
+            signature: result.data.signature,
+          }));
+          setPreviewSign(result.data.signature);
+          setIsSignSelected(false);
+          setIsUploadSignVisible(false);
+          if (fileSignInputRef.current) fileSignInputRef.current.value = "";
+        } else {
+          Swal.fire("Oops!", `${result.message}`, "error");
+        }
+      }
+    } catch (error) {
+      Swal.fire(
+        "Unsuccessful",
+        `Unable to perform upload. Please try again or contact support team.`,
+        "error"
+      );
+    } finally {
+      setIsSignUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    const timeout = setTimeout(() => {
+      handleFetchData();
+    }, 1000);
+
+    setDebounceTimeout(timeout);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery, pageSize, currentPage]);
+
+  return (
+    <AccountContext.Provider
+      value={{
+        debounceTimeout,
+        setDebounceTimeout,
+        handleFetchData,
+        selectedUser,
+        setSelectedUser,
+        isModalOpen,
+        setIsModalOpen,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <h4 className="py-3 mb-4">
+          <span className="text-muted fw-light">Home / Profile</span>
+        </h4>
+        <div
+          className="py-3 mb-4"
+          style={{ marginRight: "25px" }}
+          id="dropdown-icon-demo"
+        >
+          <button
+            aria-label="Click me"
+            type="button"
+            className="btn btn-sm btn-outline-primary  dropdown-toggle"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i className="bx bx-menu me-1"></i> Options
+          </button>
+          <ul className="dropdown-menu">
+            <li>
+              <button
+                aria-label="dropdown action link"
+                className="dropdown-item d-flex align-items-center"
+                data-bs-toggle="modal"
+                aria-expanded="false"
+                type="button"
+                data-bs-target="#viewCreateUserPossitionModal"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <i className="bx bxs-user-detail mx-2"></i>Edit Profile
+              </button>
+            </li>
+            <li>
+              <button
+                aria-label="dropdown action link"
+                className="dropdown-item d-flex align-items-center"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i className="bx bx-transfer mx-2"></i>Change User Status
+              </button>
+            </li>
+            <li>
+              <hr className="dropdown-divider" />
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="content-wrapper">
+        <div className="animate__animated animate__fadeInUp animate__faster">
+          {loading ? (
+            <div className="d-flex justify-content-between align-items-center">
+              <div className="col-md-12 col-lg-12 col-sm-12 p-2">
+                <center>
+                  <ReactLoading
+                    type={"cylon"}
+                    color={"#696cff"}
+                    height={"30px"}
+                    width={"50px"}
+                  />
+                </center>
+                <center className="mt-1">
+                  <h6 className="text-muted">Fetching Users</h6>
+                </center>
+              </div>
+            </div>
+          ) : error || selectedUser === null ? (
+            // error || directory.length === 0
+            <div className="alert alert-info" role="alert">
+              <div className="alert-body text-center">
+                <p className="mb-0">
+                  Sorry! Unable to get Users Details Please Contanct System
+                  Administrator{" "}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-grow-1 container-p-y container-fluid">
+              <div className="row">
+                <div className="col-xl-4 col-lg-5 col-md-5  order-1 order-md-0">
+                  <div className="card mb-6 animate__animated animate__fadeInLeft animate__faster">
+                    <div className="card-body pt-12">
+                      <div className="user-avatar-section">
+                        <div className=" d-flex align-items-center flex-column">
+                          <div id="profileImgeDiv">
                             <img
-                                src="../assets/img/avatars/1.png"
-                                alt="user-avatar"
-                                className="d-block rounded"
-                                height="100"
-                                width="100"
-                                aria-label="Account image"
-                                id="uploadedAvatar"
+                              src={previewImage}
+                              alt="Avatar"
+                              id="uploadedAvatar"
+                              className="img-fluid rounded mb-4 shadow  account-image-reset cursor-pointer"
+                              height="120px"
+                              width="150px"
+                              onClick={toggleUploadVisibility} // Toggle input visibility on click
+                              style={{ height: "120px", width: "120px" }}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "/assets/img/avatars/1.png";
+                              }}
+                              ref={fileInputRef}
                             />
-                            <div className="button-wrapper">
-                                <label htmlFor="upload" className="btn btn-primary me-2 mb-4" tabIndex="0">
-                                    <span className="d-none d-sm-block">Upload new photo</span>
-                                    <i className="bx bx-upload d-block d-sm-none"></i>
-                                    <input
+                            <span
+                              className="ms-1 badge bg-label-primary cursor-pointer"
+                              onClick={toggleUploadVisibility}
+                              style={{
+                                position: "absolute",
+                                top: "120px",
+                                left: "36.5%",
+                              }}
+                            >
+                              change photo
+                            </span>
+                          </div>
+
+                          <div className="user-info text-center mb-4">
+                            <h5>
+                              {selectedUser.first_name}{" "}
+                              {selectedUser.middle_name}{" "}
+                              {selectedUser.last_name}
+                              <div
+                                className="button-wrapper"
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                {isUploadVisible && (
+                                  <div className="m-3" id="card-image-div">
+                                    <div className="input-group">
+                                      <label
+                                        htmlFor="inputGroupFile04"
+                                        className="btn btn-sm btn-outline-success"
+                                      >
+                                        Choose File
+                                      </label>
+                                      <input
                                         type="file"
-                                        id="upload"
-                                        className="account-file-input"
-                                        hidden
-                                        accept="image/png, image/jpeg"
-                                    />
-                                </label>
-                                <button aria-label='Click me' type="button" className="btn btn-outline-secondary account-image-reset mb-4">
-                                    <i className="bx bx-reset d-block d-sm-none"></i>
-                                    <span className="d-none d-sm-block">Reset</span>
-                                </button>
-                                <p className="text-muted mb-0">Allowed JPG, GIF or PNG. Max size of 800K</p>
-                            </div>
-                        </div>
-                    </div>
-                    <hr className="my-0" />
-                    <div className="card-body">
-                        <form id="formAccountSettings" method="POST" onSubmit="return false">
-                            <div className="row">
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="firstName" className="form-label">First Name</label>
-                                    <input
-                                        className="form-control"
-                                        type="text"
-                                        id="firstName"
-                                        name="firstName"
-                                        value={user.first_name}
-                                        autoFocus />
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="lastName" className="form-label">Last Name</label>
-                                    <input className="form-control" type="text" name="lastName" id="lastName" value={user.last_name} />
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="email" className="form-label">E-mail</label>
-                                    <input
-                                        className="form-control"
-                                        type="text"
-                                        id="email"
-                                        name="email"
-                                        value={user.email}
-                                        readOnly='readOnly'
-                                        disabled='disabled'
-                                        placeholder="john.doe@example.com" />
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="organization" className="form-label">Organization</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        id="organization"
-                                        name="organization"
-                                        value="ThemeSelection" />
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label className="form-label" htmlFor="phoneNumber">Phone Number</label>
-                                    <div className="input-group input-group-merge">
-                                        <span className="input-group-text">US (+255)</span>
-                                        <input
-                                            type="text"
-                                            id="phoneNumber"
-                                            name="phoneNumber"
-                                            className="form-control"
-                                            maxLength={9}
-                                            value={user.phone_number}
-                                            placeholder="7XX XXX XXXX" />
+                                        name="account-file-input"
+                                        className="form-control form-control-sm account-file-input visually-hidden"
+                                        id="inputGroupFile04"
+                                        aria-describedby="inputGroupFileAddon04"
+                                        onChange={handlePhotoChange}
+                                        accept=".jpg,.jpeg,.png,.gif,.ico"
+                                        aria-label="Upload"
+                                        ref={fileInputRef}
+                                      />
+                                      <button
+                                        aria-label="Click me"
+                                        className="btn btn-sm btn-outline-danger account-file-input"
+                                        type="button"
+                                        onClick={handleResetImage}
+                                        disabled={!isFileSelected}
+                                      >
+                                        <strong>X</strong>
+                                      </button>
+                                      <button
+                                        aria-label="Click me"
+                                        className="btn btn-sm btn-outline-primary account-file-input"
+                                        type="button"
+                                        onClick={handleUpload}
+                                        disabled={!isFileSelected}
+                                      >
+                                        SAVE
+                                      </button>
                                     </div>
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="address" className="form-label">Address</label>
-                                    <input type="text" className="form-control" id="address" name="address" placeholder="Address" />
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="state" className="form-label">State</label>
-                                    <input className="form-control" type="text" id="state" name="state" placeholder="CalihtmlFornia" />
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="zipCode" className="form-label">Zip Code</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        id="zipCode"
-                                        name="zipCode"
-                                        placeholder="231465"
-                                        maxLength="6" />
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label className="form-label" htmlFor="country">Country</label>
-                                    <select id="country" className="select2 form-select">
-                                        <option value="">Select</option>
-                                        <option value="Australia">Australia</option>
-                                        <option value="Bangladesh">Bangladesh</option>
-                                        <option value="Belarus">Belarus</option>
-                                        <option value="Brazil">Brazil</option>
-                                        <option value="Canada">Canada</option>
-                                        <option value="China">China</option>
-                                        <option value="France">France</option>
-                                        <option value="Germany">Germany</option>
-                                        <option value="India">India</option>
-                                        <option value="Indonesia">Indonesia</option>
-                                        <option value="Israel">Israel</option>
-                                        <option value="Italy">Italy</option>
-                                        <option value="Japan">Japan</option>
-                                        <option value="Korea">Korea, Republic of</option>
-                                        <option value="Mexico">Mexico</option>
-                                        <option value="Philippines">Philippines</option>
-                                        <option value="Russia">Russian Federation</option>
-                                        <option value="South Africa">South Africa</option>
-                                        <option value="Thailand">Thailand</option>
-                                        <option value="Turkey">Turkey</option>
-                                        <option value="Ukraine">Ukraine</option>
-                                        <option value="United Arab Emirates">United Arab Emirates</option>
-                                        <option value="United Kingdom">United Kingdom</option>
-                                        <option value="United States">United States</option>
-                                    </select>
-                                </div>
-                                <div className="mb-3 col-md-6">
-                                    <label htmlFor="language" className="form-label">Language</label>
-                                    <select id="language" className="select2 form-select">
-                                        <option value="">Select Language</option>
-                                        <option value="en">English</option>
-                                        <option value="fr">French</option>
-                                        <option value="de">German</option>
-                                        <option value="pt">Portuguese</option>
-                                    </select>
-                                </div>
+                                  </div>
+                                )}
+                              </div>
+                            </h5>
+
+                            <div
+                              style={{
+                                maxHeight: "80px",
+                                overflowY: "auto",
+                              }}
+                            >
+                              {user &&
+                                user.groups.map((group, index) => {
+                                  // Pick a random color for each badge
+                                  const colorClass =
+                                    badgeColors[
+                                      Math.floor(
+                                        Math.random() * badgeColors.length
+                                      )
+                                    ];
+                                  return (
+                                    <span
+                                      key={`groups_${index}`}
+                                      className={`badge ${colorClass} me-3`}
+                                    >
+                                      {group}
+                                    </span>
+                                  );
+                                })}
                             </div>
-                            <div className="mt-2">
-                                <button aria-label='Click me' type="submit" className="btn btn-primary me-2">Save changes</button>
-                                <button aria-label='Click me' type="reset" className="btn btn-outline-secondary">Cancel</button>
-                            </div>
-                        </form>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="info-container border-top mt-3 ">
+                        <div
+                          className="button-wrapper mt-1"
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: "10px",
+                            width: "100%",
+                          }}
+                        >
+                          <small className="text-muted">Account Status</small>
+                          {selectedUser.status === "NEW" ? (
+                            <span className="ms-1 badge bg-label-info">
+                              {selectedUser.status}
+                            </span>
+                          ) : selectedUser.status === "ACTIVE" ? (
+                            <span className="ms-1 badge bg-label-success">
+                              {selectedUser.status}
+                            </span>
+                          ) : selectedUser.status === "RETIRED" ? (
+                            <span className="ms-1 badge bg-label-secondary">
+                              {selectedUser.status}
+                            </span>
+                          ) : (
+                            <span className="ms-1 badge bg-label-danger">
+                              {selectedUser.status}
+                            </span>
+                          )}
+                        </div>
+                        <div className="demo-inline-spacing mt-3 ">
+                          <h5 className="text-muted">Personal Details</h5>
+                          <ul className="list-group">
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bx-user me-2"></i>
+                                <strong>Username </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span>{selectedUser.username}</span>
+                            </li>
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bx-box me-2"></i>
+                                <strong>PF Number </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span>{selectedUser.pf_number}</span>
+                            </li>
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bxs-detail me-2"></i>
+                                <strong>Check Number </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span>{selectedUser.check_number}</span>
+                            </li>
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bx-female-sign"></i>
+                                <i className="bx bx-male-sign me-2"></i>
+                                <strong>Gender </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span>{selectedUser.sex}</span>
+                            </li>
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bx-calendar me-2"></i>
+                                <strong>Age </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span>{selectedUser.check_number}</span>
+                            </li>
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bx-calendar me-2"></i>
+                                <strong>Date Of Birth </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span>{selectedUser.dob}</span>
+                            </li>
+                          </ul>
+                          <h6 className="text-muted">CONTACT</h6>
+                          <ul className="list-group overflow-auto">
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bx-envelope me-2"></i>
+                                <strong>Email </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span className="text-primary">
+                                {selectedUser.email}
+                              </span>
+                            </li>
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bxs-contact me-2"></i>
+                                <strong>Contact </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span className="text-primary">
+                                {selectedUser.phone_number}
+                              </span>
+                            </li>
+                            <li
+                              className="list-group-item d-flex align-items-center"
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              <span style={{ minWidth: "90px" }}>
+                                <i className="bx bx-phone me-2"></i>
+                                <strong>Alt Contact </strong>&nbsp;:&nbsp;
+                              </span>
+                              <span>{selectedUser.alternative_contact}</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
                     </div>
+                  </div>
                 </div>
-            </>
-        </AccountWrapper>
-    )
-}
+
+                <div className="col-xl-8 col-lg-7  col-md-7 order-0 order-md-0">
+                  <div className="nav-align-top mb-4">
+                    <ul className="nav nav-pills mb-3" role="tablist">
+                      <li className="nav-item">
+                        <button
+                          aria-label="Click me"
+                          type="button"
+                          className="nav-link active shadow-sm"
+                          role="tab"
+                          data-bs-toggle="tab"
+                          data-bs-target="#navs-pills-top-position"
+                          aria-controls="navs-pills-top-position"
+                          aria-selected="true"
+                        >
+                          <i className="icon-base bx bx-user icon-sm me-1_5"></i>
+                          Positions
+                        </button>
+                      </li>
+                      <li className="nav-item">
+                        <button
+                          aria-label="Click me"
+                          type="button"
+                          className="nav-link shadow-sm"
+                          role="tab"
+                          data-bs-toggle="tab"
+                          data-bs-target="#navs-pills-top-security"
+                          aria-controls="navs-pills-top-security"
+                          aria-selected="false"
+                        >
+                          <i className="icon-base bx bx-lock icon-sm me-1_5"></i>
+                          Security{""}
+                          {selectedUser.signature.trim() === "" && (
+                            <span className="fw-medium badge bg-label-danger ms-3 px-2">
+                              <i className="icon-base bx bx-info-circle icon-sm me-1_5"></i>
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                      <li className="nav-item">
+                        <button
+                          aria-label="Click me"
+                          type="button"
+                          className="nav-link shadow-sm"
+                          role="tab"
+                          data-bs-toggle="tab"
+                          data-bs-target="#navs-pills-top-documents"
+                          aria-controls="navs-pills-top-documents"
+                          aria-selected="false"
+                        >
+                          <i className="icon-base bx bx-file icon-sm me-1_5"></i>
+                          Documents
+                        </button>
+                      </li>
+                    </ul>
+                    <div className="tab-content">
+                      <div
+                        className="tab-pane fade show active"
+                        style={{ minHeight: "60vh" }}
+                        id="navs-pills-top-position"
+                        role="tabpanel"
+                      >
+                        <div className="card">
+                          <div className="card-body invoice-preview-header rounded shadow mb-4">
+                            {selectedUser.position ? (
+                              <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
+                                <div className="mb-xl-2 mb-6 text-heading">
+                                  <div className="d-flex svg-illustration mb-6 gap-2 align-items-center">
+                                    <h3 className=" demo fw-bold ms-50 lh-1">
+                                      Current Position
+                                    </h3>
+                                  </div>
+                                  <p className="mb-2">
+                                    {" "}
+                                    <strong>Position : </strong>{" "}
+                                    <span className="text-primary">
+                                      {selectedUser?.position?.level_name} - (
+                                      {selectedUser?.position?.level_code})
+                                    </span>
+                                  </p>
+                                  <p className="mb-2">
+                                    {" "}
+                                    <strong>Directory : </strong>{" "}
+                                    {selectedUser?.position?.directory_name} - (
+                                    {selectedUser?.position?.directory_code})
+                                  </p>
+                                  <p className="mb-2">
+                                    {" "}
+                                    <strong>Department/Unit : </strong>{" "}
+                                    {selectedUser?.position?.department_name} -
+                                    ({selectedUser?.position?.department_code})
+                                  </p>
+                                </div>
+                                <div>
+                                  <h5 className="mb-6">Date & References</h5>
+                                  <div className="mb-1 text-heading">
+                                    <strong>Assigned At : </strong>
+                                    <span className="fw-medium badge bg-label-success px-3">
+                                      {formatDate(
+                                        selectedUser?.position?.start_date
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="mb-1 text-heading">
+                                    <strong>Due At : </strong>
+                                    <span className="fw-medium badge bg-label-danger px-3">
+                                      {selectedUser?.position?.last_date
+                                        ? formatDate(
+                                            selectedUser?.position?.last_date
+                                          )
+                                        : " - "}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-center m-3">
+                                <h3 className=" demo text-center text-muted ms-50 lh-1">
+                                  Currently User Dont Have Assigned Position
+                                </h3>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="card-body animate__animated animate__fadeInUp animate__faster">
+                            <div>
+                              <div className="d-flex justify-content-between align-items-center card-header">
+                                <h5 className="mb-0">
+                                  All Previously Assined Position
+                                </h5>
+                              </div>
+                            </div>
+                            <div className="table-responsive mb-4">
+                              <table className="table table-hover table-align-middle mb-0 table-bordered">
+                                <thead style={{ backgroundColor: "#f1f1f1" }}>
+                                  <tr>
+                                    <th style={{ width: "50px" }}>S/N</th>
+                                    <th>Position</th>
+                                    <th>Location</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="table-border-bottom-0">
+                                  {loadingPositions ? (
+                                    <tr>
+                                      <td colSpan="100%">
+                                        <div className="col-md-12 col-lg-12 col-sm-12 p-2">
+                                          <center>
+                                            <ReactLoading
+                                              type={"cylon"}
+                                              color={"#696cff"}
+                                              height={"30px"}
+                                              width={"50px"}
+                                            />
+                                          </center>
+                                          <center className="mt-1">
+                                            <h6 className="text-muted">
+                                              Fetching Previously Positions
+                                            </h6>
+                                          </center>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ) : errorPositions ||
+                                    positions.length === 0 ? (
+                                    <tr>
+                                      <td colSpan="100%">
+                                        <div
+                                          className="alert alert-info"
+                                          role="alert"
+                                        >
+                                          <div className="alert-body text-center">
+                                            <p className="mb-0">
+                                              No Previous Position
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    positions.map((dataRows, index) => (
+                                      <tr key={dataRows.uid}>
+                                        <td>
+                                          {(currentPage - 1) * pageSize +
+                                            index +
+                                            1}
+                                        </td>
+                                        <td className="fw-medium">
+                                          {dataRows.level.name}
+                                        </td>
+                                        <td className="fw-medium">
+                                          {dataRows.department !== null ? (
+                                            <div className="d-flex flex-column text-start">
+                                              <span className="fw-bold text-muted">
+                                                {dataRows.directory.name}
+                                              </span>
+                                              <span className="small">
+                                                Department:{" "}
+                                                <span className="text-muted">
+                                                  {dataRows.department?.name}
+                                                </span>
+                                              </span>
+                                            </div>
+                                          ) : (
+                                            <span>
+                                              {dataRows.department.name}
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className="fw-medium">
+                                          {dataRows?.created_at}
+                                        </td>
+                                        <td className="fw-medium">
+                                          {dataRows.created_at !== null
+                                            ? dataRows.end_date
+                                            : dataRows.end_date}
+                                        </td>
+                                      </tr>
+                                    ))
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className="tab-pane fade"
+                        style={{ minHeight: "60vh" }}
+                        id="navs-pills-top-security"
+                        role="tabpanel"
+                      >
+                        <div className="row">
+                          <div className="col-md-6">
+                            <div className="card mb-6">
+                              <h5 className="card-header">
+                                Change User Password
+                              </h5>
+                              <div className="card-body">
+                                <form
+                                  id="formChangePassword"
+                                  className="fv-plugins-bootstrap5 fv-plugins-framework"
+                                >
+                                  <div
+                                    className="alert alert-info alert-sm alert-dismissible"
+                                    role="alert"
+                                  >
+                                    <h5 className="alert-heading mb-1">
+                                      Ensure that these requirements are met
+                                    </h5>
+                                    <span>
+                                      Minimum 8 characters long, uppercase &amp;
+                                      symbol
+                                    </span>
+                                  </div>
+                                  <div className="row gx-6">
+                                    <div className="mb-4 col-12 col-sm-6 form-password-toggle form-control-validation fv-plugins-icon-container">
+                                      <label className="form-label">
+                                        New Password
+                                      </label>
+                                      <div className="input-group input-group-merge has-validation">
+                                        <input
+                                          className="form-control"
+                                          type="password"
+                                          id="newPassword"
+                                          name="newPassword"
+                                          placeholder="············"
+                                        />
+                                        <span className="input-group-text cursor-pointer">
+                                          <i className="icon-base bx bx-hide"></i>
+                                        </span>
+                                      </div>
+                                      <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
+                                    </div>
+
+                                    <div className="mb-4 col-12 col-sm-6 form-password-toggle form-control-validation fv-plugins-icon-container">
+                                      <label className="form-label">
+                                        Confirm New Password
+                                      </label>
+                                      <div className="input-group input-group-merge has-validation">
+                                        <input
+                                          className="form-control"
+                                          type="password"
+                                          name="confirmPassword"
+                                          id="confirmPassword"
+                                          placeholder="············"
+                                        />
+                                        <span className="input-group-text cursor-pointer">
+                                          <i className="icon-base bx bx-hide"></i>
+                                        </span>
+                                      </div>
+                                      <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
+                                    </div>
+                                    <div className="text-center">
+                                      <button
+                                        type="submit"
+                                        className="btn btn-sm btn-primary me-2"
+                                      >
+                                        Change Password
+                                      </button>
+                                    </div>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="card mb-6">
+                              <div className="card-header">
+                                <h5 className="mb-3">User Signature</h5>
+                                <span className="card-subtitle mt-0">
+                                  The Signature used to verify documents in
+                                  Approval
+                                </span>
+                              </div>
+                              <div className="card-body pt-0">
+                                <div className="text-center mb-1">
+                                  <img
+                                    src={previewSign}
+                                    alt="Signature"
+                                    className="img-fluid rounded mb-4 shadow"
+                                    height="100px"
+                                    width="85%"
+                                    onClick={() =>
+                                      setIsUploadSignVisible((prev) => !prev)
+                                    }
+                                    style={{ height: "100px", width: "85%" }}
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src =
+                                        "/assets/img/avatars/signature.png";
+                                    }}
+                                  />
+                                  {!isUploadSignVisible && (
+                                    <button
+                                      type="button"
+                                      className="ms-1 btn btn-outline-primary btn-sm cursor-pointer"
+                                      onClick={() =>
+                                        setIsUploadSignVisible((prev) => !prev)
+                                      }
+                                    >
+                                      change Signature
+                                    </button>
+                                  )}
+                                </div>
+                                <div
+                                  className="button-wrapper"
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  {isUploadSignVisible && (
+                                    <div className="m-3" id="card-sign-div">
+                                      <div className="input-group">
+                                        <label
+                                          htmlFor="inputGroupFile05"
+                                          className="btn btn-sm btn-outline-success"
+                                        >
+                                          Choose File
+                                        </label>
+                                        <input
+                                          type="file"
+                                          name="account-sign-input"
+                                          className="form-control form-control-sm account-file-input-sign visually-hidden"
+                                          id="inputGroupFile05"
+                                          aria-describedby="inputGroupFileAddon05"
+                                          onChange={handleChangeSign}
+                                          accept=".jpg,.jpeg,.png,.svg,.ico"
+                                          aria-label="Upload"
+                                          ref={fileSignInputRef}
+                                        />
+                                        <button
+                                          aria-label="Click me"
+                                          className="btn btn-sm btn-outline-danger account-file-input-sign"
+                                          type="button"
+                                          onClick={handleResetImageSign}
+                                          disabled={!isSignSelected}
+                                        >
+                                          <strong>X</strong>
+                                        </button>
+                                        <button
+                                          aria-label="Click me"
+                                          className="btn btn-sm btn-outline-primary account-file-input-sign"
+                                          type="button"
+                                          onClick={() => handleUploadSign()}
+                                          disabled={
+                                            !isSignSelected || isSignUploading
+                                          }
+                                        >
+                                          {isSignUploading
+                                            ? "Saving..."
+                                            : "SAVE"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="mb-0 text-center">
+                                  Only User will be able to change this
+                                  signature. <br />
+                                  <span className="text-primary">
+                                    Note: This will be used to verify documents
+                                    in Approval
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className="tab-pane fade"
+                        style={{ minHeight: "60vh" }}
+                        id="navs-pills-top-documents"
+                        role="tabpanel"
+                      >
+                        <p>
+                          Oat cake chupa chups dragée donut toffee. Sweet cotton
+                          candy jelly beans macaroon gummies cupcake gummi bears
+                          cake chocolate.
+                        </p>
+                        <p className="mb-0">
+                          Cake chocolate bar cotton candy apple pie tootsie roll
+                          ice cream apple pie brownie cake. Sweet roll icing
+                          sesame snaps caramels danish toffee. Brownie biscuit
+                          dessert dessert. Pudding jelly jelly-o tart brownie
+                          jelly.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedUser(null)} /> */}
+    </AccountContext.Provider>
+  );
+};

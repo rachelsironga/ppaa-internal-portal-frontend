@@ -59,6 +59,7 @@ import { DirectoryOpenPage } from "../pages/directory/Open";
 import { UserListPage } from "../pages/users/View";
 import { UserOpenPage } from "../pages/users/Open";
 import { DateRangePage } from "../pages/date_range/View";
+import { ApprovalRequestOpenPage } from "../pages/approval_request/Open";
 
 
 
@@ -99,6 +100,7 @@ const AppRoutes = () => {
 
             {/* Requestes */}
             <Route path="/requests" element={<ApprovalRequestPage />} />
+            <Route path="/requests/:uid" element={<ApprovalRequestOpenPage />} />
 
 
             <Route path="/layout/without-menu" element={<WithoutMenuPage />} />

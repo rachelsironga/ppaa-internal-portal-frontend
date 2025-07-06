@@ -1,137 +1,324 @@
 [
   {
     "uid": "group-001",
-    "name": "Doctors Group",
+    "name": "Medical Officers",
     "modules": [
       {
-        "codename": "01e5-4c97-a50",
-        "name": "Doctor Consultation",
+        "codename": "18",
+        "name": "DOCTOR CONSULTATION",
         "Permissions": [
-          { "codename": "perm-001", "name": "Add Doctors" },
-          { "codename": "perm-002", "name": "Edit Doctor Profile" },
-          { "codename": "perm-003", "name": "Delete Doctor" },
-          { "codename": "perm-004", "name": "Approve Receipt" },
-          { "codename": "perm-005", "name": "View Patient Records" },
-          { "codename": "perm-006", "name": "Schedule Appointments" },
-          { "codename": "perm-007", "name": "Cancel Appointments" },
-          { "codename": "perm-008", "name": "View Doctor Schedule" },
-          { "codename": "perm-009", "name": "Assign Patients" },
-          { "codename": "perm-010", "name": "Discharge Patient" },
-          { "codename": "perm-011", "name": "View Consultation History" }
+          { "codename": "perm-18-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-18-CREATE", "name": "Create DOCTOR CONSULTATION" }
         ]
       },
       {
-        "codename": "b7c8d9e0-f1a2",
-        "name": "Laboratory Services",
+        "codename": "09",
+        "name": "MEDICAL RECORDS",
         "Permissions": [
-          { "codename": "perm-301", "name": "Add Lab Test" },
-          { "codename": "perm-305", "name": "View Test Results" }
+          { "codename": "perm-09-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-09-CREATE", "name": "Create MEDICAL RECORDS" }
         ]
       },
       {
-        "codename": "d9e8f7a6-b5c4",
-        "name": "Billing & Accounts",
+        "codename": "13",
+        "name": "IP BILLING",
         "Permissions": [
-          { "codename": "perm-501", "name": "Create Invoice" },
-          { "codename": "perm-502", "name": "Edit Invoice" },
-          { "codename": "perm-503", "name": "Delete Invoice" },
-          { "codename": "perm-504", "name": "Process Payment" },
-          { "codename": "perm-505", "name": "Refund Payment" },
-          { "codename": "perm-506", "name": "View Billing History" },
-          { "codename": "perm-507", "name": "Generate Financial Report" },
-          { "codename": "perm-508", "name": "Manage Insurance Claims" },
-          { "codename": "perm-509", "name": "Approve Discounts" },
-          { "codename": "perm-510", "name": "View Outstanding Balances" },
-          { "codename": "perm-511", "name": "Export Billing Data" }
-        ]
-      }
-    ]
-  },
-
-   {
-    "uid": "group-007",
-    "name": "Doctors Group 1",
-    "modules": [
-      {
-        "codename": "01e5-4c97-a50",
-        "name": "Doctor Consultation",
-        "Permissions": [
-          { "codename": "perm-001", "name": "Add Doctors" },
-          { "codename": "perm-002", "name": "Edit Doctor Profile" },
-          { "codename": "perm-003", "name": "Delete Doctor" },
-          { "codename": "perm-004", "name": "Approve Receipt" },
-          { "codename": "perm-005", "name": "View Patient Records" },
-          { "codename": "perm-006", "name": "Schedule Appointments" },
-          { "codename": "perm-007", "name": "Cancel Appointments" },
-          { "codename": "perm-008", "name": "View Doctor Schedule" },
-          { "codename": "perm-009", "name": "Assign Patients" },
-          { "codename": "perm-010", "name": "Discharge Patient" },
-          { "codename": "perm-011", "name": "View Consultation History" }
-        ]
-      },
-      {
-        "codename": "b7c8d9e0-f1a2",
-        "name": "Laboratory Services",
-        "Permissions": [
-          { "codename": "perm-301", "name": "Add Lab Test" },
-          { "codename": "perm-305", "name": "View Test Results" }
-        ]
-      },
-      {
-        "codename": "d9e8f7a6-b5c4",
-        "name": "Billing & Accounts",
-        "Permissions": [
-          { "codename": "perm-501", "name": "Create Invoice" },
-          { "codename": "perm-502", "name": "Edit Invoice" },
-          { "codename": "perm-503", "name": "Delete Invoice" },
-          { "codename": "perm-504", "name": "Process Payment" },
-          { "codename": "perm-505", "name": "Refund Payment" },
-          { "codename": "perm-506", "name": "View Billing History" },
-          { "codename": "perm-507", "name": "Generate Financial Report" },
-          { "codename": "perm-508", "name": "Manage Insurance Claims" },
-          { "codename": "perm-509", "name": "Approve Discounts" },
-          { "codename": "perm-510", "name": "View Outstanding Balances" },
-          { "codename": "perm-511", "name": "Export Billing Data" }
+          { "codename": "perm-13-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-13-CREATE", "name": "Create IP BILLING" }
         ]
       }
     ]
   },
   {
     "uid": "group-002",
-    "name": "Nurses Group",
+    "name": "Nursing Supervisors",
     "modules": [
       {
-        "codename": "1e1cdef0-abd8",
-        "name": "Nursing Station",
+        "codename": "17",
+        "name": "NURSING STATION",
         "Permissions": [
-          { "codename": "perm-101", "name": "Add Nurse" },
-          { "codename": "perm-105", "name": "Monitor Vitals" }
+          { "codename": "perm-17-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-17-CREATE", "name": "Create NURSING STATION" }
         ]
       },
       {
-        "codename": "c3d4e5f6-a7b8",
-        "name": "Patient Registration",
+        "codename": "08",
+        "name": "IP REGISTRATION",
         "Permissions": [
-          { "codename": "perm-401", "name": "Register Patient" },
-          { "codename": "perm-405", "name": "View Patient List" },
-          { "codename": "perm-402", "name": "Edit Patient Info" },
-          { "codename": "perm-405", "name": "View Patient List" },
-          { "codename": "perm-406", "name": "Print Patient Card" },
-          { "codename": "perm-407", "name": "Update Patient Status" }
+          { "codename": "perm-08-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-08-CREATE", "name": "Create IP REGISTRATION" }
+        ]
+      },
+      {
+        "codename": "07",
+        "name": "OP REGISTRATION",
+        "Permissions": [
+          { "codename": "perm-07-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-07-CREATE", "name": "Create OP REGISTRATION" }
         ]
       }
     ]
   },
   {
     "uid": "group-003",
-    "name": "Pharmacy Group",
+    "name": "Pharmacy Managers",
     "modules": [
       {
-        "codename": "a2b3c4d5-e6f7",
-        "name": "Pharmacy Management",
+        "codename": "04",
+        "name": "PHARMACY",
         "Permissions": [
-          { "codename": "perm-201", "name": "Add Medication" },
-          { "codename": "perm-205", "name": "View Inventory" }
+          { "codename": "perm-04-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-04-CREATE", "name": "Create PHARMACY" }
+        ]
+      },
+      {
+        "codename": "05",
+        "name": "GENERAL STORES",
+        "Permissions": [
+          { "codename": "perm-05-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-05-CREATE", "name": "Create GENERAL STORES" }
+        ]
+      },
+      {
+        "codename": "06",
+        "name": "PURCHASE",
+        "Permissions": [
+          { "codename": "perm-06-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-06-CREATE", "name": "Create PURCHASE" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-004",
+    "name": "Laboratory Technicians",
+    "modules": [
+      {
+        "codename": "11",
+        "name": "LABORATORY",
+        "Permissions": [
+          { "codename": "perm-11-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-11-CREATE", "name": "Create LABORATORY" }
+        ]
+      },
+      {
+        "codename": "14",
+        "name": "RADIOLOGY",
+        "Permissions": [
+          { "codename": "perm-14-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-14-CREATE", "name": "Create RADIOLOGY" }
+        ]
+      },
+      {
+        "codename": "36",
+        "name": "HIV",
+        "Permissions": [
+          { "codename": "perm-36-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-36-CREATE", "name": "Create HIV" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-005",
+    "name": "Administrative Staff",
+    "modules": [
+      {
+        "codename": "02",
+        "name": "BACK OFFICE",
+        "Permissions": [
+          { "codename": "perm-02-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-02-CREATE", "name": "Create BACK OFFICE" }
+        ]
+      },
+      {
+        "codename": "25",
+        "name": "PAYROLL",
+        "Permissions": [
+          { "codename": "perm-25-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-25-CREATE", "name": "Create PAYROLL" }
+        ]
+      },
+      {
+        "codename": "03",
+        "name": "FINANCIAL ACCOUNTING",
+        "Permissions": [
+          { "codename": "perm-03-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-03-CREATE", "name": "Create FINANCIAL ACCOUNTING" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-006",
+    "name": "Security Officers",
+    "modules": [
+      {
+        "codename": "01",
+        "name": "SECURITY",
+        "Permissions": [
+          { "codename": "perm-01-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-01-CREATE", "name": "Create SECURITY" }
+        ]
+      },
+      {
+        "codename": "20",
+        "name": "MAINTENANCE",
+        "Permissions": [
+          { "codename": "perm-20-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-20-CREATE", "name": "Create MAINTENANCE" }
+        ]
+      },
+      {
+        "codename": "39",
+        "name": "GENERAL MAINTENANCE",
+        "Permissions": [
+          { "codename": "perm-39-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-39-CREATE", "name": "Create GENERAL MAINTENANCE" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-007",
+    "name": "Cashiers",
+    "modules": [
+      {
+        "codename": "10",
+        "name": "CASHIER",
+        "Permissions": [
+          { "codename": "perm-10-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-10-CREATE", "name": "Create CASHIER" }
+        ]
+      },
+      {
+        "codename": "16",
+        "name": "IP CASHIER",
+        "Permissions": [
+          { "codename": "perm-16-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-16-CREATE", "name": "Create IP CASHIER" }
+        ]
+      },
+      {
+        "codename": "29",
+        "name": "BILLNOTE",
+        "Permissions": [
+          { "codename": "perm-29-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-29-CREATE", "name": "Create BILLNOTE" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-008",
+    "name": "Operation Theatre Team",
+    "modules": [
+      {
+        "codename": "12",
+        "name": "OPERATION THEATRE",
+        "Permissions": [
+          { "codename": "perm-12-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-12-CREATE", "name": "Create OPERATION THEATRE" }
+        ]
+      },
+      {
+        "codename": "19",
+        "name": "CSSD",
+        "Permissions": [
+          { "codename": "perm-19-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-19-CREATE", "name": "Create CSSD" }
+        ]
+      },
+      {
+        "codename": "23",
+        "name": "LINEN & LAUNDRY",
+        "Permissions": [
+          { "codename": "perm-23-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-23-CREATE", "name": "Create LINEN & LAUNDRY" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-009",
+    "name": "Records & Statistics",
+    "modules": [
+      {
+        "codename": "27",
+        "name": "MIS STATISTICS",
+        "Permissions": [
+          { "codename": "perm-27-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-27-CREATE", "name": "Create MIS STATISTICS" }
+        ]
+      },
+      {
+        "codename": "26",
+        "name": "FIXED ASSETS",
+        "Permissions": [
+          { "codename": "perm-26-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-26-CREATE", "name": "Create FIXED ASSETS" }
+        ]
+      },
+      {
+        "codename": "24",
+        "name": "ORDER MANAGEMENT",
+        "Permissions": [
+          { "codename": "perm-24-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-24-CREATE", "name": "Create ORDER MANAGEMENT" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-010",
+    "name": "Special Services",
+    "modules": [
+      {
+        "codename": "21",
+        "name": "BLOOD BANK",
+        "Permissions": [
+          { "codename": "perm-21-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-21-CREATE", "name": "Create BLOOD BANK" }
+        ]
+      },
+      {
+        "codename": "22",
+        "name": "MORTUARY",
+        "Permissions": [
+          { "codename": "perm-22-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-22-CREATE", "name": "Create MORTUARY" }
+        ]
+      },
+      {
+        "codename": "38",
+        "name": "PMTCT",
+        "Permissions": [
+          { "codename": "perm-38-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-38-CREATE", "name": "Create PMTCT" }
+        ]
+      },
+      {
+        "codename": "41",
+        "name": "CMS",
+        "Permissions": [
+          { "codename": "perm-41-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-41-CREATE", "name": "Create CMS" }
+        ]
+      },
+      {
+        "codename": "45",
+        "name": "WEB INDENT",
+        "Permissions": [
+          { "codename": "perm-45-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-45-CREATE", "name": "Create WEB INDENT" }
+        ]
+      },
+      {
+        "codename": "46",
+        "name": "Dietry",
+        "Permissions": [
+          { "codename": "perm-46-ALL", "name": "All Associated Permissions" },
+          { "codename": "perm-46-CREATE", "name": "Create Dietry" }
         ]
       }
     ]
