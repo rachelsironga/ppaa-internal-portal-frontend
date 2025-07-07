@@ -19,6 +19,7 @@ import AccordionContainer from "../../components/accordion/AccordionContainer";
 import Select from "react-select";
 import { useSelector } from "react-redux";
 import { Badge } from "reactstrap";
+import BreadCumb from "../../layouts/BreadCumb";
 
 export const AccountPage = () => {
   const pageSizeData = [5, 10, 20, 50, 70, 100];
@@ -384,15 +385,8 @@ export const AccountPage = () => {
         setIsModalOpen,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h4 className="py-3 mb-4">
-          <span className="text-muted fw-light">Home / Profile</span>
-        </h4>
-        <div
-          className="py-3 mb-4"
-          style={{ marginRight: "25px" }}
-          id="dropdown-icon-demo"
-        >
+      <BreadCumb pageList={["Profile"]}>
+        <>
           <button
             aria-label="Click me"
             type="button"
@@ -430,8 +424,8 @@ export const AccountPage = () => {
               <hr className="dropdown-divider" />
             </li>
           </ul>
-        </div>
-      </div>
+        </>
+      </BreadCumb>
 
       <div className="content-wrapper">
         <div className="animate__animated animate__fadeInUp animate__faster">

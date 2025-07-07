@@ -117,14 +117,17 @@ const Navbar = () => {
                 <div className="dropdown-divider"></div>
               </li>
               <li>
-                <a
+                <span
                   aria-label="go to profile"
-                  className="dropdown-item"
+                  className="dropdown-item cursor-pointer"
                   href="#"
+                  onClick={() => {
+                    navigate("/account/settings");
+                  }}
                 >
                   <i className="bx bx-user me-2"></i>
                   <span className="align-middle">My Profile</span>
-                </a>
+                </span>
               </li>
               <li>
                 <a

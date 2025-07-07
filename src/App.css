@@ -40,3 +40,96 @@
 .read-the-docs {
   color: #888;
 }
+
+.comment-popup {
+  animation-duration: 0.4s;
+  animation-timing-function: cubic-bezier(.4, 2, .6, 1);
+}
+
+
+.comment-date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.comment-date-text {
+  flex: 1;
+  text-align: left;
+  font-size: 0.98em;
+  color: #444;
+  white-space: nowrap;
+}
+
+.comment-date-divider {
+  width: 1px;
+  height: 22px;
+  background: #e0e0e0;
+  margin: 0 8px;
+  display: inline-block;
+}
+
+.comment-icon-hover {
+  display: flex;
+  align-items: center;
+  position: relative;
+  color: #696cff;
+  transition: color 0.2s;
+}
+
+.comment-icon-hover:hover {
+  color: #3a3aff;
+}
+
+.comment-label-hover {
+  display: none;
+  margin-left: 6px;
+  font-size: 0.95em;
+  color: #696cff;
+  background: #f3f3f3;
+  border-radius: 4px;
+  padding: 2px 8px;
+  position: absolute;
+  top: -28px;
+  right: 0;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.comment-icon-hover:hover .comment-label-hover {
+  display: block;
+}
+
+
+.timeline-with-icons {
+  border-left: 1px solid hsl(0, 0%, 90%);
+  position: relative;
+  list-style: none;
+}
+
+.timeline-with-icons .timeline-item {
+  position: relative;
+}
+
+.timeline-with-icons .timeline-item:after {
+  position: absolute;
+  display: block;
+  top: 0;
+}
+
+.timeline-with-icons .timeline-icon {
+  position: absolute;
+  left: -48px;
+  background-color: hsl(217, 88.2%, 90%);
+  color: hsl(217, 88.8%, 35.1%);
+  border-radius: 50%;
+  height: 31px;
+  width: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

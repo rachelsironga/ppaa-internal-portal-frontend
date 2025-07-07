@@ -324,7 +324,7 @@ export const UserOpenPage = () => {
           <h4 className="py-3 mb-4">
             <span className="text-muted fw-light">
               Home /{" "}
-              <a className="text-link" href="/users/list">
+              <a className="text-link" href="/users">
                 Users
               </a>{" "}
               /{" "}

@@ -68,144 +68,213 @@ const DateRangeModal = () => {
 
 
     return (
-        <>
-            <button
-                aria-label="Click me"
-                type="button"
-                className="btn btn-primary ms-auto btn-sm"
-                data-bs-toggle="modal"
-                data-bs-target="#viewCreateDataModal">
-                <i className="bx bx-edit-alt me-1"></i> Add Date Range
-            </button>
+      <>
+        <button
+          aria-label="Click me"
+          type="button"
+          className="btn btn-primary ms-auto btn-sm  animate__animated animate__fadeInRight animate__slow"
+          data-bs-toggle="modal"
+          data-bs-target="#viewCreateDataModal"
+        >
+          <i className="bx bx-edit-alt me-1"></i> Add Date Range
+        </button>
 
-            <div className="modal modal-slide-in" id="viewCreateDataModal" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-md" role="document">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title" id="exampleModalLabel3">{selectDateRange === null ? 'Create New' : 'View / Update'} Date Ranges </h5>
-                            <button
-                                type="button"
-                                className="btn-close"
-                                onClick={handleClose}
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+        <div
+          className="modal modal-slide-in"
+          id="viewCreateDataModal"
+          tabIndex="-1"
+          aria-hidden="true"
+        >
+          <div className="modal-dialog modal-md" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="exampleModalLabel3">
+                  {selectDateRange === null ? "Create New" : "View / Update"}{" "}
+                  Date Ranges{" "}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleClose}
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <Formik
+                enableReinitialize
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting, values, setFieldValue }) => (
+                  <Form>
+                    <div className="modal-body">
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label htmlFor="nameLarge" className="form-label">
+                            Name
+                          </label>
+                          <Field
+                            type="text"
+                            name="name"
+                            id="nameLarge"
+                            className="form-control"
+                            placeholder="Enter Name"
+                          />
+                          <ErrorMessage
+                            name="name"
+                            component="div"
+                            className="text-danger"
+                          />
                         </div>
-                        <Formik
-                            enableReinitialize
-                            initialValues={initialValues}
-                            validationSchema={validationSchema}
-                            onSubmit={handleSubmit}
+                      </div>
+                      <div className="row">
+                        <div className="col-sm-6 mb-3">
+                          <label htmlFor="typeLarge" className="form-label">
+                            Type
+                          </label>
+                          <Select
+                            className="select2-selection fetched-select2"
+                            onChange={(selectedOption) => {
+                              setFieldValue(
+                                "type",
+                                selectedOption ? selectedOption.value : ""
+                              );
+                            }}
+                            options={dateRangeData.map((item) => ({
+                              value: item.type,
+                              label: item.title,
+                            }))}
+                            styles={{
+                              menu: (base) => ({
+                                ...base,
+                                position: "absolute",
+                                zIndex: 9999,
+                              }),
+                            }}
+                            value={
+                              dateRangeData
+                                .map((item) => ({
+                                  value: item.type,
+                                  label: item.title,
+                                }))
+                                .find(
+                                  (option) => option.value === values.type
+                                ) || null
+                            }
+                            isClearable
+                          />
+                          <ErrorMessage
+                            name="type"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                        <div className="col-sm-6 mb-3">
+                          <label htmlFor="valueLarge" className="form-label">
+                            Counts
+                          </label>
+                          <Field
+                            type="text"
+                            name="value"
+                            id="valueLarge"
+                            className="form-control"
+                            placeholder="Enter Code"
+                          />
+                          <ErrorMessage
+                            name="value"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="col-sm-6 mb-3">
+                          <label htmlFor="orderLarge" className="form-label">
+                            Order
+                          </label>
+                          <Field
+                            type="number"
+                            min={"0"}
+                            max={"50"}
+                            name="order"
+                            id="orderLarge"
+                            style={{ with: "70px" }}
+                            className="form-control"
+                            placeholder="Enter Order"
+                          />
+                          <ErrorMessage
+                            name="order"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                        <div className="col mb-3">
+                          <label htmlFor="statusSwitch" className="form-label">
+                            Activate or Deactivate Option :{" "}
+                          </label>
+                          <div className="form-check form-switch">
+                            <Field
+                              type="checkbox"
+                              className="form-check-input"
+                              id="statusSwitch"
+                              checked={values.is_active}
+                              onChange={(e) =>
+                                setFieldValue("is_active", e.target.checked)
+                              }
+                            />
+                            <label
+                              className="form-check-label"
+                              htmlFor="statusSwitch"
+                            >
+                              {values.is_active ? "Active" : "Inactive"}
+                            </label>
+                          </div>
+                          <ErrorMessage
+                            name="is_active"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+
+                      {errors.non_field_errors &&
+                        errors.non_field_errors.length > 0 && (
+                          <div className="text-danger">
+                            {errors.non_field_errors.map((error, index) => (
+                              <div key={index}>{error}</div>
+                            ))}
+                          </div>
+                        )}
+
+                      <div className="modal-footer">
+                        <button
+                          aria-label="Click me"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={handleClose}
+                          className="btn btn-outline-secondary"
+                          data-bs-dismiss="modal"
                         >
-                            {({ isSubmitting, values, setFieldValue }) => (
-                                <Form>
-                                    <div className="modal-body">
-
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="nameLarge" className="form-label">Name</label>
-                                                <Field type="text" name="name" id="nameLarge" className="form-control" placeholder="Enter Name" />
-                                                <ErrorMessage name="name" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-                                        <div className="row">
-                                            <div className="col-sm-6 mb-3">
-                                                <label htmlFor="typeLarge" className="form-label">Type</label>
-                                                <Select
-                                                    className="select2-selection fetched-select2"
-                                                    onChange={(selectedOption) => {
-                                                        setFieldValue("type", selectedOption ? selectedOption.value : "");
-                                                    }}
-                                                    options={dateRangeData.map((item) => ({
-                                                        value: item.type,
-                                                        label: item.title,
-                                                    }))}
-                                                    styles={{
-                                                        menu: (base) => ({
-                                                            ...base,
-                                                            position: "absolute",
-                                                            zIndex: 9999,
-                                                        }),
-                                                    }}
-                                                    value={
-                                                        dateRangeData
-                                                            .map((item) => ({
-                                                                value: item.type,
-                                                                label: item.title,
-                                                            }))
-                                                            .find((option) => option.value === values.type) || null
-                                                    }
-                                                    isClearable
-                                                />
-                                                <ErrorMessage
-                                                    name="type"
-                                                    component="div"
-                                                    className="text-danger"
-                                                />
-                                            </div>
-                                            <div className="col-sm-6 mb-3">
-                                                <label htmlFor="valueLarge" className="form-label">Counts</label>
-                                                <Field type="text" name="value" id="valueLarge" className="form-control" placeholder="Enter Code" />
-                                                <ErrorMessage name="value" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-                                        <div className="row">
-                                            <div className="col-sm-6 mb-3">
-                                                <label htmlFor="orderLarge" className="form-label">Order</label>
-                                                <Field type="number" min={"0"} max={"50"} name="order" id="orderLarge" style={{ with: "70px" }} className="form-control" placeholder="Enter Order" />
-                                                <ErrorMessage name="order" component="div" className="text-danger" />
-                                            </div>
-                                            <div className="col mb-3">
-                                                <label htmlFor="statusSwitch" className="form-label">Activate or Deactivate Option : </label>
-                                                <div className="form-check form-switch">
-                                                    <Field
-                                                        type="checkbox"
-                                                        className="form-check-input"
-                                                        id="statusSwitch"
-                                                        checked={values.is_active}
-                                                        onChange={(e) => setFieldValue("is_active", e.target.checked)}
-                                                    />
-                                                    <label className="form-check-label" htmlFor="statusSwitch">
-                                                        {values.is_active ? "Active" : "Inactive"}
-                                                    </label>
-                                                </div>
-                                                <ErrorMessage name="is_active" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-
-                                        {errors.non_field_errors && errors.non_field_errors.length > 0 && (
-                                            <div className="text-danger">
-                                                {errors.non_field_errors.map((error, index) => (
-                                                    <div key={index}>{error}</div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        <div className="modal-footer">
-                                            <button
-                                                aria-label="Click me"
-                                                type="button"
-                                                disabled={isSubmitting}
-                                                onClick={handleClose}
-                                                className="btn btn-outline-secondary"
-                                                data-bs-dismiss="modal">
-                                                Close
-                                            </button>
-                                            <button
-                                                aria-label="Click me"
-                                                type="submit"
-                                                disabled={isSubmitting}
-                                                className="btn btn-primary">
-                                                {isSubmitting ? "Saving..." : "Save"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </Form>
-                            )}
-                        </Formik>
+                          Close
+                        </button>
+                        <button
+                          aria-label="Click me"
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="btn btn-primary"
+                        >
+                          {isSubmitting ? "Saving..." : "Save"}
+                        </button>
+                      </div>
                     </div>
-                </div>
+                  </Form>
+                )}
+              </Formik>
             </div>
-        </>
+          </div>
+        </div>
+      </>
     );
 };
 

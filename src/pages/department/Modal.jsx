@@ -108,158 +108,230 @@ const DepartmentModal = () => {
 
 
     return (
-        <>
-            <button
-                aria-label="Click me"
-                type="button"
-                className="btn btn-primary ms-auto btn-sm"
-                data-bs-toggle="modal"
-                data-bs-target="#viewCreateDataModal">
-                <i className="bx bx-edit-alt me-1"></i> Add Department
-            </button>
+      <>
+        <button
+          aria-label="Click me"
+          type="button"
+          className="btn btn-primary ms-auto btn-sm  animate__animated animate__fadeInRight animate__slow"
+          data-bs-toggle="modal"
+          data-bs-target="#viewCreateDataModal"
+        >
+          <i className="bx bx-edit-alt me-1"></i> Add Department
+        </button>
 
-            <div className="modal modal-slide-in" id="viewCreateDataModal" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-lg" role="document">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title" id="exampleModalLabel3">{selectedDepartment === null ? 'Create New' : 'View / Update'} Departments </h5>
-                            <button
-                                type="button"
-                                className="btn-close"
-                                onClick={handleClose}
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+        <div
+          className="modal modal-slide-in"
+          id="viewCreateDataModal"
+          tabIndex="-1"
+          aria-hidden="true"
+        >
+          <div className="modal-dialog modal-lg" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="exampleModalLabel3">
+                  {selectedDepartment === null ? "Create New" : "View / Update"}{" "}
+                  Departments{" "}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleClose}
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <Formik
+                enableReinitialize
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting, values, setFieldValue }) => (
+                  <Form>
+                    <div className="modal-body">
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label htmlFor="levelUid" className="form-label">
+                            Directory
+                          </label>
+                          <Select
+                            isLoading={loadingDirectories}
+                            className="select2-selection fetched-select2"
+                            onChange={(e) => {
+                              console.log("Selected Directory:", e);
+                              if (e === null || e.value == "") {
+                                setFieldValue("directory_uid", "");
+                              } else {
+                                setFieldValue("directory_uid", e.value);
+                              }
+                            }}
+                            onInputChange={(e) => {
+                              handleFetchDirectories(e);
+                            }}
+                            options={directories?.map((item) => ({
+                              value: item.uid,
+                              label: `${item.name} (${item.code})`,
+                            }))}
+                            styles={{
+                              menu: (base) => ({
+                                ...base,
+                                position: "absolute",
+                                zIndex: 9999,
+                              }),
+                            }}
+                            value={
+                              directories
+                                ?.map((item) => ({
+                                  value: item.uid,
+                                  label: `${item.name} (${item.code})`,
+                                }))
+                                .find(
+                                  (option) =>
+                                    option.value === values.directory_uid
+                                ) || null
+                            }
+                            isClearable
+                          />
+                          <Field
+                            type="hidden"
+                            name="directory_uid"
+                            id="directoryUidLarge"
+                          />
+                          <ErrorMessage
+                            name="directory_uid"
+                            component="div"
+                            className="text-danger"
+                          />
                         </div>
-                        <Formik
-                            enableReinitialize
-                            initialValues={initialValues}
-                            validationSchema={validationSchema}
-                            onSubmit={handleSubmit}
+                      </div>
+
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label htmlFor="nameLarge" className="form-label">
+                            Name
+                          </label>
+                          <Field
+                            type="text"
+                            name="name"
+                            id="nameLarge"
+                            className="form-control"
+                            placeholder="Enter Name"
+                          />
+                          <ErrorMessage
+                            name="name"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                        <div className="col mb-3">
+                          <label htmlFor="codeLarge" className="form-label">
+                            Code
+                          </label>
+                          <Field
+                            type="text"
+                            name="code"
+                            id="codeLarge"
+                            className="form-control"
+                            placeholder="Enter Code"
+                          />
+                          <ErrorMessage
+                            name="code"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label
+                            htmlFor="descriptionLarge"
+                            className="form-label"
+                          >
+                            Description
+                          </label>
+                          <Field
+                            as="textarea"
+                            name="description"
+                            id="descriptionLarge"
+                            className="form-control"
+                            rows="3"
+                            placeholder="Enter Description"
+                          />
+                          <ErrorMessage
+                            name="description"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label htmlFor="statusSwitch" className="form-label">
+                            Set The Department as
+                          </label>
+                          <div className="form-check form-switch">
+                            <Field
+                              type="checkbox"
+                              className="form-check-input"
+                              id="statusSwitch"
+                              checked={values.is_active}
+                              onChange={(e) =>
+                                setFieldValue("is_active", e.target.checked)
+                              }
+                            />
+                            <label
+                              className="form-check-label"
+                              htmlFor="statusSwitch"
+                            >
+                              {values.is_active ? "Active" : "Inactive"}
+                            </label>
+                          </div>
+                          <ErrorMessage
+                            name="is_active"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+
+                      {errors.non_field_errors &&
+                        errors.non_field_errors.length > 0 && (
+                          <div className="text-danger">
+                            {errors.non_field_errors.map((error, index) => (
+                              <div key={index}>{error}</div>
+                            ))}
+                          </div>
+                        )}
+
+                      <div className="modal-footer">
+                        <button
+                          aria-label="Click me"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={handleClose}
+                          className="btn btn-outline-secondary"
+                          data-bs-dismiss="modal"
                         >
-                            {({ isSubmitting, values, setFieldValue }) => (
-                                <Form>
-                                    <div className="modal-body">
-
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="levelUid" className="form-label">
-                                                    Directory
-                                                </label>
-                                                <Select
-                                                    isLoading={loadingDirectories}
-                                                    className="select2-selection fetched-select2"
-                                                    onChange={(e) => {
-                                                        console.log("Selected Directory:", e);
-                                                        if (e === null || e.value == "") {
-                                                            setFieldValue("directory_uid", "");
-                                                        } else {
-                                                            setFieldValue("directory_uid", e.value);
-                                                        }
-                                                    }}
-                                                    onInputChange={(e) => {
-                                                        handleFetchDirectories(e);
-                                                    }}
-                                                    options={directories?.map((item) => ({
-                                                        value: item.uid,
-                                                        label: `${item.name} (${item.code})`,
-                                                    }))}
-                                                    styles={{
-                                                        menu: (base) => ({
-                                                            ...base,
-                                                            position: "absolute",
-                                                            zIndex: 9999,
-                                                        }),
-                                                    }}
-                                                    value={
-                                                        directories
-                                                            ?.map((item) => ({
-                                                                value: item.uid,
-                                                                label: `${item.name} (${item.code})`,
-                                                            }))
-                                                            .find(
-                                                                (option) => option.value === values.directory_uid
-                                                            ) || null
-                                                    }
-                                                    isClearable
-                                                />
-                                                <Field type="hidden" name="directory_uid" id="directoryUidLarge" />
-                                                <ErrorMessage name="directory_uid" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="nameLarge" className="form-label">Name</label>
-                                                <Field type="text" name="name" id="nameLarge" className="form-control" placeholder="Enter Name" />
-                                                <ErrorMessage name="name" component="div" className="text-danger" />
-                                            </div>
-                                            <div className="col mb-3">
-                                                <label htmlFor="codeLarge" className="form-label">Code</label>
-                                                <Field type="text" name="code" id="codeLarge" className="form-control" placeholder="Enter Code" />
-                                                <ErrorMessage name="code" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="descriptionLarge" className="form-label">Description</label>
-                                                <Field as="textarea" name="description" id="descriptionLarge" className="form-control" rows="3" placeholder="Enter Description" />
-                                                <ErrorMessage name="description" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="statusSwitch" className="form-label">Set The Department as</label>
-                                                <div className="form-check form-switch">
-                                                    <Field
-                                                        type="checkbox"
-                                                        className="form-check-input"
-                                                        id="statusSwitch"
-                                                        checked={values.is_active}
-                                                        onChange={(e) => setFieldValue("is_active", e.target.checked)}
-                                                    />
-                                                    <label className="form-check-label" htmlFor="statusSwitch">
-                                                        {values.is_active ? "Active" : "Inactive"}
-                                                    </label>
-                                                </div>
-                                                <ErrorMessage name="is_active" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-
-                                        {errors.non_field_errors && errors.non_field_errors.length > 0 && (
-                                            <div className="text-danger">
-                                                {errors.non_field_errors.map((error, index) => (
-                                                    <div key={index}>{error}</div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        <div className="modal-footer">
-                                            <button
-                                                aria-label="Click me"
-                                                type="button"
-                                                disabled={isSubmitting}
-                                                onClick={handleClose}
-                                                className="btn btn-outline-secondary"
-                                                data-bs-dismiss="modal">
-                                                Close
-                                            </button>
-                                            <button
-                                                aria-label="Click me"
-                                                type="submit"
-                                                disabled={isSubmitting}
-                                                className="btn btn-primary">
-                                                {isSubmitting ? "Saving..." : "Save"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </Form>
-                            )}
-                        </Formik>
+                          Close
+                        </button>
+                        <button
+                          aria-label="Click me"
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="btn btn-primary"
+                        >
+                          {isSubmitting ? "Saving..." : "Save"}
+                        </button>
+                      </div>
                     </div>
-                </div>
+                  </Form>
+                )}
+              </Formik>
             </div>
-        </>
+          </div>
+        </div>
+      </>
     );
 };
 

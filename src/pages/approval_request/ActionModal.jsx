@@ -44,7 +44,7 @@ const ActionModal = ({ loadOnlyModal = false }) => {
           values.action === "FORWARD"
             ? "Allow The Request to go Forward "
             : "Denying & Send Back The Request"
-        }. Please Pless confirm to proceed.`,
+        }. Please Click confirm to proceed.`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#696cff", // info color
@@ -79,7 +79,7 @@ const ActionModal = ({ loadOnlyModal = false }) => {
         if (result.status === 200 || result.status === 8000) {
           Swal.fire(
             "Process Completed!",
-            "The approval Action has been deleted.",
+            "Process Saved Successful",
             "success"
           );
           handleClose();
@@ -164,9 +164,9 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                           </p>
                           <p className="mb-0">
                             Please review the action details below.
-                            <strong> Push Forward</strong> to approve and send
-                            to the next level.
-                            <strong> Reject</strong> to return the request to
+                            <strong> Approve / Forward</strong> to approve and
+                            send to the next level.
+                            <strong> Send Back</strong> to return the request to
                             the sender. A Comment is required for Reject
                             actions.
                           </p>

@@ -9,6 +9,7 @@ import { getApprovalRequests, deleteApprovalRequest } from "./Queries";
 import { ApprovalRequestsContext } from "../../utils/context";
 import ApprovalRequestModal from "./Modal";
 import { useNavigate } from "react-router-dom";
+import BreadCumb from "../../layouts/BreadCumb";
 
 export const ApprovalRequestPage = () => {
   const pageSizeData = [5, 10, 20, 50, 70, 100];
@@ -35,7 +36,7 @@ export const ApprovalRequestPage = () => {
   };
 
   const handleNavigate = (uid) => {
-    navigate(`/requests/${uid}`);
+    navigate(`/requests/open/${uid}`);
   };
 
   const handleFetchData = async () => {
@@ -145,9 +146,8 @@ export const ApprovalRequestPage = () => {
         setIsModalOpen,
       }}
     >
-      <h4 className="py-3 mb-4">
-        <span className="text-muted fw-light">Approval Requests /</span> list
-      </h4>
+      <BreadCumb pageList={["Settings", "Approval Requests"]} />
+
       <div className="card">
         <div className="d-flex justify-content-between align-items-center card-header">
           <h5 className="mb-0">List Of All Request</h5>
@@ -184,7 +184,7 @@ export const ApprovalRequestPage = () => {
                 ))}
               </select>
             </div>
-            <div className=" col-md-4 col-sm-6">
+            <div className=" col-md-4 col-sm-6  animate__animated animate__fadeInRight animate__fast">
               <form className="d-flex">
                 <div className="input-group">
                   <span className="input-group-text">
@@ -275,7 +275,9 @@ export const ApprovalRequestPage = () => {
                         </td>
                         <td className="fw-medium">{dataRows.requester_name}</td>
                         <td className="fw-medium">{dataRows.title}</td>
-                        <td className="fw-medium">{dataRows.type}</td>
+                        <td className="fw-medium">
+                          {`${dataRows.type}`.replaceAll("_", " ")}
+                        </td>
                         <td className="fw-medium">
                           {dataRows.department.code}
                         </td>

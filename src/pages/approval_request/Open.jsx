@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
 import usePagination from "../../hooks/usePagination";
 import ReactPaginate from "react-paginate";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "animate.css";
 import { getApprovalRequests, deleteApprovalRequest } from "./Queries";
 import { ApprovalRequestsContext } from "../../utils/context";
@@ -13,6 +13,8 @@ import AccordionContainer from "../../components/accordion/AccordionContainer";
 import ActionModal from "./ActionModal";
 import TextSignature from "../../components/common/TextSignature";
 import ApprovalRequestOpenShimmer from "../../components/loaders/ApprovalRequestOpenShimmer";
+import { getBadgeClass } from "../../helpers/BadgeClassHelper";
+import BreadCumb from "../../layouts/BreadCumb";
 
 const growButtonStyle = `
 @keyframes pulse-grow {
@@ -34,6 +36,18 @@ const growButtonStyle = `
   transition: transform 0.3s cubic-bezier(.4,2,.6,1), box-shadow 0.3s;
   z-index: 2;
   position: relative;
+}
+
+@keyframes pulseAttention {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 `;
 
@@ -60,6 +74,9 @@ export const ApprovalRequestOpenPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [selectedModuleLevel, setSelectedModuleLevel] = useState(null);
+  const [openCommentIndex, setOpenCommentIndex] = useState(null);
+  const commentBoxRef = useRef(null);
+  const navigate = useNavigate();
 
   const {
     currentPage,
@@ -81,6 +98,10 @@ export const ApprovalRequestOpenPage = () => {
         ? signature
         : "/assets/img/avatars/signature.png";
     return sign;
+  };
+
+  const navigateToPrev = () => {
+    navigate(-1);
   };
 
   const handleFetchData = async () => {
@@ -183,9 +204,7 @@ export const ApprovalRequestOpenPage = () => {
         setSelectedModuleLevel,
       }}
     >
-      <h4 className="py-3 mb-4 animate__animated animate__fadeInDown animate__faster">
-        <span className="text-muted fw-light">Approval Requests /</span> view
-      </h4>
+      <BreadCumb pageList={["Approval Requests", "view"]} />
 
       {loading ? (
         <div className="row">
@@ -203,15 +222,38 @@ export const ApprovalRequestOpenPage = () => {
                   Use Right Options Button to perform different Actions
                 </p>
               </div>
+              <div
+                className={`badge d-flex align-items-center gap-2 ${getBadgeClass(
+                  selectedRequest?.status
+                )} pe-3 text-start  animate__animated animate__fadeInUp animate__slower`}
+                style={{
+                  padding: "0.75rem 1rem",
+                  borderRadius: "0.5rem",
+                  minWidth: "180px",
+                  animation: "pulseAttention 3s ease",
+                  animationIterationCount: "infinite",
+                }}
+              >
+                <i className="bx bx-purchase-tag"></i>
+                <div>
+                  <span
+                    className="d-block mb-2 text-muted fw-semibold text-lowercase"
+                    style={{ fontSize: "0.9rem" }}
+                  >
+                    Request Status
+                  </span>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      textTransform: "capitalize",
+                      paddingLeft: "0.5rem",
+                    }}
+                  >
+                    {selectedRequest?.status || "Unknown"}
+                  </div>
+                </div>
+              </div>
               <div className="d-flex align-items-center">
-                <button
-                  aria-label="Click me"
-                  type="button"
-                  className="btn btn-sm btn-outline-info bg-primary text-white  dropdown-toggle me-3"
-                >
-                  <i className="bx bxs-file-pdf"></i> Print preview
-                </button>
-
                 <div className="py-3 ml-4" id="dropdown-icon-demo">
                   <button
                     aria-label="Click me"
@@ -256,6 +298,16 @@ export const ApprovalRequestOpenPage = () => {
                     </li>
                     <li>
                       <hr className="dropdown-divider" />
+                    </li>
+                    <li>
+                      <button
+                        aria-label="dropdown action link"
+                        className="dropdown-item d-flex align-items-center"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        <i className="bx bxs-file-pdf  mx-2"></i> Print Request
+                      </button>
                     </li>
                   </ul>
                 </div>
@@ -325,7 +377,7 @@ export const ApprovalRequestOpenPage = () => {
                         <span className=" me-3 ">Request Type:</span>
                         <strong className="bold">
                           {" "}
-                          {selectedRequest?.type}
+                          {`${selectedRequest?.type}`.replaceAll("_", " ")}
                         </strong>
                       </p>
                       <p className="text-nowrap mb-2">
@@ -504,8 +556,11 @@ export const ApprovalRequestOpenPage = () => {
                           </span>
                         </div>
                         <div className="d-flex flex-column">
-                          {level.step &&
-                          selectedRequest?.current_state !== index ? (
+                          {(level.step &&
+                            selectedRequest?.current_state !== index) ||
+                          (level.step &&
+                            (selectedRequest.status === "REJECTED" ||
+                              selectedRequest.status === "APPROVED")) ? (
                             <>
                               <h6
                                 className="mb-1"
@@ -522,8 +577,8 @@ export const ApprovalRequestOpenPage = () => {
                                   ? `${level.action.name} By `
                                   : `Rejected By `}
                                 &nbsp;
-                                {level.step && level.step.approved_by.position
-                                  ? `${level.step.approved_by.position.level_name}`
+                                {level.step && level.level
+                                  ? `${level.level.name}`
                                   : "Approver N/S"}
                               </h6>
                               <strong>
@@ -544,15 +599,46 @@ export const ApprovalRequestOpenPage = () => {
                                   : ""}
                               </strong>
                               {level.step && level.step.created_at && (
-                                <small>
-                                  {new Date(
-                                    level.step.created_at
-                                  ).toLocaleDateString("en-GB", {
-                                    day: "2-digit",
-                                    month: "long",
-                                    year: "numeric",
-                                  })}
-                                </small>
+                                <div className="d-flex align-items-center justify-content-between comment-date-row my-1">
+                                  {/* Left: Date */}
+                                  <span className="comment-date-text">
+                                    {new Date(
+                                      level.step.created_at
+                                    ).toLocaleDateString("en-GB", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}
+                                  </span>
+                                  {/* Center: Vertical Line */}
+                                  <div className="vr py-0 text-"></div>
+                                  {/* Right: Comment Icon with hover label */}
+                                  <span
+                                    className="comment-icon-hover text-info"
+                                    title="View Comment"
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() => {
+                                      setOpenCommentIndex(
+                                        openCommentIndex === index
+                                          ? null
+                                          : index
+                                      );
+                                      setTimeout(() => {
+                                        if (commentBoxRef.current) {
+                                          commentBoxRef.current.scrollIntoView({
+                                            behavior: "smooth",
+                                            block: "center",
+                                          });
+                                        }
+                                      }, 100); // slight delay to ensure render
+                                    }}
+                                  >
+                                    <i className="bx bx-comment"></i>
+                                    <span className="comment-label-hover">
+                                      Comment
+                                    </span>
+                                  </span>
+                                </div>
                               )}
 
                               {level.step &&
@@ -586,50 +672,104 @@ export const ApprovalRequestOpenPage = () => {
                               </small>
                             </>
                           )}
-                          {selectedRequest?.current_state === index && (
-                            <div className="d-flex justify-content-end mt-2">
-                              <button
-                                aria-label="Click me"
-                                type="button"
-                                className="btn btn-sm btn-outline-info me-2 attention-grow"
-                                data-bs-toggle="modal"
-                                data-bs-target="#approvalActionSetModal"
-                                onClick={() => {
-                                  setSelectedModuleLevel({
-                                    module_level_uid: level.uid,
-                                    action: {
-                                      name: level.action.name,
-                                      code: level.action.code,
-                                    },
-                                    level: {
-                                      name: level.level.name,
-                                      code: level.level.code,
-                                    },
-                                    department: {
-                                      name: level.department.name,
-                                      code: level.department.code,
-                                    },
-                                    is_acting:
-                                      level.step?.is_acting ||
-                                      level.step?.position?.department_uid !==
-                                        level.department.uid ||
-                                      level.level?.uid !==
-                                        level.step?.position?.level_uid
-                                        ? true
-                                        : false,
-                                  });
-                                }}
-                              >
-                                <i className="bx bx-grid-small"></i> Take your
-                                Action
-                              </button>
-                            </div>
-                          )}
+                          {selectedRequest?.current_state === index &&
+                            !(
+                              selectedRequest.status === "REJECTED" ||
+                              selectedRequest.status === "APPROVED"
+                            ) && (
+                              <div className="d-flex justify-content-end mt-2">
+                                <button
+                                  aria-label="Click me"
+                                  type="button"
+                                  className="btn btn-sm btn-outline-info me-2 attention-grow"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#approvalActionSetModal"
+                                  onClick={() => {
+                                    setSelectedModuleLevel({
+                                      module_level_uid: level.uid,
+                                      action: {
+                                        name: level.action.name,
+                                        code: level.action.code,
+                                      },
+                                      level: {
+                                        name: level.level.name,
+                                        code: level.level.code,
+                                      },
+                                      department: {
+                                        name: level.department.name,
+                                        code: level.department.code,
+                                      },
+                                      is_acting:
+                                        level.step?.is_acting ||
+                                        level.step?.position?.department_uid !==
+                                          level.department.uid ||
+                                        level.level?.uid !==
+                                          level.step?.position?.level_uid
+                                          ? true
+                                          : false,
+                                    });
+                                  }}
+                                >
+                                  <i className="bx bx-grid-small"></i> Take your
+                                  Action
+                                </button>
+                              </div>
+                            )}
                         </div>
                       </div>
                     )
                   )}
                 </div>
+                {openCommentIndex !== null &&
+                  selectedRequest?.module?.approval_module_levels[
+                    openCommentIndex
+                  ]?.step && (
+                    <div
+                      ref={commentBoxRef}
+                      className="comment-popup animate__animated animate__fadeIn"
+                      style={{
+                        marginTop: "24px",
+                        marginBottom: "16px",
+                        minWidth: "400px",
+                        maxWidth: "80%",
+                        background: "#fff",
+                        color: "#222",
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                        padding: "16px",
+                        zIndex: 10,
+                        overflowY: "auto",
+                        width: "100%",
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bx bx-comment text-info me-2"></i>
+                        <span> Comment From</span>
+                        <strong>
+                          &nbsp;
+                          {selectedRequest.module.approval_module_levels[
+                            openCommentIndex
+                          ]?.level?.name || "Approver"}
+                        </strong>
+                        <button
+                          type="button"
+                          className="btn-close ms-auto"
+                          style={{ fontSize: "0.9em" }}
+                          aria-label="Close"
+                          onClick={() => setOpenCommentIndex(null)}
+                        ></button>
+                      </div>
+                      <div
+                        style={{ fontSize: "0.98em", whiteSpace: "pre-line" }}
+                      >
+                        {selectedRequest.module.approval_module_levels[
+                          openCommentIndex
+                        ].step.comment || "No comment provided."}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           </div>

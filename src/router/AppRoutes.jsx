@@ -77,82 +77,110 @@ function RegisterAndLogout() {
 
 const AppRoutes = () => {
     return (
-        <Routes>
-            <Route path="/auth/login" element={<LoginPage />} />
-            <Route path="/auth/register" element={<RegisterAndLogout />} />
-            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="*" element={<ErrorPage />} />
+      <Routes>
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/auth/register" element={<RegisterAndLogout />} />
+        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="*" element={<ErrorPage />} />
 
-            {/* settings */}
-            <Route path="/settings/directories" element={<DirectoryPage />} />
-            <Route path="/settings/directory-open/:uid" element={<DirectoryOpenPage />} />
-            <Route path="/settings/departments" element={<DepartmentPage />} />
-            <Route path="/settings/positional-levels" element={<PositionalLevelPage />} />
-            <Route path="/settings/approval-actions" element={<ApprovalActionPage />} />
-            <Route path="/settings/approval-modules" element={<ApprovalModulePage />} />
-            <Route path="/settings/approval-modules-open/:uid" element={<ApprovalModuleOpenPage />} />
-            <Route path="/settings/date-ranges" element={<DateRangePage />} />
+        {/* settings */}
+        <Route path="/settings/directories" element={<DirectoryPage />} />
+        <Route
+          path="/settings/directories/open/:uid"
+          element={<DirectoryOpenPage />}
+        />
+        <Route path="/settings/departments" element={<DepartmentPage />} />
+        <Route
+          path="/settings/positional-levels"
+          element={<PositionalLevelPage />}
+        />
+        <Route
+          path="/settings/approval-actions"
+          element={<ApprovalActionPage />}
+        />
+        <Route
+          path="/settings/approval-modules"
+          element={<ApprovalModulePage />}
+        />
+        <Route
+          path="/settings/approval-modules/open/:uid"
+          element={<ApprovalModuleOpenPage />}
+        />
+        <Route path="/settings/date-ranges" element={<DateRangePage />} />
 
-            {/* Users */}
-            <Route path="/users/list" element={<UserListPage />} />
-            <Route path="/users/view/:uid" element={<UserOpenPage />} />
+        {/* Users */}
+        <Route path="/users" element={<UserListPage />} />
+        <Route path="/users/open/:uid" element={<UserOpenPage />} />
 
-            {/* Requestes */}
-            <Route path="/requests" element={<ApprovalRequestPage />} />
-            <Route path="/requests/:uid" element={<ApprovalRequestOpenPage />} />
+        {/* Requestes */}
+        <Route path="/requests" element={<ApprovalRequestPage />} />
+        <Route
+          path="/requests/open/:uid"
+          element={<ApprovalRequestOpenPage />}
+        />
 
+        <Route path="/layout/without-menu" element={<WithoutMenuPage />} />
+        <Route path="/layout/without-navbar" element={<WithoutNavbarPage />} />
+        <Route path="/layout/container" element={<ContainerPage />} />
+        <Route path="/layout/fluid" element={<FluidPage />} />
+        <Route path="/layout/fluid" element={<FluidPage />} />
+        <Route path="/layout/blank" element={<BlankPage />} />
 
-            <Route path="/layout/without-menu" element={<WithoutMenuPage />} />
-            <Route path="/layout/without-navbar" element={<WithoutNavbarPage />} />
-            <Route path="/layout/container" element={<ContainerPage />} />
-            <Route path="/layout/fluid" element={<FluidPage />} />
-            <Route path="/layout/fluid" element={<FluidPage />} />
-            <Route path="/layout/blank" element={<BlankPage />} />
+        <Route path="/ui/accordion" element={<AccordionPage />} />
+        <Route path="/ui/alerts" element={<AlertPage />} />
+        <Route path="/ui/badges" element={<BadgesPage />} />
+        <Route path="/ui/buttons" element={<ButtonPage />} />
+        <Route path="/ui/cards" element={<CardsPage />} />
+        <Route path="/ui/carousel" element={<CarouselPage />} />
+        <Route path="/ui/collapse" element={<CollapsePage />} />
+        <Route path="/ui/dropdown" element={<DropdownPage />} />
+        <Route path="/ui/footer" element={<FooterPage />} />
+        <Route path="/ui/list-group" element={<ListGroupPage />} />
+        <Route path="/ui/modals" element={<ModalPage />} />
+        <Route path="/ui/navbar" element={<NavbarPage />} />
+        <Route path="/ui/offcanvas" element={<OffcanvasPage />} />
+        <Route
+          path="/ui/pagination-breadcrumbs"
+          element={<PaginationBreadcrumbsPage />}
+        />
+        <Route path="/ui/progress" element={<ProgressPage />} />
+        <Route path="/ui/spinners" element={<SpinnersPage />} />
+        <Route path="/ui/tabs-pills" element={<TabsPillPage />} />
+        <Route path="/ui/toasts" element={<ToastPage />} />
+        <Route path="/ui/tooltips-popovers" element={<TooltipPopoverPage />} />
+        <Route path="/ui/typography" element={<TypographyPage />} />
 
-            <Route path="/ui/accordion" element={<AccordionPage />} />
-            <Route path="/ui/alerts" element={<AlertPage />} />
-            <Route path="/ui/badges" element={<BadgesPage />} />
-            <Route path="/ui/buttons" element={<ButtonPage />} />
-            <Route path="/ui/cards" element={<CardsPage />} />
-            <Route path="/ui/carousel" element={<CarouselPage />} />
-            <Route path="/ui/collapse" element={<CollapsePage />} />
-            <Route path="/ui/dropdown" element={<DropdownPage />} />
-            <Route path="/ui/footer" element={<FooterPage />} />
-            <Route path="/ui/list-group" element={<ListGroupPage />} />
-            <Route path="/ui/modals" element={<ModalPage />} />
-            <Route path="/ui/navbar" element={<NavbarPage />} />
-            <Route path="/ui/offcanvas" element={<OffcanvasPage />} />
-            <Route path="/ui/pagination-breadcrumbs" element={<PaginationBreadcrumbsPage />} />
-            <Route path="/ui/progress" element={<ProgressPage />} />
-            <Route path="/ui/spinners" element={<SpinnersPage />} />
-            <Route path="/ui/tabs-pills" element={<TabsPillPage />} />
-            <Route path="/ui/toasts" element={<ToastPage />} />
-            <Route path="/ui/tooltips-popovers" element={<TooltipPopoverPage />} />
-            <Route path="/ui/typography" element={<TypographyPage />} />
+        <Route path="/account/settings" element={<AccountPage />} />
+        <Route path="/account/notifications" element={<NotificationPage />} />
+        <Route path="/account/connections" element={<Connections />} />
+        <Route path="/account/password" element={<ChangePassword />} />
 
+        <Route path="/misc/error" element={<ErrorPage />} />
+        <Route path="/misc/under-maintenance" element={<MaintenancePage />} />
 
-            <Route path="/account/settings" element={<AccountPage />} />
-            <Route path="/account/notifications" element={<NotificationPage />} />
-            <Route path="/account/connections" element={<Connections />} />
-            <Route path="/account/password" element={<ChangePassword />} />
+        <Route
+          path="/extended-ui/perfect-scrollbar"
+          element={<PerfectScrollbarPage />}
+        />
+        <Route path="/extended-ui/text-divider" element={<TextDividerPage />} />
 
-            <Route path="/misc/error" element={<ErrorPage />} />
-            <Route path="/misc/under-maintenance" element={<MaintenancePage />} />
+        <Route path="/boxicons" element={<BoxiconsPage />} />
 
-            <Route path="/extended-ui/perfect-scrollbar" element={<PerfectScrollbarPage />} />
-            <Route path="/extended-ui/text-divider" element={<TextDividerPage />} />
+        <Route path="/form/basic-inputs" element={<BasicInputPage />} />
+        <Route path="/form/input-groups" element={<InputGroupPage />} />
 
-            <Route path="/boxicons" element={<BoxiconsPage />} />
+        <Route
+          path="/form-layout/horizontal-form"
+          element={<HorizontalFormPage />}
+        />
+        <Route
+          path="/form-layout/vertical-form"
+          element={<VerticalFormPage />}
+        />
 
-            <Route path="/form/basic-inputs" element={<BasicInputPage />} />
-            <Route path="/form/input-groups" element={<InputGroupPage />} />
-
-            <Route path="/form-layout/horizontal-form" element={<HorizontalFormPage />} />
-            <Route path="/form-layout/vertical-form" element={<VerticalFormPage />} />
-
-            <Route path="/tables" element={<TablesPage />} />
-        </Routes>
-    )
+        <Route path="/tables" element={<TablesPage />} />
+      </Routes>
+    );
 }
 export default AppRoutes;

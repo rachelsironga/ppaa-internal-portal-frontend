@@ -73,97 +73,148 @@ export const DirectoryModal = ({ loadOnlyModal = false }) => {
 
 
     return (
-        <>
+      <>
+        {!loadOnlyModal && (
+          <button
+            aria-label="Click me"
+            type="button"
+            className="btn btn-primary ms-auto btn-sm  animate__animated animate__fadeInRight animate__slow"
+            data-bs-toggle="modal"
+            data-bs-target="#viewCreateDirectoryModal"
+          >
+            <i className="bx bx-edit-alt me-1"></i> Add Approval Module
+          </button>
+        )}
 
-            {!loadOnlyModal && (
+        <div
+          className="modal modal-slide-in"
+          id="viewCreateDirectoryModal"
+          tabIndex="-1"
+          aria-hidden="true"
+        >
+          <div className="modal-dialog modal-md" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="exampleModalLabel3">
+                  {selectedDirectory === null ? "Create New" : "View / Update"}{" "}
+                  Directories{" "}
+                </h5>
                 <button
-                    aria-label="Click me"
-                    type="button"
-                    className="btn btn-primary ms-auto btn-sm"
-                    data-bs-toggle="modal"
-                    data-bs-target="#viewCreateDirectoryModal">
-                    <i className="bx bx-edit-alt me-1"></i> Add Approval Module
-                </button>
-            )}
-
-            <div className="modal modal-slide-in" id="viewCreateDirectoryModal" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-md" role="document">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title" id="exampleModalLabel3">{selectedDirectory === null ? 'Create New' : 'View / Update'} Directories </h5>
-                            <button
-                                type="button"
-                                className="btn-close"
-                                onClick={handleClose}
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                  type="button"
+                  className="btn-close"
+                  onClick={handleClose}
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <Formik
+                enableReinitialize
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting, values, setFieldValue }) => (
+                  <Form>
+                    <div className="modal-body">
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label htmlFor="nameLarge" className="form-label">
+                            Name
+                          </label>
+                          <Field
+                            type="text"
+                            name="name"
+                            id="nameLarge"
+                            className="form-control"
+                            placeholder="Enter Name"
+                          />
+                          <ErrorMessage
+                            name="name"
+                            component="div"
+                            className="text-danger"
+                          />
                         </div>
-                        <Formik
-                            enableReinitialize
-                            initialValues={initialValues}
-                            validationSchema={validationSchema}
-                            onSubmit={handleSubmit}
+                      </div>
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label htmlFor="codeLarge" className="form-label">
+                            Code
+                          </label>
+                          <Field
+                            type="text"
+                            name="code"
+                            id="codeLarge"
+                            className="form-control"
+                            placeholder="Enter Code"
+                          />
+                          <ErrorMessage
+                            name="code"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="col mb-3">
+                          <label
+                            htmlFor="descriptionLarge"
+                            className="form-label"
+                          >
+                            Description
+                          </label>
+                          <Field
+                            as="textarea"
+                            name="description"
+                            id="descriptionLarge"
+                            className="form-control"
+                            rows="3"
+                            placeholder="Enter Description"
+                          />
+                          <ErrorMessage
+                            name="description"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                      </div>
+
+                      {errors.non_field_errors &&
+                        errors.non_field_errors.length > 0 && (
+                          <div className="text-danger">
+                            {errors.non_field_errors.map((error, index) => (
+                              <div key={index}>{error}</div>
+                            ))}
+                          </div>
+                        )}
+
+                      <div className="modal-footer">
+                        <button
+                          aria-label="Click me"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={handleClose}
+                          className="btn btn-outline-secondary"
+                          data-bs-dismiss="modal"
                         >
-                            {({ isSubmitting, values, setFieldValue }) => (
-                                <Form>
-                                    <div className="modal-body">
-
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="nameLarge" className="form-label">Name</label>
-                                                <Field type="text" name="name" id="nameLarge" className="form-control" placeholder="Enter Name" />
-                                                <ErrorMessage name="name" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="codeLarge" className="form-label">Code</label>
-                                                <Field type="text" name="code" id="codeLarge" className="form-control" placeholder="Enter Code" />
-                                                <ErrorMessage name="code" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-                                        <div className="row">
-                                            <div className="col mb-3">
-                                                <label htmlFor="descriptionLarge" className="form-label">Description</label>
-                                                <Field as="textarea" name="description" id="descriptionLarge" className="form-control" rows="3" placeholder="Enter Description" />
-                                                <ErrorMessage name="description" component="div" className="text-danger" />
-                                            </div>
-                                        </div>
-
-                                        {errors.non_field_errors && errors.non_field_errors.length > 0 && (
-                                            <div className="text-danger">
-                                                {errors.non_field_errors.map((error, index) => (
-                                                    <div key={index}>{error}</div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        <div className="modal-footer">
-                                            <button
-                                                aria-label="Click me"
-                                                type="button"
-                                                disabled={isSubmitting}
-                                                onClick={handleClose}
-                                                className="btn btn-outline-secondary"
-                                                data-bs-dismiss="modal">
-                                                Close
-                                            </button>
-                                            <button
-                                                aria-label="Click me"
-                                                type="submit"
-                                                disabled={isSubmitting}
-                                                className="btn btn-primary">
-                                                {isSubmitting ? "Saving..." : "Save"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </Form>
-                            )}
-                        </Formik>
+                          Close
+                        </button>
+                        <button
+                          aria-label="Click me"
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="btn btn-primary"
+                        >
+                          {isSubmitting ? "Saving..." : "Save"}
+                        </button>
+                      </div>
                     </div>
-                </div>
+                  </Form>
+                )}
+              </Formik>
             </div>
-        </>
+          </div>
+        </div>
+      </>
     );
 };
 

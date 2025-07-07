@@ -67,3 +67,29 @@ export const approveRejectRequest = async (formData) => {
     throw error;
   }
 };
+
+export const getJeevaRolePerm = async ({ pagination = {} }) => {
+  try {
+    const response = await api.get(
+      `${API_BASE_URL}/api/jeeva-role-perm-list`,
+      setConfig(pagination)
+    );
+    return response.data;
+  } catch (error) {
+    console.error("No Jeeva Module And permission found:", error);
+    throw error;
+  }
+};
+
+export const getJeevaRolePermByCode = async (codename) => {
+  try {
+    const response = await api.get(
+      `${API_BASE_URL}/api/jeeva-role-perm-by-code/${codename}`,
+      setConfig()
+    );
+    return response.data;
+  } catch (error) {
+    console.error("No Jeeva Module And permission found:", error);
+    throw error;
+  }
+};

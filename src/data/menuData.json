@@ -105,7 +105,7 @@
             "text": "Users",
             "icon": "bx bx-group",
             "available": true,
-            "link": "/users/list",
+            "link": "/users",
             "permission": [""],
             "role": ["admin"]
           },
