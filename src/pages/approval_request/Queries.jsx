@@ -93,3 +93,21 @@ export const getJeevaRolePermByCode = async (codename) => {
     throw error;
   }
 };
+
+
+export const getRequestApprovalSteps = async ({
+  request_uid = "",
+  pagination = {},
+}) => {
+  try {
+    const response = await api.get(
+      `${API_BASE_URL}/api/approval-request-step/${request_uid}`,
+
+      setConfig(pagination)
+    );
+    return response.data;
+  } catch (error) {
+    console.error("No Jeeva Module And permission found:", error);
+    throw error;
+  }
+};

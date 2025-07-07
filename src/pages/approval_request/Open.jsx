@@ -15,6 +15,7 @@ import TextSignature from "../../components/common/TextSignature";
 import ApprovalRequestOpenShimmer from "../../components/loaders/ApprovalRequestOpenShimmer";
 import { getBadgeClass } from "../../helpers/BadgeClassHelper";
 import BreadCumb from "../../layouts/BreadCumb";
+import RequestHistoryModal from "./RequestHistoryModal";
 
 const growButtonStyle = `
 @keyframes pulse-grow {
@@ -77,6 +78,7 @@ export const ApprovalRequestOpenPage = () => {
   const [openCommentIndex, setOpenCommentIndex] = useState(null);
   const commentBoxRef = useRef(null);
   const navigate = useNavigate();
+  const [viewRequestHistory, setViewRequestHistory] = useState(false);
 
   const {
     currentPage,
@@ -202,6 +204,8 @@ export const ApprovalRequestOpenPage = () => {
         setIsModalOpen,
         selectedModuleLevel,
         setSelectedModuleLevel,
+        viewRequestHistory,
+        setViewRequestHistory,
       }}
     >
       <BreadCumb pageList={["Approval Requests", "view"]} />
@@ -289,11 +293,15 @@ export const ApprovalRequestOpenPage = () => {
                       <button
                         aria-label="dropdown action link"
                         className="dropdown-item d-flex align-items-center"
-                        data-bs-toggle="dropdown"
+                        data-bs-toggle="modal"
                         aria-expanded="false"
+                        data-bs-target="#approvalRequestHistoryModal"
+                        onClick={() => {
+                          setViewRequestHistory(true);
+                        }}
                       >
-                        <i className="bx bx-transfer mx-2"></i>Preview Approval
-                        Flow
+                        <i className="bx bx-history mx-2"></i>Preview Approval
+                        History
                       </button>
                     </li>
                     <li>
@@ -777,6 +785,7 @@ export const ApprovalRequestOpenPage = () => {
       )}
 
       <ActionModal loadOnlyModal={false} />
+      <RequestHistoryModal loadOnlyModal={false} />
     </ApprovalRequestsContext.Provider>
   );
 };
