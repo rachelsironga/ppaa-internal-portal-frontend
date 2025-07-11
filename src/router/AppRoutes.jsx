@@ -59,98 +59,247 @@ import { DirectoryOpenPage } from "../pages/directory/Open";
 import { UserListPage } from "../pages/users/View";
 import { UserOpenPage } from "../pages/users/Open";
 import { DateRangePage } from "../pages/date_range/View";
-
-
-
+import { ApprovalRequestOpenPage } from "../pages/approval_request/Open";
+import ProtectedRoute from "../components/wrapper/ProtectedRoute";
 
 function Logout() {
-    localStorage.clear
-    return <Navigate to="/auth/login" />
+  localStorage.clear;
+  return <Navigate to="/auth/login" />;
 }
 
 function RegisterAndLogout() {
-    localStorage.clear
-    return <RegisterPage />
+  localStorage.clear;
+  return <RegisterPage />;
 }
-
 
 const AppRoutes = () => {
-    return (
-        <Routes>
-            <Route path="/auth/login" element={<LoginPage />} />
-            <Route path="/auth/register" element={<RegisterAndLogout />} />
-            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="*" element={<ErrorPage />} />
+  return (
+    <Routes>
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/register" element={<RegisterAndLogout />} />
+      <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/" element={<DashboardPage />} />
+      <Route path="*" element={<ErrorPage />} />
 
-            {/* settings */}
-            <Route path="/settings/directories" element={<DirectoryPage />} />
-            <Route path="/settings/directory-open/:uid" element={<DirectoryOpenPage />} />
-            <Route path="/settings/departments" element={<DepartmentPage />} />
-            <Route path="/settings/positional-levels" element={<PositionalLevelPage />} />
-            <Route path="/settings/approval-actions" element={<ApprovalActionPage />} />
-            <Route path="/settings/approval-modules" element={<ApprovalModulePage />} />
-            <Route path="/settings/approval-modules-open/:uid" element={<ApprovalModuleOpenPage />} />
-            <Route path="/settings/date-ranges" element={<DateRangePage />} />
+      {/* Settings */}
+      <Route
+        path="/settings/directories"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "view_directory",
+              "add_directory",
+              "change_directory",
+            ]}
+          >
+            <DirectoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/directories/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "view_directory",
+              "add_directory",
+              "change_directory",
+            ]}
+          >
+            <DirectoryOpenPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/departments"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "view_department",
+              "add_department",
+              "delete_department",
+              "change_department",
+            ]}
+          >
+            <DepartmentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/positional-levels"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_positionallevel",
+              "view_positionallevel",
+              "delete_positionallevel",
+            ]}
+          >
+            <PositionalLevelPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/approval-actions"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_approvalaction",
+              "view_approvalaction",
+              "delete_approvalaction",
+            ]}
+          >
+            <ApprovalActionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/approval-modules"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_approvalmodule",
+              "view_approvalmodule",
+              "delete_approvalmodule",
+            ]}
+          >
+            <ApprovalModulePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/approval-modules/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_approvalmodule",
+              "view_approvalmodule",
+              "delete_approvalmodule",
+            ]}
+          >
+            <ApprovalModuleOpenPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/date-ranges"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_daterange",
+              "view_daterange",
+              "delete_daterange",
+            ]}
+          >
+            <DateRangePage />
+          </ProtectedRoute>
+        }
+      />
 
-            {/* Users */}
-            <Route path="/users/list" element={<UserListPage />} />
-            <Route path="/users/view/:uid" element={<UserOpenPage />} />
+      {/* Users */}
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_user", "add_user", "delete_user"]}
+          >
+            <UserListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_user", "add_user", "delete_user"]}
+          >
+            <UserOpenPage />
+          </ProtectedRoute>
+        }
+      />
 
-            {/* Requestes */}
-            <Route path="/requests" element={<ApprovalRequestPage />} />
+      {/* Requests */}
+      <Route
+        path="/requests"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_approvalrequest",
+              "add_approvalrequest",
+              "view_approvalrequest",
+            ]}
+          >
+            <ApprovalRequestPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/requests/open/:uid"
+        element={
+          <ProtectedRoute requiredPermissions={["view_approvalrequest"]}>
+            <ApprovalRequestOpenPage />
+          </ProtectedRoute>
+        }
+      />
 
+      <Route path="/layout/without-menu" element={<WithoutMenuPage />} />
+      <Route path="/layout/without-navbar" element={<WithoutNavbarPage />} />
+      <Route path="/layout/container" element={<ContainerPage />} />
+      <Route path="/layout/fluid" element={<FluidPage />} />
+      <Route path="/layout/fluid" element={<FluidPage />} />
+      <Route path="/layout/blank" element={<BlankPage />} />
 
-            <Route path="/layout/without-menu" element={<WithoutMenuPage />} />
-            <Route path="/layout/without-navbar" element={<WithoutNavbarPage />} />
-            <Route path="/layout/container" element={<ContainerPage />} />
-            <Route path="/layout/fluid" element={<FluidPage />} />
-            <Route path="/layout/fluid" element={<FluidPage />} />
-            <Route path="/layout/blank" element={<BlankPage />} />
+      <Route path="/ui/accordion" element={<AccordionPage />} />
+      <Route path="/ui/alerts" element={<AlertPage />} />
+      <Route path="/ui/badges" element={<BadgesPage />} />
+      <Route path="/ui/buttons" element={<ButtonPage />} />
+      <Route path="/ui/cards" element={<CardsPage />} />
+      <Route path="/ui/carousel" element={<CarouselPage />} />
+      <Route path="/ui/collapse" element={<CollapsePage />} />
+      <Route path="/ui/dropdown" element={<DropdownPage />} />
+      <Route path="/ui/footer" element={<FooterPage />} />
+      <Route path="/ui/list-group" element={<ListGroupPage />} />
+      <Route path="/ui/modals" element={<ModalPage />} />
+      <Route path="/ui/navbar" element={<NavbarPage />} />
+      <Route path="/ui/offcanvas" element={<OffcanvasPage />} />
+      <Route
+        path="/ui/pagination-breadcrumbs"
+        element={<PaginationBreadcrumbsPage />}
+      />
+      <Route path="/ui/progress" element={<ProgressPage />} />
+      <Route path="/ui/spinners" element={<SpinnersPage />} />
+      <Route path="/ui/tabs-pills" element={<TabsPillPage />} />
+      <Route path="/ui/toasts" element={<ToastPage />} />
+      <Route path="/ui/tooltips-popovers" element={<TooltipPopoverPage />} />
+      <Route path="/ui/typography" element={<TypographyPage />} />
 
-            <Route path="/ui/accordion" element={<AccordionPage />} />
-            <Route path="/ui/alerts" element={<AlertPage />} />
-            <Route path="/ui/badges" element={<BadgesPage />} />
-            <Route path="/ui/buttons" element={<ButtonPage />} />
-            <Route path="/ui/cards" element={<CardsPage />} />
-            <Route path="/ui/carousel" element={<CarouselPage />} />
-            <Route path="/ui/collapse" element={<CollapsePage />} />
-            <Route path="/ui/dropdown" element={<DropdownPage />} />
-            <Route path="/ui/footer" element={<FooterPage />} />
-            <Route path="/ui/list-group" element={<ListGroupPage />} />
-            <Route path="/ui/modals" element={<ModalPage />} />
-            <Route path="/ui/navbar" element={<NavbarPage />} />
-            <Route path="/ui/offcanvas" element={<OffcanvasPage />} />
-            <Route path="/ui/pagination-breadcrumbs" element={<PaginationBreadcrumbsPage />} />
-            <Route path="/ui/progress" element={<ProgressPage />} />
-            <Route path="/ui/spinners" element={<SpinnersPage />} />
-            <Route path="/ui/tabs-pills" element={<TabsPillPage />} />
-            <Route path="/ui/toasts" element={<ToastPage />} />
-            <Route path="/ui/tooltips-popovers" element={<TooltipPopoverPage />} />
-            <Route path="/ui/typography" element={<TypographyPage />} />
+      <Route path="/account/settings" element={<AccountPage />} />
+      <Route path="/account/notifications" element={<NotificationPage />} />
+      <Route path="/account/connections" element={<Connections />} />
+      <Route path="/account/password" element={<ChangePassword />} />
 
+      <Route path="/misc/error" element={<ErrorPage />} />
+      <Route path="/misc/under-maintenance" element={<MaintenancePage />} />
 
-            <Route path="/account/settings" element={<AccountPage />} />
-            <Route path="/account/notifications" element={<NotificationPage />} />
-            <Route path="/account/connections" element={<Connections />} />
-            <Route path="/account/password" element={<ChangePassword />} />
+      <Route
+        path="/extended-ui/perfect-scrollbar"
+        element={<PerfectScrollbarPage />}
+      />
+      <Route path="/extended-ui/text-divider" element={<TextDividerPage />} />
 
-            <Route path="/misc/error" element={<ErrorPage />} />
-            <Route path="/misc/under-maintenance" element={<MaintenancePage />} />
+      <Route path="/boxicons" element={<BoxiconsPage />} />
 
-            <Route path="/extended-ui/perfect-scrollbar" element={<PerfectScrollbarPage />} />
-            <Route path="/extended-ui/text-divider" element={<TextDividerPage />} />
+      <Route path="/form/basic-inputs" element={<BasicInputPage />} />
+      <Route path="/form/input-groups" element={<InputGroupPage />} />
 
-            <Route path="/boxicons" element={<BoxiconsPage />} />
+      <Route
+        path="/form-layout/horizontal-form"
+        element={<HorizontalFormPage />}
+      />
+      <Route path="/form-layout/vertical-form" element={<VerticalFormPage />} />
 
-            <Route path="/form/basic-inputs" element={<BasicInputPage />} />
-            <Route path="/form/input-groups" element={<InputGroupPage />} />
-
-            <Route path="/form-layout/horizontal-form" element={<HorizontalFormPage />} />
-            <Route path="/form-layout/vertical-form" element={<VerticalFormPage />} />
-
-            <Route path="/tables" element={<TablesPage />} />
-        </Routes>
-    )
-}
+      <Route path="/tables" element={<TablesPage />} />
+    </Routes>
+  );
+};
 export default AppRoutes;

@@ -274,7 +274,7 @@ const DataTable = ({
         <CardBody>
           <CardSubtitle className="mb-1">
             <Row>
-              <Col className="col-lg-6 col-md-6 col-sm-6">
+              <Col className="col-lg-6 col-md-6 col-sm-6 animate__animated animate__fadeInRight animate__fast">
                 <div className="d-flex">
                   <form className="app-search">
                     <div className="position-relative">

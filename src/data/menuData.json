@@ -7,16 +7,16 @@
         "icon": "bx bx-home",
         "available": true,
         "link": "/",
-        "permission": ["1", "2", "3"],
-        "role": ["admin"]
+        "permission": [],
+        "role": ["admin", "staff"]
       },
       {
         "text": "Profile",
         "icon": "bx bx-user",
         "available": true,
         "link": "/account/settings",
-        "permission": ["1", "2", "3"],
-        "role": ["admin"]
+        "permission": [],
+        "role": ["admin", "staff"]
       }
     ]
   },
@@ -29,7 +29,7 @@
         "icon": "bx bx-layer",
         "available": true,
         "link": "/requests",
-        "permission": ["1", "delete_approvalactionw"],
+        "permission": ["change_approvalrequest", "add_approvalrequest", "view_approvalrequest"],
         "role": ["admin"]
       }
     ]
@@ -44,7 +44,7 @@
         "icon": "bx bx-unite",
         "available": true,
         "link": "/settings/directories",
-        "permission": ["1"],
+        "permission": ["view_directory","add_directory","change_directory"],
         "role": ["admin"]
       },
       {
@@ -52,7 +52,7 @@
         "icon": "bx bx-layer",
         "available": true,
         "link": "/settings/departments",
-        "permission": ["1"],
+        "permission": ["view_department","add_department", "delete_department", "change_department"],
         "role": ["admin"]
       },
       {
@@ -60,7 +60,7 @@
         "icon": "bx bx-sitemap",
         "available": true,
         "link": "/settings/positional-levels",
-        "permission": ["1"],
+        "permission": ["change_positionallevel","view_positionallevel", "delete_positionallevel"],
         "role": ["admin"]
       },
       {
@@ -68,7 +68,7 @@
         "icon": "bx bx-detail",
         "available": true,
         "link": "/settings/approval-actions",
-        "permission": ["1"],
+        "permission": ["change_positionalaction","view_positionalaction", "delete_"],
         "role": ["admin"]
       },
       {
@@ -76,7 +76,7 @@
         "icon": "bx bx-box",
         "available": true,
         "link": "/settings/approval-modules",
-        "permission": ["1"],
+        "permission": ["change_approvalmodule","view_approvalmodule","delete_approvalmodule" ],
         "role": ["admin"]
       },
       {
@@ -84,30 +84,29 @@
         "icon": "bx bx-calendar",
         "available": true,
         "link": "/settings/date-ranges",
-        "permission": ["1"],
+        "permission": ["change_daterange","view_daterange","delete_daterange" ],
         "role": ["admin"]
       }
     ]
   },
 
   {
-    "header": "ADMINISTRATION",
     
     "items": [
-     
       {
         "text": "User Managment",
         "icon": "bx bx-group",
         "available": true,
         "link": "",
+        "header": "ADMINISTRATION",
         "submenu": [
           {
             "text": "Users",
             "icon": "bx bx-group",
             "available": true,
-            "link": "/users/list",
-            "permission": [""],
-            "role": ["admin"]
+            "link": "/users",
+            "permission": ["view_user","add_user","delete_user"],
+            "role": ["admin"] 
           },
           {
             "text": "Roles",
@@ -126,136 +125,6 @@
             "role": ["admin"]
           }
          
-        ]
-      },
-
-
-      {
-        "text": "Test UI",
-        "icon": "bx bx-box",
-        "available": true,
-        "link": "",
-        "submenu": [
-          {
-            "text": "Accordion",
-            "available": true,
-            "link": "/ui/accordion",
-            "permission": ["1", "2", "3"],
-            "role": ["admin"]
-          },
-          {
-            "text": "Alerts",
-            "available": true,
-            "link": "/ui/alerts",
-            "permission": ["1", "2", "3"],
-            "role": ["admin"]
-          },
-          {
-            "text": "Badges",
-            "available": true,
-            "link": "/ui/badges",
-            "permission": ["1", "2", "3"],
-            "role": ["admin"]
-          },
-          {
-            "text": "Buttons",
-            "available": true,
-            "link": "/ui/buttons",
-            "permission": ["1", "2", "3"],
-            "role": ["admin"]
-          },
-          {
-            "text": "Cards",
-            "available": true,
-            "link": "/ui/cards",
-            "permission": ["1", "2", "3"],
-            "role": ["admin"]
-          },
-          {
-            "text": "Alerts",
-            "available": true,
-            "link": "/ui/alerts"
-          },
-          {
-            "text": "Badges",
-            "available": true,
-            "link": "/ui/badges"
-          },
-          {
-            "text": "Buttons",
-            "available": true,
-            "link": "/ui/buttons"
-          },
-          {
-            "text": "Cards",
-            "available": true,
-            "link": "/ui/cards"
-          },
-          {
-            "text": "Carrousel",
-            "available": true,
-            "link": "/ui/carousel"
-          },
-          {
-            "text": "Collapse",
-            "available": true,
-            "link": "/ui/collapse"
-          },
-          {
-            "text": "Dropdown",
-            "available": true,
-            "link": "/ui/dropdown"
-          },
-          {
-            "text": "List Group",
-            "available": true,
-            "link": "/ui/list-group"
-          },
-          {
-            "text": "Modals",
-            "available": true,
-            "link": "/ui/modals"
-          },
-          {
-            "text": "Navbar",
-            "available": true,
-            "link": "/ui/navbar"
-          },
-          {
-            "text": "Pagination & Breadcrumbs",
-            "available": true,
-            "link": "/ui/pagination-breadcrumbs"
-          },
-          {
-            "text": "Progress",
-            "available": true,
-            "link": "/ui/progress"
-          },
-          {
-            "text": "Spinners",
-            "available": true,
-            "link": "/ui/spinners"
-          },
-          {
-            "text": "Tabs & Pills",
-            "available": true,
-            "link": "/ui/tabs-pills"
-          },
-          {
-            "text": "Toasts",
-            "available": true,
-            "link": "/ui/toasts"
-          },
-          {
-            "text": "Tooltips & popovers",
-            "available": true,
-            "link": "/ui/tooltips-popovers"
-          },
-          {
-            "text": "Typography",
-            "available": true,
-            "link": "/ui/typography"
-          }
         ]
       }
     ]

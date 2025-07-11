@@ -8,6 +8,8 @@ import "animate.css";
 import { getApprovalRequests, deleteApprovalRequest } from "./Queries";
 import { ApprovalRequestsContext } from "../../utils/context";
 import ApprovalRequestModal from "./Modal";
+import { useNavigate } from "react-router-dom";
+import BreadCumb from "../../layouts/BreadCumb";
 
 export const ApprovalRequestPage = () => {
   const pageSizeData = [5, 10, 20, 50, 70, 100];
@@ -27,13 +29,14 @@ export const ApprovalRequestPage = () => {
     updatePagination,
     updateTotalCount,
   } = usePagination(10, 1, true);
+  const navigate = useNavigate();
 
   const handlePageClick = (event) => {
     updatePage(event.selected + 1);
   };
 
-  const handleTopBarClick = () => {
-    alert('You clicked the grey top bar!');
+  const handleNavigate = (uid) => {
+    navigate(`/requests/open/${uid}`);
   };
 
   const handleFetchData = async () => {
@@ -69,6 +72,9 @@ export const ApprovalRequestPage = () => {
           "error",
           "Session Expired"
         );
+      } else if (err.status === 403 || err.status === 8006) {
+        console.log(err);
+        Swal.fire("Access Dinied!", `You don’t have permission to access this resource`, "warning");
       } else {
         showToast("Unable to Fetch Approval Request", "warning", "Failed");
       }
@@ -143,9 +149,8 @@ export const ApprovalRequestPage = () => {
         setIsModalOpen,
       }}
     >
-      <h4 className="py-3 mb-4">
-        <span className="text-muted fw-light">Setting /</span> Approval Requests
-      </h4>
+      <BreadCumb pageList={["Settings", "Approval Requests"]} />
+
       <div className="card">
         <div className="d-flex justify-content-between align-items-center card-header">
           <h5 className="mb-0">List Of All Request</h5>
@@ -182,7 +187,7 @@ export const ApprovalRequestPage = () => {
                 ))}
               </select>
             </div>
-            <div className=" col-md-4 col-sm-6">
+            <div className=" col-md-4 col-sm-6  animate__animated animate__fadeInRight animate__fast">
               <form className="d-flex">
                 <div className="input-group">
                   <span className="input-group-text">
@@ -258,86 +263,64 @@ export const ApprovalRequestPage = () => {
                       </td>
                     </tr>
                   ) : (
-                        approvalRequests.map((dataRows, index) => (
-                          <tr key={dataRows.uid}>
-                            <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                            <td className="fw-medium">
-                              {new Date(dataRows.created_at).toLocaleDateString(
-                                "en-GB",
-                                {
-                                  day: "2-digit",
-                                  month: "long",
-                                  year: "numeric",
-                                }
-                              )}
-                            </td>
-                            <td className="fw-medium">{dataRows.requester_name}</td>
-                            <td className="fw-medium">{dataRows.title}</td>
-                            <td className="fw-medium">{dataRows.type}</td>
-                            <td className="fw-medium">
-                              {dataRows.department.code}
-                            </td>
-                            <td>
-                              <span
-                                className={
-                                  dataRows.status === "NEW"
-                                    ? "badge bg-label-primary me-1"
-                                    : dataRows.status === "PENDING"
-                                      ? "badge bg-label-warning me-1"
-                                      : dataRows.status === "REJECTED" ||
-                                        dataRows.status === "CANCELLED" ||
-                                        dataRows.status === "EXPIRED"
-                                        ? "badge bg-label-danger me-1"
-                                        : dataRows.status === "APPROVED"
-                                          ? "badge bg-label-success me-1"
-                                          : "badge bg-label-info me-1"
-                                }
-                              >
-                                {dataRows.status}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <div className="dropdown">
-                                <button
-                                  aria-label="Click me"
-                                  type="button"
-                                  className="btn p-0 dropdown-toggle hide-arrow"
-                                  data-bs-toggle="dropdown"
-                                >
-                                  <i className="bx bx-menu"></i>
-                                </button>
-                                <div className="dropdown-menu">
-                                  <a
-                                    className="dropdown-item"
-                                    href="#"
-                                    onClick={() => {
-                                      setSelectedApprovalRequest(dataRows);
-                                    }}
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#viewCreateDataModal"
-                                  >
-                                    <i className="bx bx-edit-alt me-1"></i> View /
-                                    Edit
-                                  </a>
-                                  <a
-                                    aria-label="dropdown action option"
-                                    className="dropdown-item text-danger"
-                                    href="#"
-                                    onClick={async () => {
-                                      handleDelete(dataRows);
-                                    }}
-                                  >
-                                    <i className="bx bx-trash me-1"></i> Delete
-                                  </a>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                    approvalRequests.map((dataRows, index) => (
+                      <tr key={dataRows.uid}>
+                        <td>{(currentPage - 1) * pageSize + index + 1}</td>
+                        <td className="fw-medium">
+                          {new Date(dataRows.created_at).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )}
+                        </td>
+                        <td className="fw-medium">{dataRows.requester_name}</td>
+                        <td className="fw-medium">{dataRows.title}</td>
+                        <td className="fw-medium">
+                          {`${dataRows.type}`.replaceAll("_", " ")}
+                        </td>
+                        <td className="fw-medium">
+                          {dataRows.department.code}
+                        </td>
+                        <td>
+                          <span
+                            className={
+                              dataRows.status === "NEW"
+                                ? "badge bg-label-primary me-1"
+                                : dataRows.status === "PENDING"
+                                ? "badge bg-label-warning me-1"
+                                : dataRows.status === "REJECTED" ||
+                                  dataRows.status === "CANCELLED" ||
+                                  dataRows.status === "EXPIRED"
+                                ? "badge bg-label-danger me-1"
+                                : dataRows.status === "APPROVED"
+                                ? "badge bg-label-success me-1"
+                                : "badge bg-label-info me-1"
+                            }
+                          >
+                            {dataRows.status}
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <button
+                            aria-label="Click me"
+                            type="button"
+                            className="btn p-0 dropdown-toggle hide-arrow text-info"
+                            data-bs-toggle="dropdown"
+                            onClick={() => {
+                              handleNavigate(dataRows.uid);
+                            }}
+                          >
+                            <i className="bx bx-link-external"></i>&nbsp; View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
-
             </div>
 
             <div className="d-flex justify-content-between align-items-center mt-3">
