@@ -19,13 +19,10 @@ const BreadCumb = ({ pageList = [], children }) => {
   };
 
   return (
-    <div
-      className="animate__animated animate__fadeInDown animate__faster"
-      style={{ display: "flex", justifyContent: "space-between" }}
-    >
-      <h4 className="py-3 mb-4">
+    <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <h4 className="py-3 mb-4 animate__animated animate__fadeInLeft animate__slow">
         <button
-          className="btn btn-sm btn-outline-info pe-1 text-start animate__animated animate__fadeInLeft animate__slower"
+          className="btn btn-sm btn-outline-info pe-1 text-start"
           style={{
             fontSize: "12px",
             marginRight: "10px",
@@ -40,7 +37,7 @@ const BreadCumb = ({ pageList = [], children }) => {
           <span
             type="button"
             className="text-muted cursor-pointer"
-            onclick={() => {
+            onClick={() => {
               navigate(-1);
             }}
           >
@@ -67,7 +64,7 @@ const BreadCumb = ({ pageList = [], children }) => {
         style={{ marginRight: "25px" }}
         id="dropdown-icon-demo"
       >
-        {children && children}
+        {children}
       </div>
     </div>
   );

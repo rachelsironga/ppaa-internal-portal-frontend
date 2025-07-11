@@ -28,10 +28,7 @@ export const getApprovalRequests = async ({
       uid == "" ? setConfig(pagination) : {}
     );
     return response.data;
-  } catch (error) {
-    console.error("Error fetching Approval Requests:", error);
-    throw error;
-  }
+  } catch (error) {}
 };
 
 export const createUpdateApprovalRequest = async (formData) => {

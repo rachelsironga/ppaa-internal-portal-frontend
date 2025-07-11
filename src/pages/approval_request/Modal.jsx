@@ -1838,7 +1838,7 @@ const ApprovalRequestModal = () => {
                 {showTermConditionModal === true && (
                   <div
                     className="col-md-12 mb-4"
-                    style={{ minHeight: "500px;" }}
+                    style={{ minHeight: "500px" }}
                   >
                     <p className="p fw-bold mb-3">
                       Read Carefull and Accept all part before submitting your

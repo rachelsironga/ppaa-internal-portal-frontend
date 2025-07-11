@@ -8,6 +8,7 @@ import { approveRejectRequest, getRequestApprovalSteps } from "./Queries";
 import Swal from "sweetalert2";
 import CustomTimeline from "../../components/common/CustomTimeline";
 import ReactLoading from "react-loading";
+import TextSignature from "../../components/common/TextSignature";
 
 const RequestHistoryModal = ({ loadOnlyModal = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -231,7 +232,7 @@ const RequestHistoryModal = ({ loadOnlyModal = false }) => {
                                         ? `${level.approval_level?.action.name} By `
                                         : `Rejected By `}
                                       &nbsp;
-                                      {level.level
+                                      {level.approval_level?.level.name
                                         ? `${level.approval_level?.level.name}`
                                         : "Approver N/S"}
                                     </h6>

@@ -16,6 +16,7 @@ const ActionModal = ({ loadOnlyModal = false }) => {
     setSelectedRequest,
     selectedModuleLevel,
     setSelectedModuleLevel,
+    isLastStep,
   } = useContext(ApprovalRequestsContext);
   const [errors, setOtherError] = useState({});
 
@@ -216,6 +217,28 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                         </div>
                       </div>
                     </div>
+                    {isLastStep && (
+                      <div className="col-md-6 mb-3">
+                        <label htmlFor="titleLarge" className="form-label">
+                          Select Handler
+                        </label>{" "}
+                        <small className="text-danger">
+                          Only if is to be Forwarded
+                        </small>
+                        <Field
+                          type="text"
+                          name="title"
+                          id="titleLarge"
+                          className="form-control"
+                          placeholder="Slease Select Handler"
+                        />
+                        <ErrorMessage
+                          name="title"
+                          component="div"
+                          className="text-danger"
+                        />
+                      </div>
+                    )}
                     <div className="row">
                       <div className="col mb-3">
                         <label htmlFor="commentLarge" className="form-label">

@@ -72,6 +72,9 @@ export const ApprovalRequestPage = () => {
           "error",
           "Session Expired"
         );
+      } else if (err.status === 403 || err.status === 8006) {
+        console.log(err);
+        Swal.fire("Access Dinied!", `You don’t have permission to access this resource`, "warning");
       } else {
         showToast("Unable to Fetch Approval Request", "warning", "Failed");
       }

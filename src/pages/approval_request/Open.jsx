@@ -79,6 +79,7 @@ export const ApprovalRequestOpenPage = () => {
   const commentBoxRef = useRef(null);
   const navigate = useNavigate();
   const [viewRequestHistory, setViewRequestHistory] = useState(false);
+  const [isLastStep, setIsLastStep] = useState(false);
 
   const {
     currentPage,
@@ -206,6 +207,7 @@ export const ApprovalRequestOpenPage = () => {
         setSelectedModuleLevel,
         viewRequestHistory,
         setViewRequestHistory,
+        isLastStep,
       }}
     >
       <BreadCumb pageList={["Approval Requests", "view"]} />
@@ -371,7 +373,7 @@ export const ApprovalRequestOpenPage = () => {
                     </div>
                   </div>
                   <div className="col-sm-8 col-md-8   animate__animated animate__fadeInRight animate__fast">
-                    <h5>About This Requester</h5>
+                    <h5>About This Request</h5>
                     <div className="m-4">
                       <p className="text-nowrap mb-2">
                         <i className="icon-base bx bx-pin me-2 align-top" />
@@ -693,6 +695,18 @@ export const ApprovalRequestOpenPage = () => {
                                   data-bs-toggle="modal"
                                   data-bs-target="#approvalActionSetModal"
                                   onClick={() => {
+                                    if (
+                                      selectedRequest?.module
+                                        ?.approval_module_levels &&
+                                      selectedRequest?.current_state ===
+                                        selectedRequest?.module
+                                          ?.approval_module_levels?.length
+                                    ) {
+                                      setIsLastStep(true);
+                                    } else {
+                                      setIsLastStep(false);
+                                    }
+
                                     setSelectedModuleLevel({
                                       module_level_uid: level.uid,
                                       action: {
