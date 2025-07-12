@@ -238,7 +238,14 @@ export const DirectoryPage = () => {
                     directories.map((dept, index) => (
                       <tr key={dept.uid}>
                         <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                        <td className="fw-medium">{dept.name}</td>
+                        <td
+                          className="fw-medium cursor-pointer"
+                          onClick={() =>
+                            navigate(`/settings/directories/open/${dept.uid}`)
+                          }
+                        >
+                          {dept.name}
+                        </td>
                         <td className="fw-medium">{dept.code}</td>
                         <td className="fw-medium">
                           {dept.description.length > 40
@@ -246,38 +253,17 @@ export const DirectoryPage = () => {
                             : dept.description}
                         </td>
                         <td className="text-center">
-                          <div className="dropdown">
-                            <button
-                              aria-label="Click me"
-                              type="button"
-                              className="btn p-0 dropdown-toggle hide-arrow"
-                              data-bs-toggle="dropdown"
-                            >
-                              <i className="bx bx-menu"></i>
-                            </button>
-                            <div className="dropdown-menu">
-                              <button
-                                className="dropdown-item"
-                                onClick={() =>
-                                  navigate(
-                                    `/settings/directories/open/${dept.uid}`
-                                  )
-                                }
-                              >
-                                <i className="bx bx-edit-alt me-1"></i> View
-                              </button>
-                              <a
-                                aria-label="dropdown action option"
-                                className="dropdown-item text-danger"
-                                href="#"
-                                onClick={async () => {
-                                  handleDelete(dept);
-                                }}
-                              >
-                                <i className="bx bx-trash me-1"></i> Delete
-                              </a>
-                            </div>
-                          </div>
+                          <button
+                            aria-label="Click me"
+                            type="button"
+                            className="btn p-0 dropdown-toggle hide-arrow text-info"
+                            data-bs-toggle="dropdown"
+                            onClick={() =>
+                              navigate(`/settings/directories/open/${dept.uid}`)
+                            }
+                          >
+                            <i className="bx bx-link-external"></i>&nbsp; View
+                          </button>
                         </td>
                       </tr>
                     ))

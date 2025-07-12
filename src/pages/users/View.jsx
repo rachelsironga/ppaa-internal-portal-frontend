@@ -351,17 +351,16 @@ export const UserListPage = () => {
                               </div>
                             </div>
                             <div className="d-flex flex-column">
-                              <a
-                                href={`/users/open/${userData.uid}`}
-                                className="text-heading text-truncate"
-                              >
+                              <span className="text-heading text-truncate">
                                 <span className="fw-medium">
                                   {userData.first_name} {userData.middle_name}{" "}
                                   {userData.last_name}
                                 </span>
-                              </a>
+                              </span>
                               <small className="text-primary">
-                                {userData.email}
+                                {userData.email && userData.email !== ""
+                                  ? userData.email
+                                  : "- - -"}
                               </small>
                             </div>
                           </div>
