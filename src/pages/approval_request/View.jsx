@@ -10,8 +10,12 @@ import { ApprovalRequestsContext } from "../../utils/context";
 import ApprovalRequestModal from "./Modal";
 import { useNavigate } from "react-router-dom";
 import BreadCumb from "../../layouts/BreadCumb";
+import { hasAccess } from "../../hooks/AccessHandler";
+import { useSelector } from "react-redux";
 
 export const ApprovalRequestPage = () => {
+  const user = useSelector((state) => state.userReducer?.data);
+
   const pageSizeData = [5, 10, 20, 50, 70, 100];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [approvalRequests, setApprovalRequests] = useState([]);
@@ -74,7 +78,11 @@ export const ApprovalRequestPage = () => {
         );
       } else if (err.status === 403 || err.status === 8006) {
         console.log(err);
-        Swal.fire("Access Dinied!", `You don’t have permission to access this resource`, "warning");
+        Swal.fire(
+          "Access Dinied!",
+          `You don’t have permission to access this resource`,
+          "warning"
+        );
       } else {
         showToast("Unable to Fetch Approval Request", "warning", "Failed");
       }
@@ -154,10 +162,16 @@ export const ApprovalRequestPage = () => {
       <div className="card">
         <div className="d-flex justify-content-between align-items-center card-header">
           <h5 className="mb-0">List Of All Request</h5>
-          <ApprovalRequestModal
-            title="View Approval Request"
-            onClose={() => setSelectedApprovalRequest(null)}
-          />
+          {hasAccess(
+            user,
+            ["add_approvalrequest", "change_approvalrequest"],
+            ["staff", "admin"]
+          ) && (
+            <ApprovalRequestModal
+              title="View Approval Request"
+              onClose={() => setSelectedApprovalRequest(null)}
+            />
+          )}
         </div>
 
         <div className="card-body ">

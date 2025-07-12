@@ -68,7 +68,7 @@ api.interceptors.response.use(
     ) {
       Swal.fire({
         title: "Access Denied!",
-        text: "You don’t have permission to access this resource.",
+        text: "You don’t have permission to  preceed with the Action",
         icon: "warning",
         allowOutsideClick: false, // User can't click outside to close
         allowEscapeKey: false, // User can't press ESC to close

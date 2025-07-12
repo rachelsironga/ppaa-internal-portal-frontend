@@ -31,6 +31,7 @@ export const getApprovalRequests = async ({
   } catch (error) {}
 };
 
+
 export const createUpdateApprovalRequest = async (formData) => {
   try {
     const response = await api.post(API_URL, formData, config);
@@ -91,7 +92,6 @@ export const getJeevaRolePermByCode = async (codename) => {
   }
 };
 
-
 export const getRequestApprovalSteps = async ({
   request_uid = "",
   pagination = {},
@@ -107,4 +107,14 @@ export const getRequestApprovalSteps = async ({
     console.error("No Jeeva Module And permission found:", error);
     throw error;
   }
+};
+
+export const getApprovalRequestActing = async ({ filter = {} }) => {
+  try {
+    const response = await api.get(
+      `${API_BASE_URL}/api/get-acting-user`,
+      setConfig(filter)
+    );
+    return response.data;
+  } catch (error) {}
 };

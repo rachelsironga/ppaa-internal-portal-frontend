@@ -6,7 +6,11 @@ import usePagination from "../../hooks/usePagination";
 import ReactPaginate from "react-paginate";
 import { useNavigate, useParams } from "react-router-dom";
 import "animate.css";
-import { getApprovalRequests, deleteApprovalRequest } from "./Queries";
+import {
+  getApprovalRequests,
+  deleteApprovalRequest,
+  getApprovalRequestActing,
+} from "./Queries";
 import { ApprovalRequestsContext } from "../../utils/context";
 import ApprovalRequestModal from "./Modal";
 import AccordionContainer from "../../components/accordion/AccordionContainer";
@@ -16,6 +20,7 @@ import ApprovalRequestOpenShimmer from "../../components/loaders/ApprovalRequest
 import { getBadgeClass } from "../../helpers/BadgeClassHelper";
 import BreadCumb from "../../layouts/BreadCumb";
 import RequestHistoryModal from "./RequestHistoryModal";
+import { useSelector } from "react-redux";
 
 const growButtonStyle = `
 @keyframes pulse-grow {
@@ -65,6 +70,8 @@ if (
 
 export const ApprovalRequestOpenPage = () => {
   const { uid } = useParams();
+  const user = useSelector((state) => state.userReducer?.data);
+
   const pageSizeData = [5, 10, 20, 50, 70, 100];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewVisible, setIsViewVisible] = useState(false);
@@ -74,12 +81,17 @@ export const ApprovalRequestOpenPage = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [actingDebounceTimeout, setActingDebounceTimeout] = useState(null);
+
   const [selectedModuleLevel, setSelectedModuleLevel] = useState(null);
   const [openCommentIndex, setOpenCommentIndex] = useState(null);
   const commentBoxRef = useRef(null);
   const navigate = useNavigate();
   const [viewRequestHistory, setViewRequestHistory] = useState(false);
   const [isLastStep, setIsLastStep] = useState(false);
+
+  const [loadingIsActing, setLoadingIsActing] = useState(false);
+  const [isActing, setIsActing] = useState(null);
 
   const {
     currentPage,
@@ -118,6 +130,7 @@ export const ApprovalRequestOpenPage = () => {
       });
       if (result.status === 200 || result.status === 8000) {
         setSelectedRequest(result.data);
+        setLoadingIsActing(false);
       } else {
         setError(true);
         showToast("No Approval Request Found", "warning", "Fetch Completed");
@@ -144,6 +157,36 @@ export const ApprovalRequestOpenPage = () => {
       setDebounceTimeout(timeout);
 
       return () => clearTimeout(timeout); // Cleanup on unmount
+    }
+  };
+
+  const handleFetchActing = async (level, department) => {
+    setLoadingIsActing(true);
+    try {
+      const result = await getApprovalRequestActing({
+        filter: {
+          level: level,
+          department: department,
+        },
+      });
+      if (result.status === 200 || result.status === 8000) {
+        setLoadingIsActing(false);
+        setIsActing(true);
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        showToast(
+          "Session Expired. Please Login Again",
+          "error",
+          "Session Expired"
+        );
+      } else {
+        showToast("Unable Check Acting Status", "warning", "");
+      }
+    } finally {
+      setTimeout(() => {
+        setLoadingIsActing(false);
+      }, 8000);
     }
   };
 
@@ -190,10 +233,36 @@ export const ApprovalRequestOpenPage = () => {
     setSelectedRequest(null); // Reset selected ApprovalRequest after deletion
   };
 
-  // Fetch ApprovalRequests on initial load
+  // Runs only once when component mounts
   useEffect(() => {
     handleFetchData();
-  }, []); // Fetch when search query changes
+  }, []);
+
+  useEffect(() => {
+    // Exit early if no request or no user position
+    if (!selectedRequest || !user?.position) return;
+
+    const levels = selectedRequest.module?.approval_module_levels ?? [];
+    const isRequestFinalized =
+      selectedRequest.status === "REJECTED" ||
+      selectedRequest.status === "APPROVED";
+
+    // Iterate levels to see if acting check is needed
+    levels.forEach((level, index) => {
+      const isCurrentLevel = selectedRequest.current_state === index;
+
+      const isNotOwner =
+        level.level?.uid !== user.position.level_uid ||
+        level.department?.uid !== user.position.department_uid;
+
+      if (isCurrentLevel && !isRequestFinalized && isNotOwner) {
+        // Always validate IDs before calling
+        if (level.level?.uid && level.department?.uid) {
+          handleFetchActing(level.level.uid, level.department.uid);
+        }
+      }
+    });
+  }, [selectedRequest, user]);
 
   return (
     <ApprovalRequestsContext.Provider
@@ -208,6 +277,7 @@ export const ApprovalRequestOpenPage = () => {
         viewRequestHistory,
         setViewRequestHistory,
         isLastStep,
+        isActing,
       }}
     >
       <BreadCumb pageList={["Approval Requests", "view"]} />
@@ -327,13 +397,12 @@ export const ApprovalRequestOpenPage = () => {
               <div className="p-2"></div>
               <div className="card-body pt-4">
                 <div className="row">
-                  <div className="col-sm-4 col-md-4 animate__animated animate__fadeInLeft animate__fast">
+                  <div className="col-lg-4 col-md-4 animate__animated animate__fadeInLeft animate__fast">
                     <h5>Requester Detail</h5>
-                    {console.log(selectedRequest)}
                     <div className="m-4">
                       <p className="text-nowrap mb-2">
                         <i className="icon-base bx bx-user me-2 align-top" />
-                        <span className=" me-3 ">Requester Name:</span>
+                        <span className=" me-3 ">Name:</span>
                         <strong className="bold">
                           {selectedRequest?.created_by?.first_name} &nbsp;
                           {selectedRequest?.created_by?.middle_name}&nbsp;
@@ -342,7 +411,7 @@ export const ApprovalRequestOpenPage = () => {
                       </p>
                       <p className="text-nowrap mb-2">
                         <i className="icon-base bx bx-card me-2 align-bottom" />
-                        <span className=" me-3 ">Requester PF-Number:</span>
+                        <span className=" me-3 ">PF-Number:</span>
                         <strong className="bold">
                           {selectedRequest?.created_by?.pf_number}
                         </strong>
@@ -372,7 +441,7 @@ export const ApprovalRequestOpenPage = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="col-sm-8 col-md-8   animate__animated animate__fadeInRight animate__fast">
+                  <div className="col-lg-4 col-md-4    animate__animated animate__fadeInRight animate__fast">
                     <h5>About This Request</h5>
                     <div className="m-4">
                       <p className="text-nowrap mb-2">
@@ -392,7 +461,7 @@ export const ApprovalRequestOpenPage = () => {
                       </p>
                       <p className="text-nowrap mb-2">
                         <i className="icon-base bx bx-calendar me-2 align-bottom" />
-                        <span className=" me-3 ">Request Date:</span>
+                        <span className=" me-3 ">Requested At:</span>
                         <strong className="bold">
                           {new Date(
                             selectedRequest?.created_at
@@ -405,11 +474,47 @@ export const ApprovalRequestOpenPage = () => {
                       </p>
                       <p className="text-nowrap mb-2">
                         <i className="icon-base bx bx-card me-2 align-bottom" />
-                        <span className=" me-3 ">
-                          Requested Access Period :
-                        </span>
+                        <span className=" me-3 ">Access Period :</span>
                         <strong className="bold">
                           {selectedRequest?.date_range?.name}
+                        </strong>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="col-lg-4 col-md-4  animate__animated animate__fadeInLeft animate__fast">
+                    <h5>Final Handler Detail</h5>
+                    {console.log(selectedRequest)}
+                    <div className="m-4">
+                      <p className="text-nowrap mb-2">
+                        <i className="icon-base bx bx-user me-2 align-top" />
+                        <span className=" me-3 ">Name:</span>
+                        <strong className="bold">
+                          {selectedRequest?.created_by?.first_name} &nbsp;
+                          {selectedRequest?.created_by?.middle_name}&nbsp;
+                          {selectedRequest?.created_by?.last_name}
+                        </strong>
+                      </p>
+                      <p className="text-nowrap mb-2">
+                        <i className="icon-base bx bx-card me-2 align-bottom" />
+                        <span className=" me-3 ">PF-Number:</span>
+                        <strong className="bold">
+                          {selectedRequest?.created_by?.pf_number}
+                        </strong>
+                      </p>
+                      <p className="text-nowrap mb-2">
+                        <i className="icon-base bx bxs-layer me-2 align-bottom" />
+                        <span className=" me-3 ">Departments:</span>
+                        <strong className="bold">
+                          {
+                            selectedRequest?.created_by?.position
+                              ?.department_name
+                          }{" "}
+                          (
+                          {
+                            selectedRequest?.created_by?.position
+                              ?.department_code
+                          }
+                          )
                         </strong>
                       </p>
                     </div>
@@ -686,7 +791,11 @@ export const ApprovalRequestOpenPage = () => {
                             !(
                               selectedRequest.status === "REJECTED" ||
                               selectedRequest.status === "APPROVED"
-                            ) && (
+                            ) &&
+                            ((level.level?.uid === user.position?.level_uid &&
+                              level.department?.uid ===
+                                user.position?.department_uid) ||
+                              isActing) && (
                               <div className="d-flex justify-content-end mt-2">
                                 <button
                                   aria-label="Click me"
@@ -721,20 +830,28 @@ export const ApprovalRequestOpenPage = () => {
                                         name: level.department.name,
                                         code: level.department.code,
                                       },
-                                      is_acting:
-                                        level.step?.is_acting ||
-                                        level.step?.position?.department_uid !==
-                                          level.department.uid ||
-                                        level.level?.uid !==
-                                          level.step?.position?.level_uid
-                                          ? true
-                                          : false,
+                                      is_acting: isActing,
                                     });
                                   }}
                                 >
                                   <i className="bx bx-grid-small"></i> Take your
                                   Action
                                 </button>
+                              </div>
+                            )}
+                          {/* show loading if system validate for acting user */}
+                          {selectedRequest?.current_state === index &&
+                            loadingIsActing && (
+                              <div className="d-flex align-items-center gap-2 mt-2">
+                                <ReactLoading
+                                  type="cylon"
+                                  color="#03C3EC"
+                                  height="30px"
+                                  width="40px"
+                                />
+                                <span className="mt-2">
+                                  Verifying Acting role
+                                </span>
                               </div>
                             )}
                         </div>

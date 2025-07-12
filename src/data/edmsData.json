@@ -1,0 +1,126 @@
+{
+  "Modules": [
+    {
+      "codename": "38",
+      "name": "PMTCT",
+      "Permissions": [
+        {
+          "codename": "dgerterter",
+          "name": "Postnatal Report - Print"
+        },
+        {
+          "codename": "fdggdetret",
+          "name": "Postnatal - Save"
+        },
+        {
+          "codename": "435tregdfdgf",
+          "name": "Registration List"
+        },
+        {
+          "codename": "rtgfbcbfcgrd",
+          "name": "Registration List - Change Registration"
+        },
+        {
+          "codename": "gdfgertreter",
+          "name": "Registration List - Follow up Registration"
+        },
+        {
+          "codename": "435fgfdgxfd",
+          "name": "Registration List - New Registration"
+        },
+        {
+          "codename": "dfgdgetere",
+          "name": "Registration List - Print"
+        },
+        {
+          "codename": "4365eygdgfdg",
+          "name": "Registration List - View Follow up List"
+        }
+      ]
+    },
+    {
+      "codename": "vcbcvbretreter",
+      "name": "GENERAL MAINTENANCE",
+      "Permissions": [
+        {
+          "codename": "rerre4343",
+          "name": "Close Requests"
+        },
+        {
+          "codename": "39020402",
+          "name": "Close Requests - Close"
+        }
+      ]
+    },
+    {
+      "codename": "345346565",
+      "name": "PRIVATE CREDIT",
+      "Permissions": [
+        {
+          "codename": "344343434",
+          "name": "Bill - Authorization Type Credit"
+        },
+        {
+          "codename": "400201434307",
+          "name": "Bill - Authorization Type Waiver"
+        },
+        {
+          "codename": "343434",
+          "name": "Bill  Cancel"
+        }
+      ]
+    },
+    {
+      "codename": "dfbcbvcbcv",
+      "name": "CMS",
+      "Permissions": [
+        {
+          "codename": "545454545",
+          "name": "CMS Entry Details -Save"
+        },
+        {
+          "codename": "465e645e645e645",
+          "name": "CMS Entry List -Approve"
+        }
+      ]
+    },
+    {
+      "codename": "bcvgbvcbvdf",
+      "name": "WEB INDENT",
+      "Permissions": [
+        {
+          "codename": "46353535435454",
+          "name": "Cancel - Clinical Notes"
+        },
+        {
+          "codename": "45010103",
+          "name": "Cancel - Clinical Notes Template Master"
+        },
+        {
+          "codename": "4646463644ff64",
+          "name": "Cancel  - Diagnosis"
+        }
+
+      ]
+    },
+    {
+      "codename": "46rtbcbcv",
+      "name": "Dietry",
+      "Permissions": [
+        {
+          "codename": "46464v46v4644646vhfhgh",
+          "name": "Diet - Distribution"
+        },
+        {
+          "codename": "4t43egfgrrgg",
+          "name": "Dietry - Change Password"
+        },
+        {
+          "codename": "fgdgdgfdgfdgf",
+          "name": "Dietry - Department Indent Cancel"
+        }
+
+      ]
+    }
+  ]
+}

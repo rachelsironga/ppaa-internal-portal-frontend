@@ -14,6 +14,8 @@ import { getModules } from "../approval_module/Queries";
 import PDFViewer from "../../components/common/PDFViewer";
 import jeevaData from "../../data/jeevaData.json";
 import jeevaGroupData from "../../data/jeevaGroupData.json";
+import edmsData from "../../data/edmsData.json";
+import edmsGroupData from "../../data/edmsGroupData.json";
 import requestTypes from "../../data/requestTypes.json";
 import dateRangeData from "../../data/dateRangeData.json";
 import AccordionContainer from "../../components/accordion/AccordionContainer";
@@ -29,6 +31,9 @@ const ApprovalRequestModal = () => {
     setIsModalOpen,
   } = useContext(ApprovalRequestsContext);
   const user = useSelector((state) => state.userReducer);
+
+  const [longGroupData, setLongGroupData] = useState([]);
+  const [longData, setLongData] = useState([]);
 
   const [errors, setOtherError] = useState({});
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -62,7 +67,7 @@ const ApprovalRequestModal = () => {
     setActiveChip(moduleCodename);
     setActiveChipLabel(moduleLabel);
     // Show all possible permissions for this module
-    const module = jeevaData.Modules.find(
+    const module = longData.Modules.find(
       (module) => module.codename === moduleCodename
     );
     setActiveModulePermissions(module ? module.Permissions : []);
@@ -434,6 +439,7 @@ const ApprovalRequestModal = () => {
           page: 1,
           page_size: 10,
           paginated: true,
+          is_active: true,
         },
       });
       if (result.status === 200 || result.status === 8000) {
@@ -450,16 +456,16 @@ const ApprovalRequestModal = () => {
 
   // Map Modules and Permissions to grouped options
   const groupedOptions = [
-    {
-      label: "Modules",
-      options: jeevaData.Modules.map((mod) => ({
-        value: mod.codename,
-        label: mod.name,
-      })),
-    },
+    // {
+    //   label: "Modules",
+    //   options: longData?.Modules.map((mod) => ({
+    //     value: mod.codename,
+    //     label: mod.name,
+    //   })),
+    // },
     // {
     //   label: "Permissions",
-    //   options: jeevaData.Permissions.map((perm) => ({
+    //   options: longData.Permissions.map((perm) => ({
     //     value: perm.codename,
     //     label: perm.name,
     //   })),
@@ -595,6 +601,40 @@ const ApprovalRequestModal = () => {
       fetchDateRanges();
     }
   }, [isModalOpen]);
+
+  // When selectedModule changes, set the data
+  useEffect(() => {
+    if (isModalOpen) {
+      if (selectedModule?.code === "JEEVA_ACCESS") {
+        setLongData(jeevaData);
+        setLongGroupData(jeevaGroupData);
+      } else if (selectedModule?.code === "EDMS_ACCESS") {
+        setLongData(edmsData);
+        setLongGroupData(edmsGroupData);
+      } else {
+        setLongData([]);
+        setLongGroupData([]);
+      }
+    }
+  }, [selectedModule, isModalOpen]);
+
+  // When longData changes, build options
+  useEffect(() => {
+    if (longData && longData.Modules) {
+      const options = [
+        {
+          label: "Modules",
+          options: longData.Modules.map((mod) => ({
+            value: mod.codename,
+            label: mod.name,
+          })),
+        },
+      ];
+      setLeftOptions(options);
+    } else {
+      setLeftOptions([]); // Or null
+    }
+  }, [longData]);
 
   return (
     <>
@@ -1258,7 +1298,7 @@ const ApprovalRequestModal = () => {
                                           overflowY: "auto",
                                         }}
                                       >
-                                        {jeevaGroupData.map((group, idx) => (
+                                        {longGroupData.map((group, idx) => (
                                           <div
                                             key={group.uid}
                                             className="col-12 col-sm-6 mb-3"
@@ -1300,9 +1340,9 @@ const ApprovalRequestModal = () => {
                                                     firstModule.name
                                                   );
 
-                                                  // Find all possible permissions for this module from jeevaData
+                                                  // Find all possible permissions for this module from longData
                                                   const allPermsModule =
-                                                    jeevaData.Modules.find(
+                                                    longData.Modules.find(
                                                       (m) =>
                                                         m.codename ===
                                                         firstModule.codename
