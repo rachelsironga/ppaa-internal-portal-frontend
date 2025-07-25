@@ -16,10 +16,7 @@ import jeevaData from "../../data/jeevaData.json";
 import jeevaGroupData from "../../data/jeevaGroupData.json";
 import edmsData from "../../data/edmsData.json";
 import edmsGroupData from "../../data/edmsGroupData.json";
-import requestTypes from "../../data/requestTypes.json";
-import dateRangeData from "../../data/dateRangeData.json";
-import AccordionContainer from "../../components/accordion/AccordionContainer";
-import { Provider, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { getDateRanges } from "../date_range/Queries";
 
 const ApprovalRequestModal = () => {
@@ -187,59 +184,6 @@ const ApprovalRequestModal = () => {
     );
   };
 
-  // Helpers
-  const removeFromGrouped = (grouped, items) =>
-    grouped.map((group) => ({
-      ...group,
-      options: group.options.filter(
-        (opt) => !items.some((sel) => sel.value === opt.value)
-      ),
-    }));
-
-  const addToGrouped = (grouped, items) =>
-    grouped.map((group) => ({
-      ...group,
-      options: [
-        ...group.options,
-        ...items.filter(
-          (item) =>
-            item.group === group.label &&
-            !group.options.some((opt) => opt.value === item.value)
-        ),
-      ],
-    }));
-
-  // Assign: left -> right
-  const handleAssign = () => {
-    // Get selected with group info
-    const selectedWithGroup = [];
-    leftOptions.forEach((group) => {
-      group.options.forEach((opt) => {
-        if (selectedLeft.some((sel) => sel.value === opt.value)) {
-          selectedWithGroup.push({ ...opt, group: group.label });
-        }
-      });
-    });
-    setLeftOptions(removeFromGrouped(leftOptions, selectedLeft));
-    setSelectedLeft([]);
-    setRightOptions(addToGrouped(rightOptions, selectedWithGroup));
-  };
-
-  // Remove: right -> left
-  const handleRemove = () => {
-    const selectedWithGroup = [];
-    rightOptions.forEach((group) => {
-      group.options.forEach((opt) => {
-        if (selectedRight.some((sel) => sel.value === opt.value)) {
-          selectedWithGroup.push({ ...opt, group: group.label });
-        }
-      });
-    });
-    setRightOptions(removeFromGrouped(rightOptions, selectedRight));
-    setSelectedRight([]);
-    setLeftOptions(addToGrouped(leftOptions, selectedWithGroup));
-  };
-
   const [loadingModules, setLoadingModules] = useState(false);
   const [modules, setModules] = useState([]);
 
@@ -359,31 +303,6 @@ const ApprovalRequestModal = () => {
     if (modalInstance) modalInstance.hide();
   };
 
-  const handleFetchJeevaRolePerm = async (searchValue = "") => {
-    setLoadingLeftOptions(true);
-    try {
-      const result = await getJeevaRolePerm({
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-          search: searchValue,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        console.log("Jeeva Role Perm Result:", result.data);
-        // setModules(result.data);
-        // setLeftOptions(groupedOptions);
-      } else {
-        setModules(null);
-      }
-    } catch (err) {
-      setModules(null);
-    } finally {
-      setLoadingLeftOptions(false);
-    }
-  };
-
   const handleFetchModule = async (searchValue = "") => {
     setLoadingModules(true);
     try {
@@ -410,6 +329,7 @@ const ApprovalRequestModal = () => {
   const fetchDepartments = async (searchValue = "") => {
     setLoadingDepartments(true);
     try {
+      console.log("Fetching departments with search:", searchValue);
       const result = await getDepartments({
         search: searchValue,
         pagination: {
@@ -454,23 +374,7 @@ const ApprovalRequestModal = () => {
     }
   };
 
-  // Map Modules and Permissions to grouped options
-  const groupedOptions = [
-    // {
-    //   label: "Modules",
-    //   options: longData?.Modules.map((mod) => ({
-    //     value: mod.codename,
-    //     label: mod.name,
-    //   })),
-    // },
-    // {
-    //   label: "Permissions",
-    //   options: longData.Permissions.map((perm) => ({
-    //     value: perm.codename,
-    //     label: perm.name,
-    //   })),
-    // },
-  ];
+  const groupedOptions = [];
 
   //for Wizard tab validation & Control
   const validateTab = async (
@@ -528,6 +432,7 @@ const ApprovalRequestModal = () => {
       return false;
     }
   };
+
   //for Wizard tab validation & Control
   const tabChanged = async (
     { handleNext },
@@ -653,7 +558,7 @@ const ApprovalRequestModal = () => {
         className="btn btn-primary ms-auto btn-sm   animate__animated animate__fadeInRight animate__slow"
         data-bs-toggle="modal"
         data-bs-target="#viewCreateRequestModal"
-        onClick={setIsModalOpen(true)}
+        onClick={() => setIsModalOpen(true)}
       >
         <i className="bx bx-edit-alt me-1"></i> &nbsp; Create New Request
       </button>
@@ -935,7 +840,6 @@ const ApprovalRequestModal = () => {
                             isLoading={loadingDepartments}
                             className="select2-selection fetched-select2"
                             onChange={(e) => {
-                              console.log("Selected Department:", e);
                               if (e === null || e.value == "") {
                                 setFieldValue("department_uid", "");
                               } else {
@@ -943,7 +847,9 @@ const ApprovalRequestModal = () => {
                               }
                             }}
                             onInputChange={(e) => {
-                              fetchDepartments(e);
+                              if (e.length > 2) {
+                                fetchDepartments(e);
+                              }
                             }}
                             options={departments?.map((item) => ({
                               value: item.uid,

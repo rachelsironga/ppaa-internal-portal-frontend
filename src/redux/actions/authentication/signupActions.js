@@ -10,8 +10,6 @@ export const signup = (userData, navigation) => async (dispatch) => {
   });
 
   const data = JSON.stringify(userData);
-  console.log("data==============>");
-  console.log(data);
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -30,7 +28,6 @@ export const signup = (userData, navigation) => async (dispatch) => {
     });
 
     // loginuser if successfully registered
-    console.log("=======response.data========", response.data);
     const { access_token, refresh_token } = response.data.data;
     const user = response.data.user;
 
@@ -46,8 +43,6 @@ export const signup = (userData, navigation) => async (dispatch) => {
 
     navigation("/");
   } catch (error) {
-    console.log("error==============>error");
-    console.log(error)
 
     dispatch({
       type: signupTypes.SIGNUP_FAILURE,

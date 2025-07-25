@@ -3,10 +3,18 @@
     "header": "",
     "items": [
       {
+        "text": "Services",
+        "icon": "bx bxl-microsoft",
+        "available": true,
+        "link": "/",
+        "permission": [],
+        "role": ["admin"]
+      },
+      {
         "text": "Dashboard",
         "icon": "bx bx-home",
         "available": true,
-        "link": "/",
+        "link": "/dashboard",
         "permission": [],
         "role": ["admin", "staff"]
       },
@@ -109,18 +117,10 @@
             "role": ["admin"] 
           },
           {
-            "text": "Roles",
+            "text": "Roles\t&Permissions",
             "icon": "bx bx-detail",
             "available": true,
             "link": "/account/settings1",
-            "permission": ["1"],
-            "role": ["admin"]
-          },
-          {
-            "text": "Permissions",
-            "icon": "bx bx-box",
-            "available": true,
-            "link": "/account/settings2",
             "permission": ["1"],
             "role": ["admin"]
           }

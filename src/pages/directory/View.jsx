@@ -11,6 +11,7 @@ import { DirectoryModal } from "./Modal";
 
 import "animate.css";
 import BreadCumb from "../../layouts/BreadCumb";
+import { DirectoryImportModal } from "./ImportModal";
 
 export const DirectoryPage = () => {
   const navigate = useNavigate();
@@ -133,10 +134,10 @@ export const DirectoryPage = () => {
       <div className="card">
         <div className="d-flex justify-content-between align-items-center card-header mb-1">
           <h5 className="mb-0">Hospital Directories</h5>
-          <DirectoryModal
-            title="View Hospital Directories"
-            onClose={() => setSelectedDirectory(null)}
-          />
+          <div className=" d-flex align-items-center">
+            <DirectoryImportModal onClose={() => setSelectedDirectory(null)} />
+            <DirectoryModal onClose={() => setSelectedDirectory(null)} />
+          </div>
         </div>
 
         <div className="card-body">
@@ -235,22 +236,25 @@ export const DirectoryPage = () => {
                       </td>
                     </tr>
                   ) : (
-                    directories.map((dept, index) => (
-                      <tr key={dept.uid}>
+                    directories.map((dataRow, index) => (
+                      <tr key={"directory-" + dataRow.uid}>
                         <td>{(currentPage - 1) * pageSize + index + 1}</td>
                         <td
                           className="fw-medium cursor-pointer"
                           onClick={() =>
-                            navigate(`/settings/directories/open/${dept.uid}`)
+                            navigate(
+                              `/settings/directories/open/${dataRow.uid}`
+                            )
                           }
                         >
-                          {dept.name}
+                          {dataRow.name}
                         </td>
-                        <td className="fw-medium">{dept.code}</td>
+                        <td className="fw-medium">{dataRow.code}</td>
                         <td className="fw-medium">
-                          {dept.description.length > 40
-                            ? `${dept.description.slice(0, 40)}...`
-                            : dept.description}
+                          {dataRow.description &&
+                          dataRow.description.length > 40
+                            ? `${dataRow.description.slice(0, 40)}...`
+                            : dataRow.description}
                         </td>
                         <td className="text-center">
                           <button
@@ -259,7 +263,9 @@ export const DirectoryPage = () => {
                             className="btn p-0 dropdown-toggle hide-arrow text-info"
                             data-bs-toggle="dropdown"
                             onClick={() =>
-                              navigate(`/settings/directories/open/${dept.uid}`)
+                              navigate(
+                                `/settings/directories/open/${dataRow.uid}`
+                              )
                             }
                           >
                             <i className="bx bx-link-external"></i>&nbsp; View

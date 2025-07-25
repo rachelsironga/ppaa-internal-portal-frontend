@@ -18,9 +18,21 @@ function App() {
     location.pathname.includes("under-maintenance") |
     location.pathname.includes("blank");
 
+  const isService = location.pathname === "/";
+
   return (
     <>
-      <ToastContainer position="top-right" autoClose={5000} hideProgressBar newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
 
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
@@ -30,14 +42,13 @@ function App() {
             </AppRoutes>
           ) : (
             <ProtectedRoute>
-              <Layout>
+              <Layout isService={isService}>
                 <AppRoutes />
               </Layout>
             </ProtectedRoute>
           )}
         </PersistGate>
       </Provider>
-
     </>
   );
 }

@@ -7,22 +7,23 @@ import { AccountContext } from "../../utils/context";
 import { useParams } from "react-router-dom";
 import {
   getPositions,
-  getUsers,
   photoUpload,
+  removeDelegatedUser,
   signatureUpload,
 } from "./Queries";
 import usePagination from "../../hooks/usePagination";
-// import { UserModal } from "./Modal";
 import ReactPaginate from "react-paginate";
 import { formatDate } from "../../helpers/DateFormater";
-import AccordionContainer from "../../components/accordion/AccordionContainer";
-import Select from "react-select";
 import { useSelector } from "react-redux";
-import { Badge } from "reactstrap";
 import BreadCumb from "../../layouts/BreadCumb";
+import DelegationModal from "./DelegationModal";
+import { hasAccess } from "../../hooks/AccessHandler";
+import { useDispatch } from "react-redux";
+import { userTypes } from "../../redux/types/authentication";
 
 export const AccountPage = () => {
   const pageSizeData = [5, 10, 20, 50, 70, 100];
+  const dispatch = useDispatch();
 
   // Place this above your component or inside the component before the return
   const badgeColors = [
@@ -39,8 +40,10 @@ export const AccountPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isActingChange, setIsActingChange] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadDelagationModal, setLoadDelagationModal] = useState(false);
 
   const [loadingPositions, setLoadingPositions] = useState(true);
   const [errorPositions, setErrorPositions] = useState(null);
@@ -371,7 +374,53 @@ export const AccountPage = () => {
     setDebounceTimeout(timeout);
 
     return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage]);
+  }, [pageSize, currentPage]);
+
+  useEffect(() => {
+    handleFetchData();
+  }, [isActingChange]);
+
+  const handleRemoveDelegation = async () => {
+    try {
+      const confirmation = await Swal.fire({
+        title: "Are you sure?",
+        text: "Your About to Remove Delegated User",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#DD6B55",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Yes, Remove",
+      });
+
+      if (confirmation.isConfirmed) {
+        const result = await removeDelegatedUser();
+        if (result.status === 200 || result.status === 8000) {
+          Swal.fire(
+            "Process Completed!",
+            "The Delegation Removed Successfully.",
+            "success"
+          );
+          dispatch({
+            type: userTypes.USER_UPDATE,
+            payload: {
+              user: result.data, // ✅ wrap in `user`
+            },
+          });
+          window.location.reload();
+        } else {
+          Swal.fire("Failed", `${result.message}`, "error");
+        }
+      }
+    } catch (error) {
+      Swal.fire(
+        "Unsuccessful",
+        `Unable to Perform Remove. Please Try Again or Contact Support Team`,
+        "error"
+      );
+    }
+
+    setSelectedApprovalRequest(null); // Reset selected ApprovalRequest after deletion
+  };
 
   return (
     <AccountContext.Provider
@@ -383,6 +432,10 @@ export const AccountPage = () => {
         setSelectedUser,
         isModalOpen,
         setIsModalOpen,
+        loadDelagationModal,
+        setLoadDelagationModal,
+        isActingChange,
+        setIsActingChange,
       }}
     >
       <BreadCumb pageList={["Profile"]}>
@@ -769,11 +822,12 @@ export const AccountPage = () => {
                         >
                           <i className="icon-base bx bx-lock icon-sm me-1_5"></i>
                           Security{""}
-                          {selectedUser.signature.trim() === "" && (
-                            <span className="fw-medium badge bg-label-danger ms-3 px-2">
-                              <i className="icon-base bx bx-info-circle icon-sm me-1_5"></i>
-                            </span>
-                          )}
+                          {selectedUser.signature &&
+                            selectedUser.signature.trim() === "" && (
+                              <span className="fw-medium badge bg-label-danger ms-3 px-2">
+                                <i className="icon-base bx bx-info-circle icon-sm me-1_5"></i>
+                              </span>
+                            )}
                         </button>
                       </li>
                       <li className="nav-item">
@@ -802,53 +856,75 @@ export const AccountPage = () => {
                         <div className="card">
                           <div className="card-body invoice-preview-header rounded shadow mb-4">
                             {selectedUser.position ? (
-                              <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
-                                <div className="mb-xl-2 mb-6 text-heading">
-                                  <div className="d-flex svg-illustration mb-6 gap-2 align-items-center">
-                                    <h3 className=" demo fw-bold ms-50 lh-1">
-                                      Current Position
-                                    </h3>
-                                  </div>
-                                  <p className="mb-2">
-                                    {" "}
-                                    <strong>Position : </strong>{" "}
-                                    <span className="text-primary">
-                                      {selectedUser?.position?.level_name} - (
-                                      {selectedUser?.position?.level_code})
-                                    </span>
-                                  </p>
-                                  <p className="mb-2">
-                                    {" "}
-                                    <strong>Directory : </strong>{" "}
-                                    {selectedUser?.position?.directory_name} - (
-                                    {selectedUser?.position?.directory_code})
-                                  </p>
-                                  <p className="mb-2">
-                                    {" "}
-                                    <strong>Department/Unit : </strong>{" "}
-                                    {selectedUser?.position?.department_name} -
-                                    ({selectedUser?.position?.department_code})
-                                  </p>
+                              <div>
+                                <div className="d-flex svg-illustration  justify-content-between mb-6 gap-2 align-items-center">
+                                  <h4 className=" demo fw-bold ms-50 lh-1">
+                                    Current Position
+                                  </h4>
+                                  {hasAccess(
+                                    user,
+                                    ["can_assign_delegate"],
+                                    ["can_assign_delegate"]
+                                  ) &&
+                                    selectedUser.position?.acting_user ===
+                                      null && (
+                                      <button
+                                        className="btn btn-sm btn-info btn-outline-info"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#delegatedUserModal"
+                                        onClick={() =>
+                                          setLoadDelagationModal(true)
+                                        }
+                                      >
+                                        <i className="bx bx-user-plus"></i>
+                                        &nbsp;Add Delegate{" "}
+                                      </button>
+                                    )}
                                 </div>
-                                <div>
-                                  <h5 className="mb-6">Date & References</h5>
-                                  <div className="mb-1 text-heading">
-                                    <strong>Assigned At : </strong>
-                                    <span className="fw-medium badge bg-label-success px-3">
-                                      {formatDate(
-                                        selectedUser?.position?.start_date
-                                      )}
-                                    </span>
+                                <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
+                                  <div className="mb-xl-2 mb-6 text-heading">
+                                    <p className="mb-2">
+                                      {" "}
+                                      <strong>Position : </strong>{" "}
+                                      <span className="text-primary">
+                                        {selectedUser?.position?.level_name} - (
+                                        {selectedUser?.position?.level_code})
+                                      </span>
+                                    </p>
+                                    <p className="mb-2">
+                                      {" "}
+                                      <strong>Directory : </strong>{" "}
+                                      {selectedUser?.position?.directory_name} -
+                                      ({selectedUser?.position?.directory_code})
+                                    </p>
+                                    <p className="mb-2">
+                                      {" "}
+                                      <strong>Department/Unit : </strong>{" "}
+                                      {selectedUser?.position?.department_name}{" "}
+                                      - (
+                                      {selectedUser?.position?.department_code})
+                                    </p>
                                   </div>
-                                  <div className="mb-1 text-heading">
-                                    <strong>Due At : </strong>
-                                    <span className="fw-medium badge bg-label-danger px-3">
-                                      {selectedUser?.position?.last_date
-                                        ? formatDate(
-                                            selectedUser?.position?.last_date
-                                          )
-                                        : " - "}
-                                    </span>
+                                  <div>
+                                    <h5 className="mb-6">Date & References</h5>
+                                    <div className="mb-1 text-heading">
+                                      <strong>Assigned At : </strong>
+                                      <span className="fw-medium badge bg-label-success px-3">
+                                        {formatDate(
+                                          selectedUser?.position?.start_date
+                                        )}
+                                      </span>
+                                    </div>
+                                    <div className="mb-1 text-heading">
+                                      <strong>Due At : </strong>
+                                      <span className="fw-medium badge bg-label-danger px-3">
+                                        {selectedUser?.position?.last_date
+                                          ? formatDate(
+                                              selectedUser?.position?.last_date
+                                            )
+                                          : " - "}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -861,6 +937,73 @@ export const AccountPage = () => {
                             )}
                           </div>
 
+                          {selectedUser.position?.acting_user && (
+                            <div className="card-body invoice-preview-header rounded shadow mb-4">
+                              <div>
+                                <div className="d-flex svg-illustration  justify-content-between mb-6 gap-2 align-items-center">
+                                  <h5 className=" demo fw-bold ms-50 lh-1">
+                                    Delegated Responsibility
+                                  </h5>
+
+                                  {hasAccess(
+                                    user,
+                                    ["can_assign_delegate"],
+                                    ["can_assign_delegate"]
+                                  ) && (
+                                    <button
+                                      className="btn btn-sm btn-danger btn-outline-danger"
+                                      onClick={() => handleRemoveDelegation()}
+                                    >
+                                      <i className="bx bx-user-minus"></i>
+                                      &nbsp;Remove Delegation
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
+                                  <div className="mb-xl-2 mb-4 text-heading">
+                                    <p className="mb-2">
+                                      {" "}
+                                      <strong>Name : </strong>{" "}
+                                      <span className="text-primary">
+                                        {
+                                          selectedUser?.position?.acting_user
+                                            .name
+                                        }
+                                      </span>
+                                    </p>
+                                    <p className="mb-2">
+                                      {" "}
+                                      <strong>Email Address : </strong>{" "}
+                                      {
+                                        selectedUser?.position?.acting_user
+                                          ?.email
+                                      }{" "}
+                                    </p>
+                                    <p className="mb-2">
+                                      {" "}
+                                      <strong>PF-Number : </strong>{" "}
+                                      {
+                                        selectedUser?.position?.acting_user
+                                          ?.pf_number
+                                      }
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <h5 className="mb-6">References</h5>
+                                    <div className="mb-1 text-heading">
+                                      <strong>Assigned At : </strong>
+                                      <span className="fw-medium badge bg-label-success px-3">
+                                        {formatDate(
+                                          selectedUser?.position?.acting_user
+                                            ?.created_at
+                                        )}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           <div className="card-body animate__animated animate__fadeInUp animate__faster">
                             <div>
                               <div className="d-flex justify-content-between align-items-center card-header">
@@ -873,7 +1016,9 @@ export const AccountPage = () => {
                               <table className="table table-hover table-align-middle mb-0 table-bordered">
                                 <thead style={{ backgroundColor: "#f1f1f1" }}>
                                   <tr>
-                                    <th style={{ width: "50px" }}>S/N</th>
+                                    <th style={{ width: "50px" }}>
+                                      S&nbsp;/&nbsp;N
+                                    </th>
                                     <th>Position</th>
                                     <th>Location</th>
                                     <th>From</th>
@@ -920,7 +1065,7 @@ export const AccountPage = () => {
                                   ) : (
                                     positions.map((dataRows, index) => (
                                       <tr key={dataRows.uid}>
-                                        <td>
+                                        <td style={{ width: "50px" }}>
                                           {(currentPage - 1) * pageSize +
                                             index +
                                             1}
@@ -1180,6 +1325,7 @@ export const AccountPage = () => {
       </div>
 
       {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedUser(null)} /> */}
+      <DelegationModal />
     </AccountContext.Provider>
   );
 };

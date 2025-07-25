@@ -44,12 +44,29 @@ export const createUpdateUser = async (userData) => {
   }
 };
 
-export const deleteUser = async (id) => {
+export const assignDelegatedUser = async (userData) => {
   try {
-    const response = await axios.delete(`${API_URL}/${id}`);
+    const response = await api.post(
+      `${API_URL}/assign-delegated-user`,
+      userData,
+      config
+    );
     return response.data;
   } catch (error) {
-    console.error("Error deleting directory:", error);
+    console.error(`Error while Assigning Delegated User:`, error);
+    throw error;
+  }
+};
+
+export const removeDelegatedUser = async () => {
+  try {
+    const response = await api.delete(
+      `${API_URL}/assign-delegated-user`,
+      config
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error remove Deligation:", error);
     throw error;
   }
 };
@@ -114,3 +131,6 @@ export const createUpdatePositions = async (positionData) => {
     throw error;
   }
 };
+
+
+

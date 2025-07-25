@@ -163,15 +163,8 @@ const RequestHistoryModal = ({ loadOnlyModal = false }) => {
                                   style={{
                                     minWidth: "300px",
                                     borderRadius: "10px",
-                                    borderTop:
-                                      selectedRequest?.current_state ===
-                                        index &&
-                                      selectedRequest.status !== "APPROVED" &&
-                                      selectedRequest.status !== "REJECTED"
-                                        ? "3px solid rgb(117, 202, 223)"
-                                        : "0",
                                     paddingTop: "10px",
-                                    animationDelay: `${index * 0.25}s`, // Staggered animation
+                                    animationDelay: `${index * 0.25}s`,
                                     WebkitAnimationDelay: `${index * 0.25}s`,
                                   }}
                                   key={`levels_history_${index}`}
@@ -252,7 +245,6 @@ const RequestHistoryModal = ({ loadOnlyModal = false }) => {
                                       style={{
                                         marginTop: "0px",
                                         marginBottom: "16px",
-                                        width: "300px",
                                         maxWidth: "100%",
                                         background: "#fff",
                                         color: "#222",

@@ -325,7 +325,7 @@ export const ApprovalModuleOpenPage = () => {
         </div>
       </div>
 
-      <div className="col-md-8">
+      <div className="col-md-12 col-lg-8">
         <div className="card">
           <div>
             <div className="d-flex justify-content-between align-items-center card-header">
@@ -356,7 +356,7 @@ export const ApprovalModuleOpenPage = () => {
           </div>
 
           <div className="card-body animate__animated animate__fadeInUp animate__faster">
-            <div className="text-nowrap mb-4">
+            <div className="text-nowrap mb-4 table-responsive">
               <DragDropContext onDragEnd={handleDragEnd}>
                 <table className="table table-hover table-align-middle mb-0 table-bordered">
                   <thead style={{ backgroundColor: "#f1f1f1" }}>
@@ -364,6 +364,7 @@ export const ApprovalModuleOpenPage = () => {
                       <th style={{ width: "50px" }}>S/N</th>
                       <th>Name</th>
                       <th>Action</th>
+                      <th>Location</th>
                       <th style={{ width: "100px" }}>Is Signatory</th>
                       <th style={{ width: "100px" }}>Status</th>
                       <th style={{ width: "60px" }}>Sort</th>
@@ -424,6 +425,23 @@ export const ApprovalModuleOpenPage = () => {
                                   <td className="fw-medium">{`${dataRows.level.name} (${dataRows.level.code})`}</td>
                                   <td className="fw-medium">
                                     {dataRows.action.name}
+                                  </td>
+                                  <td className="fw-medium">
+                                    {dataRows.department !== null ? (
+                                      <div className="d-flex flex-column text-start">
+                                        <span className="fw-bold text-muted">
+                                          {dataRows.department?.directory?.name}
+                                        </span>
+                                        <span className="small">
+                                          Department:{" "}
+                                          <span className="text-muted">
+                                            {dataRows.department?.name}
+                                          </span>
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span>{dataRows.department?.name}</span>
+                                    )}
                                   </td>
                                   <td className="fw-medium text-center">
                                     {dataRows.is_signatory ? (
