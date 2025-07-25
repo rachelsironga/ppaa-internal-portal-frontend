@@ -11,61 +11,61 @@ import Select from "react-select";
 
 
 export const DirectoryModal = ({ loadOnlyModal = false }) => {
-    const { fetchDirectories, selectedDirectory, setSelectedDirectory } = useContext(DirectoryContext)
+    const {
+      fetchDirectories,
+      handleFetchData,
+      selectedDirectory,
+      setSelectedDirectory,
+    } = useContext(DirectoryContext);
     const [errors, setOtherError] = useState({});
     const initialValues = {
-        name: selectedDirectory?.name || "",
-        code: selectedDirectory?.code || "",
-        description: selectedDirectory?.description || ""
+      name: selectedDirectory?.name || "",
+      code: selectedDirectory?.code || "",
+      description: selectedDirectory?.description || "",
     };
 
     const validationSchema = Yup.object().shape({
-        name: Yup.string().required("Name is required"),
-        code: Yup.string().required("Code is required"),
+      name: Yup.string().required("Name is required"),
+      code: Yup.string().required("Code is required"),
     });
 
-    const handleSubmit = async (values, { setSubmitting, resetForm, setErrors }) => {
-        try {
-            // Check if the Directory is being created or updated
-            if (selectedDirectory) {
-                values.uid = selectedDirectory.uid;
-            }
-            // Call the API to create or update the Directory
-            const result = await createUpdateDirectory(values);
-
-            if (result.status === 200 || result.status === 8000) {
-                showToast("Data Saved Successfuly", "success", "Complete");
-                handleClose();
-                resetForm();
-                fetchDirectories();
-            }
-            else if (result.status === 8002) {
-                console.log("Validation error:", result.data);
-                showToast(`${result.message}`, "warning", "Validation Failed");
-                setErrors(result.data);
-                setOtherError(result.data);
-            } else {
-                showToast(`${result.message}`, "warning", "Process Failed");
-                handleClose();
-                resetForm();
-            }
-        } catch (error) {
-            console.log("Error submitting form:", error);
-            showToast("Something went wrong while saving", "error", "Failed");
-            handleClose(); // Close the modal after submission
-            resetForm();
-        } finally {
-            setSubmitting(false);
+    const handleSubmit = async (
+      values,
+      { setSubmitting, resetForm, setErrors }
+    ) => {
+      try {
+        // Check if the Directory is being created or updated
+        if (selectedDirectory) {
+          values.uid = selectedDirectory.uid;
         }
+        const result = await createUpdateDirectory(values);
+        // Call the API to create or update the Directory
+        if (result.status === 200 || result.status === 8000) {
+          showToast("Data Saved Successfuly", "success", "Complete");
+          handleClose();
+          resetForm();
+        } else if (result.status === 8002) {
+          showToast(`${result.message}`, "warning", "Validation Failed");
+          setErrors(result.data);
+          setOtherError(result.data);
+        } else {
+          showToast(`${result.message}`, "warning", "Process Failed");
+          handleClose();
+          resetForm();
+        }
+      } catch (error) {
+        showToast("Something went wrong while saving", "error", "Failed");
+        handleClose();
+        resetForm();
+      } finally {
+        setSubmitting(false);
+      }
     };
 
-
     const handleClose = () => {
-        console.log("Modal closed");
-        setSelectedDirectory(null);
-        const modalElement = document.getElementById("viewCreateDirectoryModal");
-        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        if (modalInstance) modalInstance.hide();
+      const modalElement = document.getElementById("viewCreateDirectoryModal");
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      if (modalInstance) modalInstance.hide();
     };
 
 

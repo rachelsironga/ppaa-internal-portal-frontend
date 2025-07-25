@@ -126,7 +126,9 @@ export const ApprovalRequestOpenPage = () => {
       const result = await getApprovalRequests({
         search: searchQuery,
         uid: uid,
-        full_details: true,
+        pagination: {
+          full_details: true,
+        },
       });
       if (result.status === 200 || result.status === 8000) {
         setSelectedRequest(result.data);
@@ -481,44 +483,35 @@ export const ApprovalRequestOpenPage = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="col-lg-4 col-md-4  animate__animated animate__fadeInLeft animate__fast">
-                    <h5>Final Handler Detail</h5>
-                    {console.log(selectedRequest)}
-                    <div className="m-4">
-                      <p className="text-nowrap mb-2">
-                        <i className="icon-base bx bx-user me-2 align-top" />
-                        <span className=" me-3 ">Name:</span>
-                        <strong className="bold">
-                          {selectedRequest?.created_by?.first_name} &nbsp;
-                          {selectedRequest?.created_by?.middle_name}&nbsp;
-                          {selectedRequest?.created_by?.last_name}
-                        </strong>
-                      </p>
-                      <p className="text-nowrap mb-2">
-                        <i className="icon-base bx bx-card me-2 align-bottom" />
-                        <span className=" me-3 ">PF-Number:</span>
-                        <strong className="bold">
-                          {selectedRequest?.created_by?.pf_number}
-                        </strong>
-                      </p>
-                      <p className="text-nowrap mb-2">
-                        <i className="icon-base bx bxs-layer me-2 align-bottom" />
-                        <span className=" me-3 ">Departments:</span>
-                        <strong className="bold">
-                          {
-                            selectedRequest?.created_by?.position
-                              ?.department_name
-                          }{" "}
-                          (
-                          {
-                            selectedRequest?.created_by?.position
-                              ?.department_code
-                          }
-                          )
-                        </strong>
-                      </p>
+                  {selectedRequest?.request_handler && (
+                    <div className="col-lg-4 col-md-4  animate__animated animate__fadeInLeft animate__fast">
+                      <h5>Final Handler Detail</h5>
+                      {console.log(selectedRequest)}
+                      <div className="m-4">
+                        <p className="text-nowrap mb-2">
+                          <i className="icon-base bx bx-user me-2 align-top" />
+                          <span className=" me-3 ">Name:</span>
+                          <strong className="bold">
+                            {selectedRequest?.request_handler?.name}
+                          </strong>
+                        </p>
+                        <p className="text-nowrap mb-2">
+                          <i className="icon-base bx bx-card me-2 align-bottom" />
+                          <span className=" me-3 ">PF-Number:</span>
+                          <strong className="bold">
+                            {selectedRequest?.request_handler?.pf_number}
+                          </strong>
+                        </p>
+                        <p className="text-nowrap mb-2">
+                          <i className="icon-base bx bxs-layer me-2 align-bottom" />
+                          <span className=" me-3 ">Email:</span>
+                          <strong className="bold">
+                            {selectedRequest?.request_handler?.email}
+                          </strong>
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <hr className="my-4" />
                 <div className="d-flex justify-content-between align-items-center flex-wrap mb-6 gap-2 mb-2">
@@ -809,7 +802,8 @@ export const ApprovalRequestOpenPage = () => {
                                         ?.approval_module_levels &&
                                       selectedRequest?.current_state ===
                                         selectedRequest?.module
-                                          ?.approval_module_levels?.length
+                                          ?.approval_module_levels.length -
+                                          1
                                     ) {
                                       setIsLastStep(true);
                                     } else {

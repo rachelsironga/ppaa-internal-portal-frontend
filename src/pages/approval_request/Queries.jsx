@@ -25,7 +25,7 @@ export const getApprovalRequests = async ({
       `${API_URL}${
         uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`
       }`,
-      uid == "" ? setConfig(pagination) : {}
+      setConfig(pagination)
     );
     return response.data;
   } catch (error) {}

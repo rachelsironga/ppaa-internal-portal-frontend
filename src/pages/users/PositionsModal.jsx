@@ -55,6 +55,7 @@ const PositionsModal = () => {
             if (selectedUser) {
                 values.user_uid = selectedUser?.guid;
             }
+            console.log("Submitting form with selectedUser:", selectedUser);
 
             const result = await createUpdatePositions(values);
 

@@ -1,0 +1,4 @@
+[
+  { "id": 1, "title": "User Module Docs", "link": "/docs/user", "icon": "bx bx-user" },
+  { "id": 2, "title": "Approval Module Docs", "link": "/docs/approval", "icon": "bx bx-check-shield" }
+]

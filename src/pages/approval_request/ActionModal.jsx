@@ -6,6 +6,8 @@ import { ApprovalRequestsContext } from "../../utils/context";
 import { useSelector } from "react-redux";
 import { approveRejectRequest } from "./Queries";
 import Swal from "sweetalert2";
+import Select from "react-select";
+import { getUsers } from "../account/Queries";
 
 const ActionModal = ({ loadOnlyModal = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -25,13 +27,24 @@ const ActionModal = ({ loadOnlyModal = false }) => {
     module_level_uid: selectedModuleLevel?.module_level_uid || "",
     comment: selectedRequest?.step?.comment || "",
     action: selectedRequest?.step?.is_approved ? "FORWARD" : "RETURN",
+    handler_user: "",
   };
 
   const validationSchema = Yup.object().shape({
     request_uid: Yup.string().required("Request is required"),
     module_level_uid: Yup.string().required("Position is required"),
     comment: Yup.string().required("Please Write Something as Comment"),
+    handler_user: Yup.string().when([], {
+      is: () => isLastStep === true,
+      then: (schema) =>
+        schema.required("You Must Select The final Handler For this Request"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   });
+
+  const [loadingUser, setLoadingUser] = useState(false);
+  const [errorUser, setErrorUser] = useState(false);
+  const [users, setUsers] = useState([]);
 
   const handleSubmit = async (
     values,
@@ -75,7 +88,15 @@ const ActionModal = ({ loadOnlyModal = false }) => {
           values.uid = selectedRequest.uid;
           values.module_level_uid = selectedModuleLevel?.module_level_uid;
         }
-        const result = await approveRejectRequest(values);
+
+        // Clone values
+        const payload = { ...values };
+
+        // Remove handler_user if not needed
+        if (!isLastStep) {
+          delete payload.handler_user;
+        }
+        const result = await approveRejectRequest(payload);
 
         if (result.status === 200 || result.status === 8000) {
           Swal.fire(
@@ -98,7 +119,6 @@ const ActionModal = ({ loadOnlyModal = false }) => {
         }
       }
     } catch (error) {
-      console.log("Something when wrong while submitting form:", error);
       Swal.fire(
         "Unsuccessful",
         `Unable to Perform Action. Please Try Again or Contact Support Team`,
@@ -112,11 +132,42 @@ const ActionModal = ({ loadOnlyModal = false }) => {
     }
   };
 
+  const fetchUsers = async (searchValue = "") => {
+    setLoadingUser(true);
+    try {
+      const result = await getUsers({
+        search: searchValue,
+        pagination: {
+          page: 1,
+          page_size: 10,
+          paginated: true,
+          exception: {
+            user: "mimi",
+            age: "sfdfd",
+          },
+        },
+      });
+      if (result.status === 200 || result.status === 8000) {
+        setUsers(result.data);
+      } else {
+        setUsers([]);
+      }
+    } catch (err) {
+      setUsers([]);
+    } finally {
+      setLoadingUser(false);
+    }
+  };
+
   const handleClose = () => {
     const modalElement = document.getElementById("approvalActionSetModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) modalInstance.hide();
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [isLastStep]);
 
   return (
     <>
@@ -218,25 +269,102 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                       </div>
                     </div>
                     {isLastStep && (
-                      <div className="col-md-6 mb-3">
-                        <label htmlFor="titleLarge" className="form-label">
-                          Select Handler
-                        </label>{" "}
-                        <small className="text-danger">
-                          Only if is to be Forwarded
-                        </small>
-                        <Field
-                          type="text"
-                          name="title"
-                          id="titleLarge"
-                          className="form-control"
-                          placeholder="Slease Select Handler"
-                        />
-                        <ErrorMessage
-                          name="title"
-                          component="div"
-                          className="text-danger"
-                        />
+                      <div className="row">
+                        <div className="col-md-8 mb-3">
+                          <label htmlFor="handlerLarge" className="form-label">
+                            Select Handler
+                          </label>{" "}
+                          <small className="text-danger">
+                            Only if is to be Forwarded
+                          </small>
+                          <Select
+                            id="handlerLarge"
+                            isLoading={loadingUser}
+                            className="select2-selection fetched-select2"
+                            onChange={(e) => {
+                              if (e === null || e.value === "") {
+                                setFieldValue("handler_user", "");
+                              } else {
+                                setFieldValue("handler_user", e.value);
+                              }
+                            }}
+                            onInputChange={(e) => {
+                              fetchUsers(e);
+                            }}
+                            options={users?.map((item) => ({
+                              value: item.guid,
+                              label: `${item.first_name} ${item.middle_name} ${item.last_name}`,
+                              email: item.email,
+                              photo: item.photo,
+                              first_name: item.first_name,
+                              middle_name: item.middle_name,
+                              last_name: item.last_name,
+                            }))}
+                            styles={{
+                              menu: (base) => ({
+                                ...base,
+                                position: "absolute",
+                                zIndex: 9999,
+                              }),
+                            }}
+                            value={
+                              users
+                                ?.map((item) => ({
+                                  value: item.guid,
+                                  label: `${item.first_name} ${item.middle_name} ${item.last_name}`,
+                                  email: item.email,
+                                  photo: item.photo,
+                                  first_name: item.first_name,
+                                  middle_name: item.middle_name,
+                                  last_name: item.last_name,
+                                }))
+                                .find(
+                                  (option) =>
+                                    option.value === values.handler_user
+                                ) || null
+                            }
+                            isClearable
+                            formatOptionLabel={(user) => (
+                              <div className="d-flex justify-content-start align-items-center user-name">
+                                <div className="avatar-wrapper">
+                                  <div className="avatar avatar-sm me-4">
+                                    <img
+                                      src={
+                                        user.photo && user.photo !== ""
+                                          ? user.photo
+                                          : "../../assets/img/avatars/1.png"
+                                      }
+                                      alt="Avatar"
+                                      className="rounded-circle"
+                                      style={{
+                                        width: "32px",
+                                        height: "32px",
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="d-flex flex-column">
+                                  <span className="text-heading text-truncate">
+                                    <span className="fw-medium">
+                                      {user.first_name} {user.middle_name}{" "}
+                                      {user.last_name}
+                                    </span>
+                                  </span>
+                                  <small className="text-primary">
+                                    {user.email && user.email !== ""
+                                      ? user.email
+                                      : "- - -"}
+                                  </small>
+                                </div>
+                              </div>
+                            )}
+                          />
+                          <ErrorMessage
+                            name="handler_user"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
                       </div>
                     )}
                     <div className="row">

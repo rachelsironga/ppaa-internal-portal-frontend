@@ -419,7 +419,7 @@ export const DirectoryOpenPage = () => {
                   </tr>
                 ) : (
                   directoryDepartments.map((dataRows, index) => (
-                    <tr key={dataRows.uid}>
+                    <tr key={"departments-" + dataRows.uid}>
                       <td>{(currentPage - 1) * pageSize + index + 1}</td>
                       <td className="fw-medium">{dataRows.name}</td>
                       <td className="fw-medium">{dataRows.code}</td>

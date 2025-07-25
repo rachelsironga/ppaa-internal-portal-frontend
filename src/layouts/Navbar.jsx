@@ -2,8 +2,17 @@ import { useDispatch, useSelector } from "react-redux";
 import getGreetingMessage from "../utils/greetingHandler";
 import { logout } from "../redux/actions/authentication/logoutAction";
 import { Navigate, useNavigate } from "react-router-dom";
-const Navbar = () => {
+import { useState } from "react";
+import servicesList from "../data/servicesList.json";
+
+const Navbar = ({ isService = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
+
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown);
+  };
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -18,6 +27,97 @@ const Navbar = () => {
       className="layout-navbar navbar-detached navbar navbar-expand-xl align-items-center bg-navbar-theme container-fluid"
       id="layout-navbar"
     >
+      <style>
+        {`
+
+          .service-content{
+              background: #fff;
+              border: 0.2px solid transparent;
+              border-radius: 20px;
+              padding: 10px;
+              background:
+                linear-gradient(#fff, #fff) padding-box,
+                linear-gradient(135deg, #1976d2a6 0%, #e53835c2 60%, #ffd900c4 100%) border-box;
+              transition:
+                background 1s ease,
+                border-color 1s ease,
+                border-image 1s ease,
+                box-shadow 0.4s ease,
+                transform 0.4s ease,
+                opacity 0.4s ease;
+              box-shadow: 0 5px 16px rgba(10, 67, 124, 0.51);
+              animation: fadeInSlideUp 0.5s ease forwards;
+              opacity: 0;
+              transform: translateY(10px);
+          }
+
+          .dropdown-services-box {
+              background: #fff;
+              border: 2.5px solid transparent;
+              border-radius: 5px;
+              min-height: 300px;
+              background:
+                linear-gradient(#fff, #fff) padding-box,
+                linear-gradient(135deg, #1976d2ef 0%, #e53835e7 60%, #ffd700 100%) border-box;
+              transition:
+                background 1s ease,
+                border-color 1s ease,
+                border-image 1s ease,
+                box-shadow 0.4s ease,
+                transform 0.4s ease,
+                opacity 0.4s ease;
+              box-shadow: 0 5px 16px rgba(10, 67, 124, 0.51);
+              animation: fadeInSlideUp 0.5s ease forwards;
+              opacity: 0;
+              transform: translateY(10px);
+            }
+
+            .dropdown-services-box.show {
+              opacity: 1;
+              transform: translateY(0);
+            }
+
+            .service-list-item:active,
+            .service-list-item:hover,
+            .service-list-item:focus {
+              box-shadow: 0 6px 24px rgba(10, 67, 124, 0.18), 0 1.5px 8px rgba(25, 118, 210, 0.18);
+              transform: translateY(-4px) scale(1.06);
+
+            }
+
+            /* Icons inside cards */
+            .dropdown-services-box .bx {
+              font-size: 2rem;
+              background: linear-gradient(90deg, #1976d2 0%, #e53935 60%, #ffd700 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+              text-fill-color: transparent;
+            }
+
+            /* Gradient titles */
+            .dropdown-services-box .service-title {
+              font-weight: bold;
+              background: linear-gradient(90deg, #1976d2 0%, #e53935 60%, #ffd700 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+              text-fill-color: transparent;
+            }
+
+            /* Animation keyframe */
+            @keyframes fadeInSlideUp {
+              from {
+                opacity: 0;
+                transform: translateX(-50px);
+              }
+              to {
+                opacity: 1;
+                transform: translateX(0);
+              }
+            }`}
+      </style>
+
       <div className="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
         <a
           aria-label="toggle for sidebar"
@@ -32,7 +132,67 @@ const Navbar = () => {
         className="navbar-nav-right d-flex align-items-center"
         id="navbar-collapse"
       >
-        {getGreetingMessage(user ? user.first_name : "")}
+        {isService ? (
+          getGreetingMessage(user ? user.first_name : "")
+        ) : (
+          <div className="position-relative">
+            <button
+              aria-label="Click me"
+              type="button"
+              className="btn btn-sm btn-outline-primary me-2 me-xl-4"
+              onClick={toggleDropdown}
+            >
+              <i className="bx bx-menu me-1"></i> Services
+            </button>
+
+            {/* Dropdown */}
+            {showDropdown && (
+              <div
+                className={`dropdown-services-box show`}
+                style={{
+                  position: "absolute",
+                  left: 0, // right below the button
+                  top: 23,
+                  right: 0,
+                  width: "350px",
+                  marginTop: "10px",
+                  zIndex: 1000,
+                  padding: "20px",
+                }}
+              >
+                <div className="row">
+                  <h5 className="text-info"> Choose The Services</h5>
+                  <p className="text-muted">
+                    The below is list of mnh-Connect Service you Included
+                  </p>
+                </div>
+                <div
+                  className="row mb-4"
+                  style={{
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    maxHeight: "300px",
+                  }}
+                >
+                  {servicesList.map((doc, idx) => (
+                    <div
+                      className="d-flex align-items-center service-list-item cursor-pointer me-3 mb-3"
+                      key={"docs_index_" + idx}
+                      onClick={() => {
+                        navigate("/dashboard");
+                      }}
+                    >
+                      <i className={`${doc.icon} icon-size me-3`}></i>
+                      <div>
+                        <div className="service-title">{doc.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <ul className="navbar-nav flex-row align-items-center ms-auto">
           {user && user.position && (
             <li className="nav-item">
@@ -66,7 +226,7 @@ const Navbar = () => {
               <div className="avatar avatar-online">
                 <img
                   src={
-                    user && user.photo.trim() !== ""
+                    user && user.photo && user.photo.trim() !== ""
                       ? user.photo
                       : "/assets/img/avatars/1.png"
                   }
@@ -89,7 +249,7 @@ const Navbar = () => {
                       <div className="avatar avatar-online">
                         <img
                           src={
-                            user && user.photo.trim() !== ""
+                            user && user.photo && user.photo.trim() !== ""
                               ? user.photo
                               : "/assets/img/avatars/1.png"
                           }

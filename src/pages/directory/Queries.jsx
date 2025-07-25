@@ -52,3 +52,17 @@ export const deleteDirectory = async (id) => {
         throw error;
     }
 };
+
+export const uploadDirectory = async (formData) => {
+  try {
+    const response = await api.post(
+      `${API_BASE_URL}/api/import-directories`,
+      formData,
+      config
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error while Import directory:`, error);
+    throw error;
+  }
+};

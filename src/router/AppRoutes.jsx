@@ -61,6 +61,7 @@ import { UserOpenPage } from "../pages/users/Open";
 import { DateRangePage } from "../pages/date_range/View";
 import { ApprovalRequestOpenPage } from "../pages/approval_request/Open";
 import ProtectedRoute from "../components/wrapper/ProtectedRoute";
+import { Services } from "../pages/Services";
 
 function Logout() {
   localStorage.clear;
@@ -78,8 +79,15 @@ const AppRoutes = () => {
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/" element={<DashboardPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/" element={<Services />} />
+
       <Route path="*" element={<ErrorPage />} />
+
+      <Route path="/account/settings" element={<AccountPage />} />
+      <Route path="/account/notifications" element={<NotificationPage />} />
+      <Route path="/account/connections" element={<Connections />} />
+      <Route path="/account/password" element={<ChangePassword />} />
 
       {/* Settings */}
       <Route
