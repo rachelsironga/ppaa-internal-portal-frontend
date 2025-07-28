@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  frontend:
+    image: mnh-connect-frontend
+    container_name: frontend-container
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8091:80"
+    restart: unless-stopped
