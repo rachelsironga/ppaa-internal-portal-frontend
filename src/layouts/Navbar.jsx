@@ -81,10 +81,9 @@ const Navbar = ({ isService = false }) => {
             .service-list-item:hover,
             .service-list-item:focus {
               box-shadow: 0 6px 24px rgba(10, 67, 124, 0.18), 0 1.5px 8px rgba(25, 118, 210, 0.18);
-              transform: translateY(-4px) scale(1.06);
-
+              transform: translateX(40px); /* Slide from right */
+              /* No scale, no zoom */
             }
-
             /* Icons inside cards */
             .dropdown-services-box .bx {
               font-size: 2rem;
@@ -180,6 +179,7 @@ const Navbar = ({ isService = false }) => {
                       key={"docs_index_" + idx}
                       onClick={() => {
                         navigate("/dashboard");
+                        setShowDropdown(false);
                       }}
                     >
                       <i className={`${doc.icon} icon-size me-3`}></i>
