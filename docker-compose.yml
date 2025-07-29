@@ -7,6 +7,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    networks:
+      - mnh-network
     ports:
       - "8091:80"
     restart: unless-stopped
+
+
+networks:
+  mnh-network:
+    external: true
