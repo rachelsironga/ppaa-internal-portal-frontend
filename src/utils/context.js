@@ -18,6 +18,8 @@ const AccountContext = createContext();
 
 const DateRangeContext = createContext();
 
+const RolesManagementContext = createContext();
+
 export {
     ApprovalActionContext,
     PositionalLevelContext,
@@ -27,5 +29,6 @@ export {
     ApprovalModuleContext,
     DateRangeContext,
     AccountContext,
-    UsersContext
+    UsersContext,
+    RolesManagementContext
 };
