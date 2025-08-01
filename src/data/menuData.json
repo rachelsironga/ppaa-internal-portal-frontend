@@ -120,7 +120,7 @@
             "text": "Roles\t&Permissions",
             "icon": "bx bx-detail",
             "available": true,
-            "link": "/account/settings1",
+            "link": "/roles-managements",
             "permission": ["1"],
             "role": ["admin"]
           }

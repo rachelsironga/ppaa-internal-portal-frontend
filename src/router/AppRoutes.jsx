@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import LoginPage from "../pages/authentication/LoginPage";
 import RegisterPage from "../pages/authentication/RegisterPage";
@@ -25,11 +25,8 @@ import ProtectedRoute from "../components/wrapper/ProtectedRoute";
 import { Services } from "../pages/Services";
 import { DepartmentPage } from "../pages/services/MANAGMENTS/department/View";
 import { PositionalLevelPage } from "../pages/services/E-APPROVAL/positional_level/View";
+import {RolesManagementPage} from "../pages/services/MANAGMENTS/roles_management/View.jsx";
 
-function Logout() {
-  localStorage.clear;
-  return <Navigate to="/auth/login" />;
-}
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -213,10 +210,28 @@ const AppRoutes = () => {
         }
       />
 
-      <Route path="/account/settings" element={<AccountPage />} />
-      <Route path="/account/notifications" element={<NotificationPage />} />
-      <Route path="/account/connections" element={<Connections />} />
-      <Route path="/account/password" element={<ChangePassword />} />
+      {/* Roles Managements */}
+      <Route
+         path="/roles-managements"
+         element={
+            <ProtectedRoute
+                requiredPermissions={[]}
+                requiredRoles={['admin']}
+            >
+                <RolesManagementPage />
+            </ProtectedRoute>
+         }
+      />
+        {/*<Route*/}
+        {/*    path="/requests/open/:uid"*/}
+        {/*    element={*/}
+        {/*        <ProtectedRoute requiredPermissions={["view_approvalrequest"]}>*/}
+        {/*            <ApprovalRequestOpenPage />*/}
+        {/*        </ProtectedRoute>*/}
+        {/*    }*/}
+        {/*/>*/}
+
+
     </Routes>
   );
 };

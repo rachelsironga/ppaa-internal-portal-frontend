@@ -13,9 +13,16 @@
     "permission": [],
     "role": ["admin", "records"]
   },
+   {
+    "text": "ICT Asserts Management",
+    "icon": "bx bx-desktop",
+    "link": "/medical-records",
+    "permission": [],
+    "role": ["admin", "records"]
+  },
   {
-    "text": "HR Management",
-    "icon": "bx bxs-id-card",
+    "text": "Equipment Tracking",
+    "icon": "bx bx-file-find",
     "link": "/hr",
     "permission": [],
     "role": ["admin", "hr"]
