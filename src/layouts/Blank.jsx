@@ -8,7 +8,6 @@ export const Blank = ({ children }) => {
       <Link aria-label="Go to Home Page" to="/">
         {children}
       </Link>
-      <Footer />
     </>
   );
 };

@@ -17,19 +17,49 @@ const setConfig = (filter = {}) => {
   };
 };
 
-export const fetchData = async ({ url = "/", uid = "", filter = {} }) => {
+export const fetchData = async ({
+  url = "/",
+  uid = "",
+  filter = {},
+  isFullPath = false,
+}) => {
   if (!url) {
     throw new Error("URL is required for fetching data");
   }
 
   try {
     const response = await api.get(
-      `${API_URL}${url}${uid ? `/${uid}` : ""}`,
+      `${isFullPath ? API_BASE_URL : API_URL}${url}${uid ? `/${uid}` : ""}`,
       uid ? {} : setConfig(filter)
     );
     return response.data;
   } catch (error) {
     console.error("Error fetching Data:", error);
+    throw error;
+  }
+};
+
+export const createUpdateData = async ({
+  url = "/",
+  uid = "",
+  formData = {},
+  filter = {},
+}) => {
+  if (!url) {
+    throw new Error("URL is required for fetching data");
+  }
+  if (!formData) {
+    throw new Error("Form data is required for creating or updating");
+  }
+  try {
+    const response = await api.post(
+      `${API_URL}${url}${uid ? `/${uid}` : ""}`,
+      formData,
+      setConfig(filter)
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error while changing Item:`, error);
     throw error;
   }
 };

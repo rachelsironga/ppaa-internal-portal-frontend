@@ -9,7 +9,6 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "postinstall": "mkdir -p public/assets/js && cp node_modules/pdfjs-dist/build/pdf.worker.min.js public/assets/js/"
-
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -22,6 +21,7 @@
     "animate.css": "^4.1.1",
     "axios": "^1.7.9",
     "formik": "^2.4.6",
+    "framer-motion": "^12.23.12",
     "jwt-decode": "^4.0.0",
     "localforage": "^1.10.0",
     "match-sorter": "^6.3.1",
@@ -61,5 +61,3 @@
     "vite": "^6.3.2"
   }
 }
-
-

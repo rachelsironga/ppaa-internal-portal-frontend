@@ -26,7 +26,7 @@ import { Services } from "../pages/Services";
 import { DepartmentPage } from "../pages/services/MANAGMENTS/department/View";
 import { PositionalLevelPage } from "../pages/services/E-APPROVAL/positional_level/View";
 import {RolesManagementPage} from "../pages/services/MANAGMENTS/roles_management/View.jsx";
-
+import { OpenRolesManagementPage } from "../pages/services/MANAGMENTS/roles_management/Open.jsx";
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -212,26 +212,30 @@ const AppRoutes = () => {
 
       {/* Roles Managements */}
       <Route
-         path="/roles-managements"
-         element={
-            <ProtectedRoute
-                requiredPermissions={[]}
-                requiredRoles={['admin']}
-            >
-                <RolesManagementPage />
-            </ProtectedRoute>
-         }
+        path="/roles-managements"
+        element={
+          <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
+            <RolesManagementPage />
+          </ProtectedRoute>
+        }
       />
-        {/*<Route*/}
-        {/*    path="/requests/open/:uid"*/}
-        {/*    element={*/}
-        {/*        <ProtectedRoute requiredPermissions={["view_approvalrequest"]}>*/}
-        {/*            <ApprovalRequestOpenPage />*/}
-        {/*        </ProtectedRoute>*/}
-        {/*    }*/}
-        {/*/>*/}
 
-
+      <Route
+        path="/roles-managements/open/:uid"
+        element={
+          <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
+            <OpenRolesManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      {/*<Route*/}
+      {/*    path="/requests/open/:uid"*/}
+      {/*    element={*/}
+      {/*        <ProtectedRoute requiredPermissions={["view_approvalrequest"]}>*/}
+      {/*            <ApprovalRequestOpenPage />*/}
+      {/*        </ProtectedRoute>*/}
+      {/*    }*/}
+      {/*/>*/}
     </Routes>
   );
 };
