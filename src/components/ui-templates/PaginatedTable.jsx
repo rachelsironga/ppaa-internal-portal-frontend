@@ -7,7 +7,16 @@ import { fetchData } from "../../utils/GlobalQueries";
 import showToast from "../../helpers/ToastHelper";
 import "animate.css";
 
-const PaginatedTable = ({ fetchPath, title, columns, buttons, onSelect }) => {
+const PaginatedTable = ({
+  fetchPath,
+  title,
+  columns,
+  buttons,
+  onSelect,
+  isRefresh,
+  filters = {},
+  isFullPath = false,
+}) => {
   const {
     currentPage,
     totalCount,
@@ -31,9 +40,12 @@ const PaginatedTable = ({ fetchPath, title, columns, buttons, onSelect }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log("Fetching data from:", filters);
       const result = await fetchData({
         url: fetchPath,
+        isFullPath: isFullPath,
         filter: {
+          ...filters,
           page: currentPage,
           page_size: pageSize,
           paginated: true,
@@ -43,7 +55,6 @@ const PaginatedTable = ({ fetchPath, title, columns, buttons, onSelect }) => {
 
       if (result.status === 200 || result.status === 8000) {
         setRowRecords(result.data);
-        console.log("Fetched Data:", rowRecords);
         if (result.pagination) {
           updatePagination(result.pagination);
           updateTotalCount(result.pagination.total || 0);
@@ -51,7 +62,6 @@ const PaginatedTable = ({ fetchPath, title, columns, buttons, onSelect }) => {
           updatePagination({});
         }
       } else {
-        setError(true);
         showToast("No Records Found", "warning", "Fetch Completed");
       }
     } catch (err) {
@@ -61,6 +71,13 @@ const PaginatedTable = ({ fetchPath, title, columns, buttons, onSelect }) => {
       setLoading(false);
     }
   };
+
+  // Refresh data if isRefresh prop changes
+  useEffect(() => {
+    if (isRefresh) {
+      handleFetchData();
+    }
+  }, [isRefresh]);
 
   // Fetch ApprovalModules on initial load
   useEffect(() => {
@@ -297,6 +314,9 @@ PaginatedTable.propTypes = {
     })
   ),
   onSelect: PropTypes.func,
+  isRefresh: PropTypes.number,
+  isFullPath: PropTypes.bool,
+  filters: PropTypes.object,
 };
 
 export default PaginatedTable;

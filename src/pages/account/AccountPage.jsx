@@ -449,32 +449,7 @@ export const AccountPage = () => {
           <i className="bx bx-menu me-1"></i> Options
         </button>
         <ul className="dropdown-menu">
-          <li>
-            <button
-              aria-label="dropdown action link"
-              className="dropdown-item d-flex align-items-center"
-              data-bs-toggle="modal"
-              aria-expanded="false"
-              type="button"
-              data-bs-target="#viewCreateUserPossitionModal"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <i className="bx bxs-user-detail mx-2"></i>Edit Profile
-            </button>
-          </li>
-          <li>
-            <button
-              aria-label="dropdown action link"
-              className="dropdown-item d-flex align-items-center"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="bx bx-transfer mx-2"></i>Change User Status
-            </button>
-          </li>
-          <li>
-            <hr className="dropdown-divider" />
-          </li>
+          <li className="dropdown-item text-center text-muted">No Option</li>
         </ul>
       </BreadCumb>
 

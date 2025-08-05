@@ -1,15 +1,18 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react";
-import { formatDate } from "../../../../helpers/DateFormater";
 import "animate.css";
 import { RolesManagementContext } from "../../../../utils/context";
 import { useNavigate } from "react-router-dom";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import SystemRoleModal from "./Modal";
+import { OpenRolesManagementPage } from "./Open";
+import { HashUtil } from "../../../../helpers/HashUtil";
+import { formatDate } from "../../../../helpers/DateFormater";
 
 export const RolesManagementPage = () => {
   const [selectedObj, setSelectedObj] = useState(null);
+  const [tableRefresh, setTableRefresh] = useState(0);
   const navigate = useNavigate();
 
   return (
@@ -17,6 +20,8 @@ export const RolesManagementPage = () => {
       value={{
         selectedObj,
         setSelectedObj,
+        tableRefresh,
+        setTableRefresh,
       }}
     >
       <BreadCumb pageList={["Roles Managements"]} />
@@ -34,17 +39,51 @@ export const RolesManagementPage = () => {
             key: "name",
             label: "Role Name",
             className: "cursor-pointer",
+
             render: (row) => (
               <span
-                className="text-primary"
+                className="text-bold"
                 onClick={() => {
-                  console.log("Row clicked:", row);
-                  // navigate(`/roles-managements/open/${row.id}`);
+                  navigate(
+                    `/roles-managements/open/` + HashUtil.hashNumber(row.id)
+                  );
                 }}
               >
                 {row.name}
               </span>
             ),
+          },
+          {
+            key: "Users",
+            label: "Number of Users",
+            style: { width: "150px" },
+            className: "text-center",
+            render: (row) => row.users || 0,
+          },
+          {
+            key: "NumberOfModules",
+            label: "Number of PRIVILEGE",
+            style: { width: "150px" },
+            className: "text-center",
+            render: (row) => row.permissions?.length || 0,
+          },
+          {
+            key: "last_updated_at",
+            label: "Last Update",
+            style: { width: "150px" },
+            className: "text-center",
+            render: (row) => (
+              <span className="text-purple">
+                {formatDate(row.last_update_at, "DD/MM/YYYY HH:mm:ss") || "-"}
+              </span>
+            ),
+          },
+          {
+            key: "last_updated_by",
+            label: "Last Update By",
+            style: { width: "150px" },
+            className: "text-center text-secondary",
+            render: (row) => row.last_updated_by || "-",
           },
           {
             key: "actions",
@@ -54,11 +93,13 @@ export const RolesManagementPage = () => {
             render: (row) => (
               <button
                 className="btn btn-sm btn-outline-primary text-center"
-                data-bs-toggle="modal"
-                data-bs-target="#viewCreateRoleModal"
+                onClick={() => {
+                  navigate(
+                    `/roles-managements/open/` + HashUtil.hashNumber(row.id)
+                  );
+                }}
               >
-                <i className="bx bx-transfer-alt"></i>
-                View
+                <i className="bx bx-show"></i>&nbsp; View
               </button>
             ),
           },
@@ -82,6 +123,7 @@ export const RolesManagementPage = () => {
         onSelect={(row) => {
           setSelectedObj(row);
         }}
+        isRefresh={tableRefresh}
       />
       <SystemRoleModal />
     </RolesManagementContext.Provider>

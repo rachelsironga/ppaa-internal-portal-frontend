@@ -3,28 +3,31 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import showToast from "../../../../helpers/ToastHelper";
 import { RolesManagementContext } from "../../../../utils/context";
-import { createUpdateItem } from "./Queries";
-import { Select } from "@headlessui/react";
 import DualListSelect from "../../../../components/ui-templates/DualListSelect";
-import { fetchData } from "../../../../utils/GlobalQueries";
+import { createUpdateData, fetchData } from "../../../../utils/GlobalQueries";
 
 const SystemRoleModal = () => {
-  const { selectedObj, setSelectedObj } = useContext(RolesManagementContext);
+  const { selectedObj, setSelectedObj, setTableRefresh } = useContext(
+    RolesManagementContext
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [errors, setOtherError] = useState({});
   const initialValues = {
     name: selectedObj?.name || "",
+    parmisions: selectedObj?.permissions || [],
   };
 
   const validationSchema = Yup.object().shape({
     name: Yup.string().required("Name is required"),
+    parmisions: Yup.array()
+      .of(Yup.object())
+      .required("At least one permission is required"),
   });
 
   const [leftOptions, setLeftOptions] = useState([]);
-
+  const [rightOptions, setRightOptions] = useState([]);
   const [loadingRightOptions, setLoadingRightOptions] = useState(false);
   const [clearSelectTrigger, setClearSelectTrigger] = useState(0);
-
-  const [rightOptions, setRightOptions] = useState([]);
 
   const handleAssign = (selected) => {
     // Move items to right
@@ -58,16 +61,37 @@ const SystemRoleModal = () => {
   ) => {
     try {
       if (selectedObj) {
-        values.uid = selectedObj.uid;
+        values.id = selectedObj.id;
       }
-      const result = await createUpdateItem(values);
+
+      // Map to IDs (assuming your backend expects a list of permission IDs)
+      values.permissions = rightOptions.map((item) => item.value);
+      const payload = {
+        name: values.name,
+        permissions: values.permissions,
+      };
+      if (values.permissions.length === 0) {
+        showToast(
+          "You must assign at least one permission",
+          "warning",
+          "Validation Failed"
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      const result = await createUpdateData({
+        url: "/system/roles",
+        uid: selectedObj?.id || "",
+        formData: payload,
+      });
 
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
+        setTableRefresh((prev) => prev + 1);
         handleClose();
         resetForm();
       } else if (result.status === 8002) {
-        console.log("Validation error:", result.data);
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);
         setOtherError(result.data);
@@ -77,7 +101,6 @@ const SystemRoleModal = () => {
         resetForm();
       }
     } catch (error) {
-      console.log("Error submitting form:", error);
       showToast("Something went wrong while saving", "error", "Failed");
       handleClose(); // Close the modal after submission
       resetForm();
@@ -87,13 +110,14 @@ const SystemRoleModal = () => {
   };
 
   const handleClose = () => {
-    const modalElement = document.getElementById("viewCreateDataModal");
+    const modalElement = document.getElementById("viewCreateRoleModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) modalInstance.hide();
-    setSelectedObj(null);
-    setOtherError({});
-    setLeftOptions([]);
-    setRightOptions([]);
+    setIsModalOpen(false);
+    // setSelectedObj(null);
+    // setOtherError({});
+    // setLeftOptions([]);
+    // setRightOptions([]);
     setClearSelectTrigger((prev) => prev + 1);
   };
 
@@ -128,21 +152,37 @@ const SystemRoleModal = () => {
   };
 
   useEffect(() => {
-    if (selectedObj) {
-      handleFetchPermissions();
-      if (selectedObj.permissions && selectedObj.permissions.length > 0) {
-        const formattedRightOptions = selectedObj.permissions.map((perm) => ({
-          value: perm.id,
-          label: `${perm.name}`,
-        }));
-        setRightOptions(formattedRightOptions);
-      } else {
-        setRightOptions([]);
-      }
+    const modalElement = document.getElementById("viewCreateRoleModal");
+    if (!modalElement) return;
+
+    const handleShow = () => setIsModalOpen(true);
+    const handleHide = () => setIsModalOpen(false);
+
+    modalElement.addEventListener("shown.bs.modal", handleShow);
+    modalElement.addEventListener("hidden.bs.modal", handleHide);
+
+    return () => {
+      modalElement.removeEventListener("shown.bs.modal", handleShow);
+      modalElement.removeEventListener("hidden.bs.modal", handleHide);
+    };
+  }, []);
+
+  useEffect(() => {
+    handleFetchPermissions();
+    if (
+      selectedObj !== null &&
+      selectedObj.permissions &&
+      selectedObj.permissions.length > 0
+    ) {
+      const formattedRightOptions = selectedObj.permissions.map((perm) => ({
+        value: perm.id,
+        label: `${perm.name}`,
+      }));
+      setRightOptions(formattedRightOptions);
     } else {
       setRightOptions([]);
     }
-  }, [selectedObj]);
+  }, [isModalOpen, selectedObj]);
 
   return (
     <>
@@ -162,9 +202,9 @@ const SystemRoleModal = () => {
                 Module{" "}
               </h5>
               <button
+                onClick={() => handleClose()}
                 type="button"
                 className="btn-close"
-                onClick={handleClose}
                 data-bs-dismiss="modal"
                 aria-label="Close"
               ></button>
