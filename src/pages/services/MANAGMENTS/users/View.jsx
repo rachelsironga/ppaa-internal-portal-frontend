@@ -11,6 +11,7 @@ import { UserModal } from "./Modal";
 
 import "animate.css";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import { UserImportModal } from "./ImportModal";
 
 export const UserListPage = () => {
   const navigate = useNavigate();
@@ -222,10 +223,10 @@ export const UserListPage = () => {
       <div className="card">
         <div className="d-flex justify-content-between align-items-center card-header mb-1">
           <h5 className="mb-0">User Managments</h5>
-          <UserModal
-            title="View User Managment"
-            onClose={() => setSelectedUser(null)}
-          />
+          <div className=" d-flex align-items-center">
+            <UserImportModal />
+            <UserModal onClose={() => setSelectedUser(null)} />
+          </div>
         </div>
 
         <div className="card-body">

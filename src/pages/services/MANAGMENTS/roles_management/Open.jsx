@@ -6,18 +6,25 @@ import "animate.css";
 import { RolesManagementContext } from "../../../../utils/context";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { HashUtil } from "../../../../helpers/HashUtil";
-import { fetchData } from "../../../../utils/GlobalQueries";
+import { deleteData, fetchData } from "../../../../utils/GlobalQueries";
 import AnimatedTabs from "../../../../components/ui-templates/AnimatedTabs";
 import SystemRoleModal from "./Modal";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import { formatDate } from "../../../../helpers/DateFormater";
 import ReactLoading from "react-loading";
+import UsersModal from "./UsersModal";
 
 export const OpenRolesManagementPage = () => {
   const { uid } = useParams();
   const [selectedObj, setSelectedObj] = useState(null);
   const [tableRefresh, setTableRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredPermissions = selectedObj?.permissions?.filter((perm) =>
+    perm.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleFetchData = async () => {
     setLoading(true);
@@ -49,48 +56,58 @@ export const OpenRolesManagementPage = () => {
     handleFetchData();
   }, []);
 
-  // const handleDelete = async (approvalModule = null) => {
-  //   if (!selectedObj) {
-  //     Swal.fire("Error!", "Unable to Select this Approval Module.", "error");
-  //     return;
-  //   }
+  const handleDelete = async (selectedUser = "") => {
+    if (!selectedObj) {
+      Swal.fire("Error!", "Unable to Read Selected Role", "error");
+      return;
+    }
 
-  //   try {
-  //     const confirmation = await Swal.fire({
-  //       title: "Are you sure?",
-  //       text: "Your About to Delete the data",
-  //       icon: "warning",
-  //       showCancelButton: true,
-  //       confirmButtonColor: "#DD6B55",
-  //       cancelButtonColor: "#aaa",
-  //       confirmButtonText: "Yes, delete it!",
-  //     });
+    if (selectedUser === "") {
+      Swal.fire("Error!", "Unable to Read Selected User", "error");
+      return;
+    }
 
-  //     if (confirmation.isConfirmed) {
-  //       const result = await deleteItem(approvalModule.uid);
-  //       if (result.status === 200 || result.status === 8000) {
-  //         Swal.fire(
-  //           "Process Completed!",
-  //           "The Approval Module has been deleted.",
-  //           "success"
-  //         );
-  //         handleFetchData();
-  //       } else {
-  //         console.error("Error deleting Approval Module:", result);
-  //         Swal.fire("Error Occurred!", `${result.message}`, "error");
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting Approval Module:", error);
-  //     Swal.fire(
-  //       "Unsuccessful",
-  //       `Unable to Perform Delete. Please Try Again or Contact Support Team`,
-  //       "error"
-  //     );
-  //   }
+    try {
+      const confirmation = await Swal.fire({
+        title: "Are you sure?",
+        text: "Your About to Remove Users Role",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#DD6B55",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Yes, delete it!",
+      });
 
-  //   setSelectedApprovalModule(null); // Reset selected approvalModule after deletion
-  // };
+      if (confirmation.isConfirmed) {
+        const result = await deleteData({
+          url: "/system/roles-assign-users",
+          filter: {
+            page: 1,
+            page_size: 10,
+            paginated: true,
+            user: selectedUser,
+            role: selectedObj?.id,
+          },
+        });
+        if (result.status === 200 || result.status === 8000) {
+          setTableRefresh((prev) => prev + 1);
+          Swal.fire(
+            "Process Completed!",
+            "The User has been deleted From Role.",
+            "success"
+          );
+        } else {
+          Swal.fire("Process Failed", `${result.message}`, "warning");
+        }
+      }
+    } catch (error) {
+      Swal.fire(
+        "Unsuccessful",
+        `Unable to Perform Remove. Please Try Again or Contact Support Team`,
+        "error"
+      );
+    }
+  };
 
   return (
     <RolesManagementContext.Provider
@@ -110,7 +127,7 @@ export const OpenRolesManagementPage = () => {
             <div className="me-1">
               <h5 className="mb-0">Preview System Role</h5>
               <p className="mb-0 text-muted">
-                Use Right Options Button to perform different Actionsdsd
+                Use Right Options Button to perform different Actions
               </p>
             </div>
 
@@ -122,16 +139,8 @@ export const OpenRolesManagementPage = () => {
                 data-bs-toggle="modal"
                 data-bs-target="#viewCreateRoleModal"
               >
-                <i className="bx bx-edit-alt me-1"></i> Update
-              </button>
-              <button
-                aria-label="Click me"
-                type="button"
-                className="btn btn-danger ms-auto btn-sm   animate__animated animate__fadeInRight animate__slower me-1"
-                data-bs-toggle="modal"
-                data-bs-target="#viewCreateRoleModal"
-              >
-                <i className="bx bx-edit-alt me-1"></i> Delete
+                <i className="bx bx-edit-alt me-1"></i> Update Role &
+                Permissions
               </button>
             </div>
           </div>
@@ -325,7 +334,12 @@ export const OpenRolesManagementPage = () => {
                     className: "text-center",
                     style: { width: "120px" },
                     render: (row) => (
-                      <button className="btn btn-sm btn-outline-danger text-center">
+                      <button
+                        className="btn btn-sm btn-outline-danger text-center"
+                        onClick={() => {
+                          handleDelete(row?.guid);
+                        }}
+                      >
                         <i className="bx bx-trash"></i>
                         Remove user
                       </button>
@@ -341,16 +355,13 @@ export const OpenRolesManagementPage = () => {
                         type="button"
                         className="btn btn-primary ms-auto btn-sm   animate__animated animate__fadeInRight animate__slow me-1"
                         data-bs-toggle="modal"
-                        data-bs-target="#viewCreateRoleModal"
+                        data-bs-target="#permiteUserModal"
                       >
                         <i className="bx bx-edit-alt me-1"></i> Grant New User
                       </button>
                     ),
                   },
                 ]}
-                onSelect={(row) => {
-                  setSelectedObj(row);
-                }}
                 isRefresh={tableRefresh}
               />
             )}
@@ -360,11 +371,84 @@ export const OpenRolesManagementPage = () => {
             style={{ minHeight: "40vh" }}
             id="navs-pills-top-permissions"
             role="tabpanel"
-          ></div>
+          >
+            {loading ? (
+              <>
+                <center>
+                  <ReactLoading
+                    type={"cylon"}
+                    color={"#696cff"}
+                    height={"30px"}
+                    width={"50px"}
+                  />
+                </center>
+                <center className="mt-1">
+                  <h6 className="text-muted">Fetching Data</h6>
+                </center>
+              </>
+            ) : (
+              <div className="col-md-8 col-lg-6 col-sm-12 p-2  animate__animated animate__fadeInUp animate__fast">
+                <div className="me-3">
+                  <h5 className="mb-0">All Role Permissions</h5>
+                  <p className="mb-0 text-muted">
+                    The bellow is List of All System Permissions Assignet to
+                    This Role/Group. press Edit to change add or remove Role
+                    Permission
+                  </p>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Search permission..."
+                  className="form-control mb-2 my-3"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <div
+                  style={{
+                    flex: 1,
+                    minHeight: "120px",
+                    maxHeight: "350px",
+                    overflowY: "auto",
+                    border: "1px solid #f0f0f0",
+                    borderRadius: "6px",
+                    background: "#fafbfc",
+                    padding: "0.5rem",
+                    textAlign: "left",
+                  }}
+                >
+                  <ul className="list-group list-group-flush small">
+                    {filteredPermissions?.map((perm) => (
+                      <li
+                        key={perm.codename}
+                        className="list-group-item py-3 px-2 p-3 me-3"
+                      >
+                        <i
+                          className="bx bx-check-shield me-2"
+                          style={{
+                            color: "#696cff",
+                            fontSize: "1.1em",
+                          }}
+                        ></i>
+                        {perm.name}
+                      </li>
+                    ))}
+
+                    {filteredPermissions?.length === 0 && (
+                      <li className="list-group-item justify-context-center text-center text-muted mt-4 py-3 px-2">
+                        No permissions found
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <SystemRoleModal onSelect />
+      <UsersModal />
     </RolesManagementContext.Provider>
   );
 };

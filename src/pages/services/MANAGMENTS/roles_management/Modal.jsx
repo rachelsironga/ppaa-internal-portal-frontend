@@ -88,6 +88,7 @@ const SystemRoleModal = () => {
 
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
+        setSelectedObj(result.data);
         setTableRefresh((prev) => prev + 1);
         handleClose();
         resetForm();
@@ -122,7 +123,6 @@ const SystemRoleModal = () => {
   };
 
   const handleFetchPermissions = async (searchValue = "") => {
-    setLoadingRightOptions(true);
     try {
       const result = await fetchData({
         url: "/system/system-permissions",
@@ -146,8 +146,6 @@ const SystemRoleModal = () => {
       }
     } catch (err) {
       setLeftOptions([]);
-    } finally {
-      setLoadingRightOptions(false);
     }
   };
 
@@ -270,6 +268,7 @@ const SystemRoleModal = () => {
                           onAssign={handleAssign}
                           onRemove={handleRemove}
                           clearTrigger={clearSelectTrigger}
+                          searchMethod={handleFetchPermissions}
                         />
                       </div>
                     </div>
