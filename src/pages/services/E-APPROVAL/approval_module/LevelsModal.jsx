@@ -12,9 +12,10 @@ import { getDepartments } from "../../MANAGMENTS/department/Queries";
 const ApprovalModuleLevelModal = () => {
   const {
     handleFetchData,
+    selectedObj,
+    setSelectedObj,
     debounceTimeout,
     setDebounceTimeout,
-    selectApprovalModule,
     setSelectedPositionalLevelModule,
     selectedPositionalLevelModule,
   } = useContext(ApprovalModuleContext);
@@ -29,7 +30,7 @@ const ApprovalModuleLevelModal = () => {
 
   const resetFormRef = useRef(null);
   const initialValues = {
-    module_uid: selectApprovalModule?.name || "",
+    module_uid: selectedObj?.name || "",
     level_uid: selectedPositionalLevelModule?.level?.uid || "",
     action_uid: selectedPositionalLevelModule?.action?.uid || "",
     department_uid: selectedPositionalLevelModule?.department?.uid || "",
@@ -55,7 +56,7 @@ const ApprovalModuleLevelModal = () => {
       if (selectedPositionalLevelModule) {
         values.uid = selectedPositionalLevelModule.uid;
       }
-      values.module_uid = selectApprovalModule.uid;
+      values.module_uid = selectedObj.uid;
       const result = await createUpdateItemLevel(values);
 
       if (result.status === 200 || result.status === 8000) {
