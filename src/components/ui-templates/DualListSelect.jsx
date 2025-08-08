@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import Select from "react-select";
+import { fetchData } from "../../utils/GlobalQueries";
 
 const DualListSelect = ({
   leftTitle = "Available Items",
@@ -12,6 +13,7 @@ const DualListSelect = ({
   isLoadingLeft = false,
   isLoadingRight = false,
   clearTrigger = 0,
+  searchMethod = null,
 }) => {
   const [selectedLeft, setSelectedLeft] = useState([]);
   const [selectedRight, setSelectedRight] = useState([]);
@@ -41,6 +43,58 @@ const DualListSelect = ({
     }),
   };
 
+  const [onlineLeftOptions, setOnlineLeftOptions] = useState([]);
+  const [loadingLeftOnline, setLoadingLeftOnline] = useState(false);
+
+  const handleFetchLeftOptions = async (searchValue = "") => {
+    setLoadingLeftOnline(true);
+    try {
+      // Replace this with your actual API call
+      const result = await fetchData({
+        url: "/system/system-permissions",
+        filter: {
+          page: 1,
+          page_size: 20,
+          paginated: true,
+          search: searchValue,
+        },
+      });
+
+      if (result.status === 200 || result.status === 8000) {
+        setOnlineLeftOptions(
+          result.data.map((item) => ({
+            value: item.uid,
+            label: `${item.name} (${item.codename})`,
+          }))
+        );
+      } else {
+        setOnlineLeftOptions([]);
+      }
+    } catch (err) {
+      setOnlineLeftOptions([]);
+    } finally {
+      setLoadingLeftOnline(false);
+    }
+  };
+
+  const handleSearchLeft = async (searchValue) => {
+    if (!searchMethod || searchValue.length < 2) {
+      setOnlineLeftOptions([]);
+      return;
+    }
+
+    setLoadingLeftOnline(true);
+    try {
+      const results = await searchMethod(searchValue);
+      // Expecting results as array of { value, label }
+      setOnlineLeftOptions(results || []);
+    } catch (err) {
+      setOnlineLeftOptions([]);
+    } finally {
+      setLoadingLeftOnline(false);
+    }
+  };
+
   const handleAssign = () => {
     if (onAssign && selectedLeft.length > 0) {
       onAssign(selectedLeft);
@@ -55,6 +109,12 @@ const DualListSelect = ({
     }
   };
 
+  const normalize = (items) =>
+    (items || []).map((item) => ({
+      value: item.value ?? item.id ?? item.uid,
+      label: String(item.label ?? item.name ?? item.code ?? ""),
+    }));
+
   useEffect(() => {
     setSelectedLeft([]);
     setSelectedRight([]);
@@ -65,17 +125,21 @@ const DualListSelect = ({
       <div className="col-sm-5">
         <label className="fw-bold mb-2">{leftTitle}</label>
         <Select
-          isLoading={isLoadingLeft}
+          isLoading={isLoadingLeft || loadingLeftOnline}
           isSearchable
           isMulti
           menuIsOpen
           closeMenuOnSelect={false}
           className="select2-selection fetched-select2"
-          options={leftOptions}
-          value={selectedLeft}
-          onChange={setSelectedLeft}
+          options={
+            onlineLeftOptions.length > 0
+              ? normalize(onlineLeftOptions)
+              : normalize(leftOptions)
+          }
+          value={normalize(selectedLeft)}
+          onChange={(selected) => setSelectedLeft(normalize(selected))}
           styles={selectStyles}
-          placeholder="Select items..."
+          placeholder="Search or select items..."
         />
       </div>
 
@@ -128,6 +192,7 @@ DualListSelect.propTypes = {
   isLoadingLeft: PropTypes.bool,
   isLoadingRight: PropTypes.bool,
   clearTrigger: PropTypes.number,
+  searchMethod: PropTypes.func,
 };
 
 export default DualListSelect;

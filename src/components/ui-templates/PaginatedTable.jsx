@@ -40,7 +40,6 @@ const PaginatedTable = ({
     setLoading(true);
     setError(null);
     try {
-      console.log("Fetching data from:", filters);
       const result = await fetchData({
         url: fetchPath,
         isFullPath: isFullPath,

@@ -94,9 +94,6 @@ const Sidebar = ({ isService = false }) => {
         >
           <i className="bx bx-chevron-left bx-sm align-middle"></i>
         </a>
-        <span className="layout-menu-toggle menu-link text-large ms-auto">
-          <i className="bx bx-chevron-left bx-sm align-middle"></i>
-        </span>
       </div>
       <div style={{ alignContent: "center", textAlign: "center" }}>
         <span className="app-brand-text demo menu-text fw-bold ms-2">

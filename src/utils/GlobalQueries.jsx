@@ -34,7 +34,6 @@ export const fetchData = async ({
     );
     return response.data;
   } catch (error) {
-    console.error("Error fetching Data:", error);
     throw error;
   }
 };
@@ -44,6 +43,7 @@ export const createUpdateData = async ({
   uid = "",
   formData = {},
   filter = {},
+  isFullPath = false,
 }) => {
   if (!url) {
     throw new Error("URL is required for fetching data");
@@ -53,13 +53,33 @@ export const createUpdateData = async ({
   }
   try {
     const response = await api.post(
-      `${API_URL}${url}${uid ? `/${uid}` : ""}`,
+      `${isFullPath ? API_BASE_URL : API_URL}${url}${uid ? `/${uid}` : ""}`,
       formData,
       setConfig(filter)
     );
     return response.data;
   } catch (error) {
-    console.error(`Error while changing Item:`, error);
+    throw error;
+  }
+};
+
+export const deleteData = async ({
+  url = "/",
+  uid = "",
+  filter = {},
+  isFullPath = false,
+}) => {
+  if (!url) {
+    throw new Error("URL is required for Delete data");
+  }
+
+  try {
+    const response = await api.delete(
+      `${isFullPath ? API_BASE_URL : API_URL}${url}${uid ? `/${uid}` : ""}`,
+      uid ? {} : setConfig(filter)
+    );
+    return response.data;
+  } catch (error) {
     throw error;
   }
 };
