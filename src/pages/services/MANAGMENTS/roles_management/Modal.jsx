@@ -115,10 +115,6 @@ const SystemRoleModal = () => {
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) modalInstance.hide();
     setIsModalOpen(false);
-    // setSelectedObj(null);
-    // setOtherError({});
-    // setLeftOptions([]);
-    // setRightOptions([]);
     setClearSelectTrigger((prev) => prev + 1);
   };
 
