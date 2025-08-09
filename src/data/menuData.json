@@ -64,7 +64,7 @@
         "role": ["admin"]
       },
       {
-        "text": "Positional Levels",
+        "text": "Designations",
         "icon": "bx bx-sitemap",
         "available": true,
         "link": "/settings/positional-levels",
@@ -121,7 +121,7 @@
             "icon": "bx bx-detail",
             "available": true,
             "link": "/roles-managements",
-            "permission": ["1"],
+            "permission": ["view_group"],
             "role": ["admin"]
           }
          

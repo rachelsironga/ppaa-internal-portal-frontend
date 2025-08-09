@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react";
 import "animate.css";
 import { ApprovalModuleContext } from "../../../../utils/context";
@@ -61,7 +60,7 @@ export const ApprovalModulePage = () => {
             key: "created_at",
             label: "Created Date",
             style: { width: "150px" },
-            className: "text-center",
+            className: "text-right",
             render: (row) => (
               <span className="text-purple">
                 {formatDate(row.created_at, "DD/MM/YYYY HH:mm:ss") || "-"}
