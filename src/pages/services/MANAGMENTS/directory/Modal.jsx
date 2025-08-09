@@ -84,6 +84,8 @@ export const DirectoryModal = ({ loadOnlyModal = false }) => {
         id="viewCreateDirectoryModal"
         tabIndex="-1"
         aria-hidden="true"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
       >
         <div className="modal-dialog modal-md" role="document">
           <div className="modal-content">

@@ -111,7 +111,7 @@ export const UserImportModal = ({ loadOnlyModal = false }) => {
           setSubmitting(false);
         } else {
           setIsLoading(false);
-          Swal.fire("Process Stoped", `Unable to Uploud users`, "error");
+          Swal.fire("Process Stoped", `Unable to Upload users`, "error");
         }
       }
     } catch (error) {
