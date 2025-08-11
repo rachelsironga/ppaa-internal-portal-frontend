@@ -150,6 +150,7 @@ const ApprovalModuleLevelModal = () => {
   const fetchDepartments = async (searchValue = "") => {
     setLoadingDepartments(true);
     try {
+      console.log("Fetching departments with search:", searchValue);
       const result = await getDepartments({
         search: searchValue,
         pagination: {
@@ -164,8 +165,6 @@ const ApprovalModuleLevelModal = () => {
         setDepartments(null);
       }
     } catch (err) {
-      console.log("Fetching departments...");
-      console.error("Error fetching departments:", err);
       setDepartments(null);
     } finally {
       setLoadingDepartments(false);
@@ -256,8 +255,8 @@ const ApprovalModuleLevelModal = () => {
                           </label>
                           <Select
                             isLoading={loadingDepartments}
+                            className="select2-selection fetched-select2"
                             onChange={(e) => {
-                              console.log("Selected Department:", e);
                               if (e === null || e.value == "") {
                                 setFieldValue("department_uid", "");
                               } else {
@@ -265,14 +264,14 @@ const ApprovalModuleLevelModal = () => {
                               }
                             }}
                             onInputChange={(e) => {
-                              console.log("Input Changed:", e);
-                              fetchDepartments(e);
+                              if (e.length > 2) {
+                                fetchDepartments(e);
+                              }
                             }}
                             options={departments?.map((item) => ({
                               value: item.uid,
-                              label: `${item.name} (${item.code})`,
+                              label: `${item.name}`,
                             }))}
-                            className="select2-selection fetched-select2"
                             styles={{
                               menu: (base) => ({
                                 ...base,
@@ -280,18 +279,18 @@ const ApprovalModuleLevelModal = () => {
                                 zIndex: 9999,
                               }),
                             }}
-                            name="department_uid"
                             value={
                               departments
                                 ?.map((item) => ({
                                   value: item.uid,
-                                  label: `${item.name} (${item.code})`,
+                                  label: `${item.name}`,
                                 }))
                                 .find(
                                   (option) =>
                                     option.value === values.department_uid
                                 ) || null
                             }
+                            isClearable
                           />
                           <ErrorMessage
                             name="department_uid"
@@ -317,12 +316,13 @@ const ApprovalModuleLevelModal = () => {
                               }
                             }}
                             onInputChange={(e) => {
-                              console.log("Input Changed:", e);
-                              handleFetchLevels(e);
+                              if (e.length > 2) {
+                                handleFetchLevels(e);
+                              }
                             }}
                             options={levels?.map((item) => ({
                               value: item.uid,
-                              label: `${item.name} (${item.code})`,
+                              label: `${item.name}`,
                             }))}
                             className="select2-selection fetched-select2"
                             styles={{
@@ -337,15 +337,12 @@ const ApprovalModuleLevelModal = () => {
                               levels
                                 ?.map((item) => ({
                                   value: item.uid,
-                                  label: `${item.name} (${item.code})`,
+                                  label: `${item.name}`,
                                 }))
                                 .find(
                                   (option) => option.value === values.level_uid
                                 ) || null
                             }
-
-                            // defaultValue={selectedPositionalLevelModule?.level?.uid || ""}
-                            // defaultInputValue={selectedPositionalLevelModule ? `${selectedPositionalLevelModule?.level?.name} (${selectedPositionalLevelModule?.level?.code})` : values.level_uid}
                           />
                           {/* <Field type="hidden" name="level_uid" id="actionUidLarge" /> */}
                           <ErrorMessage

@@ -202,7 +202,7 @@ const Navbar = ({ isService = false }) => {
                 className="btn btn-sm btn-outline-primary me-2 me-xl-4"
               >
                 <i className="bx bx-user me-1"></i>
-                {user?.position?.level_name} - ({user?.position?.level_code})
+                {user?.position?.level_name}
               </button>
             </li>
           )}

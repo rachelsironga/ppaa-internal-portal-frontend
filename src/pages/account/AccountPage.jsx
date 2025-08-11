@@ -862,8 +862,7 @@ export const AccountPage = () => {
                                       {" "}
                                       <strong>Position : </strong>{" "}
                                       <span className="text-primary">
-                                        {selectedUser?.position?.level_name} - (
-                                        {selectedUser?.position?.level_code})
+                                        {selectedUser?.position?.level_name}
                                       </span>
                                     </p>
                                     <p className="mb-2">
@@ -875,9 +874,7 @@ export const AccountPage = () => {
                                     <p className="mb-2">
                                       {" "}
                                       <strong>Department/Unit : </strong>{" "}
-                                      {selectedUser?.position?.department_name}{" "}
-                                      - (
-                                      {selectedUser?.position?.department_code})
+                                      {selectedUser?.position?.department_name}
                                     </p>
                                   </div>
                                   <div>
