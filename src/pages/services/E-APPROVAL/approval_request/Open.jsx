@@ -396,10 +396,13 @@ export const ApprovalRequestOpenPage = () => {
               <div className="p-2"></div>
               <div className="card-body pt-4">
                 <div className="row">
-                  <div className="col-lg-4 col-md-4 animate__animated animate__fadeInLeft animate__fast">
+                  <div
+                    className="col-lg-4 col-md-4 animate__animated animate__fadeInLeft animate__fast"
+                    style={{ overflow: "hidden" }}
+                  >
                     <h5>Requester Detail</h5>
                     <div className="m-4">
-                      <p className="text-nowrap mb-2">
+                      <p className=" mb-2">
                         <i className="icon-base bx bx-user me-2 align-top" />
                         <span className=" me-3 ">Name:</span>
                         <strong className="bold">
@@ -408,34 +411,28 @@ export const ApprovalRequestOpenPage = () => {
                           {selectedRequest?.created_by?.last_name}
                         </strong>
                       </p>
-                      <p className="text-nowrap mb-2">
+                      <p className=" mb-2">
                         <i className="icon-base bx bx-card me-2 align-bottom" />
                         <span className=" me-3 ">PF-Number:</span>
                         <strong className="bold">
                           {selectedRequest?.created_by?.pf_number}
                         </strong>
                       </p>
-                      <p className="text-nowrap mb-2 ">
+                      <p className=" mb-2 ">
                         <i className="icon-base bx bx-trophy me-2 align-bottom" />
                         <span className=" me-3 ">Position:</span>
                         <strong className="bold">
                           {selectedRequest?.created_by?.position?.level_name}
                         </strong>
                       </p>
-                      <p className="text-nowrap mb-2">
+                      <p className=" mb-2">
                         <i className="icon-base bx bxs-layer me-2 align-bottom" />
                         <span className=" me-3 ">Departments:</span>
                         <strong className="bold">
                           {
                             selectedRequest?.created_by?.position
                               ?.department_name
-                          }{" "}
-                          (
-                          {
-                            selectedRequest?.created_by?.position
-                              ?.department_code
                           }
-                          )
                         </strong>
                       </p>
                     </div>
@@ -610,6 +607,7 @@ export const ApprovalRequestOpenPage = () => {
                 <div
                   style={{
                     overflowX: "scroll",
+                    minHeight: "150px",
                   }}
                   className="d-flex justify-content-start col-md-12"
                 >
@@ -618,15 +616,17 @@ export const ApprovalRequestOpenPage = () => {
                       <div
                         className="d-flex justify-content-start align-items-start user-name me-3 animate__animated animate__fadeInRight"
                         style={{
-                          minWidth: "300px",
+                          minWidth: "320px",
                           borderRadius: "10px",
                           borderTop:
                             selectedRequest?.current_state === index
                               ? "3px solid rgb(117, 202, 223)"
                               : "0",
                           paddingTop: "10px",
-                          animationDelay: `${index * 0.25}s`, // Staggered animation
+                          animationDelay: `${index * 0.25}s`,
                           WebkitAnimationDelay: `${index * 0.25}s`,
+                          overflow: "clip",
+                          paddingRight: "5px",
                         }}
                         key={`levels_${index}`}
                       >
@@ -646,8 +646,9 @@ export const ApprovalRequestOpenPage = () => {
                             alignContent: "center",
                           }}
                         >
-                          <span
+                          <div
                             style={{
+                              width: "50px",
                               fontSize: "30px",
                               fontWeight: "800",
                               color: level.step
@@ -658,9 +659,12 @@ export const ApprovalRequestOpenPage = () => {
                             }}
                           >
                             {index + 1}
-                          </span>
+                          </div>
                         </div>
-                        <div className="d-flex flex-column">
+                        <div
+                          className="d-flex flex-column"
+                          style={{ width: "280px" }}
+                        >
                           {(level.step &&
                             selectedRequest?.current_state !== index) ||
                           (level.step &&
@@ -771,10 +775,7 @@ export const ApprovalRequestOpenPage = () => {
                           ) : (
                             <>
                               <h6 className="mb-1">{`Wait for/(to be) ${level.action.name} by`}</h6>
-                              <small>
-                                {level.level.code}&nbsp;-&nbsp;(&nbsp;
-                                {level.department.code}&nbsp;)
-                              </small>
+                              <small>{level.level.name}</small>
                             </>
                           )}
                           {selectedRequest?.current_state === index &&

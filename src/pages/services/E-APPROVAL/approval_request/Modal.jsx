@@ -852,7 +852,7 @@ const ApprovalRequestModal = () => {
                             }}
                             options={departments?.map((item) => ({
                               value: item.uid,
-                              label: `${item.name} (${item.code})`,
+                              label: `${item.name}`,
                             }))}
                             styles={{
                               menu: (base) => ({
@@ -865,7 +865,7 @@ const ApprovalRequestModal = () => {
                               departments
                                 ?.map((item) => ({
                                   value: item.uid,
-                                  label: `${item.name} (${item.code})`,
+                                  label: `${item.name}`,
                                 }))
                                 .find(
                                   (option) =>

@@ -770,21 +770,18 @@ export const UserOpenPage = () => {
                                     {" "}
                                     <strong>Position : </strong>{" "}
                                     <span className="text-primary">
-                                      {selectedUser?.position?.level_name} - (
-                                      {selectedUser?.position?.level_code})
+                                      {selectedUser?.position?.level_name}
                                     </span>
                                   </p>
                                   <p className="mb-2">
                                     {" "}
                                     <strong>Directory : </strong>{" "}
-                                    {selectedUser?.position?.directory_name} - (
-                                    {selectedUser?.position?.directory_code})
+                                    {selectedUser?.position?.directory_name}
                                   </p>
                                   <p className="mb-2">
                                     {" "}
                                     <strong>Department/Unit : </strong>{" "}
-                                    {selectedUser?.position?.department_name} -
-                                    ({selectedUser?.position?.department_code})
+                                    {selectedUser?.position?.department_name}
                                   </p>
                                 </div>
                                 <div>

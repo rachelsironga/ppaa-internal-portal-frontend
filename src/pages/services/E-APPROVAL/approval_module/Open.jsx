@@ -414,7 +414,7 @@ return (
                                 ref={provider.innerRef}
                               >
                                 <td>{index + 1}</td>
-                                <td className="fw-medium">{`${dataRows.level.name} (${dataRows.level.code})`}</td>
+                                <td className="fw-medium">{`${dataRows.level.name}`}</td>
                                 <td className="fw-medium">
                                   {dataRows.action.name}
                                 </td>
