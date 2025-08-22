@@ -12,23 +12,30 @@ import PositionsModal from "./PositionsModal";
 import AccordionContainer from "../../../../components/accordion/AccordionContainer";
 import Select from "react-select";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import { hasAccess } from "../../../../hooks/AccessHandler";
+import { useSelector } from "react-redux";
+import UserPermissionModal from "./UserPermissionModal";
 
 export const UserOpenPage = () => {
+  const user = useSelector((state) => state.userReducer?.data);
+
   const pageSizeData = [5, 10, 20, 50, 70, 100];
 
   const { uid } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [loadingPositions, setLoadingPositions] = useState(true);
   const [errorPositions, setErrorPositions] = useState(null);
   const [positions, setPositions] = useState(null);
-
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const filteredPermissions = selectedUser?.user_permissions?.filter((perm) =>
+    perm.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const {
     currentPage,
     totalCount,
@@ -421,7 +428,7 @@ export const UserOpenPage = () => {
                             src={previewImage}
                             alt="Avatar"
                             id="uploadedAvatar"
-                            className="img-fluid rounded mb-4 shadow  account-image-reset"
+                            className="img-fluid rounded mb-2 shadow  account-image-reset"
                             height="120px"
                             width="150px"
                             onClick={toggleUploadVisibility} // Toggle input visibility on click
@@ -433,7 +440,7 @@ export const UserOpenPage = () => {
                             ref={fileInputRef}
                           />
 
-                          <div className="user-info text-center mb-4">
+                          <div className="user-info text-center mb-2">
                             <h5>
                               {selectedUser.first_name}{" "}
                               {selectedUser.middle_name}{" "}
@@ -488,26 +495,10 @@ export const UserOpenPage = () => {
                                 )}
                               </div>
                             </h5>
-
-                            <span className="badge bg-label-primary me-3">
-                              Administratior
-                            </span>
-                            <span className="badge bg-label-secondary me-3">
-                              Accountant
-                            </span>
-                            <span className="badge bg-label-primary me-3">
-                              User
-                            </span>
-                            <span className="badge bg-label-success me-3">
-                              Manager
-                            </span>
-                            <span className="badge bg-label-info me-3">
-                              HOD
-                            </span>
                           </div>
                         </div>
                       </div>
-                      <div className="info-container border-top mt-3 ">
+                      <div className="info-container border-top mt-1 ">
                         <div
                           className="button-wrapper mt-1"
                           style={{
@@ -536,9 +527,8 @@ export const UserOpenPage = () => {
                             </span>
                           )}
                         </div>
-                        <h5 className="pb-2 mt-3 ">User Details</h5>
                         <div className="demo-inline-spacing mt-3 ">
-                          <h6 className="text-muted">ABOUT</h6>
+                          <h5 className="text-muted">Personal Details</h5>
                           <ul className="list-group">
                             <li
                               className="list-group-item d-flex align-items-center"
@@ -1072,134 +1062,128 @@ export const UserOpenPage = () => {
                       >
                         <div className="ibox-content">
                           <div className="ibox-content-body">
+                            <div className="row mb-4">
+                              <div className="d-flex svg-illustration  justify-content-between mb-6 gap-2 align-items-center">
+                                <h5 className=" demo fw-bold ms-50 lh-1">
+                                  User Role and Permissions
+                                </h5>
+                                {hasAccess(
+                                  user,
+                                  ["assign_user_permission"],
+                                  ["admin"]
+                                ) && (
+                                  <button
+                                    className="btn btn-sm btn-info btn-outline-info"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#viewCreateRoleModal"
+                                    onClick={() => {}}
+                                  >
+                                    <i className="bx bx-user-plus"></i>
+                                    &nbsp;Add Role/Permissions{" "}
+                                  </button>
+                                )}
+                              </div>
+                              <p className="mb-0 text-muted">
+                                The bellow is List of All System Roles and
+                                Permissions Assignet to This User. Direct or by
+                                Role
+                              </p>
+                            </div>
                             <div className="row">
-                              <div className="col-sm-11">
-                                <AccordionContainer
+                              <div className="col-md-6 col-lg-6 col-sm-12 p-2  animate__animated animate__fadeInUp animate__fast">
+                                <div className="me-3 mb-3">
+                                  <h6 className="mb-0">
+                                    Assigned Roles/Groups
+                                  </h6>
+                                </div>
+                                <div
                                   style={{
-                                    border: "0.1px solid #dfd9d7",
-                                    borderRadius: "7px",
+                                    flex: 1,
+                                    minHeight: "120px",
+                                    maxHeight: "400px",
+                                    overflowY: "auto",
+                                    border: "1px solid #f0f0f0",
+                                    borderRadius: "6px",
+                                    background: "#fafbfc",
+                                    padding: "0.5rem",
+                                    textAlign: "left",
+                                    fontSize: "1.5em",
                                   }}
-                                  items={[
-                                    {
-                                      id: 3,
-                                      title:
-                                        "Instructions for Selecting JEEVA Modules and Permissions",
-                                      active: false,
-                                      content: `On the left, you will find all available JEEVA Modules and Permissions you can request. Please make your selections, then click the green button to confirm your choices. On the right, your selected items will appear. You may also remove selections at any time by clicking the red button. You can use the search feature at any time to make your selection process easier.`,
-                                    },
-                                  ]}
-                                />
-                              </div>
-                              <div className="col-sm-5">
-                                <Select
-                                  isLoading={loadingLeftSelect}
-                                  closeMenuOnSelect={false}
-                                  expandOnFocus={false}
-                                  isSearchable
-                                  isMulti
-                                  menuIsOpen={true} // Always show options
-                                  className="select2-selection fetched-select2"
-                                  options={leftOptions}
-                                  value={selectedLeft}
-                                  onChange={setSelectedLeft}
-                                  onInputChange={(e) => {
-                                    // fetchDepartments(e);
-                                  }}
-                                  label="Select New Grants"
-                                  styles={{
-                                    menu: (base) => ({
-                                      ...base,
-                                      position: "relative",
-                                      zIndex: 9999,
-                                      textAlign: "left",
-                                      padding: "8px",
-                                      minHeight: "300px",
-                                    }),
-                                    groupHeading: (base) => ({
-                                      ...base,
-                                      fontWeight: "bolder",
-                                      fontSize: "0.85rem",
-                                      color: "#6f6c6b",
-                                    }),
-                                    placeholder: (base) => ({
-                                      ...base,
-                                      textAlign: "left",
-                                    }),
-                                    option: (base) => ({
-                                      ...base,
-                                      paddingLeft: "20px",
-                                    }),
-                                  }}
-                                  isClearable
-                                />
-                              </div>
-                              <div className="col-sm-1">
-                                <br />
-                                <br />
-                                <br />
-                                <button
-                                  id="assignButton"
-                                  className="btn btn-success btn-sm btn-assign"
-                                  onClick={handleAssign}
-                                  title="Assign"
                                 >
-                                  <i className="bx bx-right-arrow-alt"></i>
-                                </button>
-                                <br />
-                                <br />
-                                <button
-                                  id="removeButton"
-                                  className="btn btn-danger btn-sm btn-assign"
-                                  onClick={() => {
-                                    handleRemove();
-                                  }}
-                                  title="Remove"
-                                >
-                                  <i className="bx bx-left-arrow-alt"></i>
-                                </button>
+                                  <ul className=" small">
+                                    {selectedUser?.groups?.map((group) => (
+                                      <li
+                                        key={group}
+                                        className="list-group-item py-3 px-2 p-3 me-3"
+                                      >
+                                        <i
+                                          className="bx bx-check-shield me-2"
+                                          style={{
+                                            fontSize: "1.5em",
+                                          }}
+                                        ></i>
+                                        {group}
+                                      </li>
+                                    ))}
+
+                                    {selectedUser?.groups?.length === 0 && (
+                                      <li className="list-group-item justify-context-center text-center text-muted mt-4 py-3 px-2">
+                                        User has no assigned roles
+                                      </li>
+                                    )}
+                                  </ul>
+                                </div>
                               </div>
-                              <div className="col-sm-5">
-                                <Select
-                                  isLoading={loadingRightSelect}
-                                  closeMenuOnSelect={false}
-                                  expandOnFocus={false}
-                                  isSearchable
-                                  isMulti
-                                  placeholder="Selected Grants"
-                                  menuIsOpen={true} // Always show options
-                                  className="select2-selection fetched-select2"
-                                  options={rightOptions}
-                                  value={selectedRight}
-                                  onChange={setSelectedRight}
-                                  onInputChange={(e) => {
-                                    // fetchDepartments(e);
-                                  }}
-                                  styles={{
-                                    menu: (base) => ({
-                                      ...base,
-                                      position: "relative",
-                                      zIndex: 9999,
-                                      textAlign: "left",
-                                      padding: "8px",
-                                      minHeight: "300px",
-                                    }),
-                                    groupHeading: (base) => ({
-                                      ...base,
-                                      fontWeight: "bolder",
-                                      fontSize: "0.85rem",
-                                      color: "#6f6c6b",
-                                    }),
-                                    placeholder: (base) => ({
-                                      ...base,
-                                      textAlign: "left",
-                                    }),
-                                    option: (base) => ({
-                                      ...base,
-                                      paddingLeft: "20px",
-                                    }),
-                                  }}
-                                  isClearable
+                              <div className="col-md-6 col-lg-6 col-sm-12 p-2  animate__animated animate__fadeInUp animate__fast">
+                                <div className="me-3">
+                                  <h6 className="mb-0">Assigned Permissions</h6>
+                                </div>
+                                <input
+                                  type="text"
+                                  placeholder="Search permission..."
+                                  className="form-control mb-2 my-3"
+                                  value={searchTerm}
+                                  onChange={(e) =>
+                                    setSearchTerm(e.target.value)
+                                  }
                                 />
+                                <div
+                                  style={{
+                                    flex: 1,
+                                    minHeight: "120px",
+                                    maxHeight: "350px",
+                                    overflowY: "auto",
+                                    border: "1px solid #f0f0f0",
+                                    borderRadius: "6px",
+                                    background: "#fafbfc",
+                                    padding: "0.5rem",
+                                    textAlign: "left",
+                                  }}
+                                >
+                                  <ul className="list-group list-group-flush small">
+                                    {filteredPermissions?.map((perm) => (
+                                      <li
+                                        key={perm}
+                                        className="list-group-item py-3 px-2 p-3 me-3"
+                                      >
+                                        <i
+                                          className="bx bx-check-shield me-2"
+                                          style={{
+                                            color: "#696cff",
+                                            fontSize: "1.1em",
+                                          }}
+                                        ></i>
+                                        {perm}
+                                      </li>
+                                    ))}
+
+                                    {filteredPermissions?.length === 0 && (
+                                      <li className="list-group-item justify-context-center text-center text-muted mt-4 py-3 px-2">
+                                        No permissions found
+                                      </li>
+                                    )}
+                                  </ul>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1216,6 +1200,7 @@ export const UserOpenPage = () => {
 
       {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedUser(null)} /> */}
       <PositionsModal />
+      <UserPermissionModal />
     </UsersContext.Provider>
   );
 };

@@ -183,7 +183,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 
   return (
     <>
-      {!loadOnlyModal && (
+      {/* {!loadOnlyModal && (
         <button
           aria-label="Click me"
           type="button"
@@ -193,7 +193,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
         >
           <i className="bx bx-edit-alt me-1"></i> Add User
         </button>
-      )}
+      )} */}
 
       <div
         className="modal modal-slide-in"

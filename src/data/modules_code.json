@@ -1,0 +1,14 @@
+[
+  {
+    "key": "INTERNET_EMAIL_ACCESS",
+    "name": "INTERNET EMAIL ACCESS"
+  },
+  {
+    "key": "JEEVA_ACCESS",
+    "name": "JEEVA ACCESS"
+  },
+  {
+    "key": "EDMS_ACCESS",
+    "name": "EDMS ACCESS"
+  }
+]

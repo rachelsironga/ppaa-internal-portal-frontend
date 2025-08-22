@@ -5,28 +5,23 @@ import * as Yup from "yup";
 import showToast from "../../../../helpers/ToastHelper";
 import { createUpdateApprovalRequest } from "./Queries";
 import { ApprovalRequestsContext } from "../../../../utils/context";
-import { getDepartments } from "../../MANAGMENTS/department/Queries";
 import FormWizard from "react-form-wizard-component";
 import "react-form-wizard-component/dist/style.css";
 import Select, { components } from "react-select";
-import { getModules } from "../approval_module/Queries";
 import PDFViewer from "../../../../components/common/PDFViewer";
 import jeevaData from "../../../../data/jeevaData.json";
 import jeevaGroupData from "../../../../data/jeevaGroupData.json";
 import edmsData from "../../../../data/edmsData.json";
 import edmsGroupData from "../../../../data/edmsGroupData.json";
 import { useSelector } from "react-redux";
-import { getDateRanges } from "../../MANAGMENTS/date_range/Queries";
+import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 const ApprovalRequestModal = () => {
-  const {
-    handleFetchData,
-    selectApprovalRequests,
-    setSelectedApprovalRequest,
-    isModalOpen,
-    setIsModalOpen,
-  } = useContext(ApprovalRequestsContext);
   const user = useSelector((state) => state.userReducer);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } =
+    useContext(ApprovalRequestsContext);
 
   const [longGroupData, setLongGroupData] = useState([]);
   const [longData, setLongData] = useState([]);
@@ -42,21 +37,11 @@ const ApprovalRequestModal = () => {
   const [activeChipLabel, setActiveChipLabel] = useState(null);
 
   const [selectedLeft, setSelectedLeft] = useState([]);
-  const [selectedRight, setSelectedRight] = useState([]);
-
-  const [loadingLeftOptions, setLoadingLeftOptions] = useState(false);
-  const [errorLeftOptions, setErrorLeftOptions] = useState(false);
   const [leftOptions, setLeftOptions] = useState([]);
 
-  const [loadingRightOptions, setLoadingRightOptions] = useState(false);
-  const [errorRightOptions, setErrorRightOptions] = useState(false);
-  const [rightOptions, setRightOptions] = useState([
-    { label: "Modules", options: [] },
-    { label: "Permissions", options: [] },
-  ]);
-
   const [activeModulePermissions, setActiveModulePermissions] = useState([]);
-  const [selectedModules, setSelectedModules] = useState([]); // [{ codename, name, Permissions: [...] }]
+  const [selectedModules, setSelectedModules] = useState([]);
+  const [selectedApprovalModule, setSelectedApprovalModule] = useState([]);
 
   // When a module chip is clicked, show its permissions
   const handleChipClick = (moduleCodename, moduleLabel) => {
@@ -183,52 +168,26 @@ const ApprovalRequestModal = () => {
     );
   };
 
-  const [loadingModules, setLoadingModules] = useState(false);
-  const [modules, setModules] = useState([]);
-
   const [loadingPermissions, stLoadingPermissions] = useState(false);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-  const [departments, setDepartments] = useState([]);
-
-  const [loadingDateRanges, setLoadingDateRanges] = useState(false);
-  const [dateRanges, setDateRanges] = useState([]);
 
   //for Wizard tab validation & Control
   const [tabsError, setTabsError] = useState([false, false, false]);
   const [isValidTab, setSInValidTab] = useState([false, false, false]);
   const [isFirstTabChange, setIsFirstTabChange] = useState(true);
   const [tabIndex, setTabIndex] = useState(0); // current tab index
-  const [selectedModule, setSelectedModule] = useState(
-    selectApprovalRequests?.module
-  );
-  const CustomOption = (props) => (
-    <components.Option {...props}>
-      <div>
-        <span>{props.data.name}</span>
-        <span style={{ color: "#888", fontSize: "0.9em", marginLeft: 8 }}>
-          (&nbsp;
-          {props.data.description && props.data.description.length > 40
-            ? props.data.description.slice(0, 40) + "..."
-            : props.data.description}
-          &nbsp;)
-        </span>
-      </div>
-    </components.Option>
-  );
+  const [selectedModule, setSelectedModule] = useState(selectedObj?.module);
 
   const initialValues = {
-    title: selectApprovalRequests?.title || "",
-    module_uid: selectApprovalRequests?.module?.uid || "",
+    title: selectedObj?.title || "",
+    module_uid: selectedObj?.module?.uid || "",
     department_uid:
-      selectApprovalRequests?.department_uid ||
-      user?.data?.position?.department_uid ||
-      "",
-    date_range_uid: selectApprovalRequests?.request_data?.date_range_uid || "",
+      selectedObj?.department_uid || user?.data?.position?.department_uid || "",
+    date_range_uid: selectedObj?.request_data?.date_range_uid || "",
     request_data: {
-      attachment: selectApprovalRequests?.request_data?.attachment || "",
-      grants: selectApprovalRequests?.request_data?.grants || [],
-      is_edited: selectApprovalRequests?.request_data?.is_edited || false,
-      is_read_term: selectApprovalRequests?.request_data?.is_read_term || false,
+      attachment: selectedObj?.request_data?.attachment || "",
+      grants: selectedObj?.request_data?.grants || [],
+      is_edited: selectedObj?.request_data?.is_edited || false,
+      is_read_term: selectedObj?.request_data?.is_read_term || false,
     },
   };
 
@@ -246,7 +205,7 @@ const ApprovalRequestModal = () => {
       ),
       grants: Yup.array().min(
         1,
-        "Your Must Select Group or Manual Select Module with its permitions"
+        "Your Must Select Group or Manual Select Module with its Permission"
       ),
       is_edited: Yup.boolean().default(false),
       is_read_term: Yup.boolean()
@@ -260,17 +219,18 @@ const ApprovalRequestModal = () => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (selectApprovalRequests) {
-        values.uid = selectApprovalRequests.uid;
+      if (selectedObj) {
+        values.uid = selectedObj.uid;
       }
       setSubmitting(true);
+
       const result = await createUpdateApprovalRequest(values);
 
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
         handleClose();
         resetForm();
-        handleFetchData();
+        setTableRefresh((prev) => prev + 1);
       } else if (result.status === 8002) {
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);
@@ -291,7 +251,7 @@ const ApprovalRequestModal = () => {
   };
 
   const handleClose = () => {
-    setSelectedApprovalRequest(null);
+    setSelectedObj(null);
     setIsFirstTabChange(true);
     setTabsError([false, false, false]);
     setSInValidTab([false, false, false]);
@@ -300,77 +260,6 @@ const ApprovalRequestModal = () => {
     const modalElement = document.getElementById("viewCreateRequestModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) modalInstance.hide();
-  };
-
-  const handleFetchModule = async (searchValue = "") => {
-    setLoadingModules(true);
-    try {
-      const result = await getModules({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setModules(result.data);
-      } else {
-        setModules(null);
-      }
-    } catch (err) {
-      setModules(null);
-    } finally {
-      setLoadingModules(false);
-    }
-  };
-
-  const fetchDepartments = async (searchValue = "") => {
-    setLoadingDepartments(true);
-    try {
-      console.log("Fetching departments with search:", searchValue);
-      const result = await getDepartments({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setDepartments(result.data);
-      } else {
-        setDepartments(null);
-      }
-    } catch (err) {
-      setDepartments(null);
-    } finally {
-      setLoadingDepartments(false);
-    }
-  };
-
-  const fetchDateRanges = async (searchValue = "") => {
-    setLoadingDateRanges(true);
-    try {
-      const result = await getDateRanges({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-          is_active: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setDateRanges(result.data);
-      } else {
-        setDateRanges(null);
-      }
-    } catch (err) {
-      setDateRanges(null);
-    } finally {
-      setLoadingDateRanges(false);
-    }
   };
 
   const groupedOptions = [];
@@ -391,19 +280,21 @@ const ApprovalRequestModal = () => {
         await validationSchema.validateAt("description", values);
       }
       if (tabIndex === 2) {
-        if (selectedModule?.code === "INTERNET_EMAIL_ACCESS") {
+        if (selectedApprovalModule?.code === "INTERNET_EMAIL_ACCESS") {
           // await validationSchema.validateAt("request_data.attachment", values);
         }
 
+        console.log(values.module_uid?.code);
+
         if (
-          selectedModule?.code === "JEEVA_ACCESS" ||
-          selectedModule?.code === "EDMS_ACCESS"
+          selectedApprovalModule?.code === "JEEVA_ACCESS" ||
+          selectedApprovalModule?.code === "EDMS_ACCESS"
         ) {
-          if (selectedModules.length === 0) {
+          if (selectedModules?.length === 0) {
             setFieldValue("request_data.grants", []);
             setFieldError(
               "request_data.grants",
-              "Your Must Select Group or Manual Select Module with its permitions"
+              "Your Must Select Group or Manual Select Module with its Permissions"
             );
             await validationSchema.validateAt("request_data.grants", values);
             return false;
@@ -494,25 +385,34 @@ const ApprovalRequestModal = () => {
   };
 
   useEffect(() => {
-    if (isModalOpen) {
-      setLeftOptions(groupedOptions);
-      setRightOptions([
-        { label: "Modules", options: [] },
-        { label: "Permissions", options: [] },
-      ]);
-      fetchDepartments();
-      handleFetchModule();
-      fetchDateRanges();
-    }
-  }, [isModalOpen]);
+    const modalElement = document.getElementById("viewCreateRequestModal");
+    if (!modalElement) return;
 
-  // When selectedModule changes, set the data
+    const handleShow = () => setIsModalOpen(true);
+    const handleHide = () => setIsModalOpen(false);
+
+    modalElement.addEventListener("shown.bs.modal", handleShow);
+    modalElement.addEventListener("hidden.bs.modal", handleHide);
+
+    return () => {
+      modalElement.removeEventListener("shown.bs.modal", handleShow);
+      modalElement.removeEventListener("hidden.bs.modal", handleHide);
+    };
+  }, []);
+
+  // When selectedApprovalModule changes, set the data
   useEffect(() => {
     if (isModalOpen) {
-      if (selectedModule?.code === "JEEVA_ACCESS") {
+      if (isModalOpen) {
+        setLeftOptions(groupedOptions);
+      }
+
+      console.log(selectedApprovalModule);
+
+      if (selectedApprovalModule?.code === "JEEVA_ACCESS") {
         setLongData(jeevaData);
         setLongGroupData(jeevaGroupData);
-      } else if (selectedModule?.code === "EDMS_ACCESS") {
+      } else if (selectedApprovalModule?.code === "EDMS_ACCESS") {
         setLongData(edmsData);
         setLongGroupData(edmsGroupData);
       } else {
@@ -520,7 +420,7 @@ const ApprovalRequestModal = () => {
         setLongGroupData([]);
       }
     }
-  }, [selectedModule, isModalOpen]);
+  }, [selectedApprovalModule, isModalOpen]);
 
   // When longData changes, build options
   useEffect(() => {
@@ -550,17 +450,6 @@ const ApprovalRequestModal = () => {
           }
       `}
       </style>
-      <button
-        aria-label="Click me"
-        type="button"
-        style={{ minWidth: "150px" }}
-        className="btn btn-primary ms-auto btn-sm   animate__animated animate__fadeInRight animate__slow"
-        data-bs-toggle="modal"
-        data-bs-target="#viewCreateRequestModal"
-        onClick={() => setIsModalOpen(true)}
-      >
-        <i className="bx bx-edit-alt me-1"></i> &nbsp; Create New Request
-      </button>
 
       <div
         className="modal modal-slide-in"
@@ -576,10 +465,10 @@ const ApprovalRequestModal = () => {
             <div className="modal-header">
               <h5 className="modal-title" id="exampleModalLabel3">
                 Approval Request{" "}
-                {selectedModule && (
+                {selectedApprovalModule && (
                   <span className="text-info">
                     {" "}
-                    &nbsp;( {selectedModule?.name} )
+                    &nbsp;( {selectedApprovalModule?.name} )
                   </span>
                 )}
               </h5>
@@ -698,67 +587,36 @@ const ApprovalRequestModal = () => {
                       showErrorOnTab={tabsError[0]}
                     >
                       <div className="row text-start">
-                        <div className="col-md-6  mb-3">
-                          <label htmlFor="module_uid" className="form-label">
-                            Request For
-                          </label>
-                          <Select
-                            isLoading={loadingModules}
-                            className="select2-selection fetched-select2"
-                            onChange={(e) => {
-                              if (!e) {
-                                setFieldValue("module_uid", "");
-                                setSelectedModule(null);
-                              } else {
-                                setFieldValue("module_uid", e.value);
-                                // Find the full module object by uid
-                                const moduleObj = modules.find(
-                                  (mod) => mod.uid === e.value
-                                );
-                                setSelectedModule(moduleObj || null);
-                              }
-                            }}
-                            onInputChange={(e) => {
-                              handleFetchModule(e);
-                            }}
-                            options={modules?.map((item) => ({
-                              value: item.uid,
-                              label: item.name,
-                              name: item.name,
-                              description: item.description,
-                            }))}
-                            components={{ Option: CustomOption }}
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                position: "absolute",
-                                zIndex: 9999,
-                              }),
-                            }}
-                            value={
-                              modules
-                                ?.map((item) => ({
-                                  value: item.uid,
-                                  label: `${item.name} - (${item.description})`,
-                                }))
-                                .find(
-                                  (option) => option.value === values.module_uid
-                                ) || null
-                            }
-                            isClearable
-                          />
-
-                          <Field
-                            type="hidden"
-                            name="module_uid"
-                            id="typeHidden"
-                          />
-                          <ErrorMessage
-                            name="module_uid"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
+                        <FormikSelect
+                          name="module_uid"
+                          label="Request For"
+                          url="/approval-module"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.uid,
+                            label: `${item.name} (${item.code})`,
+                            name: item.name,
+                            code: item.code,
+                          })}
+                          onSelectObject={(obj) => {
+                            console.log("Selected object outside Formik:", obj);
+                            // you can set it to local state if you want
+                            setSelectedApprovalModule({
+                              value: obj.uid,
+                              label: obj.name,
+                              name: obj.name,
+                              code: obj.code,
+                            });
+                          }}
+                          placeholder="Search Modules..."
+                          debounceMs={500}
+                          minChars={2}
+                          isReadOnly={false}
+                        />
 
                         <div className="col-md-6 mb-3">
                           <label htmlFor="titleLarge" className="form-label">
@@ -780,107 +638,46 @@ const ApprovalRequestModal = () => {
                       </div>
 
                       <div className="row text-start">
-                        <div className="col-md-6  mb-3">
-                          <label
-                            htmlFor="date_range_uid"
-                            className="form-label"
-                          >
-                            Access For Period Of
-                          </label>
-                          <Select
-                            isLoading={loadingDateRanges}
-                            className="select2-selection fetched-select2"
-                            onChange={(e) => {
-                              if (e === null || e.value == "") {
-                                setFieldValue("date_range_uid", "");
-                              } else {
-                                setFieldValue("date_range_uid", e.value);
-                              }
-                            }}
-                            onInputChange={(e) => {
-                              fetchDateRanges(e);
-                            }}
-                            options={dateRanges?.map((item) => ({
-                              value: item.uid,
-                              label: `${item.name}`,
-                            }))}
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                position: "absolute",
-                                zIndex: 9999,
-                              }),
-                            }}
-                            value={
-                              dateRanges
-                                ?.map((item) => ({
-                                  value: item.uid,
-                                  label: `${item.name}`,
-                                }))
-                                .find(
-                                  (option) =>
-                                    option.value === values.date_range_uid
-                                ) || null
-                            }
-                            isClearable
-                          />
-                          <ErrorMessage
-                            name="date_range_uid"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
+                        <FormikSelect
+                          name="date_range_uid"
+                          label="Access For Period Of"
+                          url="/date-range"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.uid,
+                            label: `${item.name}`,
+                            name: `${item.name}`,
+                          })}
+                          placeholder="Search Date Ranges ... "
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={false}
+                        />
 
-                        <div className="col-md-6 mb-3">
-                          <label htmlFor="departmentUid" className="form-label">
-                            Department
-                          </label>
-                          <Select
-                            isLoading={loadingDepartments}
-                            className="select2-selection fetched-select2"
-                            onChange={(e) => {
-                              if (e === null || e.value == "") {
-                                setFieldValue("department_uid", "");
-                              } else {
-                                setFieldValue("department_uid", e.value);
-                              }
-                            }}
-                            onInputChange={(e) => {
-                              if (e.length > 2) {
-                                fetchDepartments(e);
-                              }
-                            }}
-                            options={departments?.map((item) => ({
-                              value: item.uid,
-                              label: `${item.name}`,
-                            }))}
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                position: "absolute",
-                                zIndex: 9999,
-                              }),
-                            }}
-                            value={
-                              departments
-                                ?.map((item) => ({
-                                  value: item.uid,
-                                  label: `${item.name}`,
-                                }))
-                                .find(
-                                  (option) =>
-                                    option.value === values.department_uid
-                                ) || null
-                            }
-                            isClearable
-                          />
-
-                          <ErrorMessage
-                            name="department_uid"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
+                        <FormikSelect
+                          name="department_uid"
+                          label="Departments"
+                          url="/departments"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.uid,
+                            label: `${item.code}`,
+                            name: `${item.name}`,
+                            code: `${item.code}`,
+                          })}
+                          placeholder="Search Departments..."
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={false}
+                        />
                       </div>
 
                       <div className="row text-start">
@@ -921,7 +718,8 @@ const ApprovalRequestModal = () => {
                       isValid={isValidTab[0]}
                       showErrorOnTab={tabsError[1]}
                     >
-                      {selectedModule?.code === "INTERNET_EMAIL_ACCESS" && (
+                      {selectedApprovalModule?.code ===
+                        "INTERNET_EMAIL_ACCESS" && (
                         <div style={{ minHeight: "300px" }}>
                           <div className="row text-start">
                             <div className="col mb-3">
@@ -951,8 +749,8 @@ const ApprovalRequestModal = () => {
                           </div>
                         </div>
                       )}
-                      {(selectedModule?.code === "JEEVA_ACCESS" ||
-                        selectedModule?.code === "EDMS_ACCESS") && (
+                      {(selectedApprovalModule?.code === "JEEVA_ACCESS" ||
+                        selectedApprovalModule?.code === "EDMS_ACCESS") && (
                         <>
                           <div className="ibox-content">
                             <div className="ibox-content-body">

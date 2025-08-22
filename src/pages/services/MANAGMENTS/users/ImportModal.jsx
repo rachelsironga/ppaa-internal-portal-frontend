@@ -151,18 +151,6 @@ export const UserImportModal = ({ loadOnlyModal = false }) => {
 
   return (
     <>
-      {!loadOnlyModal && (
-        <button
-          aria-label="Click me"
-          type="button"
-          className="btn btn-success ms-auto btn-sm me-4 animate__animated animate__fadeInRight animate__fast"
-          data-bs-toggle="modal"
-          data-bs-target="#viewCreateUserImportModal"
-        >
-          <i className="bx bx-table me-1"></i> Import &nbsp;Users
-        </button>
-      )}
-
       <div
         className="modal modal-slide-in"
         id="viewCreateUserImportModal"
