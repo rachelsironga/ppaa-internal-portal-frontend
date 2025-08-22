@@ -8,13 +8,12 @@ import showToast from "../../../../helpers/ToastHelper";
 import { DepartmentsContext } from "../../../../utils/context";
 import { getDirectories } from "../directory/Queries";
 import Select from "react-select";
+import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 const DepartmentModal = () => {
   const { fetchDepartments, selectedDepartment, setSelectedDepartment } =
     useContext(DepartmentsContext);
   const [errors, setOtherError] = useState({});
-  const [loadingDirectories, setLoadingDirectories] = useState(false);
-  const [directories, setDirectories] = useState([]);
 
   const initialValues = {
     name: selectedDepartment?.name || "",
@@ -67,32 +66,9 @@ const DepartmentModal = () => {
     }
   };
 
-  const handleFetchDirectories = async (searchValue = "") => {
-    setLoadingDirectories(true);
-    try {
-      const result = await getDirectories({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setDirectories(result.data);
-      } else {
-        setDirectories(null);
-      }
-    } catch (err) {
-      setDirectories(null);
-    } finally {
-      setLoadingDirectories(false);
-    }
-  };
-
   useEffect(() => {
     if (!selectedDepartment) {
-      handleFetchDirectories();
+      // handleFetchDirectories();
     } else {
       values.directory_uid = selectedDepartment?.directory?.uid;
     }
@@ -151,59 +127,27 @@ const DepartmentModal = () => {
                 <Form>
                   <div className="modal-body">
                     <div className="row">
-                      <div className="col mb-3">
-                        <label htmlFor="levelUid" className="form-label">
-                          Directory
-                        </label>
-                        <Select
-                          isLoading={loadingDirectories}
-                          className="select2-selection fetched-select2"
-                          onChange={(e) => {
-                            console.log("Selected Directory:", e);
-                            if (e === null || e.value == "") {
-                              setFieldValue("directory_uid", "");
-                            } else {
-                              setFieldValue("directory_uid", e.value);
-                            }
-                          }}
-                          onInputChange={(e) => {
-                            handleFetchDirectories(e);
-                          }}
-                          options={directories?.map((item) => ({
-                            value: item.uid,
-                            label: `${item.name} (${item.code})`,
-                          }))}
-                          styles={{
-                            menu: (base) => ({
-                              ...base,
-                              position: "absolute",
-                              zIndex: 9999,
-                            }),
-                          }}
-                          value={
-                            directories
-                              ?.map((item) => ({
-                                value: item.uid,
-                                label: `${item.name} (${item.code})`,
-                              }))
-                              .find(
-                                (option) =>
-                                  option.value === values.directory_uid
-                              ) || null
-                          }
-                          isClearable
-                        />
-                        <Field
-                          type="hidden"
-                          name="directory_uid"
-                          id="directoryUidLarge"
-                        />
-                        <ErrorMessage
-                          name="directory_uid"
-                          component="div"
-                          className="text-danger"
-                        />
-                      </div>
+                      <FormikSelect
+                        name="directory_uid"
+                        label="Directory"
+                        url="/directory"
+                        containerClass="col-md-12 mb-3"
+                        filters={{
+                          page: 1,
+                          page_size: 10,
+                          paginated: true,
+                        }}
+                        mapOption={(item) => ({
+                          value: item.uid,
+                          label: `${item.name}`,
+                          name: `${item.name}`,
+                          code: `${item.code}`,
+                        })}
+                        placeholder="Search Directory ..."
+                        debounceMs={500}
+                        minChars={3}
+                        isReadOnly={false}
+                      />
                     </div>
 
                     <div className="row">

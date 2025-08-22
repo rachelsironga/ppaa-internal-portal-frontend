@@ -5,6 +5,7 @@ import ReactPaginate from "react-paginate";
 import usePagination from "../../hooks/usePagination";
 import { fetchData } from "../../utils/GlobalQueries";
 import showToast from "../../helpers/ToastHelper";
+import Select from "react-select";
 import "animate.css";
 
 const PaginatedTable = ({
@@ -14,7 +15,7 @@ const PaginatedTable = ({
   buttons,
   onSelect,
   isRefresh,
-  filters = {},
+  filters = [],
   isFullPath = false,
 }) => {
   const {
@@ -32,6 +33,7 @@ const PaginatedTable = ({
   const pageSizeData = [10, 25, 50, 100];
   const [searchQuery, setSearchQuery] = useState("");
   const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [selectedFilters, setSelectedFilters] = useState(["ALL"]);
   const handlePageClick = (event) => {
     updatePage(event.selected + 1);
   };
@@ -44,11 +46,11 @@ const PaginatedTable = ({
         url: fetchPath,
         isFullPath: isFullPath,
         filter: {
-          ...filters,
           page: currentPage,
           page_size: pageSize,
           paginated: true,
           search: searchQuery,
+          filters: selectedFilters.join(","),
         },
       });
 
@@ -64,6 +66,7 @@ const PaginatedTable = ({
         showToast("No Records Found", "warning", "Fetch Completed");
       }
     } catch (err) {
+      console.error("Error fetching data:", err);
       setError(true);
       showToast("Unable to Fetch Records", "warning", "Failed");
     } finally {
@@ -86,7 +89,16 @@ const PaginatedTable = ({
     }, 1500);
     setDebounceTimeout(timeout);
     return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage]);
+  }, [searchQuery, pageSize, currentPage, selectedFilters]);
+
+  // useEffect(() => {
+  //   if (debounceTimeout) clearTimeout(debounceTimeout);
+  //   const timeout = setTimeout(() => {
+  //     handleFetchData();
+  //   }, 1500);
+  //   setDebounceTimeout(timeout);
+  //   return () => clearTimeout(timeout);
+  // }, [selectedFilters]);
 
   return (
     <div className="card">
@@ -116,32 +128,86 @@ const PaginatedTable = ({
       </div>
 
       <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center mb-2 animate__animated animate__fadeInDown animate__faster">
-          <div className="d-flex align-items-center col-md-8 col-sm-6">
-            <label className="text-sm font-medium me-2 mb-0">
-              Rows per page:
-            </label>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                updatePageSize(Number(e.target.value));
-                updatePage(1);
-                updatePagination({
-                  page: 1,
-                  page_size: Number(e.target.value),
-                });
-              }}
-              className="form-select"
-              aria-label="Default select example"
-              style={{ width: "80px" }}
-            >
-              {pageSizeData.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* animate__animated animate__fadeInDown animate__faster */}
+        <div className="d-flex justify-content-between align-items-center mb-2 ">
+          {loading ? (
+            <div className="d-flex align-items-center col-md-8 col-sm-6"></div>
+          ) : (
+            <div className="d-flex align-items-center col-md-8 col-sm-6">
+              <Select
+                options={pageSizeData.map((size) => ({
+                  value: size,
+                  label: `${size}`,
+                }))}
+                value={{ value: pageSize, label: `${pageSize}` }}
+                onChange={(selected) => {
+                  updatePageSize(Number(selected.value));
+                  updatePage(1);
+                  updatePagination({
+                    page: 1,
+                    page_size: Number(selected.value),
+                  });
+                }}
+                className="me-2"
+                classNamePrefix="react-select"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: "32px",
+                    width: "80px",
+                  }),
+                  menuPortal: (base) => ({
+                    ...base,
+                    zIndex: 99999,
+                  }),
+                }}
+                menuPortalTarget={document.body}
+              />
+              {filters.length > 0 && (
+                <div className="input-group " style={{ minWidth: "250px" }}>
+                  <span className="input-group-text text-info">
+                    <i className="tf-icons bx bx-filter-alt"></i>
+                  </span>
+                  <Select
+                    isMulti
+                    options={filters}
+                    value={filters.filter((f) =>
+                      selectedFilters?.includes(f.value)
+                    )}
+                    onChange={(selected) => {
+                      let values = selected
+                        ? selected.map((opt) => opt.value)
+                        : [];
+
+                      if (values.includes("ALL")) {
+                        // If * is selected, keep only *
+                        values = ["ALL"];
+                        selected = filters.filter((f) => f.value === "ALL");
+                      } else {
+                        // Make sure * is not included in multi-select
+                        values = values.filter((v) => v !== "ALL");
+                      }
+
+                      setSelectedFilters(values);
+                      updatePage(1);
+                    }}
+                    placeholder="Select Filters"
+                    classNamePrefix="react-select"
+                    styles={{
+                      menu: (base) => ({
+                        ...base,
+                        position: "absolute",
+                        zIndex: 99999,
+                        minHeight: "32px",
+                        borderColor: "#17a2b8",
+                      }),
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           <div className=" col-md-4 col-sm-6  animate__animated animate__fadeInRight animate__fast">
             <form className="d-flex">
               <div className="input-group">
@@ -315,7 +381,12 @@ PaginatedTable.propTypes = {
   onSelect: PropTypes.func,
   isRefresh: PropTypes.number,
   isFullPath: PropTypes.bool,
-  filters: PropTypes.object,
+  filters: PropTypes.arrayOf(
+    PropTypes.shape({
+      value: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+    })
+  ),
 };
 
 export default PaginatedTable;

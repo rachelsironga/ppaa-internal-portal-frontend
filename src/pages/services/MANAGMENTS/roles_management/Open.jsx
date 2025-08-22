@@ -1,5 +1,5 @@
 import Swal from "sweetalert2";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import React, { useState, useEffect, useContext } from "react";
 import showToast from "../../../../helpers/ToastHelper";
 import "animate.css";
@@ -16,6 +16,7 @@ import UsersModal from "./UsersModal";
 
 export const OpenRolesManagementPage = () => {
   const { uid } = useParams();
+  const navigate = useNavigate();
   const [selectedObj, setSelectedObj] = useState(null);
   const [tableRefresh, setTableRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -252,8 +253,8 @@ export const OpenRolesManagementPage = () => {
               </div>
             ) : (
               <PaginatedTable
-                fetchPath="/system/roles-users"
-                filters={{ role_id: selectedObj?.id }}
+                fetchPath={`/system/roles-users?role_id=${selectedObj?.id}`}
+                filters={[]}
                 title="List Of Users"
                 columns={[
                   {
@@ -267,7 +268,12 @@ export const OpenRolesManagementPage = () => {
                     label: "Name",
                     className: "cursor-pointer",
                     render: (row) => (
-                      <div className="d-flex justify-content-start align-items-center user-name">
+                      <div
+                        className="d-flex justify-content-start align-items-center user-name"
+                        onClick={() => {
+                          navigate(`/users/open/${row.guid}`);
+                        }}
+                      >
                         <div className="avatar-wrapper">
                           <div className="avatar avatar-sm me-4">
                             <img

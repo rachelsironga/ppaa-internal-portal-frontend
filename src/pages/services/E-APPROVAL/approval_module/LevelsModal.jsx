@@ -4,10 +4,7 @@ import * as Yup from "yup";
 import showToast from "../../../../helpers/ToastHelper";
 import { ApprovalModuleContext } from "../../../../utils/context";
 import { createUpdateItemLevel } from "./Queries";
-import Select from "react-select";
-import { getPositionalLevels } from "../../E-APPROVAL/positional_level/Queries";
-import { getApprovalActions } from "../../E-APPROVAL/approval_action/Queries";
-import { getDepartments } from "../../MANAGMENTS/department/Queries";
+import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 const ApprovalModuleLevelModal = () => {
   const {
@@ -20,13 +17,6 @@ const ApprovalModuleLevelModal = () => {
     selectedPositionalLevelModule,
   } = useContext(ApprovalModuleContext);
   const [errors, setOtherError] = useState({});
-  const [loadingLevels, setLoadingLevels] = useState(false);
-  const [loadingActions, setLoadingActions] = useState(false);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-
-  const [levels, setLevels] = useState([]);
-  const [actions, setActions] = useState([]);
-  const [departments, setDepartments] = useState([]);
 
   const resetFormRef = useRef(null);
   const initialValues = {
@@ -101,82 +91,8 @@ const ApprovalModuleLevelModal = () => {
     if (modalInstance) modalInstance.hide();
   };
 
-  const handleFetchLevels = async (searchValue = "") => {
-    setLoadingLevels(true);
-    try {
-      const result = await getPositionalLevels({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setLevels(result.data);
-      } else {
-        setLevels(null);
-      }
-    } catch (err) {
-      setLevels(null);
-    } finally {
-      setLoadingLevels(false);
-    }
-  };
-
-  const handleFetchActions = async (searchValue = "") => {
-    setLoadingActions(true);
-    try {
-      const result = await getApprovalActions({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setActions(result.data);
-      } else {
-        setActions(null);
-      }
-    } catch (err) {
-      setLevels(null);
-    } finally {
-      setLoadingActions(false);
-    }
-  };
-
-  const fetchDepartments = async (searchValue = "") => {
-    setLoadingDepartments(true);
-    try {
-      console.log("Fetching departments with search:", searchValue);
-      const result = await getDepartments({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setDepartments(result.data);
-      } else {
-        setDepartments(null);
-      }
-    } catch (err) {
-      setDepartments(null);
-    } finally {
-      setLoadingDepartments(false);
-    }
-  };
-
   useEffect(() => {
-    if (!selectedPositionalLevelModule) {
-      handleFetchLevels();
-      handleFetchActions();
-      fetchDepartments();
-    } else {
+    if (selectedPositionalLevelModule) {
       values.level_uid = selectedPositionalLevelModule?.level?.uid;
       values.action_uid = selectedPositionalLevelModule?.action?.uid;
       values.department_uid = selectedPositionalLevelModule?.department?.uid;
@@ -230,7 +146,7 @@ const ApprovalModuleLevelModal = () => {
                   <Form>
                     <div className="modal-body">
                       <div className="row">
-                        <div className="col mb-3">
+                        <div className="col-md-6 mb-3">
                           <label htmlFor="nameLarge" className="form-label">
                             Module
                           </label>
@@ -249,162 +165,68 @@ const ApprovalModuleLevelModal = () => {
                             className="text-danger"
                           />
                         </div>
-                        <div className="col mb-3">
-                          <label htmlFor="levelUid" className="form-label">
-                            Department
-                          </label>
-                          <Select
-                            isLoading={loadingDepartments}
-                            className="select2-selection fetched-select2"
-                            onChange={(e) => {
-                              if (e === null || e.value == "") {
-                                setFieldValue("department_uid", "");
-                              } else {
-                                setFieldValue("department_uid", e.value);
-                              }
-                            }}
-                            onInputChange={(e) => {
-                              if (e.length > 2) {
-                                fetchDepartments(e);
-                              }
-                            }}
-                            options={departments?.map((item) => ({
-                              value: item.uid,
-                              label: `${item.name}`,
-                            }))}
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                position: "absolute",
-                                zIndex: 9999,
-                              }),
-                            }}
-                            value={
-                              departments
-                                ?.map((item) => ({
-                                  value: item.uid,
-                                  label: `${item.name}`,
-                                }))
-                                .find(
-                                  (option) =>
-                                    option.value === values.department_uid
-                                ) || null
-                            }
-                            isClearable
-                          />
-                          <ErrorMessage
-                            name="department_uid"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
+                        <FormikSelect
+                          name="department_uid"
+                          label="Departments"
+                          url="/departments"
+                          containerClass="col-md-6 mb-3"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.uid,
+                            label: `${item.name}`,
+                            name: `${item.name}`,
+                            code: `${item.code}`,
+                          })}
+                          placeholder="Search Departments..."
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={false}
+                        />
                       </div>
 
                       <div className="row">
-                        <div className="col mb-3">
-                          <label htmlFor="levelUid" className="form-label">
-                            Level
-                          </label>
-                          <Select
-                            isLoading={loadingLevels}
-                            onChange={(e) => {
-                              console.log("Selected Level:", e);
-                              if (e === null || e.value == "") {
-                                setFieldValue("level_uid", "");
-                              } else {
-                                setFieldValue("level_uid", e.value);
-                              }
-                            }}
-                            onInputChange={(e) => {
-                              if (e.length > 2) {
-                                handleFetchLevels(e);
-                              }
-                            }}
-                            options={levels?.map((item) => ({
-                              value: item.uid,
-                              label: `${item.name}`,
-                            }))}
-                            className="select2-selection fetched-select2"
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                position: "absolute",
-                                zIndex: 9999,
-                              }),
-                            }}
-                            name="level_uid"
-                            value={
-                              levels
-                                ?.map((item) => ({
-                                  value: item.uid,
-                                  label: `${item.name}`,
-                                }))
-                                .find(
-                                  (option) => option.value === values.level_uid
-                                ) || null
-                            }
-                          />
-                          {/* <Field type="hidden" name="level_uid" id="actionUidLarge" /> */}
-                          <ErrorMessage
-                            name="level_uid"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
-                        <div className="col mb-3">
-                          <label htmlFor="levelUid" className="form-label">
-                            Action
-                          </label>
-                          <Select
-                            isLoading={loadingActions}
-                            onChange={(e) => {
-                              console.log("Selected Action:", e);
-                              if (e === null || e.value == "") {
-                                setFieldValue("action_uid", "");
-                              } else {
-                                setFieldValue("action_uid", e.value);
-                              }
-                            }}
-                            onInputChange={(e) => {
-                              handleFetchActions(e);
-                            }}
-                            options={actions?.map((item) => ({
-                              value: item.uid,
-                              label: `${item.name} (${item.code})`,
-                            }))}
-                            className="select2-selection fetched-select2"
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                position: "absolute",
-                                zIndex: 9999,
-                              }),
-                            }}
-                            value={
-                              actions
-                                ?.map((item) => ({
-                                  value: item.uid,
-                                  label: `${item.name} (${item.code})`,
-                                }))
-                                .find(
-                                  (option) => option.value === values.action_uid
-                                ) || null
-                            }
-                            // defaultValue={selectedPositionalLevelModule?.action?.uid || ""}
-                            // defaultInputValue={selectedPositionalLevelModule ? `${selectedPositionalLevelModule.action?.name} (${selectedPositionalLevelModule.action?.code})` : ""}
-                            isClearable
-                          />
-                          <Field
-                            type="hidden"
-                            name="action_uid"
-                            id="actionUidLarge"
-                          />
-                          <ErrorMessage
-                            name="action_uid"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
+                        <FormikSelect
+                          name="level_uid"
+                          label="Level (Designation)"
+                          url="/positional-level"
+                          containerClass="col-md-6 mb-3"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.uid,
+                            label: `${item.name}`,
+                          })}
+                          placeholder="Search Designations..."
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={false}
+                        />
+                        <FormikSelect
+                          name="action_uid"
+                          label="Actions"
+                          url="/approval-action"
+                          containerClass="col-md-6 mb-3"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.uid,
+                            label: `${item.name} (${item.code})`,
+                          })}
+                          placeholder="Search Actions..."
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={false}
+                        />
                       </div>
 
                       <div className="row">
