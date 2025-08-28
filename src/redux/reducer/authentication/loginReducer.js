@@ -3,6 +3,7 @@ const initialState = {
     isLoading: false,
     success: false,
     error: null,
+    data: null
 };
 
 export const loginReducer = (state = initialState, action) => {
@@ -12,7 +13,8 @@ export const loginReducer = (state = initialState, action) => {
                 ...state,
                 isLoading: true,
                 success: false,
-                error: null
+                error: null,
+                data: null
             };
         case loginTypes.LOGIN_SUCCESS:
             return {
@@ -20,6 +22,15 @@ export const loginReducer = (state = initialState, action) => {
                 isLoading: false,
                 success: true,
                 error: null,
+                data: null
+            };
+        case loginTypes.LOGIN_NEW_USER:
+            return {
+                ...state,
+                isLoading: false,
+                success: true,
+                error: null,
+                data: action.payload
             };
         case loginTypes.LOGIN_FAILURE:
             return {
@@ -27,6 +38,7 @@ export const loginReducer = (state = initialState, action) => {
                 isLoading: false,
                 success: false, 
                 error: action.payload,
+                data: null,
             };
         case coreTypes.RESET:
             return initialState;
