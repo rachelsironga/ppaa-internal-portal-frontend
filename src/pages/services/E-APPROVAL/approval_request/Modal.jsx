@@ -1097,23 +1097,28 @@ const ApprovalRequestModal = () => {
                                                   {group.modules.length > 0 ? (
                                                     <span>
                                                       (&nbsp;
-                                                      {group.modules.map(
-                                                        (module, modid) => (
-                                                          <span
-                                                            key={
-                                                              module.codename ||
-                                                              modid
-                                                            }
-                                                            className=" fw-bold  me-1 mb-1"
-                                                            style={{
-                                                              fontSize:
-                                                                "0.85em",
-                                                            }}
-                                                          >
-                                                            {module.name},
-                                                          </span>
-                                                        )
-                                                      )}
+                                                      {group.modules
+                                                        .slice(0, 3)
+                                                        .map(
+                                                          (module, modid) => (
+                                                            <span
+                                                              key={
+                                                                module.codename ||
+                                                                modid
+                                                              }
+                                                              className="fw-bold me-1 mb-1"
+                                                              style={{
+                                                                fontSize:
+                                                                  "0.85em",
+                                                              }}
+                                                            >
+                                                              {module.name},
+                                                            </span>
+                                                          )
+                                                        )}{" "}
+                                                      {group.modules.length > 3
+                                                        ? `...`
+                                                        : ``}
                                                       &nbsp;)
                                                     </span>
                                                   ) : (
