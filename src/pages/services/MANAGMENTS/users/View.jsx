@@ -1,11 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
-import { deleteUser, getUsers } from "./Queries";
-import Swal from "sweetalert2";
-import showToast from "../../../../helpers/ToastHelper";
-import ReactLoading from "react-loading";
-import usePagination from "../../../../hooks/usePagination";
-import ReactPaginate from "react-paginate";
-import { UsersContext } from "../../../../utils/context";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserModal } from "./Modal";
 
@@ -14,6 +7,7 @@ import BreadCumb from "../../../../layouts/BreadCumb";
 import { UserImportModal } from "./ImportModal";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import { formatDate } from "../../../../helpers/DateFormater";
+import { UsersContext } from "../../../../utils/context";
 
 export const UserListPage = () => {
   const [selectedObj, setSelectedObj] = useState(null);
@@ -192,7 +186,6 @@ export const UserListPage = () => {
                 : "N/A";
             },
           },
-
           {
             key: "user_status",
             label: "Status",
@@ -278,4 +271,3 @@ export const UserListPage = () => {
     </UsersContext.Provider>
   );
 };
-

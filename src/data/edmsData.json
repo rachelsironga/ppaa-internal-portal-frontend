@@ -1,125 +1,123 @@
 {
   "Modules": [
     {
-      "codename": "38",
-      "name": "PMTCT",
+      "codename": "EDMS-1",
+      "name": "Dashboard",
       "Permissions": [
         {
-          "codename": "dgerterter",
-          "name": "Postnatal Report - Print"
-        },
-        {
-          "codename": "fdggdetret",
-          "name": "Postnatal - Save"
-        },
-        {
-          "codename": "435tregdfdgf",
-          "name": "Registration List"
-        },
-        {
-          "codename": "rtgfbcbfcgrd",
-          "name": "Registration List - Change Registration"
-        },
-        {
-          "codename": "gdfgertreter",
-          "name": "Registration List - Follow up Registration"
-        },
-        {
-          "codename": "435fgfdgxfd",
-          "name": "Registration List - New Registration"
-        },
-        {
-          "codename": "dfgdgetere",
-          "name": "Registration List - Print"
-        },
-        {
-          "codename": "4365eygdgfdg",
-          "name": "Registration List - View Follow up List"
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
         }
       ]
     },
     {
-      "codename": "vcbcvbretreter",
-      "name": "GENERAL MAINTENANCE",
+      "codename": "EDMS-2",
+      "name": "Mail Movement",
       "Permissions": [
         {
-          "codename": "rerre4343",
-          "name": "Close Requests"
-        },
-        {
-          "codename": "39020402",
-          "name": "Close Requests - Close"
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
         }
       ]
     },
     {
-      "codename": "345346565",
-      "name": "PRIVATE CREDIT",
+      "codename": "EDMS-3",
+      "name": "User Role Delegation",
       "Permissions": [
         {
-          "codename": "344343434",
-          "name": "Bill - Authorization Type Credit"
-        },
-        {
-          "codename": "400201434307",
-          "name": "Bill - Authorization Type Waiver"
-        },
-        {
-          "codename": "343434",
-          "name": "Bill  Cancel"
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
         }
       ]
     },
     {
-      "codename": "dfbcbvcbcv",
-      "name": "CMS",
+      "codename": "EDMS-4",
+      "name": "Account",
       "Permissions": [
         {
-          "codename": "545454545",
-          "name": "CMS Entry Details -Save"
-        },
-        {
-          "codename": "465e645e645e645",
-          "name": "CMS Entry List -Approve"
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
         }
       ]
     },
     {
-      "codename": "bcvgbvcbvdf",
-      "name": "WEB INDENT",
+      "codename": "EDMS-5",
+      "name": "User Management",
       "Permissions": [
         {
-          "codename": "46353535435454",
-          "name": "Cancel - Clinical Notes"
-        },
-        {
-          "codename": "45010103",
-          "name": "Cancel - Clinical Notes Template Master"
-        },
-        {
-          "codename": "4646463644ff64",
-          "name": "Cancel  - Diagnosis"
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
         }
-
       ]
     },
     {
-      "codename": "46rtbcbcv",
-      "name": "Dietry",
+      "codename": "EDMS-6",
+      "name": "User File Access Requests",
       "Permissions": [
         {
-          "codename": "46464v46v4644646vhfhgh",
-          "name": "Diet - Distribution"
-        },
-        {
-          "codename": "4t43egfgrrgg",
-          "name": "Dietry - Change Password"
-        },
-        {
-          "codename": "fgdgdgfdgfdgf",
-          "name": "Dietry - Department Indent Cancel"
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
         }
-
+      ]
+    },
+    {
+      "codename": "EDMS-7",
+      "name": "Add New Case",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EDMS-8",
+      "name": "Registry Active Files",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EDMS-9",
+      "name": "Registry Archived Files",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EDMS-10",
+      "name": "Registry Module Management",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EDMS-11",
+      "name": "Finance Request Approval",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EDMS-12",
+      "name": "Finance Retirement Approval",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
       ]
     }
   ]

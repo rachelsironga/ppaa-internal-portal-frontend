@@ -37,10 +37,27 @@ export const login = (userData, navigation) => async (dispatch) => {
         payload: { user, access_token, refresh_token },
       });
       navigation("/");
-    } else {
+    } else if (response.status == 202 && response.data.status !== 8007) {
+      // Redirect new user for verification password change
+      dispatch({
+        type: loginTypes.LOGIN_NEW_USER,
+        payload: response.data,
+      });
+      navigation("/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF");
+    }
+    else if (response.status == 202 && response.data.status === 8007) {
+      // Redirect new user for verification password change
+      dispatch({
+        type: loginTypes.LOGIN_NEW_USER,
+        payload: response.data,
+      });
+      navigation("/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF");
+    }
+
+    else {
       dispatch({
         type: loginTypes.LOGIN_FAILURE,
-        payload: response.data.data,
+        payload: response.data,
       });
       return;
     }
@@ -48,7 +65,9 @@ export const login = (userData, navigation) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: loginTypes.LOGIN_FAILURE,
-      payload: error?.response?.data.data,
+      payload: error?.response?.data,
     });
   }
 };
+
+

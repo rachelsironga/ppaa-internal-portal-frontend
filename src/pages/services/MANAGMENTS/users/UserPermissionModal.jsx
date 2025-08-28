@@ -12,20 +12,19 @@ const UserPermissionModal = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errors, setOtherError] = useState({});
   const initialValues = {
-    name: selectedObj?.name || "",
-    parmisions: selectedObj?.permissions || [],
+    user_uid: selectedObj?.guid || "",
+    selected_roles: selectedObj?.groups || [],
   };
 
   const validationSchema = Yup.object().shape({
-    name: Yup.string().required("Name is required"),
-    parmisions: Yup.array()
+    user_uid: Yup.string().required("User is required"),
+    selected_roles: Yup.array()
       .of(Yup.object())
       .required("At least one permission is required"),
   });
 
   const [leftOptions, setLeftOptions] = useState([]);
   const [rightOptions, setRightOptions] = useState([]);
-  const [loadingRightOptions, setLoadingRightOptions] = useState(false);
   const [clearSelectTrigger, setClearSelectTrigger] = useState(0);
 
   const handleAssign = (selected) => {
@@ -59,19 +58,22 @@ const UserPermissionModal = () => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
+      console.log("Submitting with values:", values);
+
       if (selectedObj) {
-        values.id = selectedObj?.id;
+        values.permitted_user = selectedObj?.guid;
       }
+      console.log("Submitting with values:", values);
 
       // Map to IDs (assuming your backend expects a list of permission IDs)
-      values.permissions = rightOptions.map((item) => item.value);
+      values.selected_roles = rightOptions.map((item) => item.value);
       const payload = {
-        name: values.name,
-        permissions: values.permissions,
+        permitted_user: values.permitted_user,
+        selected_roles: values.selected_roles,
       };
-      if (values.permissions.length === 0) {
+      if (values.selected_roles.length === 0) {
         showToast(
-          "You must assign at least one permission",
+          "You must assign at least one Role to the user",
           "warning",
           "Validation Failed"
         );
@@ -80,8 +82,7 @@ const UserPermissionModal = () => {
       }
 
       const result = await createUpdateData({
-        url: "/system/roles",
-        uid: selectedObj?.id || "",
+        url: "/system/roles-list-assign-users",
         formData: payload,
       });
 
@@ -110,23 +111,24 @@ const UserPermissionModal = () => {
   };
 
   const handleClose = () => {
-    const modalElement = document.getElementById("viewCreateRoleModal");
+    const modalElement = document.getElementById(
+      "viewCreateAssignUserRoleModal"
+    );
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) modalInstance.hide();
     setIsModalOpen(false);
     setClearSelectTrigger((prev) => prev + 1);
   };
 
-  const handleFetchPermissions = async (searchValue = "") => {
+  const handleFetchGroups = async (searchValue = "") => {
     try {
       const result = await fetchData({
-        url: "/system/system-permissions",
+        url: "/system/system-groups",
         filter: {
           page: 1,
           page_size: 50,
           paginated: true,
           search: searchValue,
-          selected_role: selectedObj?.id || "",
         },
       });
       if (result.status === 200 || result.status === 8000) {
@@ -145,7 +147,9 @@ const UserPermissionModal = () => {
   };
 
   useEffect(() => {
-    const modalElement = document.getElementById("viewCreateRoleModal");
+    const modalElement = document.getElementById(
+      "viewCreateAssignUserRoleModal"
+    );
     if (!modalElement) return;
 
     const handleShow = () => setIsModalOpen(true);
@@ -161,7 +165,7 @@ const UserPermissionModal = () => {
   }, []);
 
   useEffect(() => {
-    handleFetchPermissions();
+    handleFetchGroups();
     if (
       selectedObj !== null &&
       selectedObj?.permissions &&
@@ -181,7 +185,7 @@ const UserPermissionModal = () => {
     <>
       <div
         className="modal modal-slide-in"
-        id="viewCreateRoleModal"
+        id="viewCreateAssignUserRoleModal"
         tabIndex="-1"
         aria-hidden="true"
         data-bs-backdrop="static"
@@ -191,8 +195,7 @@ const UserPermissionModal = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="exampleModalLabel3">
-                {selectedObj === null ? "Create New" : "View / Update"} Approval
-                Module{" "}
+                User Role and Permission Assignment
               </h5>
               <button
                 onClick={() => handleClose()}
@@ -215,10 +218,10 @@ const UserPermissionModal = () => {
                       <div className="col-sm-11 text-normal">
                         <p className="text-justify">
                           Use the panel below to manage permissions. All
-                          available permissions appear on the
-                          <strong> left</strong>, and all assigned permissions
-                          appear on the <strong> right</strong>. Select items
-                          and click the{" "}
+                          available Role appear on the
+                          <strong> left</strong>, and all assigned Role appear
+                          on the <strong> right</strong>. Select items and click
+                          the{" "}
                           <span className="text-success fw-bold">
                             green arrow
                           </span>{" "}
@@ -228,30 +231,55 @@ const UserPermissionModal = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="row">
-                      <div className="col mb-3">
-                        <label
-                          htmlFor="nameLarge"
-                          className="form-label text-capitalize"
-                        >
-                          Role/Group Name&nbsp;&nbsp;
-                          <small className="text-info text-capitalize">
-                            * You Must Have a Unique Role Name
-                          </small>
-                        </label>
-                        <Field
-                          type="text"
-                          name="name"
-                          id="nameLarge"
-                          className="form-control"
-                          placeholder="Enter Name"
-                        />
-                        <ErrorMessage
-                          name="name"
-                          component="div"
-                          className="text-danger"
-                        />
-                      </div>
+                    <div className="row mb-3">
+                      {selectedObj && (
+                        <div className="d-flex justify-content-start align-items-center user-name">
+                          <div className="avatar-wrapper">
+                            <div className="avatar avatar-sm me-4">
+                              <img
+                                src={
+                                  selectedObj.photo && selectedObj.photo !== ""
+                                    ? selectedObj.photo
+                                    : "../../assets/img/avatars/1.png"
+                                }
+                                alt="Avatar"
+                                className="rounded-circle"
+                                style={{ width: "40px", height: "40px" }}
+                              />
+                            </div>
+                          </div>
+                          <div className="d-flex flex-column">
+                            <span className="text-heading text-truncate">
+                              <span className="fw-medium text-uppercase">
+                                {selectedObj.first_name}{" "}
+                                {selectedObj.middle_name}{" "}
+                                {selectedObj.last_name}
+                              </span>
+                              &nbsp;
+                              <span className="text-secondary">
+                                ({selectedObj.pf_number || ""} )
+                              </span>
+                            </span>
+                            <small className="text-primary">
+                              {selectedObj.email && selectedObj.email !== ""
+                                ? selectedObj.email
+                                : "- - -"}
+                            </small>
+                          </div>
+                        </div>
+                      )}
+                      <Field
+                        type="hidden"
+                        name="user_uid"
+                        id="nameLarge"
+                        className="form-control"
+                        placeholder="Enter Name"
+                      />
+                      <ErrorMessage
+                        name="user_uid"
+                        component="div"
+                        className="text-danger"
+                      />
                     </div>
                     <div className="row">
                       <div className="col-md-12">
@@ -263,7 +291,7 @@ const UserPermissionModal = () => {
                           onAssign={handleAssign}
                           onRemove={handleRemove}
                           clearTrigger={clearSelectTrigger}
-                          searchMethod={handleFetchPermissions}
+                          searchMethod={handleFetchGroups}
                         />
                       </div>
                     </div>

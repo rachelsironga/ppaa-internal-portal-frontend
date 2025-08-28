@@ -9,7 +9,7 @@ import FormWizard from "react-form-wizard-component";
 import "react-form-wizard-component/dist/style.css";
 
 export const UserModal = ({ loadOnlyModal = false }) => {
-  const { fetchUsers, selectedUser, setSelectedUser } =
+  const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } =
     useContext(UsersContext);
 
   //for Wizard tab validation & Control
@@ -20,19 +20,18 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   const [tabIndex, setTabIndex] = useState(0); // current tab index
 
   const initialValues = {
-    pf_number: selectedUser?.pf_number || "",
-    first_name: selectedUser?.first_name || "",
-    middle_name: selectedUser?.middle_name || "",
-    last_name: selectedUser?.last_name || "",
-    dob: selectedUser?.dob || "",
-    sex: selectedUser?.sex || "",
+    pf_number: selectedObj?.pf_number || "",
+    first_name: selectedObj?.first_name || "",
+    middle_name: selectedObj?.middle_name || "",
+    last_name: selectedObj?.last_name || "",
+    dob: selectedObj?.dob || "",
+    sex: selectedObj?.sex || "",
 
-    email: selectedUser?.email || "",
-    check_number: selectedUser?.check_number || "",
-    account_number: selectedUser?.account_number || "",
+    email: selectedObj?.email || "",
+    check_number: selectedObj?.check_number || "",
 
-    phone_number: selectedUser?.phone_number || "",
-    alternative_contact: selectedUser?.alternative_contact || "",
+    phone_number: selectedObj?.phone_number || "",
+    alternative_contact: selectedObj?.alternative_contact || "",
   };
 
   const validationSchema = Yup.object().shape({
@@ -58,8 +57,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (selectedUser) {
-        values.uid = selectedUser.uid;
+      if (selectedObj) {
+        values.uid = selectedObj.uid;
       }
       setSubmitting(true);
       const result = await createUpdateUser(values);
@@ -68,9 +67,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
         showToast("Data Saved Successfuly", "success", "Complete");
         handleClose();
         resetForm();
-        fetchUsers();
+        setTableRefresh((prev) => prev + 1);
       } else if (result.status === 8002) {
-        console.log("Validation error:", result.data);
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);
         setOtherError(result.data);
@@ -80,7 +78,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
         resetForm();
       }
     } catch (error) {
-      console.log("Error submitting form:", error);
       showToast("Something went wrong while saving", "error", "Failed");
       handleClose(); // Close the modal after submission
       resetForm();
@@ -92,7 +89,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   //for closing modal
   const handleClose = () => {
     console.log("Modal closed");
-    setSelectedUser(null);
+    setSelectedObj(null);
     setIsFirstTabChange(true);
     const modalElement = document.getElementById("viewCreateUserModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -491,7 +488,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                         </div>
                       </div>
                       <div className="row text-start">
-                        <div className="col-md-6 mb-3">
+                        <div className="col mb-3">
                           <label
                             htmlFor="checkNumberLarge"
                             className="form-label"
@@ -507,26 +504,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                           />
                           <ErrorMessage
                             name="check_number"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <label
-                            htmlFor="AccountNumberLarge"
-                            className="form-label"
-                          >
-                            Bank Account Number
-                          </label>
-                          <Field
-                            type="text"
-                            name="account_number"
-                            id="AccountNumberLarge"
-                            className="form-control"
-                            placeholder="Enter Account Number"
-                          />
-                          <ErrorMessage
-                            name="account_number"
                             component="div"
                             className="text-danger"
                           />

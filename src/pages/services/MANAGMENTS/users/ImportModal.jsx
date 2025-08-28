@@ -7,7 +7,7 @@ import { createUpdateData } from "../../../../utils/GlobalQueries";
 import { Based64Helper } from "../../../../helpers/Based64Helper";
 
 export const UserImportModal = ({ loadOnlyModal = false }) => {
-  const { fetchUsers, selectedUser, setSelectedUser } =
+  const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } =
     useContext(UsersContext);
 
   const [errors, setOtherError] = useState({});
@@ -107,7 +107,7 @@ export const UserImportModal = ({ loadOnlyModal = false }) => {
             Swal.fire("Process Completed!", `${result.message}`, "success");
           }
           resetForm();
-          fetchUsers();
+          setTableRefresh((prev) => prev + 1);
           setSubmitting(false);
         } else {
           setIsLoading(false);

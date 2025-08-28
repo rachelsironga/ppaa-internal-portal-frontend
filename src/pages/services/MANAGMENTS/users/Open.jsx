@@ -9,19 +9,16 @@ import { getPositions, getUsers, photoUpload } from "./Queries";
 import usePagination from "../../../../hooks/usePagination";
 import { formatDate } from "../../../../helpers/DateFormater";
 import PositionsModal from "./PositionsModal";
-import AccordionContainer from "../../../../components/accordion/AccordionContainer";
-import Select from "react-select";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 import { useSelector } from "react-redux";
 import UserPermissionModal from "./UserPermissionModal";
 
 export const UserOpenPage = () => {
-  const user = useSelector((state) => state.userReducer?.data);
-
-  const pageSizeData = [5, 10, 20, 50, 70, 100];
-
   const { uid } = useParams();
+  const user = useSelector((state) => state.userReducer?.data);
+  const [selectedObj, setSelectedObj] = useState(null);
+  const [tableRefresh, setTableRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,11 +26,14 @@ export const UserOpenPage = () => {
   const [errorPositions, setErrorPositions] = useState(null);
   const [positions, setPositions] = useState(null);
   const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredPermissions = selectedUser?.user_permissions?.filter((perm) =>
+  const filteredPermissions = selectedObj?.user_permissions?.filter((perm) =>
     perm.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const [searchGroupTerm, setSearchGroupTerm] = useState("");
+  const filteredGroups = selectedObj?.groups?.filter((group) =>
+    group.toLowerCase().includes(searchGroupTerm.toLowerCase())
   );
 
   const {
@@ -46,12 +46,6 @@ export const UserOpenPage = () => {
     updateTotalCount,
   } = usePagination(10, 1, true);
 
-  const handlePageClick = (event) => {
-    updatePage(event.selected + 1);
-  };
-
-  const [loadingLeftSelect, setLoadingLeftSelect] = useState(false);
-  const [loadingRightSelect, setLoadingRightSelect] = useState(false);
   const [selectedLeft, setSelectedLeft] = useState([]);
   const [selectedRight, setSelectedRight] = useState([]);
   const [leftOptions, setLeftOptions] = useState([]);
@@ -114,14 +108,14 @@ export const UserOpenPage = () => {
   };
 
   const uploadValues = {
-    uid: selectedUser?.guid,
+    uid: selectedObj?.guid,
     based64_file: "",
   };
 
   const [isUploadVisible, setIsUploadVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState(
-    selectedUser?.photo && selectedUser.photo.trim() !== ""
-      ? selectedUser.photo
+    selectedObj?.photo && selectedObj.photo.trim() !== ""
+      ? selectedObj.photo
       : "/assets/img/avatars/1.png"
   );
   const [isFileSelected, setIsFileSelected] = useState(false);
@@ -135,7 +129,7 @@ export const UserOpenPage = () => {
         uid: uid,
       });
       if (result.status === 200 || result.status === 8000) {
-        setSelectedUser(result.data);
+        setSelectedObj(result.data);
         setPreviewImage(
           result.data.photo && result.data.photo.trim() !== ""
             ? result.data.photo
@@ -215,8 +209,8 @@ export const UserOpenPage = () => {
 
   const handleResetImage = () => {
     setPreviewImage(
-      selectedUser?.photo && selectedUser.photo.trim() !== ""
-        ? selectedUser.photo
+      selectedObj?.photo && selectedObj.photo.trim() !== ""
+        ? selectedObj.photo
         : "/assets/img/avatars/1.png"
     );
     setIsFileSelected(false); // Disable buttons after reset
@@ -231,8 +225,8 @@ export const UserOpenPage = () => {
     setIsUploadVisible((prev) => !prev);
   };
 
-  const handleUpload = async (selectedUser = null) => {
-    if (!selectedUser) {
+  const handleUpload = async (selectedObj = null) => {
+    if (!selectedObj) {
       Swal.fire("Error!", "Sorry Reopen this user to Fix this error.", "error");
       return;
     }
@@ -288,7 +282,7 @@ export const UserOpenPage = () => {
             "Successfully Uploaded the Photo.",
             "success"
           );
-          setSelectedUser(result.data);
+          setSelectedObj(result.data);
           setIsFileSelected(false);
           toggleUploadVisibility();
         } else {
@@ -320,11 +314,13 @@ export const UserOpenPage = () => {
   return (
     <UsersContext.Provider
       value={{
+        selectedObj,
+        setSelectedObj,
+        tableRefresh,
+        setTableRefresh,
         debounceTimeout,
         setDebounceTimeout,
         handleFetchData,
-        selectedUser,
-        setSelectedUser,
         isModalOpen,
         setIsModalOpen,
       }}
@@ -406,7 +402,7 @@ export const UserOpenPage = () => {
                 </center>
               </div>
             </div>
-          ) : error || selectedUser === null ? (
+          ) : error || selectedObj === null ? (
             // error || directory.length === 0
             <div className="alert alert-info" role="alert">
               <div className="alert-body text-center">
@@ -442,9 +438,8 @@ export const UserOpenPage = () => {
 
                           <div className="user-info text-center mb-2">
                             <h5>
-                              {selectedUser.first_name}{" "}
-                              {selectedUser.middle_name}{" "}
-                              {selectedUser.last_name}
+                              {selectedObj.first_name} {selectedObj.middle_name}{" "}
+                              {selectedObj.last_name}
                               <div
                                 className="button-wrapper"
                                 style={{
@@ -509,21 +504,21 @@ export const UserOpenPage = () => {
                           }}
                         >
                           <small className="text-muted">Account Status</small>
-                          {selectedUser.status === "NEW" ? (
+                          {selectedObj.status === "NEW" ? (
                             <span className="ms-1 badge bg-label-info">
-                              {selectedUser.status}
+                              {selectedObj.status}
                             </span>
-                          ) : selectedUser.status === "ACTIVE" ? (
+                          ) : selectedObj.status === "ACTIVE" ? (
                             <span className="ms-1 badge bg-label-success">
-                              {selectedUser.status}
+                              {selectedObj.status}
                             </span>
-                          ) : selectedUser.status === "RETIRED" ? (
+                          ) : selectedObj.status === "RETIRED" ? (
                             <span className="ms-1 badge bg-label-secondary">
-                              {selectedUser.status}
+                              {selectedObj.status}
                             </span>
                           ) : (
                             <span className="ms-1 badge bg-label-danger">
-                              {selectedUser.status}
+                              {selectedObj.status}
                             </span>
                           )}
                         </div>
@@ -541,7 +536,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bx-user me-2"></i>
                                 <strong>Username </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.username}</span>
+                              <span>{selectedObj.username}</span>
                             </li>
                             <li
                               className="list-group-item d-flex align-items-center"
@@ -554,7 +549,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bx-box me-2"></i>
                                 <strong>PF Number </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.pf_number}</span>
+                              <span>{selectedObj.pf_number}</span>
                             </li>
                             <li
                               className="list-group-item d-flex align-items-center"
@@ -567,7 +562,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bxs-detail me-2"></i>
                                 <strong>Check Number </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.check_number}</span>
+                              <span>{selectedObj.check_number}</span>
                             </li>
                             <li
                               className="list-group-item d-flex align-items-center"
@@ -581,7 +576,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bx-male-sign me-2"></i>
                                 <strong>Gender </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.sex}</span>
+                              <span>{selectedObj.sex}</span>
                             </li>
                             <li
                               className="list-group-item d-flex align-items-center"
@@ -594,7 +589,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bx-calendar me-2"></i>
                                 <strong>Age </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.check_number}</span>
+                              <span>{selectedObj.check_number}</span>
                             </li>
                             <li
                               className="list-group-item d-flex align-items-center"
@@ -607,7 +602,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bx-calendar me-2"></i>
                                 <strong>Date Of Birth </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.dob}</span>
+                              <span>{selectedObj.dob}</span>
                             </li>
                           </ul>
                           <h6 className="text-muted">CONTACT</h6>
@@ -624,7 +619,7 @@ export const UserOpenPage = () => {
                                 <strong>Email </strong>&nbsp;:&nbsp;
                               </span>
                               <span className="text-primary">
-                                {selectedUser.email}
+                                {selectedObj.email}
                               </span>
                             </li>
                             <li
@@ -639,7 +634,7 @@ export const UserOpenPage = () => {
                                 <strong>Contact </strong>&nbsp;:&nbsp;
                               </span>
                               <span className="text-primary">
-                                {selectedUser.phone_number}
+                                {selectedObj.phone_number}
                               </span>
                             </li>
                             <li
@@ -653,7 +648,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bx-phone me-2"></i>
                                 <strong>Alt Contact </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.alternative_contact}</span>
+                              <span>{selectedObj.alternative_contact}</span>
                             </li>
                             <li
                               className="list-group-item d-flex align-items-center"
@@ -666,7 +661,7 @@ export const UserOpenPage = () => {
                                 <i className="bx bx-credit-card me-2"></i>
                                 <strong>Bank Account </strong>&nbsp;:&nbsp;
                               </span>
-                              <span>{selectedUser.account_number}</span>
+                              <span>{selectedObj.account_number}</span>
                             </li>
                           </ul>
                         </div>
@@ -748,7 +743,7 @@ export const UserOpenPage = () => {
                       >
                         <div className="card">
                           <div className="card-body invoice-preview-header rounded shadow mb-4">
-                            {selectedUser.position ? (
+                            {selectedObj.position ? (
                               <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
                                 <div className="mb-xl-2 mb-6 text-heading">
                                   <div className="d-flex svg-illustration mb-6 gap-2 align-items-center">
@@ -760,18 +755,18 @@ export const UserOpenPage = () => {
                                     {" "}
                                     <strong>Position : </strong>{" "}
                                     <span className="text-primary">
-                                      {selectedUser?.position?.level_name}
+                                      {selectedObj?.position?.level_name}
                                     </span>
                                   </p>
                                   <p className="mb-2">
                                     {" "}
                                     <strong>Directory : </strong>{" "}
-                                    {selectedUser?.position?.directory_name}
+                                    {selectedObj?.position?.directory_name}
                                   </p>
                                   <p className="mb-2">
                                     {" "}
                                     <strong>Department/Unit : </strong>{" "}
-                                    {selectedUser?.position?.department_name}
+                                    {selectedObj?.position?.department_name}
                                   </p>
                                 </div>
                                 <div>
@@ -780,16 +775,16 @@ export const UserOpenPage = () => {
                                     <strong>Assigned At : </strong>
                                     <span className="fw-medium badge bg-label-success px-3">
                                       {formatDate(
-                                        selectedUser?.position?.start_date
+                                        selectedObj?.position?.start_date
                                       )}
                                     </span>
                                   </div>
                                   <div className="mb-1 text-heading">
                                     <strong>Due At : </strong>
                                     <span className="fw-medium badge bg-label-danger px-3">
-                                      {selectedUser?.position?.last_date
+                                      {selectedObj?.position?.last_date
                                         ? formatDate(
-                                            selectedUser?.position?.last_date
+                                            selectedObj?.position?.last_date
                                           )
                                         : " - "}
                                     </span>
@@ -931,57 +926,22 @@ export const UserOpenPage = () => {
                                     role="alert"
                                   >
                                     <h5 className="alert-heading mb-1">
-                                      Ensure that these requirements are met
+                                      Reset Password
                                     </h5>
                                     <span>
-                                      Minimum 8 characters long, uppercase &amp;
-                                      symbol
+                                      A password reset email will be sent
+                                      directly to User. This email will contain
+                                      a secure link to initiate the password
+                                      change process for your account.
                                     </span>
                                   </div>
                                   <div className="row gx-6">
-                                    <div className="mb-4 col-12 col-sm-6 form-password-toggle form-control-validation fv-plugins-icon-container">
-                                      <label className="form-label">
-                                        New Password
-                                      </label>
-                                      <div className="input-group input-group-merge has-validation">
-                                        <input
-                                          className="form-control"
-                                          type="password"
-                                          id="newPassword"
-                                          name="newPassword"
-                                          placeholder="············"
-                                        />
-                                        <span className="input-group-text cursor-pointer">
-                                          <i className="icon-base bx bx-hide"></i>
-                                        </span>
-                                      </div>
-                                      <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
-                                    </div>
-
-                                    <div className="mb-4 col-12 col-sm-6 form-password-toggle form-control-validation fv-plugins-icon-container">
-                                      <label className="form-label">
-                                        Confirm New Password
-                                      </label>
-                                      <div className="input-group input-group-merge has-validation">
-                                        <input
-                                          className="form-control"
-                                          type="password"
-                                          name="confirmPassword"
-                                          id="confirmPassword"
-                                          placeholder="············"
-                                        />
-                                        <span className="input-group-text cursor-pointer">
-                                          <i className="icon-base bx bx-hide"></i>
-                                        </span>
-                                      </div>
-                                      <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
-                                    </div>
                                     <div className="text-center">
                                       <button
                                         type="submit"
-                                        className="btn btn-sm btn-primary me-2"
+                                        className="btn btn-sm btn-danger me-2"
                                       >
-                                        Change Password
+                                        Reset User Password
                                       </button>
                                     </div>
                                   </div>
@@ -1002,9 +962,9 @@ export const UserOpenPage = () => {
                                 <div className="text-center">
                                   <img
                                     src={
-                                      selectedUser?.signature &&
-                                      selectedUser.signature.trim() !== ""
-                                        ? selectedUser.signature
+                                      selectedObj?.signature &&
+                                      selectedObj.signature.trim() !== ""
+                                        ? selectedObj.signature
                                         : "/assets/img/avatars/signature.png"
                                     }
                                     alt="Avatar"
@@ -1075,11 +1035,11 @@ export const UserOpenPage = () => {
                                   <button
                                     className="btn btn-sm btn-info btn-outline-info"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#viewCreateRoleModal"
+                                    data-bs-target="#viewCreateAssignUserRoleModal"
                                     onClick={() => {}}
                                   >
                                     <i className="bx bx-user-plus"></i>
-                                    &nbsp;Add Role/Permissions{" "}
+                                    &nbsp;Change Role/Permissions{" "}
                                   </button>
                                 )}
                               </div>
@@ -1095,11 +1055,21 @@ export const UserOpenPage = () => {
                                   <h6 className="mb-0">
                                     Assigned Roles/Groups
                                   </h6>
+                                  <input
+                                    type="text"
+                                    placeholder="Search permission..."
+                                    className="form-control mb-2 my-3"
+                                    value={searchGroupTerm}
+                                    onChange={(e) =>
+                                      setSearchGroupTerm(e.target.value)
+                                    }
+                                  />
                                 </div>
+
                                 <div
                                   style={{
                                     flex: 1,
-                                    minHeight: "120px",
+                                    minHeight: "390px",
                                     maxHeight: "400px",
                                     overflowY: "auto",
                                     border: "1px solid #f0f0f0",
@@ -1110,32 +1080,31 @@ export const UserOpenPage = () => {
                                     fontSize: "1.5em",
                                   }}
                                 >
-                                  <ul className=" small">
-                                    {selectedUser?.groups?.map((group) => (
-                                      <li
-                                        key={group}
-                                        className="list-group-item py-3 px-2 p-3 me-3"
-                                      >
-                                        <i
-                                          className="bx bx-check-shield me-2"
-                                          style={{
-                                            fontSize: "1.5em",
-                                          }}
-                                        ></i>
-                                        {group}
-                                      </li>
-                                    ))}
+                                  {filteredGroups?.map((group) => (
+                                    <button
+                                      type="text"
+                                      key={group}
+                                      className="btn btn-outline-info me-3 m-1"
+                                    >
+                                      <i
+                                        className="bx bx-check-shield me-2"
+                                        style={{
+                                          fontSize: "1.5em",
+                                        }}
+                                      ></i>
+                                      {group}
+                                    </button>
+                                  ))}
 
-                                    {selectedUser?.groups?.length === 0 && (
-                                      <li className="list-group-item justify-context-center text-center text-muted mt-4 py-3 px-2">
-                                        User has no assigned roles
-                                      </li>
-                                    )}
-                                  </ul>
+                                  {selectedObj?.groups?.length === 0 && (
+                                    <li className="list-group-item justify-context-center text-center text-muted mt-4 py-3 px-2">
+                                      User has no assigned roles
+                                    </li>
+                                  )}
                                 </div>
                               </div>
                               <div className="col-md-6 col-lg-6 col-sm-12 p-2  animate__animated animate__fadeInUp animate__fast">
-                                <div className="me-3">
+                                <div className="me-3 mb-3">
                                   <h6 className="mb-0">Assigned Permissions</h6>
                                 </div>
                                 <input
@@ -1150,8 +1119,8 @@ export const UserOpenPage = () => {
                                 <div
                                   style={{
                                     flex: 1,
-                                    minHeight: "120px",
-                                    maxHeight: "350px",
+                                    minHeight: "390px",
+                                    maxHeight: "400px",
                                     overflowY: "auto",
                                     border: "1px solid #f0f0f0",
                                     borderRadius: "6px",
@@ -1198,7 +1167,7 @@ export const UserOpenPage = () => {
         </div>
       </div>
 
-      {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedUser(null)} /> */}
+      {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} /> */}
       <PositionsModal />
       <UserPermissionModal />
     </UsersContext.Provider>
