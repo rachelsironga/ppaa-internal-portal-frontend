@@ -127,9 +127,14 @@ export const Services = () => {
               </div>
             </div>
             <div
-              className="col-sm-12 row g-4 m-3 p-4 align-items-center justify-content-center"
+              className="col-sm-12 row g-4 m-3 p-4 align-items-start justify-content-start"
               style={{
+                height: "60vh",
                 overflowY: "auto",
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
+                alignItems: "flex-start",
               }}
             >
               {servicesList.map((service, idx) => (
