@@ -309,7 +309,7 @@ export const UserOpenPage = () => {
     setDebounceTimeout(timeout);
 
     return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage]);
+  }, [searchQuery, pageSize, currentPage, tableRefresh]);
 
   return (
     <UsersContext.Provider

@@ -9,6 +9,8 @@
 export function hasAccess(user, requiredPermissions = [], requiredRoles = []) {
     if (!user) return false;
 
+    if (user && user.is_superuser) return true;
+
     const userPermissions = user.user_permissions || [];
     const userRoles = user.groups || [];
 
