@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import servicesList from "../data/servicesList.json";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,15 @@ import { useNavigate } from "react-router-dom";
 export const Services = () => {
   const user = useSelector((state) => state.userReducer?.data);
   const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+
+  // Filter services by search text
+  const filteredServices = servicesList.filter(
+    (service) =>
+      service.text.toLowerCase().includes(search.toLowerCase()) ||
+      (service.description &&
+        service.description.toLowerCase().includes(search.toLowerCase()))
+  );
 
   useEffect(() => {
     dashboardAnalitics();
@@ -113,7 +122,7 @@ export const Services = () => {
                   minWidth: "200px",
                   maxWidth: "500px",
                   margin: "0 auto",
-                  marginTop: "100px",
+                  marginTop: "10px",
                 }}
               >
                 <span className="input-group-text">
@@ -123,6 +132,8 @@ export const Services = () => {
                   type="text"
                   className="form-control"
                   placeholder="Search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
             </div>
@@ -137,7 +148,7 @@ export const Services = () => {
                 alignItems: "flex-start",
               }}
             >
-              {servicesList.map((service, idx) => (
+              {filteredServices.map((service, idx) => (
                 <div
                   key={service.text + idx}
                   className="col-md-3 col-sm-6 mb-3 col-lg-3"

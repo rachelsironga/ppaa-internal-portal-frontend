@@ -8,7 +8,7 @@
         "available": true,
         "link": "/",
         "permission": [],
-        "role": ["admin"]
+        "role": ["staff","admin"]
       },
       {
         "text": "Dashboard",
@@ -37,8 +37,8 @@
         "icon": "bx bx-layer",
         "available": true,
         "link": "/requests",
-        "permission": ["change_approvalrequest", "add_approvalrequest", "view_approvalrequest"],
-        "role": ["admin"]
+        "permission": ["can_view_approval_request", "can_create_approval_request", "can_update_approval_request_status"],
+        "role": ["staff"]
       }
     ]
   },

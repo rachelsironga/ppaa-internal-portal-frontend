@@ -8,37 +8,28 @@ import { getDepartments } from "../../MANAGMENTS/department/Queries";
 import { getDirectories } from "../../MANAGMENTS/directory/Queries";
 import { getPositionalLevels } from "../../E-APPROVAL/positional_level/Queries";
 import { createUpdatePositions } from "./Queries";
+import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 const PositionsModal = () => {
   const {
-    debounceTimeout,
-    setDebounceTimeout,
-    handleFetchData,
-    selectedUser,
-    setSelectedUser,
+    selectedObj,
+    setSelectedObj,
+    tableRefresh,
+    setTableRefresh,
     isModalOpen,
     setIsModalOpen,
   } = useContext(UsersContext);
   const [errors, setOtherError] = useState({});
 
   const [loadingDirectories, setLoadingDirectories] = useState(true);
-  const [errorDirectory, setErrorDirectory] = useState(null);
-  const [directories, setDirectories] = useState(null);
-
-  const [loadingDepartments, setLoadingDepartments] = useState(true);
-  const [errorDepartments, setErrorDepartments] = useState(null);
-  const [departments, setDepartments] = useState(null);
-
-  const [loadingLevels, setLoadingLevels] = useState(true);
-  const [errorLevels, setErrorLevels] = useState(null);
   const [levels, setLevels] = useState(null);
 
   const initialValues = {
-    user_uid: selectedUser?.guid || "",
-    level_uid: selectedUser?.position?.level_uid || "",
-    department_uid: selectedUser?.position?.department_uid || "",
-    directory_uid: selectedUser?.position?.directory_uid || "",
-    description: selectedUser?.position?.description || "",
+    user_uid: selectedObj?.guid || "",
+    level_uid: selectedObj?.position?.level_uid || "",
+    department_uid: selectedObj?.position?.department_uid || "",
+    directory_uid: selectedObj?.position?.directory_uid || "",
+    description: selectedObj?.position?.description || "",
     is_active: true,
   };
 
@@ -52,18 +43,18 @@ const PositionsModal = () => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (selectedUser) {
-        values.user_uid = selectedUser?.guid;
+      if (selectedObj) {
+        values.user_uid = selectedObj?.guid;
       }
-      console.log("Submitting form with selectedUser:", selectedUser);
+      console.log("Submitting form with selectedObj:", selectedObj);
 
       const result = await createUpdatePositions(values);
 
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
+        setTableRefresh((prev) => prev + 1);
         handleClose();
         resetForm();
-        handleFetchData();
       } else if (result.status === 8002) {
         console.log("Validation error:", result.data);
         showToast(`${result.message}`, "warning", "Validation Failed");
@@ -84,85 +75,7 @@ const PositionsModal = () => {
     }
   };
 
-  const handleFetchDirectories = async (searchValue = "") => {
-    setLoadingDirectories(true);
-    try {
-      const result = await getDirectories({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setDirectories(result.data);
-      } else {
-        setDirectories(null);
-      }
-    } catch (err) {
-      setDirectories(null);
-    } finally {
-      setLoadingDirectories(false);
-    }
-  };
-
-  const handleFetchDepartments = async (searchValue = "") => {
-    setLoadingDepartments(true);
-    try {
-      const result = await getDepartments({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setDepartments(result.data);
-      } else {
-        setDepartments(null);
-      }
-    } catch (err) {
-      setDepartments(null);
-    } finally {
-      setLoadingDepartments(false);
-    }
-  };
-
-  const handleFetchLevels = async (searchValue = "") => {
-    setLoadingLevels(true);
-    try {
-      const result = await getPositionalLevels({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setLevels(result.data);
-      } else {
-        setLevels(null);
-      }
-    } catch (err) {
-      setLevels(null);
-    } finally {
-      setErrorLevels(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isModalOpen) {
-      handleFetchDirectories();
-      handleFetchDepartments();
-      handleFetchLevels();
-    }
-  }, [isModalOpen]);
-
   const handleClose = () => {
-    console.log("Modal closed");
     const modalElement = document.getElementById(
       "viewCreateUserPossitionModal"
     );
@@ -185,7 +98,7 @@ const PositionsModal = () => {
               <h5 className="modal-title" id="exampleModalLabel3">
                 Change{" "}
                 <span className="text-primary">
-                  {selectedUser?.first_name} {selectedUser?.last_name}
+                  {selectedObj?.first_name} {selectedObj?.last_name}
                 </span>{" "}
                 Position
               </h5>
@@ -212,167 +125,71 @@ const PositionsModal = () => {
                       Position
                     </p>
                     <div className="row">
-                      <div className="col mb-3">
-                        <label htmlFor="levelUid" className="form-label">
-                          Position
-                        </label>
-                        <Select
-                          isLoading={loadingDirectories}
-                          className="select2-selection fetched-select2"
-                          onChange={(e) => {
-                            console.log("Selected Position:", e);
-                            if (e === null || e.value == "") {
-                              setFieldValue("level_uid", "");
-                            } else {
-                              setFieldValue("level_uid", e.value);
-                            }
-                          }}
-                          onInputChange={(e) => {
-                            handleFetchLevels(e);
-                          }}
-                          options={levels?.map((item) => ({
-                            value: item.uid,
-                            label: `${item.name} (${item.code})`,
-                          }))}
-                          styles={{
-                            menu: (base) => ({
-                              ...base,
-                              position: "absolute",
-                              zIndex: 9999,
-                            }),
-                          }}
-                          value={
-                            levels
-                              ?.map((item) => ({
-                                value: item.uid,
-                                label: `${item.name} (${item.code})`,
-                              }))
-                              .find(
-                                (option) => option.value === values.level_uid
-                              ) || null
-                          }
-                          isClearable
-                        />
-                        <Field
-                          type="hidden"
-                          name="level_uid"
-                          id="levelUidLarge"
-                        />
-                        <ErrorMessage
-                          name="level_uid"
-                          component="div"
-                          className="text-danger"
-                        />
-                      </div>
+                      <FormikSelect
+                        name="level_uid"
+                        label="Positions"
+                        url="/positional-level"
+                        containerClass="col-md-12 mb-3"
+                        filters={{
+                          page: 1,
+                          page_size: 10,
+                          paginated: true,
+                        }}
+                        mapOption={(item) => ({
+                          value: item.uid,
+                          label: `${item.name}`,
+                          name: `${item.name}`,
+                          code: `${item.code}`,
+                        })}
+                        placeholder="Search Levels ..."
+                        debounceMs={500}
+                        minChars={3}
+                        isReadOnly={false}
+                      />
                     </div>
 
                     <div className="row">
-                      <div className="col mb-3">
-                        <label htmlFor="levelUid" className="form-label">
-                          Directory
-                        </label>
-                        <Select
-                          isLoading={loadingDirectories}
-                          className="select2-selection fetched-select2"
-                          onChange={(e) => {
-                            console.log("Selected Directory:", e);
-                            if (e === null || e.value == "") {
-                              setFieldValue("directory_uid", "");
-                            } else {
-                              setFieldValue("directory_uid", e.value);
-                            }
-                          }}
-                          onInputChange={(e) => {
-                            handleFetchDirectories(e);
-                          }}
-                          options={directories?.map((item) => ({
-                            value: item.uid,
-                            label: `${item.name} (${item.code})`,
-                          }))}
-                          styles={{
-                            menu: (base) => ({
-                              ...base,
-                              position: "absolute",
-                              zIndex: 9999,
-                            }),
-                          }}
-                          value={
-                            directories
-                              ?.map((item) => ({
-                                value: item.uid,
-                                label: `${item.name} (${item.code})`,
-                              }))
-                              .find(
-                                (option) =>
-                                  option.value === values.directory_uid
-                              ) || null
-                          }
-                          isClearable
-                        />
-                        <Field
-                          type="hidden"
-                          name="directory_uid"
-                          id="directoryUidLarge"
-                        />
-                        <ErrorMessage
-                          name="directory_uid"
-                          component="div"
-                          className="text-danger"
-                        />
-                      </div>
-                      <div className="col mb-3">
-                        <label htmlFor="departmentUid" className="form-label">
-                          Department
-                        </label>
-                        <Select
-                          isLoading={loadingDepartments}
-                          className="select2-selection fetched-select2"
-                          onChange={(e) => {
-                            console.log("Selected Department:", e);
-                            if (e === null || e.value == "") {
-                              setFieldValue("department_uid", "");
-                            } else {
-                              setFieldValue("department_uid", e.value);
-                            }
-                          }}
-                          onInputChange={(e) => {
-                            handleFetchDepartments(e);
-                          }}
-                          options={departments?.map((item) => ({
-                            value: item.uid,
-                            label: `${item.name} (${item.code})`,
-                          }))}
-                          styles={{
-                            menu: (base) => ({
-                              ...base,
-                              position: "absolute",
-                              zIndex: 9999,
-                            }),
-                          }}
-                          value={
-                            departments
-                              ?.map((item) => ({
-                                value: item.uid,
-                                label: `${item.name} (${item.code})`,
-                              }))
-                              .find(
-                                (option) =>
-                                  option.value === values.department_uid
-                              ) || null
-                          }
-                          isClearable
-                        />
-                        <Field
-                          type="hidden"
-                          name="department_uid"
-                          id="departmentUidLarge"
-                        />
-                        <ErrorMessage
-                          name="department_uid"
-                          component="div"
-                          className="text-danger"
-                        />
-                      </div>
+                      <FormikSelect
+                        name="directory_uid"
+                        label="Directory"
+                        url="/directory"
+                        containerClass="col-md-6 mb-3"
+                        filters={{
+                          page: 1,
+                          page_size: 10,
+                          paginated: true,
+                        }}
+                        mapOption={(item) => ({
+                          value: item.uid,
+                          label: `${item.name}`,
+                          name: `${item.name}`,
+                          code: `${item.code}`,
+                        })}
+                        placeholder="Search Directory ..."
+                        debounceMs={500}
+                        minChars={3}
+                        isReadOnly={false}
+                      />
+                      <FormikSelect
+                        name="department_uid"
+                        label="Departments"
+                        url="/departments"
+                        filters={{
+                          page: 1,
+                          page_size: 10,
+                          paginated: true,
+                        }}
+                        mapOption={(item) => ({
+                          value: item.uid,
+                          label: `${item.name}`,
+                          name: `${item.name}`,
+                          code: `${item.code}`,
+                        })}
+                        placeholder="Search Departments..."
+                        debounceMs={500}
+                        minChars={3}
+                        isReadOnly={false}
+                      />
                     </div>
 
                     <div className="row">

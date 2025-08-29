@@ -160,9 +160,9 @@ export const AccountPage = () => {
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
-      setIsFileSelected(true); // Enable buttons when a file is selected
+      setIsFileSelected(true);
     } else {
-      setIsFileSelected(false); // Disable buttons if no file is selected
+      setIsFileSelected(false);
     }
   };
 
@@ -210,6 +210,15 @@ export const AccountPage = () => {
   };
 
   const handleUpload = async (selectedUser = null) => {
+    if (hasAccess(user, ["can_upload_profile_photo"]) === false) {
+      Swal.fire(
+        "Error!",
+        "Sorry Youdont have permission to change Profile",
+        "error"
+      );
+      return;
+    }
+
     if (!selectedUser) {
       Swal.fire("Error!", "Sorry Reopen this user to Fix this error.", "error");
       return;
@@ -266,6 +275,13 @@ export const AccountPage = () => {
             "Successfully Uploaded the Photo.",
             "success"
           );
+          dispatch({
+            type: userTypes.USER_UPDATE,
+            payload: {
+              user: result.data, // ✅ wrap in `user`
+            },
+          });
+          window.location.reload();
           setSelectedUser(result.data);
           setIsFileSelected(false);
           toggleUploadVisibility();
@@ -286,6 +302,14 @@ export const AccountPage = () => {
 
   // Signature upload handler
   const handleUploadSign = async (selectedUserParam = null) => {
+    if (hasAccess(user, ["can_upload_profile_signature"]) === false) {
+      Swal.fire(
+        "Error!",
+        "Sorry Youdont have permission to change Signature",
+        "error"
+      );
+      return;
+    }
     const userToUse = selectedUserParam || selectedUser;
     if (!userToUse) {
       Swal.fire(
@@ -342,6 +366,13 @@ export const AccountPage = () => {
             "Successfully Uploaded the Signature.",
             "success"
           );
+          dispatch({
+            type: userTypes.USER_UPDATE,
+            payload: {
+              user: result.data,
+            },
+          });
+          window.location.reload();
           setSelectedUser((prev) => ({
             ...prev,
             signature: result.data.signature,
@@ -381,6 +412,16 @@ export const AccountPage = () => {
   }, [isActingChange]);
 
   const handleRemoveDelegation = async () => {
+    if (
+      hasAccess(user, ["can_assign_delegate", "can_remove_delegate"]) === false
+    ) {
+      Swal.fire(
+        "Error!",
+        "Sorry Youdont have permission to Remove Delegation",
+        "error"
+      );
+      return;
+    }
     try {
       const confirmation = await Swal.fire({
         title: "Are you sure?",
@@ -505,17 +546,19 @@ export const AccountPage = () => {
                               }}
                               ref={fileInputRef}
                             />
-                            <span
-                              className="ms-1 badge bg-label-primary cursor-pointer"
-                              onClick={toggleUploadVisibility}
-                              style={{
-                                position: "absolute",
-                                top: "120px",
-                                left: "36.5%",
-                              }}
-                            >
-                              change photo
-                            </span>
+                            {hasAccess(user, ["can_upload_profile_photoo"]) && (
+                              <span
+                                className="ms-1 badge bg-label-primary cursor-pointer"
+                                onClick={toggleUploadVisibility}
+                                style={{
+                                  position: "absolute",
+                                  top: "120px",
+                                  left: "36.5%",
+                                }}
+                              >
+                                change photo
+                              </span>
+                            )}
                           </div>
 
                           <div className="user-info text-center mb-4">
@@ -838,8 +881,11 @@ export const AccountPage = () => {
                                   </h4>
                                   {hasAccess(
                                     user,
-                                    ["can_assign_delegate"],
-                                    ["can_assign_delegate"]
+                                    [
+                                      "can_assign_delegate",
+                                      "can_assign_delegate",
+                                    ],
+                                    ["Delegators", "Delegator"]
                                   ) &&
                                     selectedUser.position?.acting_user ===
                                       null && (

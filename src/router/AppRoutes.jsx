@@ -197,10 +197,11 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute
             requiredPermissions={[
-              "change_approvalrequest",
-              "add_approvalrequest",
-              "view_approvalrequest",
+              "can_view_approval_request",
+              "can_create_approval_request",
+              "can_update_approval_request_status",
             ]}
+            requiredRoles={["staff"]}
           >
             <ApprovalRequestPage />
           </ProtectedRoute>
