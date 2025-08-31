@@ -28,6 +28,8 @@ import { PositionalLevelPage } from "../pages/services/E-APPROVAL/positional_lev
 import {RolesManagementPage} from "../pages/services/MANAGMENTS/roles_management/View.jsx";
 import { OpenRolesManagementPage } from "../pages/services/MANAGMENTS/roles_management/Open.jsx";
 import NewUserPage from "../pages/authentication/NewUserPage.jsx";
+import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handling/View.jsx";
+import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -212,6 +214,36 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredPermissions={["view_approvalrequest"]}>
             <ApprovalRequestOpenPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Requests Handling*/}
+
+      <Route
+        path="/requests-handling"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_request_handling",
+              "can_perform_request_handling",
+            ]}
+            requiredRoles={["Request_Handler"]}
+          >
+            <RequestHandlingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/requests-handling/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_request_handling",
+              "can_perform_request_handling",
+            ]}
+            requiredRoles={["Request_Handler"]}
+          >
+            <RequestHandlingOpenPage />
           </ProtectedRoute>
         }
       />

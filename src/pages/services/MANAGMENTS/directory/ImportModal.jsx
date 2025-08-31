@@ -100,135 +100,120 @@ export const DirectoryImportModal = ({ loadOnlyModal = false }) => {
   };
 
   return (
-    <>
-      {!loadOnlyModal && (
-        <button
-          aria-label="Click me"
-          type="button"
-          className="btn btn-success ms-auto btn-sm me-4 animate__animated animate__fadeInRight animate__slow"
-          data-bs-toggle="modal"
-          data-bs-target="#viewCreateDirectoryImportModal"
-        >
-          <i className="bx bx-table me-1"></i> Import
-          Directory&nbsp;&&nbsp;Departments
-        </button>
-      )}
-
-      <div
-        className="modal modal-slide-in"
-        id="viewCreateDirectoryImportModal"
-        tabIndex="-1"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog modal-md" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="exampleModalLabel3">
-                Import Directories And Department Excel
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={handleClose}
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
-            </div>
-            <Formik
-              enableReinitialize
-              initialValues={initialValues}
-              validationSchema={validationSchema}
-              onSubmit={handleUpload}
-            >
-              {({ isSubmitting, values, setFieldValue }) => (
-                <Form>
-                  <div className="modal-body">
-                    {/* Header and Description */}
-                    <div className="mb-3">
-                      <h6 className="fw-bold mb-1">Excel Directory Import</h6>
-                      <p
-                        className="text-muted mb-2"
-                        style={{ fontSize: "0.98em" }}
-                      >
-                        Please upload your directory and department Excel file
-                        using the provided template format. Download the
-                        template below if you do not have it. If you already
-                        have a file, you may proceed with the upload.
-                      </p>
-                      <a
-                        href="/assets/templates/directory_department_template.xlsx"
-                        download
-                        className="btn btn-sm btn-outline-primary mb-3"
-                        style={{ fontSize: "0.95em" }}
-                      >
-                        <i className="bx bx-download"></i> Download Template
-                      </a>
-                    </div>
-                    <div className="mb-3">
-                      <label htmlFor="nameLarge" className="text-bold">
-                        Select Excel file to Import
-                      </label>
-                      <div className="input-group">
-                        <input
-                          type="file"
-                          name="file"
-                          className="form-control"
-                          aria-describedby="inputGroupFileAddon05"
-                          onChange={(event) => {
-                            const file = event.currentTarget.files[0];
-                            if (file) {
-                              setFieldValue("file", file);
-                            } else {
-                              setFieldValue("file", null);
-                            }
-                          }}
-                          ref={fileInputRef}
-                          accept=".xlsx,.xls"
-                          aria-label="Upload"
-                        />
-                        <button
-                          className="btn btn-outline-danger"
-                          type="button"
-                          onClick={() => {
-                            fileInputRef.current.value = null;
-                            setFieldValue("file", null);
-                          }}
-                        >
-                          <strong>X</strong>
-                        </button>
-                      </div>
-                      <ErrorMessage
-                        name="file"
-                        component="div"
-                        className="text-danger"
-                      />
-                    </div>
-
-                    <div className="modal-footer">
-                      <button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={handleClose}
-                        className="btn btn-outline-secondary"
-                        data-bs-dismiss="modal"
-                      >
-                        Close
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="btn btn-primary"
-                      >
-                        {isSubmitting ? "Uploading..." : "Upload"}
-                      </button>
-                    </div>
-                  </div>
-                </Form>
-              )}
-            </Formik>
+    <div
+      className="modal modal-slide-in"
+      id="viewCreateDirectoryImportModal"
+      tabIndex="-1"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog modal-md" role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id="exampleModalLabel3">
+              Import Directories And Department Excel
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              onClick={handleClose}
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
+          <Formik
+            enableReinitialize
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleUpload}
+          >
+            {({ isSubmitting, values, setFieldValue }) => (
+              <Form>
+                <div className="modal-body">
+                  {/* Header and Description */}
+                  <div className="mb-3">
+                    <h6 className="fw-bold mb-1">Excel Directory Import</h6>
+                    <p
+                      className="text-muted mb-2"
+                      style={{ fontSize: "0.98em" }}
+                    >
+                      Please upload your directory and department Excel file
+                      using the provided template format. Download the template
+                      below if you do not have it. If you already have a file,
+                      you may proceed with the upload.
+                    </p>
+                    <a
+                      href="/assets/templates/directory_department_template.xlsx"
+                      download
+                      className="btn btn-sm btn-outline-primary mb-3"
+                      style={{ fontSize: "0.95em" }}
+                    >
+                      <i className="bx bx-download"></i> Download Template
+                    </a>
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="nameLarge" className="text-bold">
+                      Select Excel file to Import
+                    </label>
+                    <div className="input-group">
+                      <input
+                        type="file"
+                        name="file"
+                        className="form-control"
+                        aria-describedby="inputGroupFileAddon05"
+                        onChange={(event) => {
+                          const file = event.currentTarget.files[0];
+                          if (file) {
+                            setFieldValue("file", file);
+                          } else {
+                            setFieldValue("file", null);
+                          }
+                        }}
+                        ref={fileInputRef}
+                        accept=".xlsx,.xls"
+                        aria-label="Upload"
+                      />
+                      <button
+                        className="btn btn-outline-danger"
+                        type="button"
+                        onClick={() => {
+                          fileInputRef.current.value = null;
+                          setFieldValue("file", null);
+                        }}
+                      >
+                        <strong>X</strong>
+                      </button>
+                    </div>
+                    <ErrorMessage
+                      name="file"
+                      component="div"
+                      className="text-danger"
+                    />
+                  </div>
+
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={handleClose}
+                      className="btn btn-outline-secondary"
+                      data-bs-dismiss="modal"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="btn btn-primary"
+                    >
+                      {isSubmitting ? "Uploading..." : "Upload"}
+                    </button>
+                  </div>
+                </div>
+              </Form>
+            )}
+          </Formik>
         </div>
       </div>
-    </>
+    </div>
   );
 };

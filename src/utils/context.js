@@ -1,5 +1,8 @@
 import { createContext } from "react";
 
+const PageContext = createContext();
+
+
 const ApprovalActionContext = createContext();
 
 const PositionalLevelContext = createContext();
@@ -21,6 +24,7 @@ const DateRangeContext = createContext();
 const RolesManagementContext = createContext();
 
 export {
+    PageContext,
     ApprovalActionContext,
     PositionalLevelContext,
     DepartmentsContext,

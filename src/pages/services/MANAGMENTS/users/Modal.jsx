@@ -196,7 +196,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
         className="modal modal-slide-in"
         id="viewCreateUserModal"
         tabIndex="-1"
-        aria-hidden="true"
         data-bs-backdrop="static"
         data-bs-keyboard="false"
       >
