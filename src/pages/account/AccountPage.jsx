@@ -479,20 +479,7 @@ export const AccountPage = () => {
         setIsActingChange,
       }}
     >
-      <BreadCumb pageList={["Profile"]}>
-        <button
-          aria-label="Click me"
-          type="button"
-          className="btn btn-sm btn-outline-primary  dropdown-toggle    animate__animated animate__fadeInRight animate__slow"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
-          <i className="bx bx-menu me-1"></i> Options
-        </button>
-        <ul className="dropdown-menu">
-          <li className="dropdown-item text-center text-muted">No Option</li>
-        </ul>
-      </BreadCumb>
+      <BreadCumb pageList={["Profile"]}></BreadCumb>
 
       <div className="content-wrapper">
         <div className="animate__animated animate__fadeInUp animate__faster">
@@ -538,7 +525,11 @@ export const AccountPage = () => {
                               className="img-fluid rounded mb-4 shadow  account-image-reset cursor-pointer"
                               height="120px"
                               width="150px"
-                              onClick={toggleUploadVisibility} // Toggle input visibility on click
+                              onClick={
+                                hasAccess(user, ["can_upload_profile_photo"])
+                                  ? toggleUploadVisibility
+                                  : null
+                              } // Toggle input visibility on click
                               style={{ height: "120px", width: "120px" }}
                               onError={(e) => {
                                 e.target.onerror = null;
@@ -546,7 +537,7 @@ export const AccountPage = () => {
                               }}
                               ref={fileInputRef}
                             />
-                            {hasAccess(user, ["can_upload_profile_photoo"]) && (
+                            {hasAccess(user, ["can_upload_profile_photo"]) && (
                               <span
                                 className="ms-1 badge bg-label-primary cursor-pointer"
                                 onClick={toggleUploadVisibility}
@@ -573,47 +564,50 @@ export const AccountPage = () => {
                                   justifyContent: "center",
                                 }}
                               >
-                                {isUploadVisible && (
-                                  <div className="m-3" id="card-image-div">
-                                    <div className="input-group">
-                                      <label
-                                        htmlFor="inputGroupFile04"
-                                        className="btn btn-sm btn-outline-success"
-                                      >
-                                        Choose File
-                                      </label>
-                                      <input
-                                        type="file"
-                                        name="account-file-input"
-                                        className="form-control form-control-sm account-file-input visually-hidden"
-                                        id="inputGroupFile04"
-                                        aria-describedby="inputGroupFileAddon04"
-                                        onChange={handlePhotoChange}
-                                        accept=".jpg,.jpeg,.png,.gif,.ico"
-                                        aria-label="Upload"
-                                        ref={fileInputRef}
-                                      />
-                                      <button
-                                        aria-label="Click me"
-                                        className="btn btn-sm btn-outline-danger account-file-input"
-                                        type="button"
-                                        onClick={handleResetImage}
-                                        disabled={!isFileSelected}
-                                      >
-                                        <strong>X</strong>
-                                      </button>
-                                      <button
-                                        aria-label="Click me"
-                                        className="btn btn-sm btn-outline-primary account-file-input"
-                                        type="button"
-                                        onClick={handleUpload}
-                                        disabled={!isFileSelected}
-                                      >
-                                        SAVE
-                                      </button>
+                                {isUploadVisible &&
+                                  hasAccess(user, [
+                                    "can_upload_profile_photo",
+                                  ]) && (
+                                    <div className="m-3" id="card-image-div">
+                                      <div className="input-group">
+                                        <label
+                                          htmlFor="inputGroupFile04"
+                                          className="btn btn-sm btn-outline-success"
+                                        >
+                                          Choose File
+                                        </label>
+                                        <input
+                                          type="file"
+                                          name="account-file-input"
+                                          className="form-control form-control-sm account-file-input visually-hidden"
+                                          id="inputGroupFile04"
+                                          aria-describedby="inputGroupFileAddon04"
+                                          onChange={handlePhotoChange}
+                                          accept=".jpg,.jpeg,.png,.gif,.ico"
+                                          aria-label="Upload"
+                                          ref={fileInputRef}
+                                        />
+                                        <button
+                                          aria-label="Click me"
+                                          className="btn btn-sm btn-outline-danger account-file-input"
+                                          type="button"
+                                          onClick={handleResetImage}
+                                          disabled={!isFileSelected}
+                                        >
+                                          <strong>X</strong>
+                                        </button>
+                                        <button
+                                          aria-label="Click me"
+                                          className="btn btn-sm btn-outline-primary account-file-input"
+                                          type="button"
+                                          onClick={handleUpload}
+                                          disabled={!isFileSelected}
+                                        >
+                                          SAVE
+                                        </button>
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
+                                  )}
                               </div>
                             </h5>
 

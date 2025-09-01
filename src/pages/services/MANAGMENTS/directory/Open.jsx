@@ -5,14 +5,19 @@ import ReactLoading from "react-loading";
 import "animate.css";
 import { deleteDepartment, getDepartments } from "../department/Queries";
 import { DirectoryContext } from "../../../../utils/context";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getDirectories } from "./Queries";
 import usePagination from "../../../../hooks/usePagination";
 import { DirectoryDepartmentModal, DirectoryModal } from "./Modal";
 import ReactPaginate from "react-paginate";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import { useSelector } from "react-redux";
 
 export const DirectoryOpenPage = () => {
+  const [selectedObj, setSelectedObj] = useState(null);
+  const [tableRefresh, setTableRefresh] = useState(0);
+  const navigate = useNavigate();
+  const user = useSelector((state) => state.userReducer?.data);
   const pageSizeData = [5, 10, 20, 50, 70, 100];
 
   const { uid } = useParams();
@@ -23,7 +28,6 @@ export const DirectoryOpenPage = () => {
   const [errorDepartment, setErrorDepartment] = useState(null);
 
   const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const [selectedDirectory, setSelectedDirectory] = useState(null);
   const [directoryDepartments, setDirectoryDepartments] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,7 +53,7 @@ export const DirectoryOpenPage = () => {
         uid: uid,
       });
       if (result.status === 200 || result.status === 8000) {
-        setSelectedDirectory(result.data);
+        setSelectedObj(result.data);
       } else {
         setError(true);
         showToast("No Directory Found", "warning", "Fetch Completed");
@@ -97,8 +101,8 @@ export const DirectoryOpenPage = () => {
     }
   };
 
-  const handleDelete = async (selectedDirectory = null) => {
-    if (!selectedDirectory) {
+  const handleDelete = async (selectedObj = null) => {
+    if (!selectedObj) {
       Swal.fire("Error!", "Unable to Select this Directory.", "error");
       return;
     }
@@ -115,7 +119,7 @@ export const DirectoryOpenPage = () => {
       });
 
       if (confirmation.isConfirmed) {
-        const result = await deleteItem(selectedDirectory.uid);
+        const result = await deleteItem(selectedObj.uid);
         if (result.status === 200 || result.status === 8000) {
           Swal.fire(
             "Process Completed!",
@@ -137,7 +141,7 @@ export const DirectoryOpenPage = () => {
       );
     }
 
-    setSelectedDirectory(null);
+    setSelectedObj(null);
   };
 
   const handleDeleteDepartment = async (department = null) => {
@@ -196,7 +200,7 @@ export const DirectoryOpenPage = () => {
     setDebounceTimeout(timeout);
 
     return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage]);
+  }, [searchQuery, pageSize, currentPage, tableRefresh]);
 
   return (
     <DirectoryContext.Provider
@@ -204,8 +208,10 @@ export const DirectoryOpenPage = () => {
         debounceTimeout,
         setDebounceTimeout,
         handleFetchData,
-        selectedDirectory,
-        setSelectedDirectory,
+        selectedObj,
+        setSelectedObj,
+        setTableRefresh,
+        tableRefresh,
         selectedDepartment,
         setSelectedDepartment,
         fetchDepartments,
@@ -217,7 +223,7 @@ export const DirectoryOpenPage = () => {
         <div className="d-flex justify-content-between align-items-center card-header shadow-sm mb-4">
           <h5 className="mb-0">Directories Details</h5>
 
-          {loading || error || selectedDirectory == null ? (
+          {loading || error || selectedObj == null ? (
             <div className="form-group"></div>
           ) : (
             <div className="form-group">
@@ -234,7 +240,7 @@ export const DirectoryOpenPage = () => {
                 aria-label="Delete Item"
                 className="btn btn-danger ms-auto btn-sm"
                 onClick={async () => {
-                  handleDelete(selectedDirectory);
+                  handleDelete(selectedObj);
                 }}
                 type="button"
               >
@@ -261,7 +267,7 @@ export const DirectoryOpenPage = () => {
                 </center>
               </div>
             </div>
-          ) : error || selectedDirectory === null ? (
+          ) : error || selectedObj === null ? (
             // error || directory.length === 0
             <div className="alert alert-info" role="alert">
               <div className="alert-body text-center">
@@ -282,7 +288,7 @@ export const DirectoryOpenPage = () => {
                 </div>
                 <div className="col-md-9 col-sm-12">
                   <p className="text-justify">
-                    {selectedDirectory?.name || ""} ({selectedDirectory.code})
+                    {selectedObj?.name || ""} ({selectedObj.code})
                   </p>
                 </div>
               </div>
@@ -295,7 +301,7 @@ export const DirectoryOpenPage = () => {
                 </div>
                 <div className="col-md-9 col-sm-12">
                   <p className="text-justify">
-                    {selectedDirectory?.description || ""}
+                    {selectedObj?.description || ""}
                   </p>
                 </div>
               </div>
@@ -308,9 +314,7 @@ export const DirectoryOpenPage = () => {
         <div>
           <div className="d-flex justify-content-between align-items-center card-header">
             <h5 className="mb-0">Directories Departments</h5>
-            {loadingDepartment ||
-            errorDepartment ||
-            selectedDirectory == null ? (
+            {loadingDepartment || errorDepartment || selectedObj == null ? (
               <div className="form-group"></div>
             ) : (
               <div className="form-group">
@@ -502,7 +506,7 @@ export const DirectoryOpenPage = () => {
       </div>
       <DirectoryModal
         loadOnlyModal={true}
-        onClose={() => setSelectedDirectory(null)}
+        onClose={() => setSelectedObj(null)}
       />
     </DirectoryContext.Provider>
   );

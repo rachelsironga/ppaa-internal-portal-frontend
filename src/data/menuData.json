@@ -39,6 +39,14 @@
         "link": "/requests",
         "permission": ["can_view_approval_request", "can_create_approval_request", "can_update_approval_request_status"],
         "role": ["staff"]
+      },
+       {
+        "text": "Requests Handling",
+        "icon": "bx bx-redo",
+        "available": true,
+        "link": "/requests-handling",
+        "permission": ["can_view_request_handling", "can_perform_request_handling"],
+        "role": ["Request_Handler"]
       }
     ]
   },

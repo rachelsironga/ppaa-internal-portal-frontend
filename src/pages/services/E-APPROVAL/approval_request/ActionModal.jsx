@@ -8,6 +8,7 @@ import { approveRejectRequest } from "./Queries";
 import Swal from "sweetalert2";
 import Select from "react-select";
 import { getUsers } from "../../../account/Queries";
+import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 const ActionModal = ({ loadOnlyModal = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -270,101 +271,77 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                     </div>
                     {isLastStep && (
                       <div className="row">
-                        <div className="col-md-8 mb-3">
-                          <label htmlFor="handlerLarge" className="form-label">
-                            Select Handler
-                          </label>{" "}
-                          <small className="text-danger">
-                            Only if is to be Forwarded
-                          </small>
-                          <Select
-                            id="handlerLarge"
-                            isLoading={loadingUser}
-                            className="select2-selection fetched-select2"
-                            onChange={(e) => {
-                              if (e === null || e.value === "") {
-                                setFieldValue("handler_user", "");
-                              } else {
-                                setFieldValue("handler_user", e.value);
-                              }
-                            }}
-                            onInputChange={(e) => {
-                              fetchUsers(e);
-                            }}
-                            options={users?.map((item) => ({
-                              value: item.guid,
-                              label: `${item.first_name} ${item.middle_name} ${item.last_name}`,
-                              email: item.email,
-                              photo: item.photo,
-                              first_name: item.first_name,
-                              middle_name: item.middle_name,
-                              last_name: item.last_name,
-                            }))}
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                position: "absolute",
-                                zIndex: 9999,
-                              }),
-                            }}
-                            value={
-                              users
-                                ?.map((item) => ({
-                                  value: item.guid,
-                                  label: `${item.first_name} ${item.middle_name} ${item.last_name}`,
-                                  email: item.email,
-                                  photo: item.photo,
-                                  first_name: item.first_name,
-                                  middle_name: item.middle_name,
-                                  last_name: item.last_name,
-                                }))
-                                .find(
-                                  (option) =>
-                                    option.value === values.handler_user
-                                ) || null
-                            }
-                            isClearable
-                            formatOptionLabel={(user) => (
-                              <div className="d-flex justify-content-start align-items-center user-name">
-                                <div className="avatar-wrapper">
-                                  <div className="avatar avatar-sm me-4">
-                                    <img
-                                      src={
-                                        user.photo && user.photo !== ""
-                                          ? user.photo
-                                          : "../../assets/img/avatars/1.png"
-                                      }
-                                      alt="Avatar"
-                                      className="rounded-circle"
-                                      style={{
-                                        width: "32px",
-                                        height: "32px",
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="d-flex flex-column">
-                                  <span className="text-heading text-truncate">
-                                    <span className="fw-medium">
-                                      {user.first_name} {user.middle_name}{" "}
-                                      {user.last_name}
-                                    </span>
-                                  </span>
-                                  <small className="text-primary">
-                                    {user.email && user.email !== ""
-                                      ? user.email
-                                      : "- - -"}
-                                  </small>
+                        <FormikSelect
+                          name="handler_user"
+                          label={
+                            <>
+                              <label
+                                htmlFor="handlerLarge"
+                                className="form-label"
+                              >
+                                Select Handler
+                              </label>{" "}
+                              <small className="text-danger">
+                                Only if is to be Forwarded
+                              </small>
+                            </>
+                          }
+                          url={"/user/setup"}
+                          isFullPath={true}
+                          containerClass="col-md-8 mb-3"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                            excluded_user: user?.guid,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.guid,
+                            label: `${item.first_name} ${item.middle_name} ${item.last_name}`,
+                            first_name: `${item.first_name}`,
+                            middle_name: `${item.middle_name}`,
+                            last_name: `${item.last_name}`,
+                            email: `${item.email}`,
+                            photo: item.photo,
+                            guid: item.guid,
+                            full_name: `${item.first_name} ${item.middle_name} ${item.last_name}`,
+                          })}
+                          formatOptionLabel={(user) => (
+                            <div className="d-flex justify-content-start align-items-center user-name">
+                              <div className="avatar-wrapper">
+                                <div className="avatar avatar-sm me-4">
+                                  <img
+                                    src={
+                                      user.photo && user.photo !== ""
+                                        ? user.photo
+                                        : "../../assets/img/avatars/1.png"
+                                    }
+                                    alt="Avatar"
+                                    className="rounded-circle"
+                                    style={{ width: "32px", height: "32px" }}
+                                  />
                                 </div>
                               </div>
-                            )}
-                          />
-                          <ErrorMessage
-                            name="handler_user"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
+                              <div className="d-flex flex-column">
+                                <span className="text-heading text-truncate">
+                                  <span className="fw-medium">
+                                    {user.first_name} {user.middle_name}{" "}
+                                    {user.last_name}
+                                  </span>
+                                </span>
+                                <small className="text-primary">
+                                  {user.email && user.email !== ""
+                                    ? user.email
+                                    : "- - -"}
+                                </small>
+                              </div>
+                            </div>
+                          )}
+                          placeholder="Search Users ..."
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={false}
+                        />
                       </div>
                     )}
                     <div className="row">

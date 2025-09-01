@@ -144,7 +144,7 @@ const PaginatedTable = ({
                 control: (base) => ({
                   ...base,
                   minHeight: "32px",
-                  width: "80px",
+                  width: "95px",
                 }),
                 menuPortal: (base) => ({
                   ...base,
