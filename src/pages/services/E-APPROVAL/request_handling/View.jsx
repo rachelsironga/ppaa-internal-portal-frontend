@@ -23,7 +23,7 @@ export const RequestHandlingPage = () => {
     >
       <BreadCumb pageList={["Settings", "Approval Request Handling"]} />
       <PaginatedTable
-        fetchPath="/approval-module"
+        fetchPath="/approval-request-handler"
         title="List of Approval Request into Handling Stage"
         columns={[
           {
@@ -84,25 +84,15 @@ export const RequestHandlingPage = () => {
             ),
           },
         ]}
-        buttons={[
-          {
-            label: "Add System Roles",
-            render: () => (
-              <button
-                aria-label="Click me"
-                type="button"
-                className="btn btn-primary ms-auto btn-sm   animate__animated animate__fadeInRight animate__slow me-1"
-                data-bs-toggle="modal"
-                data-bs-target="#viewCreateModuleDataModal"
-              >
-                <i className="bx bx-edit-alt me-1"></i> Add New Module
-              </button>
-            ),
-          },
-        ]}
         onSelect={(row) => {
           setSelectedObj(row);
         }}
+        filters={[
+          { value: "ALL", label: "All TASK" },
+          { value: "PENDING", label: "PENDING" },
+          { value: "DONE", label: "DONE" },
+          { value: "POSTPONED", label: "POSTPONED" },
+        ]}
         isRefresh={tableRefresh}
       />
       <RequestHandlingModal />

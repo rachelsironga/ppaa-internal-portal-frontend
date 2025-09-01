@@ -164,7 +164,7 @@ const UsersModal = () => {
                             </div>
                           </div>
                         )}
-                        placeholder="Search Directory ..."
+                        placeholder="Search Users ..."
                         debounceMs={500}
                         minChars={3}
                         isReadOnly={false}
