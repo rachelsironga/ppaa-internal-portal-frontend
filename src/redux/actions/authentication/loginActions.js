@@ -37,13 +37,12 @@ export const login = (userData, navigation) => async (dispatch) => {
         payload: { user, access_token, refresh_token },
       });
       navigation("/");
-    } else if (response.status == 202 && response.data.status !== 8007) {
-      // Redirect new user for verification password change
+    } else if (response.status == 202 && response.data.status === 8002) {
       dispatch({
-        type: loginTypes.LOGIN_NEW_USER,
+        type: loginTypes.LOGIN_FAILURE,
         payload: response.data,
       });
-      navigation("/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF");
+      return;
     }
     else if (response.status == 202 && response.data.status === 8007) {
       // Redirect new user for verification password change

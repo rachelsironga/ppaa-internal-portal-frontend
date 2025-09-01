@@ -38,7 +38,7 @@
         "available": true,
         "link": "/requests",
         "permission": ["can_view_approval_request", "can_create_approval_request", "can_update_approval_request_status"],
-        "role": ["staff"]
+        "role": ["staff", "admin"]
       },
        {
         "text": "Requests Handling",
@@ -68,7 +68,7 @@
         "icon": "bx bx-layer",
         "available": true,
         "link": "/settings/departments",
-        "permission": ["view_department","add_department", "delete_department", "change_department"],
+        "permission": ["can_add_department","can_view_department","can_delete_department"],
         "role": ["admin"]
       },
       {
@@ -84,7 +84,7 @@
         "icon": "bx bx-detail",
         "available": true,
         "link": "/settings/approval-actions",
-        "permission": ["change_positionalaction","view_positionalaction", "delete_"],
+        "permission": ["change_positionalaction","view_positionalaction", "can_delete_approval_action"],
         "role": ["admin"]
       },
       {
@@ -92,7 +92,7 @@
         "icon": "bx bx-box",
         "available": true,
         "link": "/settings/approval-modules",
-        "permission": ["change_approvalmodule","view_approvalmodule","delete_approvalmodule" ],
+        "permission": ["can_view_approval_modules","can_add_approval_module", "can_edit_approval_module","can_delete_approval_module" ],
         "role": ["admin"]
       },
       {
@@ -100,7 +100,7 @@
         "icon": "bx bx-calendar",
         "available": true,
         "link": "/settings/date-ranges",
-        "permission": ["change_daterange","view_daterange","delete_daterange" ],
+        "permission": ["view_daterange", "can_edit_date_range","can_delete_date_range" ],
         "role": ["admin"]
       }
     ]
