@@ -300,6 +300,11 @@ export const AccountPage = () => {
     }
   };
 
+
+  useEffect(() => {
+    handleFetchData();
+  }, []);
+
   // Signature upload handler
   const handleUploadSign = async (selectedUserParam = null) => {
     if (hasAccess(user, ["can_upload_profile_signature"]) === false) {
@@ -479,7 +484,12 @@ export const AccountPage = () => {
         setIsActingChange,
       }}
     >
-      <BreadCumb pageList={["Profile"]}></BreadCumb>
+      <BreadCumb pageList={["Profile"]}>
+        <button className="btn btn-primary btn-sm">
+          <i className={`bx bx-refresh me-1 ${loading ? "bx-spin" : ""}`}></i>
+          <span className="text-bold">Update My Status</span>
+        </button>
+      </BreadCumb>
 
       <div className="content-wrapper">
         <div className="animate__animated animate__fadeInUp animate__faster">

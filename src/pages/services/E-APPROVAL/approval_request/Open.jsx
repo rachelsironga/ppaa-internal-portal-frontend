@@ -354,16 +354,6 @@ export const ApprovalRequestOpenPage = () => {
                       <button
                         aria-label="dropdown action link"
                         className="dropdown-item d-flex align-items-center"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        <i className="bx bx-transfer mx-2"></i>Tract Request
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        aria-label="dropdown action link"
-                        className="dropdown-item d-flex align-items-center"
                         data-bs-toggle="modal"
                         aria-expanded="false"
                         data-bs-target="#approvalRequestHistoryModal"
@@ -371,7 +361,7 @@ export const ApprovalRequestOpenPage = () => {
                           setViewRequestHistory(true);
                         }}
                       >
-                        <i className="bx bx-history mx-2"></i>Preview Approval
+                        <i className="bx bx-transfer mx-2"></i>Preview Approval
                         History
                       </button>
                     </li>

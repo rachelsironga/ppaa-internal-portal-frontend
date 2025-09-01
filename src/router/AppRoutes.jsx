@@ -90,10 +90,9 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute
             requiredPermissions={[
-              "view_department",
-              "add_department",
-              "delete_department",
-              "change_department",
+              "can_add_department",
+              "can_view_department",
+              "can_delete_department",
             ]}
           >
             <DepartmentPage />
@@ -133,10 +132,12 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute
             requiredPermissions={[
-              "change_approvalmodule",
-              "view_approvalmodule",
-              "delete_approvalmodule",
+              "can_view_approval_modules",
+              "can_add_approval_module",
+              "can_edit_approval_module",
+              "can_delete_approval_module",
             ]}
+            requiredRoles={["admin"]}
           >
             <ApprovalModulePage />
           </ProtectedRoute>
@@ -147,10 +148,12 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute
             requiredPermissions={[
-              "change_approvalmodule",
-              "view_approvalmodule",
-              "delete_approvalmodule",
+              "can_view_approval_modules",
+              "can_add_approval_module",
+              "can_edit_approval_module",
+              "can_delete_approval_module",
             ]}
+            requiredRoles={["admin"]}
           >
             <ApprovalModuleOpenPage />
           </ProtectedRoute>
@@ -162,8 +165,9 @@ const AppRoutes = () => {
           <ProtectedRoute
             requiredPermissions={[
               "change_daterange",
-              "view_daterange",
-              "delete_daterange",
+              "can_view_date_range",
+              "can_edit_date_range",
+              "can_delete_date_range",
             ]}
           >
             <DateRangePage />
@@ -203,7 +207,7 @@ const AppRoutes = () => {
               "can_create_approval_request",
               "can_update_approval_request_status",
             ]}
-            requiredRoles={["staff"]}
+            requiredRoles={["admin", "staff"]}
           >
             <ApprovalRequestPage />
           </ProtectedRoute>
@@ -212,7 +216,13 @@ const AppRoutes = () => {
       <Route
         path="/requests/open/:uid"
         element={
-          <ProtectedRoute requiredPermissions={["view_approvalrequest"]}>
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_approval_request",
+              "can_create_approval_request",
+              "can_update_approval_request_status",
+            ]}
+          >
             <ApprovalRequestOpenPage />
           </ProtectedRoute>
         }
