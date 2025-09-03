@@ -623,8 +623,8 @@ export const ApprovalRequestOpenPage = () => {
                         <div
                           className="avatar me-4 mb-5 text-muted"
                           style={{
-                            border: level.step
-                              ? level.step.is_approved
+                            border: level?.step
+                              ? level?.step?.is_approved
                                 ? "2px solid #696cff"
                                 : "2px solid rgb(247, 55, 55)"
                               : "0.5px solid rgb(163, 169, 190)",
@@ -641,8 +641,8 @@ export const ApprovalRequestOpenPage = () => {
                               width: "50px",
                               fontSize: "30px",
                               fontWeight: "800",
-                              color: level.step
-                                ? level.step.is_approved
+                              color: level?.step
+                                ? level?.step?.is_approved
                                   ? "#696cff"
                                   : "rgb(247, 55, 55)"
                                 : "rgb(163, 169, 190)",
@@ -655,29 +655,29 @@ export const ApprovalRequestOpenPage = () => {
                           className="d-flex flex-column"
                           style={{ width: "280px" }}
                         >
-                          {(level.step &&
+                          {(level?.step &&
                             selectedRequest?.current_state !== index) ||
-                          (level.step &&
+                          (level?.step &&
                             (selectedRequest.status === "REJECTED" ||
                               selectedRequest.status === "APPROVED")) ? (
                             <>
                               <h6
                                 className="mb-1"
                                 style={{
-                                  color: level.step
-                                    ? level.step.is_approved
+                                  color: level?.step
+                                    ? level?.step?.is_approved
                                       ? "#696cff"
                                       : "rgb(247, 55, 55)"
                                     : "rgb(163, 169, 190)",
                                 }}
                               >
                                 {" "}
-                                {level.step.is_approved
-                                  ? `${level.action.name} By `
+                                {level?.step?.is_approved
+                                  ? `${level?.action?.name} By `
                                   : `Rejected By `}
                                 &nbsp;
-                                {level.step && level.level
-                                  ? `${level.level.name}`
+                                {level?.step && level.level
+                                  ? `${level?.level?.name}`
                                   : "Approver N/S"}
                               </h6>
                               <strong>
@@ -685,24 +685,24 @@ export const ApprovalRequestOpenPage = () => {
                                   className="text-capitalize"
                                   style={{ fontWeight: "300" }}
                                 >
-                                  {level.step && level.step.approved_by
-                                    ? `${level.step.approved_by.name}`
+                                  {level?.step && level?.step?.approved_by
+                                    ? `${level?.step?.approved_by.name}`
                                     : "Approver N/S"}
                                 </span>{" "}
-                                {level.step?.is_acting ||
-                                level.step?.position?.department_uid !==
+                                {level?.step?.is_acting ||
+                                level?.step?.position?.department_uid !==
                                   level.department.uid ||
                                 level.level?.uid !==
-                                  level.step?.position?.level_uid
+                                  level?.step?.position?.level_uid
                                   ? `( Act )`
                                   : ""}
                               </strong>
-                              {level.step && level.step.created_at && (
+                              {level?.step && level?.step?.created_at && (
                                 <div className="d-flex align-items-center justify-content-between comment-date-row my-1">
                                   {/* Left: Date */}
                                   <span className="comment-date-text">
                                     {new Date(
-                                      level.step.created_at
+                                      level?.step?.created_at
                                     ).toLocaleDateString("en-GB", {
                                       day: "2-digit",
                                       month: "short",
@@ -740,11 +740,12 @@ export const ApprovalRequestOpenPage = () => {
                                 </div>
                               )}
 
-                              {level.step &&
-                              level.step.approved_by.signature &&
-                              level.step.approved_by.signature.trim() !== "" ? (
+                              {level?.step &&
+                              level?.step?.approved_by?.signature &&
+                              level?.step?.approved_by?.signature.trim() !==
+                                "" ? (
                                 <img
-                                  src={level.step.approved_by.signature}
+                                  src={level?.step?.approved_by?.signature}
                                   alt="Avatar"
                                   className="img-fluid rounded mb-4 shadow"
                                   height="100px"
@@ -758,7 +759,7 @@ export const ApprovalRequestOpenPage = () => {
                                 />
                               ) : (
                                 <TextSignature
-                                  text={level.step.approved_by.name}
+                                  text={level?.step?.approved_by?.name}
                                 />
                               )}
                             </>
