@@ -33,37 +33,66 @@ export const RequestHandlingPage = () => {
             className: "text-center",
           },
           {
-            key: "name",
-            label: "Module Name",
-            className: "cursor-pointer",
-
-            render: (row) => (
-              <span
-                className="text-bold"
-                onClick={() => {
-                  // navigate(
-                  //   `/roles-managements/open/` + HashUtil.hashNumber(row.id)
-                  // );
-                }}
-              >
-                {row.name}
-              </span>
-            ),
-          },
-          {
-            key: "code",
-            label: "Code",
-            className: "text-justify",
-            style: { width: "30%" },
-          },
-          {
             key: "created_at",
-            label: "Created Date",
+            label: "Approved Date",
             style: { width: "150px" },
             className: "text-right",
             render: (row) => (
               <span className="text-purple">
                 {formatDate(row.created_at, "DD/MM/YYYY HH:mm:ss") || "-"}
+              </span>
+            ),
+          },
+          {
+            key: "requester_name",
+            label: "Requested by",
+            className: "cursor-pointer text-bold",
+            width: { width: "120px" },
+            render: (row) => (
+              <span className="text-heading text-truncate">
+                <span className="fw-medium">
+                  {row?.approval_request?.created_by?.first_name}{" "}
+                  {row?.approval_request?.created_by?.middle_name}{" "}
+                  {row?.approval_request?.created_by?.last_name}
+                </span>
+              </span>
+            ),
+          },
+          {
+            key: "title",
+            label: "Request Title",
+            className: "text-justify",
+            render: (row) => {
+              const text = String(row?.approval_request?.title || "");
+              return text.length > 50 ? text.slice(0, 50) + "..." : text;
+            },
+          },
+          {
+            key: "type",
+            label: "Request Types",
+            className: "text-justify",
+            style: { width: "100px" },
+            render: (row) => {
+              return `${row?.approval_request?.type}`.replaceAll("_", " ");
+            },
+          },
+          {
+            key: "status",
+            label: "Status",
+            style: { width: "150px" },
+            render: (row) => (
+              <span
+                className={
+                  row.status === "PENDING"
+                    ? "badge bg-label-warning me-1"
+                    : row.status === "POSPONED" || row.status === "CANCELLED"
+                    ? "badge bg-label-danger me-1"
+                    : row.status === "DONE"
+                    ? "badge bg-label-success me-1"
+                    : "badge bg-label-info me-1"
+                }
+              >
+                {row.status}
               </span>
             ),
           },
@@ -74,12 +103,15 @@ export const RequestHandlingPage = () => {
             style: { width: "120px" },
             render: (row) => (
               <button
-                className="btn btn-sm btn-outline-primary text-center"
+                aria-label="Click me"
+                type="button"
+                className="btn p-0 dropdown-toggle hide-arrow text-info"
+                data-bs-toggle="dropdown"
                 onClick={() => {
-                  navigate(`/settings/approval-modules/open/${row.uid}`);
+                  navigate(`/requests/open/${row.uid}`);
                 }}
               >
-                <i className="bx bx-show"></i>&nbsp; View
+                <i className="bx bx-link-external"></i>&nbsp; View
               </button>
             ),
           },
