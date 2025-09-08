@@ -81,6 +81,31 @@ const FormikSelect = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, JSON.stringify(filters), isFullPath]);
 
+  useEffect(() => {
+    const initValue = field.value;
+
+    if (!initValue) return;
+
+    const exists = options.find((opt) => opt.value === initValue);
+    if (exists) return;
+
+    // 🔑 Fetch single option by id if not already in options
+    (async () => {
+      try {
+        const res = await fetchData({
+          url: isFullPath ? url : `${url}/${initValue}`,
+          isFullPath,
+        });
+        if ((res?.status === 200 || res?.status === 8000) && res.data) {
+          const mapped = mapOption(res.data);
+          mergeOptions([mapped]);
+        }
+      } catch (err) {
+        console.error("Failed to load initial option:", err);
+      }
+    })();
+  }, [field.value, options, url, isFullPath, mapOption]);
+
   // Formik only stores uid(s)
   const currentValue = useMemo(() => {
     if (isMulti) {

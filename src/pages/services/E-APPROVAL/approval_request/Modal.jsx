@@ -17,7 +17,7 @@ import { useSelector } from "react-redux";
 import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 const ApprovalRequestModal = () => {
-  const user = useSelector((state) => state.userReducer);
+  const user = useSelector((state) => state.userReducer)?.data;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } =
@@ -180,8 +180,7 @@ const ApprovalRequestModal = () => {
   const initialValues = {
     title: selectedObj?.title || "",
     module_uid: selectedObj?.module?.uid || "",
-    department_uid:
-      selectedObj?.department_uid || user?.data?.position?.department_uid || "",
+    department_uid: user?.position?.department_uid,
     date_range_uid: selectedObj?.request_data?.date_range_uid || "",
     request_data: {
       attachment: selectedObj?.request_data?.attachment || "",
