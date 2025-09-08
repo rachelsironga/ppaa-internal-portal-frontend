@@ -84,6 +84,25 @@ export const DirectoryPage = () => {
             key: "name",
             label: "Name",
             className: "cursor-pointer text-bold",
+            render: (row) => (
+              <span
+                onClick={() =>
+                  hasAccess(user, [
+                    [
+                      "view_directory",
+                      "can_add_directory",
+                      "can_update_directory",
+                      "add_directory",
+                      "change_directory",
+                    ],
+                  ])
+                    ? navigate(`/settings/directories/open/${row.uid}`)
+                    : null
+                }
+              >
+                {row.name || "-"}
+              </span>
+            ),
           },
           {
             key: "code",

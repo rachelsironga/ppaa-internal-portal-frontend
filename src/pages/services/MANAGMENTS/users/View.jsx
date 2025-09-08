@@ -262,7 +262,7 @@ export const UserListPage = () => {
         filters={[
           { value: "ALL", label: "All" },
           { value: "ACTIVE", label: "Active" },
-          { value: "DELETED", label: "Deleted" },
+          { value: "NEW", label: "New" },
         ]}
         isRefresh={tableRefresh}
       />
