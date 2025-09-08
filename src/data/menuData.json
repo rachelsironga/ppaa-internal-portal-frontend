@@ -45,7 +45,7 @@
         "icon": "bx bx-redo",
         "available": true,
         "link": "/requests-handling",
-        "permission": ["can_view_request_handling", "can_perform_request_handling"],
+        "permission": ["can_view_request_handling","can_perform_request_handling"],
         "role": ["Request_Handler"]
       }
     ]
