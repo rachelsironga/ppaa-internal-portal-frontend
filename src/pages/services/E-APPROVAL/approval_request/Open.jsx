@@ -690,8 +690,8 @@ export const ApprovalRequestOpenPage = () => {
                                     : "Approver N/S"}
                                 </span>{" "}
                                 {level?.step?.is_acting ||
-                                level?.step?.position?.department_uid !==
-                                  level.department.uid ||
+                                level?.step?.approved_by?.position
+                                  ?.department_uid !== level.department.uid ||
                                 level.level?.uid !==
                                   level?.step?.position?.level_uid
                                   ? `( Act )`
