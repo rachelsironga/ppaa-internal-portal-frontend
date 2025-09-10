@@ -108,7 +108,7 @@ export const RequestHandlingPage = () => {
                 className="btn p-0 dropdown-toggle hide-arrow text-info"
                 data-bs-toggle="dropdown"
                 onClick={() => {
-                  navigate(`/requests/open/${row.uid}`);
+                  navigate(`/requests/open/${row?.approval_request?.uid}`);
                 }}
               >
                 <i className="bx bx-link-external"></i>&nbsp; View
@@ -116,9 +116,6 @@ export const RequestHandlingPage = () => {
             ),
           },
         ]}
-        onSelect={(row) => {
-          setSelectedObj(row);
-        }}
         filters={[
           { value: "ALL", label: "All TASK" },
           { value: "PENDING", label: "PENDING" },
