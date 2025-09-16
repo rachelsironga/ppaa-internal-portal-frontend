@@ -8,6 +8,7 @@ import Select from "react-select";
 import showToast from "../../helpers/ToastHelper";
 import { userTypes } from "../../redux/types/authentication";
 import { useDispatch } from "react-redux";
+import FormikSelect from "../../components/ui-templates/form-components/FormikSelect";
 
 const DelegationModal = () => {
   const {
@@ -19,6 +20,7 @@ const DelegationModal = () => {
   } = useContext(AccountContext);
 
   const [errors, setOtherError] = useState({});
+  const user = useSelector((state) => state.userReducer?.data);
 
   const [loadingUser, setLoadingUser] = useState(false);
   const [errorUser, setErrorUser] = useState(false);
@@ -169,52 +171,39 @@ const DelegationModal = () => {
                         >
                           Delegated User
                         </label>
-                        <Select
-                          isLoading={loadingUser}
-                          className="select2-selection fetched-select2"
-                          onChange={(e) => {
-                            if (e === null || e.value === "") {
-                              setFieldValue("delegated_user", "");
-                            } else {
-                              setFieldValue("delegated_user", e.value);
-                            }
+
+                        <FormikSelect
+                          name="delegated_user"
+                          label={
+                            <>
+                              <label
+                                htmlFor="handlerLarge"
+                                className="form-label"
+                              >
+                                Select Delegated User
+                              </label>
+                            </>
+                          }
+                          url={"/user/setup"}
+                          isFullPath={true}
+                          containerClass="col-md-8 mb-3"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                            excluded_user: user?.guid,
                           }}
-                          onInputChange={(e) => {
-                            fetchUsers(e);
-                          }}
-                          options={users?.map((item) => ({
+                          mapOption={(item) => ({
                             value: item.guid,
                             label: `${item.first_name} ${item.middle_name} ${item.last_name}`,
-                            email: item.email,
+                            first_name: `${item.first_name}`,
+                            middle_name: `${item.middle_name}`,
+                            last_name: `${item.last_name}`,
+                            email: `${item.email}`,
                             photo: item.photo,
-                            first_name: item.first_name,
-                            middle_name: item.middle_name,
-                            last_name: item.last_name,
-                          }))}
-                          styles={{
-                            menu: (base) => ({
-                              ...base,
-                              position: "absolute",
-                              zIndex: 9999,
-                            }),
-                          }}
-                          value={
-                            users
-                              ?.map((item) => ({
-                                value: item.guid,
-                                label: `${item.first_name} ${item.middle_name} ${item.last_name}`,
-                                email: item.email,
-                                photo: item.photo,
-                                first_name: item.first_name,
-                                middle_name: item.middle_name,
-                                last_name: item.last_name,
-                              }))
-                              .find(
-                                (option) =>
-                                  option.value === values.delegated_user
-                              ) || null
-                          }
-                          isClearable
+                            guid: item.guid,
+                            full_name: `${item.first_name} ${item.middle_name} ${item.last_name}`,
+                          })}
                           formatOptionLabel={(user) => (
                             <div className="d-flex justify-content-start align-items-center user-name">
                               <div className="avatar-wrapper">
@@ -246,6 +235,10 @@ const DelegationModal = () => {
                               </div>
                             </div>
                           )}
+                          placeholder="Search Users ..."
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={false}
                         />
                         <ErrorMessage
                           name="delegated_user"
