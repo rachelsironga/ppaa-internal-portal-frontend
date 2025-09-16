@@ -84,7 +84,7 @@ export const ApprovalRequestOpenPage = () => {
   const [openCommentIndex, setOpenCommentIndex] = useState(null);
   const commentBoxRef = useRef(null);
   const navigate = useNavigate();
-  const [viewRequestHistory, setViewRequestHistory] = useState(false);
+  const [viewRequestHistory, setViewRequestHistory] = useState(0);
   const [isLastStep, setIsLastStep] = useState(false);
 
   const [loadingIsActing, setLoadingIsActing] = useState(false);
@@ -340,7 +340,7 @@ export const ApprovalRequestOpenPage = () => {
                     <i className="bx bx-menu me-1"></i> Select Options
                   </button>
                   <ul className="dropdown-menu">
-                    <li>
+                    {/* <li>
                       <button
                         aria-label="dropdown action link"
                         className="dropdown-item d-flex align-items-center"
@@ -349,7 +349,7 @@ export const ApprovalRequestOpenPage = () => {
                       >
                         <i className="bx bx-pencil mx-2"></i>Edit Request
                       </button>
-                    </li>
+                    </li> */}
                     <li>
                       <button
                         aria-label="dropdown action link"
@@ -358,7 +358,7 @@ export const ApprovalRequestOpenPage = () => {
                         aria-expanded="false"
                         data-bs-target="#approvalRequestHistoryModal"
                         onClick={() => {
-                          setViewRequestHistory(true);
+                          setViewRequestHistory((prev) => prev + 1);
                         }}
                       >
                         <i className="bx bx-transfer mx-2"></i>Preview Approval
@@ -368,7 +368,7 @@ export const ApprovalRequestOpenPage = () => {
                     <li>
                       <hr className="dropdown-divider" />
                     </li>
-                    <li>
+                    {/* <li>
                       <button
                         aria-label="dropdown action link"
                         className="dropdown-item d-flex align-items-center"
@@ -377,7 +377,7 @@ export const ApprovalRequestOpenPage = () => {
                       >
                         <i className="bx bxs-file-pdf  mx-2"></i> Print Request
                       </button>
-                    </li>
+                    </li> */}
                   </ul>
                 </div>
               </div>
@@ -529,63 +529,79 @@ export const ApprovalRequestOpenPage = () => {
                   </div>
                 </div>
 
-                {isViewVisible && selectedRequest?.request_details?.grants && (
-                  <div className="row g-4">
-                    <p className="text-muted">
-                      Here is the list of permissions selected for this request.
-                      Please review them carefully before Perform Any Action.
-                    </p>
-                    {selectedRequest?.request_details?.grants.map((mod) => (
-                      <div
-                        key={mod.codename}
-                        className="col-12 col-sm-6 col-md-4 col-lg-"
-                      >
-                        <div className="card h-100 shadow-sm">
-                          <div className="card-body d-flex flex-column">
-                            <h5 className="card-title mb-3">{mod.name}</h5>
+                {isViewVisible &&
+                  selectedRequest?.request_details?.grants &&
+                  (selectedRequest?.type == "EDMS_ACCESS" ||
+                    selectedRequest?.type == "JEEVA_ACCESS") && (
+                    <div className="row g-4">
+                      <p className="text-muted">
+                        Here is the list of permissions selected for this
+                        request. Please review them carefully before Perform Any
+                        Action.
+                      </p>
+                      {selectedRequest?.request_details?.grants.map((mod) => (
+                        <div
+                          key={mod.codename}
+                          className="col-12 col-sm-6 col-md-4 col-lg-"
+                        >
+                          <div className="card h-100 shadow-sm">
+                            <div className="card-body d-flex flex-column">
+                              <h5 className="card-title mb-3">{mod.name}</h5>
 
-                            <div
-                              style={{
-                                flex: 1,
-                                minHeight: "120px",
-                                maxHeight: "220px",
-                                overflowY: "auto",
-                                border: "1px solid #f0f0f0",
-                                borderRadius: "6px",
-                                background: "#fafbfc",
-                                padding: "0.5rem",
-                                textAlign: "left",
-                              }}
-                            >
-                              <ul className="list-group list-group-flush small">
-                                {mod.Permissions.map((perm) => (
-                                  <li
-                                    key={perm.codename}
-                                    className="list-group-item py-1 px-2"
-                                  >
-                                    <i
-                                      className="bx bx-check-shield me-2"
-                                      style={{
-                                        color: "#696cff",
-                                        fontSize: "1.1em",
-                                      }}
-                                    ></i>
-                                    {perm.name}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            {/* Optional: Show count of permissions */}
-                            <div className="mt-2 text-end small text-muted">
-                              {mod.Permissions.length} permission
-                              {mod.Permissions.length > 1 ? "s" : ""}
+                              <div
+                                style={{
+                                  flex: 1,
+                                  minHeight: "120px",
+                                  maxHeight: "220px",
+                                  overflowY: "auto",
+                                  border: "1px solid #f0f0f0",
+                                  borderRadius: "6px",
+                                  background: "#fafbfc",
+                                  padding: "0.5rem",
+                                  textAlign: "left",
+                                }}
+                              >
+                                <ul className="list-group list-group-flush small">
+                                  {mod.Permissions.map((perm) => (
+                                    <li
+                                      key={perm.codename}
+                                      className="list-group-item py-1 px-2"
+                                    >
+                                      <i
+                                        className="bx bx-check-shield me-2"
+                                        style={{
+                                          color: "#696cff",
+                                          fontSize: "1.1em",
+                                        }}
+                                      ></i>
+                                      {perm.name}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              {/* Optional: Show count of permissions */}
+                              <div className="mt-2 text-end small text-muted">
+                                {mod.Permissions.length} permission
+                                {mod.Permissions.length > 1 ? "s" : ""}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+
+                {isViewVisible &&
+                  selectedRequest?.request_details?.grants &&
+                  selectedRequest?.type == "INTERNET_EMAIL_ACCESS" && (
+                    <div className="row g-4 ">
+                      <p className="text-muted text-center py-5">
+                        The user is requesting for Internet Access. Please
+                        review the details carefully before Perform Any Action.
+                      </p>
+                    </div>
+                  )}
+
                 <hr className="my-6" />
 
                 <h5>Description</h5>
@@ -693,7 +709,7 @@ export const ApprovalRequestOpenPage = () => {
                                 level?.step?.approved_by?.position
                                   ?.department_uid !== level.department.uid ||
                                 level.level?.uid !==
-                                  level?.step?.position?.level_uid
+                                  level?.step?.approved_by?.position?.level_uid
                                   ? `( Act )`
                                   : ""}
                               </strong>

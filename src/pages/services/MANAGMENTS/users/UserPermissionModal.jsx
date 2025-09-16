@@ -211,7 +211,14 @@ const UserPermissionModal = () => {
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
             >
-              {({ isSubmitting, values, setFieldValue }) => (
+              {({
+                isSubmitting,
+                values,
+                setFieldValue,
+                setSubmitting,
+                setErrors,
+                resetForm,
+              }) => (
                 <Form>
                   <div className="modal-body">
                     <div className="row">
@@ -318,7 +325,15 @@ const UserPermissionModal = () => {
                       </button>
                       <button
                         aria-label="Click me"
-                        type="submit"
+                        type="button"
+                        onClick={() => {
+                          setFieldValue("selected_roles", rightOptions);
+                          handleSubmit(values, {
+                            setSubmitting,
+                            setErrors,
+                            resetForm,
+                          });
+                        }}
                         disabled={isSubmitting}
                         className="btn btn-primary"
                       >

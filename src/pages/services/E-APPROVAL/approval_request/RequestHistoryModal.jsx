@@ -77,7 +77,7 @@ const RequestHistoryModal = ({ loadOnlyModal = false }) => {
       if (selectedRequest) {
         handleFetchRequestSteps();
       }
-    }, 1500);
+    }, 1300);
   }, [viewRequestHistory]); // Fetch when search query changes
 
   return (
