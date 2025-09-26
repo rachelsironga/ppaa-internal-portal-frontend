@@ -306,6 +306,16 @@ return (
             </div>
             <div className="row mb-3">
               <div className="col-md-1 col-sm-12" style={{ minWidth: "120px" }}>
+                <h6 className="text-muted">Directory:</h6>
+              </div>
+              <div className="col-md-9 col-sm-12">
+                <p className="text-justify">
+                  {selectedObj?.directory?.name || " Not Set"}
+                </p>
+              </div>
+            </div>
+            <div className="row mb-3">
+              <div className="col-md-1 col-sm-12" style={{ minWidth: "120px" }}>
                 <h6 className="text-muted">Description:</h6>
               </div>
               <div className="col-md-9 col-sm-12">

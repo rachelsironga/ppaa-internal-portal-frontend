@@ -587,9 +587,9 @@ const ApprovalRequestModal = () => {
                     >
                       <div className="row text-start">
                         <FormikSelect
-                          name="module_uid"
-                          label="Request For"
-                          url="/approval-module"
+                          name="department_uid"
+                          label="Departments"
+                          url="/departments"
                           filters={{
                             page: 1,
                             page_size: 10,
@@ -597,7 +597,28 @@ const ApprovalRequestModal = () => {
                           }}
                           mapOption={(item) => ({
                             value: item.uid,
-                            label: `${item.name} (${item.code})`,
+                            label: `${item.name}`,
+                            name: `${item.name}`,
+                            code: `${item.code}`,
+                          })}
+                          placeholder="Search Departments..."
+                          debounceMs={500}
+                          minChars={3}
+                          isReadOnly={true}
+                        />
+                        <FormikSelect
+                          name="module_uid"
+                          label="Request For"
+                          url="/approval-module"
+                          filters={{
+                            page: 1,
+                            page_size: 10,
+                            paginated: true,
+                            directory_uid: user?.position?.directory_uid,
+                          }}
+                          mapOption={(item) => ({
+                            value: item.uid,
+                            label: `${item.name}`,
                             name: item.name,
                             code: item.code,
                           })}
@@ -616,24 +637,6 @@ const ApprovalRequestModal = () => {
                           minChars={2}
                           isReadOnly={false}
                         />
-
-                        <div className="col-md-6 mb-3">
-                          <label htmlFor="titleLarge" className="form-label">
-                            Request Title
-                          </label>
-                          <Field
-                            type="text"
-                            name="title"
-                            id="titleLarge"
-                            className="form-control"
-                            placeholder="Enter Request Title"
-                          />
-                          <ErrorMessage
-                            name="title"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
                       </div>
 
                       <div className="row text-start">
@@ -656,27 +659,23 @@ const ApprovalRequestModal = () => {
                           minChars={3}
                           isReadOnly={false}
                         />
-
-                        <FormikSelect
-                          name="department_uid"
-                          label="Departments"
-                          url="/departments"
-                          filters={{
-                            page: 1,
-                            page_size: 10,
-                            paginated: true,
-                          }}
-                          mapOption={(item) => ({
-                            value: item.uid,
-                            label: `${item.code}`,
-                            name: `${item.name}`,
-                            code: `${item.code}`,
-                          })}
-                          placeholder="Search Departments..."
-                          debounceMs={500}
-                          minChars={3}
-                          isReadOnly={false}
-                        />
+                        <div className="col-md-6 mb-3">
+                          <label htmlFor="titleLarge" className="form-label">
+                            Request Title ( Subject )
+                          </label>
+                          <Field
+                            type="text"
+                            name="title"
+                            id="titleLarge"
+                            className="form-control"
+                            placeholder="Enter Request Title"
+                          />
+                          <ErrorMessage
+                            name="title"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
                       </div>
 
                       <div className="row text-start">
@@ -1320,7 +1319,9 @@ const ApprovalRequestModal = () => {
                                 }}
                               >
                                 &nbsp; &nbsp;{" "}
-                                {`${user?.data?.first_name} ${user?.data?.middle_name} ${user?.data?.last_name}`}{" "}
+                                {`${user?.first_name} ${
+                                  user?.middle_name ?? ""
+                                } ${user?.last_name}`}{" "}
                                 &nbsp; &nbsp;
                               </span>{" "}
                               acknowledge that{" "}

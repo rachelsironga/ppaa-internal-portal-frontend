@@ -143,7 +143,6 @@ const Navbar = ({ isService = false }) => {
             >
               <i className="bx bx-menu me-1"></i> Services
             </button>
-
             {/* Dropdown */}
             {showDropdown && (
               <div
@@ -191,6 +190,10 @@ const Navbar = ({ isService = false }) => {
                 </div>
               </div>
             )}
+            <span className="text-secondary text-truncate  mt-3">
+              <i className="bx bx-user me-1 mb-1"></i>
+              {user ? `${user.first_name} ${user.last_name}` : ""}
+            </span>
           </div>
         )}
         <ul className="navbar-nav flex-row align-items-center ms-auto">

@@ -18,7 +18,6 @@ import { getBadgeClass } from "../../../../helpers/BadgeClassHelper";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import RequestHistoryModal from "./RequestHistoryModal";
 import { useSelector } from "react-redux";
-import PermissionModal from "./PermissionModal";
 
 const growButtonStyle = `
 @keyframes pulse-grow {
@@ -70,11 +69,16 @@ export const ApprovalRequestOpenPage = () => {
   const { uid } = useParams();
   const user = useSelector((state) => state.userReducer?.data);
 
+  const pageSizeData = [5, 10, 20, 50, 70, 100];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewVisible, setIsViewVisible] = useState(false);
+  const [approvalRequests, setApprovalRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [actingDebounceTimeout, setActingDebounceTimeout] = useState(null);
 
   const [selectedModuleLevel, setSelectedModuleLevel] = useState(null);
   const [openCommentIndex, setOpenCommentIndex] = useState(null);
@@ -85,7 +89,20 @@ export const ApprovalRequestOpenPage = () => {
 
   const [loadingIsActing, setLoadingIsActing] = useState(false);
   const [isActing, setIsActing] = useState(null);
-  const [updatedGrants, setUpdatedGrants] = useState([]);
+
+  const {
+    currentPage,
+    totalCount,
+    pageSize,
+    updatePage,
+    updatePageSize,
+    updatePagination,
+    updateTotalCount,
+  } = usePagination(10, 1, true);
+
+  const handlePageClick = (event) => {
+    updatePage(event.selected + 1);
+  };
 
   const viewSignature = ({ signature = null }) => {
     sign =
@@ -101,8 +118,10 @@ export const ApprovalRequestOpenPage = () => {
 
   const handleFetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await getApprovalRequests({
+        search: searchQuery,
         uid: uid,
         pagination: {
           full_details: true,
@@ -112,10 +131,11 @@ export const ApprovalRequestOpenPage = () => {
         setSelectedRequest(result.data);
         setLoadingIsActing(false);
       } else {
+        setError(true);
         showToast("No Approval Request Found", "warning", "Fetch Completed");
       }
     } catch (err) {
-      console.log(err);
+      setError(true);
       if (err.status === 401) {
         showToast(
           "Session Expired. Please Login Again",
@@ -243,55 +263,6 @@ export const ApprovalRequestOpenPage = () => {
     });
   }, [selectedRequest, user]);
 
-  // Toggle entire module
-  const handleModuleToggle = (codename) => {
-    setUpdatedGrants((prev) =>
-      prev.map((mod) =>
-        mod.codename === codename
-          ? {
-              ...mod,
-              isChecked: !mod.isChecked,
-              Permissions: mod.Permissions.map((perm) => ({
-                ...perm,
-                isChecked: !mod.isChecked ? true : false, // recheck or uncheck all
-              })),
-            }
-          : mod
-      )
-    );
-  };
-
-  // Toggle individual permission
-  const handlePermissionToggle = (moduleCodename, permCodename) => {
-    setUpdatedGrants((prev) =>
-      prev.map((mod) =>
-        mod.codename === moduleCodename
-          ? {
-              ...mod,
-              Permissions: mod.Permissions.map((perm) =>
-                perm.codename === permCodename
-                  ? { ...perm, isChecked: !perm.isChecked }
-                  : perm
-              ),
-              isChecked: mod.Permissions.some((perm) =>
-                perm.codename === permCodename
-                  ? !perm.isChecked
-                  : perm.isChecked
-              ), // update module checkbox if at least one permission remains
-            }
-          : mod
-      )
-    );
-  };
-
-  // Filtered "final state" without removed modules/permissions
-  const finalGrants = updatedGrants
-    .filter((mod) => mod.isChecked) // keep only checked modules
-    .map((mod) => ({
-      ...mod,
-      Permissions: mod.Permissions.filter((perm) => perm.isChecked),
-    }));
-
   return (
     <ApprovalRequestsContext.Provider
       value={{
@@ -309,7 +280,6 @@ export const ApprovalRequestOpenPage = () => {
       }}
     >
       <BreadCumb pageList={["Approval Requests", "view"]} />
-      <PermissionModal />
 
       {loading ? (
         <div className="row">
@@ -569,25 +539,6 @@ export const ApprovalRequestOpenPage = () => {
                         request. Please review them carefully before Perform Any
                         Action.
                       </p>
-                      <div className="row center align-content-center">
-                        <div className="d-flex align-items-center animate__animated animate__fadeInRight  animate__slow">
-                          <button
-                            aria-label="dropdown action link"
-                            data-bs-toggle="modal"
-                            aria-expanded="false"
-                            data-bs-target="#approvalRequestPermissionModal"
-                            onClick={() => {
-                              setIsViewVisible((prev) => !prev);
-                            }}
-                            type="button"
-                            style={{ width: "300px", fontWeight: "800" }}
-                            className="btn btn-sm btn-outline-primary bg-info text-white bold me-3 attention-grow"
-                          >
-                            <i className="bx bx-pen"></i>&nbsp; Customise
-                            Selected Permissions
-                          </button>
-                        </div>
-                      </div>
                       {selectedRequest?.request_details?.grants.map((mod) => (
                         <div
                           key={mod.codename}
