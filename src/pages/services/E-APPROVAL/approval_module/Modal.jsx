@@ -13,12 +13,14 @@ const ApprovalModuleModal = () => {
   const initialValues = {
     name: selectedObj?.name || "",
     code: selectedObj?.code || "",
+    directory_uid: selectedObj?.directory?.uid || "",
     description: selectedObj?.description || "",
   };
 
   const validationSchema = Yup.object().shape({
     name: Yup.string().required("Name is required"),
     code: Yup.string().required("Code is required"),
+    directory_uid: Yup.string().required("Directory is required"),
     description: Yup.string().required("Description is required"),
   });
 
@@ -137,6 +139,29 @@ const ApprovalModuleModal = () => {
                       placeholder="Search Modules Code..."
                       debounceMs={500}
                       minChars={2}
+                      isReadOnly={false}
+                    />
+                  </div>
+                  <div className="row">
+                    <FormikSelect
+                      name="directory_uid"
+                      label="Directory"
+                      url="/directory"
+                      containerClass="col-md-12 mb-3"
+                      filters={{
+                        page: 1,
+                        page_size: 10,
+                        paginated: true,
+                      }}
+                      mapOption={(item) => ({
+                        value: item.uid,
+                        label: `${item.name}`,
+                        name: `${item.name}`,
+                        code: `${item.code}`,
+                      })}
+                      placeholder="Search Directory ..."
+                      debounceMs={500}
+                      minChars={3}
                       isReadOnly={false}
                     />
                   </div>

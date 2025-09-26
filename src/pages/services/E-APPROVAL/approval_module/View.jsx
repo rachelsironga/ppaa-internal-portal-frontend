@@ -57,9 +57,15 @@ export const ApprovalModulePage = () => {
             style: { width: "30%" },
           },
           {
+            key: "directory_uid",
+            label: "Code",
+            className: "text-justify",
+            style: { width: "30%" },
+            render: (row) => (row.directory?.name || " Not Set") + "",
+          },
+          {
             key: "created_at",
             label: "Created Date",
-            style: { width: "150px" },
             className: "text-right",
             render: (row) => (
               <span className="text-purple">
