@@ -58,7 +58,7 @@ export const ApprovalModulePage = () => {
           },
           {
             key: "directory_uid",
-            label: "Code",
+            label: "Directory",
             className: "text-justify",
             style: { width: "30%" },
             render: (row) => (row.directory?.name || " Not Set") + "",
