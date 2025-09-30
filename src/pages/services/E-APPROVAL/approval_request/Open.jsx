@@ -19,6 +19,7 @@ import BreadCumb from "../../../../layouts/BreadCumb";
 import RequestHistoryModal from "./RequestHistoryModal";
 import { useSelector } from "react-redux";
 import PermissionModal from "./PermissionModal";
+import { bool } from "yup";
 
 const growButtonStyle = `
 @keyframes pulse-grow {
@@ -82,10 +83,10 @@ export const ApprovalRequestOpenPage = () => {
   const navigate = useNavigate();
   const [viewRequestHistory, setViewRequestHistory] = useState(0);
   const [isLastStep, setIsLastStep] = useState(false);
+  const [isCurrentApprover, setIsCurrentApprover] = useState(false);
 
   const [loadingIsActing, setLoadingIsActing] = useState(false);
   const [isActing, setIsActing] = useState(null);
-  const [updatedGrants, setUpdatedGrants] = useState([]);
 
   const viewSignature = ({ signature = null }) => {
     sign =
@@ -115,7 +116,6 @@ export const ApprovalRequestOpenPage = () => {
         showToast("No Approval Request Found", "warning", "Fetch Completed");
       }
     } catch (err) {
-      console.log(err);
       if (err.status === 401) {
         showToast(
           "Session Expired. Please Login Again",
@@ -218,7 +218,6 @@ export const ApprovalRequestOpenPage = () => {
   }, []);
 
   useEffect(() => {
-    // Exit early if no request or no user position
     if (!selectedRequest || !user?.position) return;
 
     const levels = selectedRequest.module?.approval_module_levels ?? [];
@@ -226,7 +225,6 @@ export const ApprovalRequestOpenPage = () => {
       selectedRequest.status === "REJECTED" ||
       selectedRequest.status === "APPROVED";
 
-    // Iterate levels to see if acting check is needed
     levels.forEach((level, index) => {
       const isCurrentLevel = selectedRequest.current_state === index;
 
@@ -235,62 +233,23 @@ export const ApprovalRequestOpenPage = () => {
         level.department?.uid !== user.position.department_uid;
 
       if (isCurrentLevel && !isRequestFinalized && isNotOwner) {
-        // Always validate IDs before calling
         if (level.level?.uid && level.department?.uid) {
           handleFetchActing(level.level.uid, level.department.uid);
         }
       }
     });
-  }, [selectedRequest, user]);
 
-  // Toggle entire module
-  const handleModuleToggle = (codename) => {
-    setUpdatedGrants((prev) =>
-      prev.map((mod) =>
-        mod.codename === codename
-          ? {
-              ...mod,
-              isChecked: !mod.isChecked,
-              Permissions: mod.Permissions.map((perm) => ({
-                ...perm,
-                isChecked: !mod.isChecked ? true : false, // recheck or uncheck all
-              })),
-            }
-          : mod
-      )
+    const approver = levels.some(
+      (level, index) =>
+        selectedRequest.current_state === index &&
+        !isRequestFinalized &&
+        ((level.level?.uid === user.position?.level_uid &&
+          level.department?.uid === user.position?.department_uid) ||
+          isActing)
     );
-  };
 
-  // Toggle individual permission
-  const handlePermissionToggle = (moduleCodename, permCodename) => {
-    setUpdatedGrants((prev) =>
-      prev.map((mod) =>
-        mod.codename === moduleCodename
-          ? {
-              ...mod,
-              Permissions: mod.Permissions.map((perm) =>
-                perm.codename === permCodename
-                  ? { ...perm, isChecked: !perm.isChecked }
-                  : perm
-              ),
-              isChecked: mod.Permissions.some((perm) =>
-                perm.codename === permCodename
-                  ? !perm.isChecked
-                  : perm.isChecked
-              ), // update module checkbox if at least one permission remains
-            }
-          : mod
-      )
-    );
-  };
-
-  // Filtered "final state" without removed modules/permissions
-  const finalGrants = updatedGrants
-    .filter((mod) => mod.isChecked) // keep only checked modules
-    .map((mod) => ({
-      ...mod,
-      Permissions: mod.Permissions.filter((perm) => perm.isChecked),
-    }));
+    setIsCurrentApprover(approver);
+  }, [selectedRequest, user, isActing]);
 
   return (
     <ApprovalRequestsContext.Provider
@@ -306,6 +265,7 @@ export const ApprovalRequestOpenPage = () => {
         setViewRequestHistory,
         isLastStep,
         isActing,
+        isCurrentApprover,
       }}
     >
       <BreadCumb pageList={["Approval Requests", "view"]} />
@@ -528,7 +488,12 @@ export const ApprovalRequestOpenPage = () => {
                   )}
                 </div>
                 <hr className="my-4" />
-                <div className="d-flex justify-content-between align-items-center flex-wrap mb-6 gap-2 mb-2">
+                <div
+                  className="d-flex justify-content-between align-items-center flex-wrap mb-6 gap-2 mb-2 bg-dark bg-opacity-10 rounded-3 p-3 border"
+                  onClick={() => {
+                    setIsViewVisible((prev) => !prev);
+                  }}
+                >
                   <div className="me-1">
                     <h5
                       className="mb-0 cursor-pointer"
@@ -543,19 +508,29 @@ export const ApprovalRequestOpenPage = () => {
                       these Request
                     </p>
                   </div>
-                  <div className="d-flex align-items-center animate__animated animate__fadeInRight  animate__slow">
-                    <button
-                      aria-label="Click me"
-                      onClick={() => {
-                        setIsViewVisible((prev) => !prev);
+
+                  <div>
+                    <span className="text-muted">Click to preview</span>&nbsp;
+                    &nbsp;
+                    <div
+                      class=""
+                      style={{
+                        height: "20px",
+                        display: "inline-block",
+                        paddingTop: "-1.5rem",
+                        marginLeft: "2rem",
+                        borderRadius: "10px",
+                        cursor: "pointer",
                       }}
-                      type="button"
-                      style={{ width: "300px", fontWeight: "800" }}
-                      className="btn btn-sm btn-outline-primary bg-info text-white bold me-3 attention-grow"
                     >
-                      <i className="bx bx-caret-down"></i>&nbsp; Preview Request
-                      Attached Details
-                    </button>
+                      <i
+                        className={
+                          `bx bx-lg attention-grow` +
+                          (isViewVisible ? " bx-caret-up" : " bx-caret-down")
+                        }
+                        style={{ borderRadius: "10px" }}
+                      ></i>
+                    </div>
                   </div>
                 </div>
 
@@ -563,31 +538,47 @@ export const ApprovalRequestOpenPage = () => {
                   selectedRequest?.request_details?.grants &&
                   (selectedRequest?.type == "EDMS_ACCESS" ||
                     selectedRequest?.type == "JEEVA_ACCESS") && (
-                    <div className="row g-4">
-                      <p className="text-muted">
-                        Here is the list of permissions selected for this
-                        request. Please review them carefully before Perform Any
-                        Action.
-                      </p>
-                      <div className="row center align-content-center">
-                        <div className="d-flex align-items-center animate__animated animate__fadeInRight  animate__slow">
-                          <button
-                            aria-label="dropdown action link"
-                            data-bs-toggle="modal"
-                            aria-expanded="false"
-                            data-bs-target="#approvalRequestPermissionModal"
-                            onClick={() => {
-                              setIsViewVisible((prev) => !prev);
-                            }}
-                            type="button"
-                            style={{ width: "300px", fontWeight: "800" }}
-                            className="btn btn-sm btn-outline-primary bg-info text-white bold me-3 attention-grow"
-                          >
-                            <i className="bx bx-pen"></i>&nbsp; Customise
-                            Selected Permissions
-                          </button>
-                        </div>
+                    <div
+                      className="row g-4 mx-1 mt-3 mb-4"
+                      style={{
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        padding: "1rem",
+                        background: "#fafbfc",
+                      }}
+                    >
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <p className="text-muted">
+                          Here is the list of permissions selected for this
+                          request. Please review them carefully before Perform
+                          Any Action.
+                        </p>
+
+                        {selectedRequest.status !== "REJECTED" &&
+                          selectedRequest.status !== "APPROVED" &&
+                          isCurrentApprover && (
+                            <div className="row center align-content-center">
+                              <div className="d-flex align-items-center animate__animated animate__fadeInRight  animate__slow">
+                                <button
+                                  aria-label="dropdown action link"
+                                  data-bs-toggle="modal"
+                                  aria-expanded="false"
+                                  data-bs-target="#approvalRequestPermissionModal"
+                                  onClick={() => {
+                                    setIsViewVisible((prev) => !prev);
+                                  }}
+                                  type="button"
+                                  style={{ width: "300px", fontWeight: "800" }}
+                                  className="btn btn-sm btn-outline-primary bg-info text-white bold me-3 attention-grow"
+                                >
+                                  <i className="bx bx-pen"></i>&nbsp; Customise
+                                  Selected Permissions
+                                </button>
+                              </div>
+                            </div>
+                          )}
                       </div>
+
                       {selectedRequest?.request_details?.grants.map((mod) => (
                         <div
                           key={mod.codename}
@@ -643,7 +634,7 @@ export const ApprovalRequestOpenPage = () => {
                 {isViewVisible &&
                   selectedRequest?.request_details?.grants &&
                   selectedRequest?.type == "INTERNET_EMAIL_ACCESS" && (
-                    <div className="row g-4 ">
+                    <div className="row g-4 px-4">
                       <p className="text-muted text-center py-5">
                         The user is requesting for Internet Access. Please
                         review the details carefully before Perform Any Action.
@@ -675,8 +666,9 @@ export const ApprovalRequestOpenPage = () => {
                           borderRadius: "10px",
                           borderTop:
                             selectedRequest?.current_state === index
-                              ? "3px solid rgb(117, 202, 223)"
+                              ? "6px solid rgb(117, 202, 223)"
                               : "0",
+
                           paddingTop: "10px",
                           animationDelay: `${index * 0.25}s`,
                           WebkitAnimationDelay: `${index * 0.25}s`,
@@ -830,7 +822,16 @@ export const ApprovalRequestOpenPage = () => {
                             </>
                           ) : (
                             <>
-                              <h6 className="mb-1">{`Wait for/(to be) ${level.action.name} by`}</h6>
+                              <h6
+                                className="mb-1"
+                                style={{
+                                  color:
+                                    selectedRequest?.current_state === index &&
+                                    isCurrentApprover
+                                      ? "rgb(117, 202, 223)"
+                                      : "gray",
+                                }}
+                              >{`Wait for/(to be) ${level.action.name} by`}</h6>
                               <small>{level.level.name}</small>
                             </>
                           )}

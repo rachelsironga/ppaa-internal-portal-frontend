@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import Select from "react-select";
 import { getUsers } from "../../../account/Queries";
 import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
+import { createUpdateData } from "../../../../utils/GlobalQueries";
 
 const PermissionModal = () => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -20,114 +21,60 @@ const PermissionModal = () => {
     selectedModuleLevel,
     setSelectedModuleLevel,
     isLastStep,
+    isCurrentApprover,
   } = useContext(ApprovalRequestsContext);
   const [errors, setOtherError] = useState({});
 
   const initialValues = {
-    request_uid: selectedRequest?.uid || "",
-    module_level_uid: selectedModuleLevel?.module_level_uid || "",
-    comment: selectedRequest?.step?.comment || "",
-    action: selectedRequest?.step?.is_approved ? "FORWARD" : "RETURN",
-    handler_user: "",
+    request_data: {
+      attachment: selectedRequest?.request_data?.attachment || "",
+      grants: selectedRequest?.request_data?.grants || [],
+      is_edited: selectedRequest?.request_data?.is_edited || false,
+      is_read_term: selectedRequest?.request_data?.is_read_term || false,
+    },
   };
 
   const validationSchema = Yup.object().shape({
-    request_uid: Yup.string().required("Request is required"),
-    module_level_uid: Yup.string().required("Position is required"),
-    comment: Yup.string().required("Please Write Something as Comment"),
-    handler_user: Yup.string().when([], {
-      is: () => isLastStep === true,
-      then: (schema) =>
-        schema.required("You Must Select The final Handler For this Request"),
-      otherwise: (schema) => schema.notRequired(),
+    request_data: Yup.object().shape({
+      grants: Yup.array().min(
+        1,
+        "Your Must Select Group or Manual Select Module with its Permission"
+      ),
     }),
   });
 
-  const [loadingUser, setLoadingUser] = useState(false);
-  const [errorUser, setErrorUser] = useState(false);
-  const [users, setUsers] = useState([]);
   const [updatedGrants, setUpdatedGrants] = useState([]);
-  const [finalGrants, setFinalGrants] = useState([]);
-
   const handleSubmit = async (
     values,
-    { resetForm, setErrors, setSubmitting }
+    { setSubmitting, setFieldValue, resetForm, setErrors }
   ) => {
     try {
-      handleClose();
-      const confirmation = await Swal.fire({
-        title: "Are you sure?",
-        text: `You are about to ${
-          values.action === "FORWARD"
-            ? "Allow The Request to go Forward "
-            : "Denying & Send Back The Request"
-        }. Please Click confirm to proceed.`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#696cff", // info color
-        cancelButtonColor: "#fff",
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        buttonsStyling: true,
-        customClass: {
-          confirmButton: "btn btn-info btn-sm",
-          cancelButton: "btn btn-outline-secondary btn-sm",
-        },
+      setFieldValue("request_data.grants", finalGrants);
+      setSubmitting(true);
+
+      const result = await createUpdateData({
+        url:
+          "/approval-request-update-permissions/" +
+          (selectedRequest ? selectedRequest.uid : ""),
+        formData: values,
       });
 
-      if (confirmation.isConfirmed) {
-        if (!selectedRequest || !selectedModuleLevel?.level) {
-          showToast(
-            "Opps! Unable to Perform Action Please try Again or Contact Support team",
-            "error",
-            ""
-          );
-          handleClose();
-          resetForm();
-          return;
-        }
-
-        if (selectedRequest) {
-          values.uid = selectedRequest.uid;
-          values.module_level_uid = selectedModuleLevel?.module_level_uid;
-        }
-
-        // Clone values
-        const payload = { ...values };
-
-        // Remove handler_user if not needed
-        if (!isLastStep) {
-          delete payload.handler_user;
-        }
-        const result = await approveRejectRequest(payload);
-
-        if (result.status === 200 || result.status === 8000) {
-          Swal.fire(
-            "Process Completed!",
-            "Process Saved Successful",
-            "success"
-          );
-          handleClose();
-          resetForm();
-          handleFetchData();
-        } else if (result.status === 8002) {
-          console.log("Validation error:", result.data);
-          showToast(`${result.message}`, "warning", "Validation Failed");
-          setErrors(result.data);
-          setOtherError(result.data);
-        } else {
-          showToast(`${result.message}`, "warning", "Process Failed");
-          handleClose();
-          resetForm();
-        }
+      if (result.status === 200 || result.status === 8000) {
+        showToast("Data Saved Successfuly", "success", "Complete");
+        handleClose();
+        resetForm();
+        handleFetchData();
+      } else if (result.status === 8002) {
+        showToast(`${result.message}`, "warning", "Validation Failed");
+        setErrors(result.data);
+        setOtherError(result.data);
+      } else {
+        showToast(`${result.message}`, "warning", "Process Failed");
+        handleClose();
+        resetForm();
       }
     } catch (error) {
-      Swal.fire(
-        "Unsuccessful",
-        `Unable to Perform Action. Please Try Again or Contact Support Team`,
-        "error"
-      );
-
+      showToast("Something went wrong while saving", "error", "Failed");
       handleClose();
       resetForm();
     } finally {
@@ -135,11 +82,60 @@ const PermissionModal = () => {
     }
   };
 
+  // Toggle entire module
+  const handleModuleToggle = (codename) => {
+    setUpdatedGrants((prev) =>
+      prev.map((mod) =>
+        mod.codename === codename
+          ? {
+              ...mod,
+              isChecked: !mod.isChecked,
+              Permissions: mod.Permissions.map((perm) => ({
+                ...perm,
+                isChecked: !mod.isChecked ? true : false,
+              })),
+            }
+          : mod
+      )
+    );
+  };
+
   const handleClose = () => {
     const modalElement = document.getElementById("approvalActionSetModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) modalInstance.hide();
   };
+
+  // Toggle individual permission
+  const handlePermissionToggle = (moduleCodename, permCodename) => {
+    setUpdatedGrants((prev) =>
+      prev.map((mod) =>
+        mod.codename === moduleCodename
+          ? {
+              ...mod,
+              Permissions: mod.Permissions.map((perm) =>
+                perm.codename === permCodename
+                  ? { ...perm, isChecked: !perm.isChecked }
+                  : perm
+              ),
+              isChecked: mod.Permissions.some((perm) =>
+                perm.codename === permCodename
+                  ? !perm.isChecked
+                  : perm.isChecked
+              ), // update module checkbox if at least one permission remains
+            }
+          : mod
+      )
+    );
+  };
+
+  // Filtered "final state" without removed modules/permissions
+  const finalGrants = updatedGrants
+    .filter((mod) => mod.isChecked) // keep only checked modules
+    .map((mod) => ({
+      ...mod,
+      Permissions: mod.Permissions.filter((perm) => perm.isChecked),
+    }));
 
   useEffect(() => {
     if (selectedRequest?.request_details?.grants) {
@@ -193,15 +189,24 @@ const PermissionModal = () => {
                 setSubmitting,
                 setFieldValue,
                 isSubmitting,
+                setTouched,
               }) => (
                 <Form>
-                  <div className="modal-body">
+                  <div
+                    className="modal-body"
+                    style={{ maxHeight: "70vh", overflowY: "auto" }}
+                  >
                     <div className="row g-4">
                       <p className="text-muted">
                         Here is the list of permissions selected for this
                         request. Please review them carefully before performing
                         any action.
                       </p>
+                      <ErrorMessage
+                        name="request_data.grants"
+                        component="div"
+                        className="alert alert-danger"
+                      />
 
                       {updatedGrants.map((mod) => (
                         <div
@@ -301,40 +306,38 @@ const PermissionModal = () => {
                           </div>
                         </div>
                       ))}
-
-                      {/* Debugging: show current final state */}
-                      <pre className="mt-4 bg-light p-2 rounded small">
-                        {JSON.stringify(finalGrants, null, 2)}
-                      </pre>
                     </div>
                   </div>
-                  <div className="modal-footer">
-                    <button
-                      aria-label="Click me"
-                      type="submit"
-                      disabled={isSubmitting}
-                      onClick={() => {
-                        setFieldValue("action", "RETURN");
-                      }}
-                      className="btn btn-sm btn-outline-danger "
-                      data-bs-dismiss="modal"
-                      style={{ marginRight: "20px", minWidth: "150px" }}
-                    >
-                      Send Back
-                    </button>
-                    <button
-                      aria-label="Click me"
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="btn btn-sm btn-primary"
-                      style={{ marginRight: "20px", minWidth: "150px" }}
-                      onClick={() => {
-                        setFieldValue("action", "FORWARD");
-                      }}
-                    >
-                      {isSubmitting ? "Processing..." : "Approve / Forward "}
-                    </button>
-                  </div>
+                  {isCurrentApprover && (
+                    <div className="modal-footer">
+                      <button
+                        aria-label="Click me"
+                        type="submit"
+                        disabled={isSubmitting}
+                        onClick={() => {
+                          handleClose();
+                        }}
+                        className="btn btn-sm btn-outline-danger "
+                        data-bs-dismiss="modal"
+                        style={{ marginRight: "20px", minWidth: "150px" }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        aria-label="Click me"
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="btn btn-sm btn-primary"
+                        style={{ marginRight: "20px", minWidth: "150px" }}
+                        onClick={() => {
+                          setTouched({ "request_data.grants": true }, false);
+                          setFieldValue("request_data.grants", finalGrants);
+                        }}
+                      >
+                        {isSubmitting ? "Processing..." : "Save Changes"}
+                      </button>
+                    </div>
+                  )}
                 </Form>
               )}
             </Formik>
