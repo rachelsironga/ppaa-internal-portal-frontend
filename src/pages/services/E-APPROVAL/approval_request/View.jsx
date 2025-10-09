@@ -132,11 +132,13 @@ export const ApprovalRequestPage = () => {
         filters={[
           { value: "ALL", label: "All Request" },
           { value: "MY_REQUEST", label: "My Requests" },
+          { value: "RELATED", label: "Related Requests" },
           { value: "NEW", label: "New" },
           { value: "PENDING", label: "Pending" },
           { value: "APPROVED", label: "Approved" },
           { value: "REJECTED", label: "Rejected" },
         ]}
+        filterSelected={["MY_REQUEST"]}
       />
       <ApprovalRequestModal />
     </ApprovalRequestsContext.Provider>

@@ -16,6 +16,7 @@ const PaginatedTable = ({
   onSelect,
   isRefresh,
   filters = [],
+  filterSelected = ["ALL"],
   isFullPath = false,
 }) => {
   const {
@@ -33,7 +34,7 @@ const PaginatedTable = ({
   const pageSizeData = [10, 25, 50, 100];
   const [searchQuery, setSearchQuery] = useState("");
   const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const [selectedFilters, setSelectedFilters] = useState(["ALL"]);
+  const [selectedFilters, setSelectedFilters] = useState(filterSelected);
   const handlePageClick = (event) => {
     updatePage(event.selected + 1);
   };
@@ -90,8 +91,6 @@ const PaginatedTable = ({
     setDebounceTimeout(timeout);
     return () => clearTimeout(timeout);
   }, [searchQuery, pageSize, currentPage, selectedFilters]);
-
-
 
   return (
     <div className="card">
@@ -375,6 +374,7 @@ PaginatedTable.propTypes = {
       label: PropTypes.string.isRequired,
     })
   ),
+  filterSelected: PropTypes.arrayOf(PropTypes.string.isRequired),
 };
 
 export default PaginatedTable;
