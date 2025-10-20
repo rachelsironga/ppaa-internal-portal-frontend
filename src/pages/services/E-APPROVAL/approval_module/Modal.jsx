@@ -6,7 +6,7 @@ import { ApprovalModuleContext } from "../../../../utils/context";
 import { createUpdateItem } from "./Queries";
 import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
-const ApprovalModuleModal = () => {
+const PermissionsModal = () => {
   const { selectedObj, setTableRefresh } = useContext(ApprovalModuleContext);
 
   const [errors, setOtherError] = useState({});
@@ -229,4 +229,4 @@ const ApprovalModuleModal = () => {
   );
 };
 
-export default ApprovalModuleModal;
+export default PermissionsModal;
