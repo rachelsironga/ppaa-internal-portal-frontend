@@ -242,13 +242,34 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                             </span>
                             <strong className="bold">
                               {selectedModuleLevel
-                                ? selectedModuleLevel?.level.name +
-                                  ` From ( ${
-                                    selectedModuleLevel
-                                      ? `${selectedModuleLevel?.department.code}  Department )`
-                                      : "N/A"
-                                  } `
+                                ? selectedModuleLevel?.level.name
                                 : "N/A"}
+                            </strong>
+                          </p>
+                          <p className="text-nowrap mb-2">
+                            <i className="icon-base bx bx-trophy me-2 align-bottom" />
+                            <span className=" me-3 ">
+                              From Department/Office :
+                            </span>
+                            <strong className="bold">
+                              {selectedModuleLevel
+                                ? selectedModuleLevel?.department.name
+                                : "N/A"}
+                            </strong>
+                          </p>
+                          <p className="text-nowrap mb-2">
+                            <i className="icon-base bx bx-user me-2 align-top" />
+                            <span className=" me-3 ">
+                              I Who Perform Action is :
+                            </span>
+                            <strong className="bold">
+                              {user?.first_name} {user?.middle_name}{" "}
+                              {user?.last_name}
+                              {selectedModuleLevel?.is_acting && (
+                                <span className="text-info">
+                                  ( Acting {selectedModuleLevel?.level.code} )
+                                </span>
+                              )}
                             </strong>
                           </p>
                           <p className="text-nowrap mb-2">
