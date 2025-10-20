@@ -128,9 +128,11 @@ export const UserListPage = () => {
             key: "name",
             label: "Name",
             className: "cursor-pointer",
+            style: { maxWidth: "300px", overFlow: "hidden" },
+
             render: (row) => (
               <div
-                className="d-flex justify-content-start align-items-center user-name"
+                className="d-flex justify-content-start align-items-center user-name  text-truncate"
                 onClick={() => {
                   navigate(`/users/open/${row.guid}`);
                 }}
@@ -150,12 +152,37 @@ export const UserListPage = () => {
                       {row.first_name} {row.middle_name} {row.last_name}
                     </span>
                   </span>
-                  <small className="text-primary">
-                    {row.email && row.email !== "" ? row.email : "- - -"}
+                  <small className="text-primary  text-truncate">
+                    {row.current_level_name
+                      ? row.current_level_name
+                      : row.email !== ""
+                      ? row.email
+                      : "- - -"}
                   </small>
                 </div>
               </div>
             ),
+          },
+          {
+            key: "location",
+            label: "Allocation",
+            className: "cursor-pointer",
+            style: { maxWidth: "400px", overFlow: "hidden" },
+            render: (row) =>
+              row.current_department_name && row.current_directory_name ? (
+                <div className="d-flex flex-column">
+                  <span className="text-heading text-truncate">
+                    <span className="fw-medium">
+                      {row.current_directory_name}
+                    </span>
+                  </span>
+                  <small className="text-primary text-truncate">
+                    {row.current_department_name}
+                  </small>
+                </div>
+              ) : (
+                <div className="text-muted p-2text-center">Not Assigned</div>
+              ),
           },
           {
             key: "user_pf_number",
@@ -173,18 +200,6 @@ export const UserListPage = () => {
             render: (row) => (
               <span className="text-bold">{row.check_number}</span>
             ),
-          },
-          {
-            key: "user_gender",
-            label: "Gender",
-            className: "fw-medium",
-            render: (row) => {
-              row.sex === "MALE"
-                ? "Male"
-                : row.sex === "FEMALE"
-                ? "Female"
-                : "N/A";
-            },
           },
           {
             key: "user_status",

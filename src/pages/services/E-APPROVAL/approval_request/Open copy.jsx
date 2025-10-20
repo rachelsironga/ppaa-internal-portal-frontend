@@ -781,8 +781,12 @@ export const ApprovalRequestOpenPage = () => {
                             </>
                           ) : (
                             <>
-                              <h6 className="mb-1">{`Wait for/(to be) ${level.action.name} by`}</h6>
+                              <h6 className="mb-1">{`Wait to be ${level.action.name} by`}</h6>
                               <small>{level.level.name}</small>
+                              <small className="mb-1 text-secondary">
+                                <strong>From :</strong>{" "}
+                                {`${level.department.name}`}
+                              </small>
                             </>
                           )}
                           {selectedRequest?.current_state === index &&
