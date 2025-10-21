@@ -77,23 +77,34 @@ export const RequestHandlingPage = () => {
             },
           },
           {
-            key: "status",
+            key: "status_request",
             label: "Status",
-            style: { width: "150px" },
+            style: { width: "150px", textAlign: "center" },
             render: (row) => (
-              <span
-                className={
-                  row.status === "PENDING"
-                    ? "badge bg-label-warning me-1"
-                    : row.status === "POSPONED" || row.status === "CANCELLED"
-                    ? "badge bg-label-danger me-1"
-                    : row.status === "DONE"
-                    ? "badge bg-label-success me-1"
-                    : "badge bg-label-info me-1"
-                }
-              >
-                {row.status}
-              </span>
+              <div>
+                <span
+                  className={
+                    row?.approval_request?.status === "NEW"
+                      ? "badge bg-label-primary me-1"
+                      : row?.approval_request?.status === "PENDING"
+                      ? "badge bg-label-warning me-1"
+                      : row?.approval_request?.status === "REJECTED" ||
+                        row?.approval_request?.status === "CANCELLED" ||
+                        row?.approval_request?.status === "EXPIRED"
+                      ? "badge bg-label-danger me-1"
+                      : row?.approval_request?.status === "APPROVED"
+                      ? "badge bg-label-success me-1"
+                      : "badge bg-label-info me-1"
+                  }
+                >
+                  {row?.approval_request?.status}
+                </span>
+                {row?.approval_request?.is_handled === true && (
+                  <span className="badge bg-info text-sm mt-1">
+                    <small>complete</small>
+                  </span>
+                )}
+              </div>
             ),
           },
           {

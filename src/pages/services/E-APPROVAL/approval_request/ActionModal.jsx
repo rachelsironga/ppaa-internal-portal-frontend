@@ -177,6 +177,8 @@ const ActionModal = ({ loadOnlyModal = false }) => {
         id="approvalActionSetModal"
         tabIndex="-1"
         aria-hidden="true"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
       >
         <div className="modal-dialog modal-lg" role="document">
           <div className="modal-content">
