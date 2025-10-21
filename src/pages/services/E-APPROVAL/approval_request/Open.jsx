@@ -20,6 +20,9 @@ import RequestHistoryModal from "./RequestHistoryModal";
 import { useSelector } from "react-redux";
 import PermissionModal from "./PermissionModal";
 import { bool } from "yup";
+import HandlerActionModal from "./HandlerActionModal";
+import MarkupViewer from "../../../../components/ui-templates/MarkupViewer";
+import ResultPanel from "../../../../components/ui-templates/ResultPanel";
 
 const growButtonStyle = `
 @keyframes pulse-grow {
@@ -318,6 +321,7 @@ export const ApprovalRequestOpenPage = () => {
                   </div>
                 </div>
               </div>
+
               <div className="d-flex align-items-center">
                 <div className="py-3 ml-4" id="dropdown-icon-demo">
                   <button
@@ -483,11 +487,45 @@ export const ApprovalRequestOpenPage = () => {
                             {selectedRequest?.request_handler?.email}
                           </strong>
                         </p>
+                        {selectedRequest?.is_handled === true && (
+                          <p className="text-nowrap mb-2">
+                            <i className="bx bx-purchase-tag"></i>
+                            <span className=" me-3 ">status:</span>
+                            <strong className="bold text-bold text-success attention-grow">
+                              COMPLETE
+                            </strong>
+                          </p>
+                        )}
+                        {selectedRequest?.request_handler?.guid == user?.guid &&
+                          selectedRequest?.is_handled === false && (
+                            <button
+                              aria-label="Click me"
+                              type="button"
+                              className="btn btn-sm btn-outline-info me-2 attention-grow"
+                              data-bs-toggle="modal"
+                              data-bs-target="#approvalHandleActionModal"
+                              onClick={() => {}}
+                            >
+                              <i className="bx bx-grid-small"></i> Take your
+                              Action
+                            </button>
+                          )}
                       </div>
                     </div>
                   )}
                 </div>
                 <hr className="my-4" />
+
+                {selectedRequest?.handler_descriptions && (
+                  <div className="p-3">
+                    <ResultPanel
+                      title="Congatuations! Your Request has been taken Care Off"
+                      html={selectedRequest?.handler_descriptions}
+                      initiallyOpen={false}
+                    />
+                  </div>
+                )}
+
                 <div
                   className="d-flex justify-content-between align-items-center flex-wrap mb-6 gap-2 mb-2 bg-dark bg-opacity-10 rounded-3 p-3 border"
                   onClick={() => {
@@ -831,8 +869,12 @@ export const ApprovalRequestOpenPage = () => {
                                       ? "rgb(117, 202, 223)"
                                       : "gray",
                                 }}
-                              >{`Wait for/(to be) ${level.action.name} by`}</h6>
-                              <small>{level.level.name}</small>
+                              >{`Wait to be ${level?.action?.name} by`}</h6>
+                              <small>{level?.level?.name}</small>
+                              <small className="mb-1 text-secondary">
+                                <strong>From :</strong>{" "}
+                                {`${level?.department?.name}`}
+                              </small>
                             </>
                           )}
                           {selectedRequest?.current_state === index &&
@@ -965,6 +1007,7 @@ export const ApprovalRequestOpenPage = () => {
       )}
 
       <ActionModal loadOnlyModal={false} />
+      <HandlerActionModal loadOnlyModal={false} />
       <RequestHistoryModal loadOnlyModal={false} />
     </ApprovalRequestsContext.Provider>
   );

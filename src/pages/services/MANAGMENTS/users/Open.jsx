@@ -564,7 +564,7 @@ export const UserOpenPage = () => {
                               </span>
                               <span>{selectedObj.check_number}</span>
                             </li>
-                            <li
+                            {/* <li
                               className="list-group-item d-flex align-items-center"
                               style={{
                                 whiteSpace: "normal",
@@ -603,7 +603,7 @@ export const UserOpenPage = () => {
                                 <strong>Date Of Birth </strong>&nbsp;:&nbsp;
                               </span>
                               <span>{selectedObj.dob}</span>
-                            </li>
+                            </li> */}
                           </ul>
                           <h6 className="text-muted">CONTACT</h6>
                           <ul className="list-group overflow-auto">
@@ -649,19 +649,6 @@ export const UserOpenPage = () => {
                                 <strong>Alt Contact </strong>&nbsp;:&nbsp;
                               </span>
                               <span>{selectedObj.alternative_contact}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-credit-card me-2"></i>
-                                <strong>Bank Account </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.account_number}</span>
                             </li>
                           </ul>
                         </div>

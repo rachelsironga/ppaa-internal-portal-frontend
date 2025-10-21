@@ -177,6 +177,8 @@ const ActionModal = ({ loadOnlyModal = false }) => {
         id="approvalActionSetModal"
         tabIndex="-1"
         aria-hidden="true"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
       >
         <div className="modal-dialog modal-lg" role="document">
           <div className="modal-content">
@@ -323,6 +325,7 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                             middle_name: `${item.middle_name}`,
                             last_name: `${item.last_name}`,
                             email: `${item.email}`,
+                            current_level_name: item.current_level_name,
                             photo: item.photo,
                             guid: item.guid,
                             full_name: `${item.first_name} ${item.middle_name} ${item.last_name}`,
@@ -351,7 +354,9 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                                   </span>
                                 </span>
                                 <small className="text-primary">
-                                  {user.email && user.email !== ""
+                                  {user.current_level_name
+                                    ? user.current_level_name
+                                    : user.email !== ""
                                     ? user.email
                                     : "- - -"}
                                 </small>
