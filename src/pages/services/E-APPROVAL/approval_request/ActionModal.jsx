@@ -274,21 +274,6 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                               )}
                             </strong>
                           </p>
-                          <p className="text-nowrap mb-2">
-                            <i className="icon-base bx bx-user me-2 align-top" />
-                            <span className=" me-3 ">
-                              I Who Perform Action is :
-                            </span>
-                            <strong className="bold">
-                              {user?.first_name} {user?.middle_name}{" "}
-                              {user?.last_name}
-                              {selectedModuleLevel?.is_acting && (
-                                <span className="text-info">
-                                  ( Acting {selectedModuleLevel?.level.code} )
-                                </span>
-                              )}
-                            </strong>
-                          </p>
                         </div>
                       </div>
                     </div>
