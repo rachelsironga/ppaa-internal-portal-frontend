@@ -519,7 +519,7 @@ export const ApprovalRequestOpenPage = () => {
                 {selectedRequest?.handler_descriptions && (
                   <div className="p-3">
                     <ResultPanel
-                      title="Congatuations! Your Request has been taken Care Off"
+                      title="Request Handler Descriptions / Instructions"
                       html={selectedRequest?.handler_descriptions}
                       initiallyOpen={false}
                     />
