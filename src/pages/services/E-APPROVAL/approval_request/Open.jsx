@@ -575,7 +575,8 @@ export const ApprovalRequestOpenPage = () => {
                 {isViewVisible &&
                   selectedRequest?.request_details?.grants &&
                   (selectedRequest?.type == "EDMS_ACCESS" ||
-                    selectedRequest?.type == "JEEVA_ACCESS") && (
+                    selectedRequest?.type == "JEEVA_ACCESS" ||
+                    selectedRequest?.type == "WELSOFT_ACCESS") && (
                     <div
                       className="row g-4 mx-1 mt-3 mb-4"
                       style={{
