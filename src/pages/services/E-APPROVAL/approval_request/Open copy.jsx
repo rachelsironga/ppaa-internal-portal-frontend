@@ -532,7 +532,8 @@ export const ApprovalRequestOpenPage = () => {
                 {isViewVisible &&
                   selectedRequest?.request_details?.grants &&
                   (selectedRequest?.type == "EDMS_ACCESS" ||
-                    selectedRequest?.type == "JEEVA_ACCESS") && (
+                    selectedRequest?.type == "JEEVA_ACCESS" ||
+                    selectedRequest?.type == "WELSOFT_ACCESS") && (
                     <div className="row g-4">
                       <p className="text-muted">
                         Here is the list of permissions selected for this

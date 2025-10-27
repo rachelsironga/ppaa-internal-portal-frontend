@@ -1,0 +1,234 @@
+{
+  "Modules": [
+    {
+      "codename": "CLINIC-MNH-FU",
+      "name": "Clinic MNH F/U",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "CLINIC-OUTSIDE",
+      "name": "Clinic Outside",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EM-REGISTRAR",
+      "name": "EM Registrar",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EM-RESIDENT",
+      "name": "EM Resident",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EM-SPECIALIST",
+      "name": "EM Specialist",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EM-VISITING-FACULTY",
+      "name": "EM Visiting Faculty",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-CASHIER",
+      "name": "EMD Cashier",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-HEALTH-ATTENDANT",
+      "name": "EMD Health Attendant",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-MEDICAL-RECORDER",
+      "name": "EMD Medical Recorder",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-NURSE",
+      "name": "EMD Nurse",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-NURSE-CHARGE",
+      "name": "EMD Nurse Charge",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-NURSING-STUDENT",
+      "name": "EMD Nursing Student",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-PHARMACY-TECH",
+      "name": "EMD Pharmacy Tech",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "EMD-SOCIAL-WORKER",
+      "name": "EMD Social Worker",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "HOSPITAL",
+      "name": "Hospital",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "INTERN",
+      "name": "Intern",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "PHARMACY",
+      "name": "Pharmacy",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "STAFF-NURSE",
+      "name": "Staff Nurse",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "STAFF-PHYSICIAN-LAB",
+      "name": "Staff Physician (Laboratory)",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "STAFF-PHYSICIAN-RAD",
+      "name": "Staff Physician (Radiologist)",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "STAFF-PHYSICIAN-RESIDENT",
+      "name": "Staff Physician (Resident)",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "STAFF-PHYSICIAN-SPECIALIST",
+      "name": "Staff Physician (Specialist)",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "SUPPORT-STAFF",
+      "name": "Support Staff",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    }
+  ]
+}
