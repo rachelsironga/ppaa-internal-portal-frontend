@@ -506,8 +506,7 @@ export const ApprovalRequestOpenPage = () => {
                               data-bs-target="#approvalHandleActionModal"
                               onClick={() => {}}
                             >
-                              <i className="bx bx-grid-small"></i> Take your
-                              Action
+                              <i className="bx bx-grid-small"></i>
                             </button>
                           )}
                       </div>
@@ -521,6 +520,10 @@ export const ApprovalRequestOpenPage = () => {
                     <ResultPanel
                       title="Request Handler Descriptions / Instructions"
                       html={selectedRequest?.handler_descriptions}
+                      isViewer={
+                        selectedRequest?.created_by?.guid == user.guid ||
+                        selectedRequest?.request_handler?.guid == user?.guid
+                      }
                       initiallyOpen={false}
                     />
                   </div>

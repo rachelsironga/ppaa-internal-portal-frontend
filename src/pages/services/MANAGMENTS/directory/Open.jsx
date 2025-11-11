@@ -244,7 +244,7 @@ export const DirectoryOpenPage = () => {
                 }}
                 type="button"
               >
-                <i className="bx bx-trash me-1"></i> Delete
+                <i className="bx bx-trash me-1"></i> Disable
               </button>
             </div>
           )}
@@ -468,7 +468,7 @@ export const DirectoryOpenPage = () => {
                                 handleDeleteDepartment(dataRows);
                               }}
                             >
-                              <i className="bx bx-trash me-1"></i> Delete
+                              <i className="bx bx-trash me-1"></i> Disable
                             </a>
                           </div>
                         </div>

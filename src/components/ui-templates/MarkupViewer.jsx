@@ -6,6 +6,7 @@ const MarkupViewer = ({ html }) => {
   return (
     <div
       className="markup-viewer"
+      style={{ height: "400px" }}
       dangerouslySetInnerHTML={{ __html: clean }}
     />
   );

@@ -282,7 +282,7 @@ export const DepartmentPage = () => {
                                   handleDelete(dept);
                                 }}
                               >
-                                <i className="bx bx-trash me-1"></i> Delete
+                                <i className="bx bx-trash me-1"></i> Disable
                               </a>
                             </div>
                           </div>

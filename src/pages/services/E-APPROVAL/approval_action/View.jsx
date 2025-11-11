@@ -282,7 +282,7 @@ export const ApprovalActionPage = () => {
                                 handleDelete(dataRows);
                               }}
                             >
-                              <i className="bx bx-trash me-1"></i> Delete
+                              <i className="bx bx-trash me-1"></i> Disable
                             </a>
                           </div>
                         </div>
