@@ -1,7 +1,12 @@
 import React, { useState, useMemo } from "react";
 import MarkupViewer from "./MarkupViewer";
 
-const ResultPanel = ({ title = "Result", html = "", initiallyOpen = true }) => {
+const ResultPanel = ({
+  title = "Result",
+  html = "",
+  initiallyOpen = true,
+  isViewer = false,
+}) => {
   const [open, setOpen] = useState(initiallyOpen);
 
   const panelStyle = useMemo(
@@ -91,8 +96,17 @@ const ResultPanel = ({ title = "Result", html = "", initiallyOpen = true }) => {
         }}
       >
         {html ? (
-          <div style={{ background: "transparent" }}>
-            <MarkupViewer html={html} />
+          <div style={{ background: "transparent", overflow: "auto" }}>
+            {isViewer ? (
+              <MarkupViewer html={html} />
+            ) : (
+              <div className="row g-4 px-4">
+                <p className="text-muted text-center py-5">
+                  The instruction from the handler is now visible to the
+                  requester.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-muted">No content available.</div>
@@ -101,5 +115,8 @@ const ResultPanel = ({ title = "Result", html = "", initiallyOpen = true }) => {
     </div>
   );
 };
+
+
+
 
 export default ResultPanel;
