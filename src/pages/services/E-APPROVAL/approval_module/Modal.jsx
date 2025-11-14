@@ -6,7 +6,7 @@ import { ApprovalModuleContext } from "../../../../utils/context";
 import { createUpdateItem } from "./Queries";
 import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
-const ApprovalModuleModal = () => {
+const PermissionsModal = () => {
   const { selectedObj, setTableRefresh } = useContext(ApprovalModuleContext);
 
   const [errors, setOtherError] = useState({});
@@ -135,6 +135,7 @@ const ApprovalModuleModal = () => {
                         },
                         { value: "JEEVA_ACCESS", label: "JEEVA ACCESS" },
                         { value: "EDMS_ACCESS", label: "EDMS ACCESS" },
+                        { value: "WELSOFT_ACCESS", label: "WELSOFT ACCESS" },
                       ]}
                       placeholder="Search Modules Code..."
                       debounceMs={500}
@@ -229,4 +230,4 @@ const ApprovalModuleModal = () => {
   );
 };
 
-export default ApprovalModuleModal;
+export default PermissionsModal;

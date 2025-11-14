@@ -177,6 +177,8 @@ const ActionModal = ({ loadOnlyModal = false }) => {
         id="approvalActionSetModal"
         tabIndex="-1"
         aria-hidden="true"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
       >
         <div className="modal-dialog modal-lg" role="document">
           <div className="modal-content">
@@ -242,12 +244,18 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                             </span>
                             <strong className="bold">
                               {selectedModuleLevel
-                                ? selectedModuleLevel?.level.name +
-                                  ` From ( ${
-                                    selectedModuleLevel
-                                      ? `${selectedModuleLevel?.department.code}  Department )`
-                                      : "N/A"
-                                  } `
+                                ? selectedModuleLevel?.level.name
+                                : "N/A"}
+                            </strong>
+                          </p>
+                          <p className="text-nowrap mb-2">
+                            <i className="icon-base bx bx-trophy me-2 align-bottom" />
+                            <span className=" me-3 ">
+                              From Department/Office :
+                            </span>
+                            <strong className="bold">
+                              {selectedModuleLevel
+                                ? selectedModuleLevel?.department.name
                                 : "N/A"}
                             </strong>
                           </p>
@@ -302,6 +310,7 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                             middle_name: `${item.middle_name}`,
                             last_name: `${item.last_name}`,
                             email: `${item.email}`,
+                            current_level_name: item.current_level_name,
                             photo: item.photo,
                             guid: item.guid,
                             full_name: `${item.first_name} ${item.middle_name} ${item.last_name}`,
@@ -330,7 +339,9 @@ const ActionModal = ({ loadOnlyModal = false }) => {
                                   </span>
                                 </span>
                                 <small className="text-primary">
-                                  {user.email && user.email !== ""
+                                  {user.current_level_name
+                                    ? user.current_level_name
+                                    : user.email !== ""
                                     ? user.email
                                     : "- - -"}
                                 </small>

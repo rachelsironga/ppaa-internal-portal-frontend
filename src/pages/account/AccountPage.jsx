@@ -20,6 +20,7 @@ import DelegationModal from "./DelegationModal";
 import { hasAccess } from "../../hooks/AccessHandler";
 import { useDispatch } from "react-redux";
 import { userTypes } from "../../redux/types/authentication";
+import ResetPasswordModal from "./ResetPasswordModal";
 
 export const AccountPage = () => {
   const pageSizeData = [5, 10, 20, 50, 70, 100];
@@ -299,7 +300,6 @@ export const AccountPage = () => {
       );
     }
   };
-
 
   useEffect(() => {
     handleFetchData();
@@ -720,7 +720,7 @@ export const AccountPage = () => {
                               </span>
                               <span>{selectedUser.check_number}</span>
                             </li>
-                            <li
+                            {/* <li
                               className="list-group-item d-flex align-items-center"
                               style={{
                                 whiteSpace: "normal",
@@ -759,7 +759,7 @@ export const AccountPage = () => {
                                 <strong>Date Of Birth </strong>&nbsp;:&nbsp;
                               </span>
                               <span>{selectedUser.dob}</span>
-                            </li>
+                            </li> */}
                           </ul>
                           <h6 className="text-muted">CONTACT</h6>
                           <ul className="list-group overflow-auto">
@@ -850,21 +850,6 @@ export const AccountPage = () => {
                                 <i className="icon-base bx bx-info-circle icon-sm me-1_5"></i>
                               </span>
                             )}
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          aria-label="Click me"
-                          type="button"
-                          className="nav-link shadow-sm"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-documents"
-                          aria-controls="navs-pills-top-documents"
-                          aria-selected="false"
-                        >
-                          <i className="icon-base bx bx-file icon-sm me-1_5"></i>
-                          Documents
                         </button>
                       </li>
                     </ul>
@@ -1161,53 +1146,15 @@ export const AccountPage = () => {
                                       symbol
                                     </span>
                                   </div>
-                                  <div className="row gx-6">
-                                    <div className="mb-4 col-12 col-sm-6 form-password-toggle form-control-validation fv-plugins-icon-container">
-                                      <label className="form-label">
-                                        New Password
-                                      </label>
-                                      <div className="input-group input-group-merge has-validation">
-                                        <input
-                                          className="form-control"
-                                          type="password"
-                                          id="newPassword"
-                                          name="newPassword"
-                                          placeholder="············"
-                                        />
-                                        <span className="input-group-text cursor-pointer">
-                                          <i className="icon-base bx bx-hide"></i>
-                                        </span>
-                                      </div>
-                                      <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
-                                    </div>
-
-                                    <div className="mb-4 col-12 col-sm-6 form-password-toggle form-control-validation fv-plugins-icon-container">
-                                      <label className="form-label">
-                                        Confirm New Password
-                                      </label>
-                                      <div className="input-group input-group-merge has-validation">
-                                        <input
-                                          className="form-control"
-                                          type="password"
-                                          name="confirmPassword"
-                                          id="confirmPassword"
-                                          placeholder="············"
-                                        />
-                                        <span className="input-group-text cursor-pointer">
-                                          <i className="icon-base bx bx-hide"></i>
-                                        </span>
-                                      </div>
-                                      <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
-                                    </div>
-                                    <div className="text-center">
-                                      <button
-                                        type="submit"
-                                        className="btn btn-sm btn-primary me-2"
-                                      >
-                                        Change Password
-                                      </button>
-                                    </div>
-                                  </div>
+                                  <button
+                                    aria-label="Click me"
+                                    type="button"
+                                    className="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#resetPasswordModal"
+                                  >
+                                    Reset Password
+                                  </button>
                                 </form>
                               </div>
                             </div>
@@ -1317,26 +1264,6 @@ export const AccountPage = () => {
                           </div>
                         </div>
                       </div>
-
-                      <div
-                        className="tab-pane fade"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-documents"
-                        role="tabpanel"
-                      >
-                        <p>
-                          Oat cake chupa chups dragée donut toffee. Sweet cotton
-                          candy jelly beans macaroon gummies cupcake gummi bears
-                          cake chocolate.
-                        </p>
-                        <p className="mb-0">
-                          Cake chocolate bar cotton candy apple pie tootsie roll
-                          ice cream apple pie brownie cake. Sweet roll icing
-                          sesame snaps caramels danish toffee. Brownie biscuit
-                          dessert dessert. Pudding jelly jelly-o tart brownie
-                          jelly.
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1348,6 +1275,7 @@ export const AccountPage = () => {
 
       {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedUser(null)} /> */}
       <DelegationModal />
+      <ResetPasswordModal />
     </AccountContext.Provider>
   );
 };

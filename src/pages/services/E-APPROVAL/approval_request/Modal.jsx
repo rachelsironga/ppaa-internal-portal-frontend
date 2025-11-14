@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useMemo } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import Swal from "sweetalert2";
 import * as Yup from "yup";
@@ -13,6 +13,8 @@ import jeevaData from "../../../../data/jeevaData.json";
 import jeevaGroupData from "../../../../data/jeevaGroupData.json";
 import edmsData from "../../../../data/edmsData.json";
 import edmsGroupData from "../../../../data/edmsGroupData.json";
+import welsoftData from "../../../../data/welsoftData.json";
+import welsoftGroupData from "../../../../data/welsoftGroupData.json";
 import { useSelector } from "react-redux";
 import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
@@ -25,6 +27,34 @@ const ApprovalRequestModal = () => {
 
   const [longGroupData, setLongGroupData] = useState([]);
   const [longData, setLongData] = useState([]);
+  const [groupSearch, setGroupSearch] = useState("");
+
+  // filter groups, modules and permissions by search term
+  const filteredGroups = useMemo(() => {
+    if (!groupSearch || !longGroupData) return longGroupData || [];
+    const s = groupSearch.trim().toLowerCase();
+    if (!s) return longGroupData;
+    return longGroupData.filter((g) => {
+      if ((g.name || "").toLowerCase().includes(s)) return true;
+      if (Array.isArray(g.modules)) {
+        if (g.modules.some((m) => (m.name || "").toLowerCase().includes(s)))
+          return true;
+        if (
+          g.modules.some(
+            (m) =>
+              Array.isArray(m.Permissions) &&
+              m.Permissions.some(
+                (p) =>
+                  (p.name || "").toLowerCase().includes(s) ||
+                  (p.codename || "").toLowerCase().includes(s)
+              )
+          )
+        )
+          return true;
+      }
+      return false;
+    });
+  }, [groupSearch, longGroupData]);
 
   const [errors, setOtherError] = useState({});
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -287,7 +317,8 @@ const ApprovalRequestModal = () => {
 
         if (
           selectedApprovalModule?.code === "JEEVA_ACCESS" ||
-          selectedApprovalModule?.code === "EDMS_ACCESS"
+          selectedApprovalModule?.code === "EDMS_ACCESS" ||
+          selectedApprovalModule?.code === "WELSOFT_ACCESS"
         ) {
           if (selectedModules?.length === 0) {
             setFieldValue("request_data.grants", []);
@@ -414,6 +445,10 @@ const ApprovalRequestModal = () => {
       } else if (selectedApprovalModule?.code === "EDMS_ACCESS") {
         setLongData(edmsData);
         setLongGroupData(edmsGroupData);
+      } else if (selectedApprovalModule?.code === "WELSOFT_ACCESS") {
+        // Assuming welsoftData and welsoftGroupData are imported similarly
+        setLongData(welsoftData);
+        setLongGroupData(welsoftGroupData);
       } else {
         setLongData([]);
         setLongGroupData([]);
@@ -748,7 +783,8 @@ const ApprovalRequestModal = () => {
                         </div>
                       )}
                       {(selectedApprovalModule?.code === "JEEVA_ACCESS" ||
-                        selectedApprovalModule?.code === "EDMS_ACCESS") && (
+                        selectedApprovalModule?.code === "EDMS_ACCESS" ||
+                        selectedApprovalModule?.code === "WELSOFT_ACCESS") && (
                         <>
                           <div className="ibox-content">
                             <div className="ibox-content-body">
@@ -972,7 +1008,7 @@ const ApprovalRequestModal = () => {
                                   ) : (
                                     <div className="row h-100 center">
                                       <div className="col-sm-11 animate__animated animate__fadeInDown animate__fast">
-                                        <form
+                                        <div
                                           className="d-flex"
                                           style={{ marginLeft: "50px" }}
                                         >
@@ -981,12 +1017,16 @@ const ApprovalRequestModal = () => {
                                               <i className="tf-icons bx bx-search"></i>
                                             </span>
                                             <input
-                                              type="text"
+                                              type="search"
                                               className="form-control"
-                                              placeholder="Search..."
+                                              placeholder="Search groups, modules or permissions..."
+                                              value={groupSearch}
+                                              onChange={(e) =>
+                                                setGroupSearch(e.target.value)
+                                              }
                                             />
                                           </div>
-                                        </form>
+                                        </div>
                                       </div>
                                       <div
                                         className="col-sm-12 row g-3 shadow m-3 p-4"
@@ -999,7 +1039,7 @@ const ApprovalRequestModal = () => {
                                           overflowY: "auto",
                                         }}
                                       >
-                                        {longGroupData.map((group, idx) => (
+                                        {filteredGroups.map((group, idx) => (
                                           <div
                                             key={group.uid}
                                             className="col-12 col-sm-6 mb-3"

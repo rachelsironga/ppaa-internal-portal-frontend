@@ -133,6 +133,7 @@ const RequestHandlingModal = () => {
                         },
                         { value: "JEEVA_ACCESS", label: "JEEVA ACCESS" },
                         { value: "EDMS_ACCESS", label: "EDMS ACCESS" },
+                        { value: "WELSOFT_ACCESS", label: "WELSOFT ACCESS" },
                       ]}
                       placeholder="Search Modules Code..."
                       debounceMs={500}
