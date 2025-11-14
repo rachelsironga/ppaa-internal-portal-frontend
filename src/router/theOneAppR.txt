@@ -1,0 +1,554 @@
+import { Route, Routes } from "react-router-dom";
+
+import LoginPage from "../pages/authentication/LoginPage";
+import RegisterPage from "../pages/authentication/RegisterPage";
+import { ForgotPasswordPage } from "../pages/authentication/ForgotPasswordPage";
+import { AccountPage } from "../pages/account/AccountPage";
+import { Connections } from "../pages/account/ConnectionsPage";
+import { NotificationPage } from "../pages/account/NotificationPage";
+import { ErrorPage } from "../pages/misc/ErrorPage";
+
+import { DashboardPage } from "../pages/DashboardPage";
+
+import ChangePassword from "../pages/account/ChangePassword";
+import { ApprovalActionPage } from "../pages/services/E-APPROVAL/approval_action/View";
+import { ApprovalModulePage } from "../pages/services/E-APPROVAL/approval_module/View";
+import { ApprovalModuleOpenPage } from "../pages/services/E-APPROVAL/approval_module/Open";
+import { ApprovalRequestPage } from "../pages/services/E-APPROVAL/approval_request/View";
+import { DirectoryPage } from "../pages/services/MANAGMENTS/directory/View";
+import { DirectoryOpenPage } from "../pages/services/MANAGMENTS/directory/Open";
+import { UserListPage } from "../pages/services/MANAGMENTS/users/View";
+import { UserOpenPage } from "../pages/services/MANAGMENTS/users/Open";
+import { DateRangePage } from "../pages/services/MANAGMENTS/date_range/View";
+import { ApprovalRequestOpenPage } from "../pages/services/E-APPROVAL/approval_request/Open";
+import ProtectedRoute from "../components/wrapper/ProtectedRoute";
+import { Services } from "../pages/Services";
+import { DepartmentPage } from "../pages/services/MANAGMENTS/department/View";
+import { PositionalLevelPage } from "../pages/services/E-APPROVAL/positional_level/View";
+import {RolesManagementPage} from "../pages/services/MANAGMENTS/roles_management/View.jsx";
+import { OpenRolesManagementPage } from "../pages/services/MANAGMENTS/roles_management/Open.jsx";
+import NewUserPage from "../pages/authentication/NewUserPage.jsx";
+import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handling/View.jsx";
+import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
+
+// ICT Assets Pages
+// import ICTAssetsDashboard from "../pages/services/ICT-ASSETS/Dashboard";
+import Assets from "../pages/services/ICT-ASSETS/assets/Assets.jsx";
+// import ComputersList from "../pages/services/ICT-ASSETS/ComputersList";
+// import NetworkDevicesList from "../pages/services/ICT-ASSETS/NetworkDevicesList";
+// import PeripheralsList from "../pages/services/ICT-ASSETS/PeripheralsList";
+// import SoftwareList from "../pages/services/ICT-ASSETS/SoftwareList";
+// import SoftwareInstallationsList from "../pages/services/ICT-ASSETS/SoftwareInstallationsList";
+// import SoftwareCategoriesList from "../pages/services/ICT-ASSETS/SoftwareCategoriesList";
+// import BuildingsList from "../pages/services/ICT-ASSETS/BuildingsList";
+// import FloorsList from "../pages/services/ICT-ASSETS/FloorsList";
+// import LocationsList from "../pages/services/ICT-ASSETS/LocationsList";
+// import AssetCategoriesList from "../pages/services/ICT-ASSETS/AssetCategoriesList";
+// import AssetTypesList from "../pages/services/ICT-ASSETS/AssetTypesList";
+// import ManufacturersList from "../pages/services/ICT-ASSETS/ManufacturersList";
+// import SuppliersList from "../pages/services/ICT-ASSETS/SuppliersList";
+// import AssetAssignmentsList from "../pages/services/ICT-ASSETS/AssetAssignmentsList";
+// import MaintenanceRecordsList from "../pages/services/ICT-ASSETS/MaintenanceRecordsList";
+// import SupportTicketsList from "../pages/services/ICT-ASSETS/SupportTicketsList";
+// import WarrantiesList from "../pages/services/ICT-ASSETS/WarrantiesList";
+// import DisposalRecordsList from "../pages/services/ICT-ASSETS/DisposalRecordsList";
+
+function RegisterAndLogout() {
+  localStorage.clear;
+  return <RegisterPage />;
+}
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      {/* Authentication Routes */}
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route
+        path="/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF"
+        element={<NewUserPage />}
+      />
+      <Route path="/auth/register" element={<RegisterAndLogout />} />
+      <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+      
+      {/* Main App Routes */}
+      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/" element={<Services />} />
+      <Route path="*" element={<ErrorPage />} />
+
+      {/* Account Routes */}
+      <Route path="/account/settings" element={<AccountPage />} />
+      <Route path="/account/notifications" element={<NotificationPage />} />
+      <Route path="/account/connections" element={<Connections />} />
+      <Route path="/account/password" element={<ChangePassword />} />
+
+      {/* Settings */}
+      <Route
+        path="/settings/directories"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "view_directory",
+              "add_directory",
+              "change_directory",
+            ]}
+          >
+            <DirectoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/directories/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "view_directory",
+              "add_directory",
+              "change_directory",
+            ]}
+          >
+            <DirectoryOpenPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/departments"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_add_department",
+              "can_view_department",
+              "can_delete_department",
+            ]}
+          >
+            <DepartmentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/positional-levels"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_positionallevel",
+              "view_positionallevel",
+              "delete_positionallevel",
+            ]}
+          >
+            <PositionalLevelPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/approval-actions"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_approvalaction",
+              "view_approvalaction",
+              "delete_approvalaction",
+            ]}
+          >
+            <ApprovalActionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/approval-modules"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_approval_modules",
+              "can_add_approval_module",
+              "can_edit_approval_module",
+              "can_delete_approval_module",
+            ]}
+            requiredRoles={["admin"]}
+          >
+            <ApprovalModulePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/approval-modules/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_approval_modules",
+              "can_add_approval_module",
+              "can_edit_approval_module",
+              "can_delete_approval_module",
+            ]}
+            requiredRoles={["admin"]}
+          >
+            <ApprovalModuleOpenPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/date-ranges"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "change_daterange",
+              "can_view_date_range",
+              "can_edit_date_range",
+              "can_delete_date_range",
+            ]}
+          >
+            <DateRangePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Users */}
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_user", "add_user", "delete_user"]}
+          >
+            <UserListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_user", "add_user", "delete_user"]}
+          >
+            <UserOpenPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Requests */}
+      <Route
+        path="/requests"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_approval_request",
+              "can_create_approval_request",
+              "can_update_approval_request_status",
+            ]}
+            requiredRoles={["admin", "staff"]}
+          >
+            <ApprovalRequestPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/requests/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_approval_request",
+              "can_create_approval_request",
+              "can_update_approval_request_status",
+            ]}
+          >
+            <ApprovalRequestOpenPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Requests Handling*/}
+      <Route
+        path="/requests-handling"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_request_handling",
+              "can_perform_request_handling",
+            ]}
+            requiredRoles={["Request_Handler"]}
+          >
+            <RequestHandlingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/requests-handling/open/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={[
+              "can_view_request_handling",
+              "can_perform_request_handling",
+            ]}
+            requiredRoles={["Request_Handler"]}
+          >
+            <RequestHandlingOpenPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Roles Managements */}
+      <Route
+        path="/roles-managements"
+        element={
+          <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
+            <RolesManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/roles-managements/open/:uid"
+        element={
+          <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
+            <OpenRolesManagementPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ==================================================================== */}
+      {/* ICT ASSETS ROUTES */}
+      {/* ==================================================================== */}
+
+      {/* ICT Assets Dashboard */}
+      {/* <Route
+        path="/ict-assets"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+            <ICTAssetsDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/dashboard"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+            <ICTAssetsDashboard />
+          </ProtectedRoute>
+        }
+      /> */}
+
+      {/* Asset Management */}
+      <Route
+        path="/ict-assets/assets"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_asset"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+            <Assets />
+          </ProtectedRoute>
+        }
+      />
+      {/* <Route
+        path="/ict-assets/asset-computers"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_computer"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+            <ComputersList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-network-devices"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_networkdevice"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <NetworkDevicesList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-peripherals"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_peripheral"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <PeripheralsList />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Software Management */}
+      {/* <Route
+        path="/ict-assets/asset-software"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_software"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <SoftwareList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-software-installations"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_softwareinstallation"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+            <SoftwareInstallationsList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-software-categories"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_softwarecategory"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <SoftwareCategoriesList />
+          </ProtectedRoute>
+        }
+      /> */}
+
+      {/* Location Management */}
+      {/* <Route
+        path="/ict-assets/asset-buildings"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_building"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <BuildingsList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-floors"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_floor"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <FloorsList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-locations"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_location"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <LocationsList />
+          </ProtectedRoute>
+        }
+      /> */}
+
+      {/* Configuration */}
+      {/* <Route
+        path="/ict-assets/asset-categories"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_assetcategory"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <AssetCategoriesList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-types"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_assettype"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <AssetTypesList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-manufacturers"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_manufacturer"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <ManufacturersList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-suppliers"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_supplier"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <SuppliersList />
+          </ProtectedRoute>
+        }
+      /> */}
+
+      {/* Operations */}
+      {/* <Route
+        path="/ict-assets/asset-asset-assignments"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_assetassignment"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+            <AssetAssignmentsList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-maintenance-records"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_maintenancerecord"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <MaintenanceRecordsList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-support-tickets"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_supportticket"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+            <SupportTicketsList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-warranties"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_warranty"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+          >
+            <WarrantiesList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ict-assets/asset-disposal-records"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_disposalrecord"]}
+            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Auditor"]}
+          >
+            <DisposalRecordsList />
+          </ProtectedRoute>
+        }
+      /> */}
+    </Routes>
+  );
+};
+
+export default AppRoutes;

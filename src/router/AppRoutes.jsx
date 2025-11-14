@@ -31,6 +31,13 @@ import NewUserPage from "../pages/authentication/NewUserPage.jsx";
 import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handling/View.jsx";
 import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
 
+// ICT ASSETS MANAGEMENT
+import { AssetListPage } from "../pages/services/ICT-ASSETS/assets_list/View.jsx";
+import { AssetDashboardPage } from "../pages/services/ICT-ASSETS/dashboard/AssetDashboardPage.jsx"
+
+
+
+
 function RegisterAndLogout() {
   localStorage.clear;
   return <RegisterPage />;
@@ -46,7 +53,7 @@ const AppRoutes = () => {
       />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/e-approval" element={<DashboardPage />} />
       <Route path="/" element={<Services />} />
 
       <Route path="*" element={<ErrorPage />} />
@@ -276,6 +283,40 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+
+
+      {/* ===================================================== */}
+      {/* ICT ASSETS ROUTES */}
+      {/* ===================================================== */}
+
+      {/* ICT Assets Dashboard */}
+      <Route
+        path="/ict-assets/dashboard"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+             <AssetDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/ict-assets/assets/list"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+          >
+             <AssetListPage />
+          </ProtectedRoute>
+        }
+      />
+      
+     
+
       {/*<Route*/}
       {/*    path="/requests/open/:uid"*/}
       {/*    element={*/}

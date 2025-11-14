@@ -1,8 +1,19 @@
 [
   {
+    "id": "e-approval",
     "text": "E-Approval",
     "icon": "bx bxl-microsoft",
-    "link": "/services",
+    "available": true,
+    "link": "/e-approval",
+    "permission": [],
+    "role": ["admin"]
+  },
+  {
+    "id": "ict-assets-service",
+    "text": "ICT Assets",
+    "icon": "bx bx-chip",
+    "available": true,
+    "link": "/ict-assets/dashboard",
     "permission": [],
     "role": ["admin"]
   }

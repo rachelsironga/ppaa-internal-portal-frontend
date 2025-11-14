@@ -1,16 +1,9 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import eApprovalMenu from '../data/eApprovalMenu.json'
-import ictAssetsMenu from '../data/ictAssetsMenu.json'; 
-
+import menuData from '../data/menuData.json'
 import { useSelector } from 'react-redux';
-import documentationList from "../data/documentationList.json"; 
-import servicesList from "../data/servicesList.json";
-
-  // const location = useLocation();
-
-
+import documentationList from "../data/documentationList.json";
+import serviceList from "../data/servicesList.json";
 
 const hasPermission = (
   itemPermissions,
@@ -63,42 +56,6 @@ const Sidebar = ({ isService = false }) => {
   const userPermissions = user?.user_permissions;
   const userRoles = user?.groups;
 
-  const [activeService, setActiveService] = useState('e-approval');
-  const location = useLocation();
-
-
-  // Filter services based on user permissions
-  const hasPermission = (itemPermissions, itemRoles) => {
-    const hasRequiredPermission =
-      !itemPermissions ||
-      itemPermissions.some((permission) => userPermissions?.includes(permission));
-    const hasRequiredRole =
-      !itemRoles || itemRoles.some((role) => userRoles?.includes(role));
-    return hasRequiredPermission || hasRequiredRole;
-  };
-
-  const filteredServices = servicesList.filter(service => 
-    hasPermission(service.permission, service.role)
-  );
-
-
-  useEffect(() => {
-    const currentPath = location.pathname;
-    if (currentPath.includes('/ict-assets')) {
-      setActiveService('ict-assets');
-    } else if (currentPath.includes('/e-approval') || currentPath === '/') {
-      setActiveService('e-approval');
-    } else {
-      // Try to find service from the services list
-      const currentService = servicesList.find(service => 
-        currentPath.startsWith(service.link)
-      );
-      if (currentService) {
-        setActiveService(currentService.id || currentService.text.toLowerCase());
-      }
-    }
-  }, [location.pathname]);
-
   return (
     <aside
       id="layout-menu"
@@ -142,25 +99,18 @@ const Sidebar = ({ isService = false }) => {
         <span className="app-brand-text demo menu-text fw-bold ms-2">
           MNH-CONNECT
         </span>
-          {activeService && (
-            <h5 className="text-bold">
-              {activeService.split('-').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-              ).join(' ')}
-            </h5>
-          )}
+        <h5 className="text-bold">(e-approval)</h5>
       </div>
 
       <div className="menu-inner-shadow"></div>
 
       <ul className="menu-inner py-1">
         {isService ? (
-          // Service Documentation View
           <>
             <li className="menu-header small text-uppercase">
               <span className="menu-header-text">Documentation</span>
             </li>
-            {servicesList.map((doc, idx) => (
+            {serviceList.map((doc, idx) => (
               <li className="menu-item" key={"docs_index_" + idx}>
                 <a
                   className="menu-link"
@@ -174,43 +124,8 @@ const Sidebar = ({ isService = false }) => {
               </li>
             ))}
           </>
-         ) : activeService === 'ict-assets' ? (
-            // ICT Assets Management
-            ictAssetsMenu[0].items.map((section, sectionIndex) => (  // Access items[0].items
-              <React.Fragment key={"ict-header-" + sectionIndex}>
-                {section.header &&
-                  hasAnyVisibleItem(
-                    [section], // Pass section as array for consistency
-                    userPermissions,
-                    userRoles
-                  ) && (
-                    <li className="menu-header small text-uppercase">
-                      <span className="menu-header-text">{section.header}</span>
-                    </li>
-                  )}
-                
-                {section.submenu  
-                  ?.filter((item) =>
-                    hasPermission(
-                      item.permission,
-                      item.role,
-                      userPermissions,
-                      userRoles
-                    )
-                  )
-                  .map((item, itemIndex) => (
-                    <MenuItem
-                      key={item.id || `ict-${itemIndex}`}
-                      {...item}
-                      userPermissions={userPermissions}
-                      userRoles={userRoles}
-                    />
-                  ))}
-              </React.Fragment>
-            ))
-          ) : (
-          // Main E-Approval Application Menu (default)
-          eApprovalMenu.map((section, sectionIndex) => (
+        ) : (
+          menuData.map((section, sectionIndex) => (
             <React.Fragment key={"header-" + sectionIndex}>
               {section.header &&
                 hasAnyVisibleItem(
@@ -231,9 +146,9 @@ const Sidebar = ({ isService = false }) => {
                     userRoles
                   )
                 )
-                .map((item, itemIndex) => (
+                .map((item, intemIndex) => (
                   <MenuItem
-                    key={item.id || itemIndex}
+                    key={item.id || intemIndex}
                     {...item}
                     userPermissions={userPermissions}
                     userRoles={userRoles}
@@ -241,8 +156,7 @@ const Sidebar = ({ isService = false }) => {
                 ))}
             </React.Fragment>
           ))
-        )
-      }
+        )}
       </ul>
     </aside>
   );

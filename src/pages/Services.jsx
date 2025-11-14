@@ -153,7 +153,24 @@ export const Services = () => {
                   key={service.text + idx}
                   className="col-md-3 col-sm-6 mb-3 col-lg-3"
                   onClick={() => {
-                    navigate("/dashboard");
+                    // determine route: prefer explicit link/path/route, otherwise build slug from text
+                    const target =
+                      service.link ||
+                      service.path ||
+                      service.route ||
+                      `/dashboard/${encodeURIComponent(
+                        (service.text || "")
+                          .toLowerCase()
+                          .trim()
+                          .replace(/\s+/g, "-")
+                      )}`;
+
+                    // if external URL, use window.location, otherwise use react-router navigate
+                    if (/^https?:\/\//i.test(target)) {
+                      window.location.href = target;
+                    } else {
+                      navigate(target);
+                    }
                   }}
                 >
                   <button

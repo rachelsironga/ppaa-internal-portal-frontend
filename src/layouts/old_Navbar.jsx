@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import getGreetingMessage from "../utils/greetingHandler";
 import { logout } from "../redux/actions/authentication/logoutAction";
 import { Navigate, useNavigate } from "react-router-dom";
-import React, { useState, useEffect, activeService } from "react";
+import { useState } from "react";
 import servicesList from "../data/servicesList.json";
 
 const Navbar = ({ isService = false }) => {
@@ -142,13 +142,6 @@ const Navbar = ({ isService = false }) => {
               onClick={toggleDropdown}
             >
               <i className="bx bx-menu me-1"></i> Services
-              {activeService && (
-                <span className="active-service-badge ms-2 text-dark">&nbsp;|&nbsp;&nbsp;&nbsp;
-                  {activeService.split('-').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ')}
-                </span>
-              )}
             </button>
             {/* Dropdown */}
             {showDropdown && (
@@ -179,12 +172,12 @@ const Navbar = ({ isService = false }) => {
                     maxHeight: "300px",
                   }}
                 >
-                  {servicesList.map((doc, idx) => ( 
+                  {servicesList.map((doc, idx) => (
                     <div
                       className="d-flex align-items-center service-list-item cursor-pointer me-3 mb-3"
                       key={"docs_index_" + idx}
                       onClick={() => {
-                        navigate(doc.link);
+                        navigate("/dashboard");
                         setShowDropdown(false);
                       }}
                     >
@@ -203,8 +196,6 @@ const Navbar = ({ isService = false }) => {
             </span>
           </div>
         )}
-
-
         <ul className="navbar-nav flex-row align-items-center ms-auto">
           {user && user.position && (
             <li className="nav-item">
@@ -312,6 +303,24 @@ const Navbar = ({ isService = false }) => {
                   <span className="align-middle">Log Out</span>
                 </a>
               </li>
+              {
+                // <li>
+                //   <a aria-label='go to setting' className="dropdown-item" href="#">
+                //     <i className="bx bx-cog me-2"></i>
+                //     <span className="align-middle">Settings</span>
+                //   </a>
+                // </li>
+                // <li>
+                //   <a aria-label='go to billing' className="dropdown-item" href="#">
+                //     <span className="d-flex align-items-center align-middle">
+                //       <i className="flex-shrink-0 bx bx-credit-card me-2"></i>
+                //       <span className="flex-grow-1 align-middle ms-1">Billing</span>
+                //       <span className="flex-shrink-0 badge badge-center rounded-pill bg-danger w-px-20 h-px-20">4</span>
+                //     </span>
+                //   </a>
+                // </li>
+              }
+
               <li>
                 <div className="dropdown-divider"></div>
               </li>
@@ -323,4 +332,3 @@ const Navbar = ({ isService = false }) => {
   );
 };
 export default Navbar;
-

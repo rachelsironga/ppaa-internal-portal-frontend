@@ -23,6 +23,10 @@ const DateRangeContext = createContext();
 
 const RolesManagementContext = createContext();
 
+// ICT ASSETS
+const AssetListPageContext = createContext();
+const AssetDashboardContext = createContext();
+
 export {
     PageContext,
     ApprovalActionContext,
@@ -34,5 +38,9 @@ export {
     DateRangeContext,
     AccountContext,
     UsersContext,
-    RolesManagementContext
+    RolesManagementContext,
+    
+    // ICT ASSETS MANAGEMENT
+    AssetDashboardContext,
+    AssetListPageContext
 };
