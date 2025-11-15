@@ -44,6 +44,14 @@ export const login = (userData, navigation) => async (dispatch) => {
       });
       return;
     }
+    else if (response.status == 202 && response.data.status === 8008) {
+      // Redirect new user for Reset password change
+      dispatch({
+        type: loginTypes.LOGIN_RESET_PASSWORD,
+        payload: response.data,
+      });
+      navigation("/auth/user-password-UF56HJUIrZafX2riMPDQFgQG2L06IOKHJDD");
+    }
     else if (response.status == 202 && response.data.status === 8007) {
       // Redirect new user for verification password change
       dispatch({
