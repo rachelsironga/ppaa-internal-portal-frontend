@@ -24,6 +24,14 @@ export const loginReducer = (state = initialState, action) => {
                 error: null,
                 data: null
             };
+        case loginTypes.LOGIN_RESET_PASSWORD:
+            return {
+                ...state,
+                isLoading: false,
+                success: true,
+                error: null,
+                data: action.payload
+            };
         case loginTypes.LOGIN_NEW_USER:
             return {
                 ...state,

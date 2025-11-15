@@ -30,6 +30,7 @@ import { OpenRolesManagementPage } from "../pages/services/MANAGMENTS/roles_mana
 import NewUserPage from "../pages/authentication/NewUserPage.jsx";
 import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handling/View.jsx";
 import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
+import ResetPasswordPage from "../pages/authentication/ResetPasswordPage.jsx";
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -43,6 +44,10 @@ const AppRoutes = () => {
       <Route
         path="/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF"
         element={<NewUserPage />}
+      />
+      <Route
+        path="/auth/user-password-UF56HJUIrZafX2riMPDQFgQG2L06IOKHJDD"
+        element={<ResetPasswordPage />}
       />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
