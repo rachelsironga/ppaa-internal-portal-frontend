@@ -121,14 +121,6 @@ const PaginatedTable = ({
     updatePage(1);
   };
 
-  // Handle Group filter resert
-  const resetAllFilters = () => {
-    const cleared = {};
-    filterGroups.forEach((g) => (cleared[g.group] = []));
-    setSelectedFilterGroups(cleared);
-  };
-
-
   return (
     <div className="card">
       <div className="d-flex justify-content-between align-items-center card-header mb-1">
@@ -157,85 +149,75 @@ const PaginatedTable = ({
       </div>
       <div className="card-body">
         <div className="row d-flex justify-content-between align-items-center mb-2 ">
-         
-          {/* Multiple Filters */}
-          {filterGroups.length > 0 && (
-            <div className="row g-2 mb-2">
+            {/* Multiple Filters */}
+            {filterGroups.length > 0 && (
+            <div className="d-flex flex-row flex-wrap align-items-start gap-2 mb-2">
               {filterGroups.map((group) => (
-                <div key={group.group} className="col-auto">
-                  <div className="input-group">
-                    <span className="input-group-text text-info">
-                      {group.label}
-                    </span>
+                <div
+                  key={group.group}
+                  className="input-group d-flex flex-row col"
+                  style={{ width: "auto" }}
+                >
+                  <span className="input-group-text text-info">
+                    {group.label}
+                  </span>
 
-                    <Select
-                      isMulti
-                      options={group.options}
-                      value={group.options.filter((opt) =>
-                        selectedFilterGroups[group.group]?.includes(opt.value)
-                      )}
-                      onChange={(selected) =>
-                        handleGroupFilterChange(group.group, selected)
-                      }
-                      placeholder={group.placeholder || `Select ${group.label}`}
-                      classNamePrefix="react-select"
-                      styles={{
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 99999,
-                          borderColor: "#17a2b8",
-                        }),
-                        control: (base) => ({
-                          ...base,
-                          minHeight: "32px",
-                        }),
-                      }}
-                    />
-                  </div>
+                  <Select
+                    isMulti
+                    options={group.options}
+                    value={group.options.filter((opt) =>
+                      selectedFilterGroups[group.group]?.includes(opt.value)
+                    )}
+                    onChange={(selected) =>
+                      handleGroupFilterChange(group.group, selected)
+                    }
+                    placeholder={group.placeholder || `Select ${group.label}`}
+                    classNamePrefix="react-select"
+                    styles={{
+                      menu: (base) => ({
+                        ...base,
+                        zIndex: 99999,
+                        borderColor: "#17a2b8",
+                      }),
+                      control: (base) => ({
+                        ...base,
+                        minHeight: "32px",
+                      }),
+                    }}
+                  />
                 </div>
               ))}
-              {/*Reset All Button */}
-              <div className="col-auto d-flex align-items-center">
-                  <button
-                    className="btn btn-outline-info me-2"
-                    onClick={resetAllFilters}
-                    title="Reset All Filters"
-                  >
-                    <i className="tf-icons bx bx-refresh"></i> Reset All
-                  </button>
-                </div>
             </div>
-            )}
-            
-            <div className="d-flex align-items-center col-md-8 col-sm-6 mt-2">
-                <Select
-                  options={pageSizeData.map((size) => ({
-                  value: size,
-                  label: `${size}`,
-                  }))}
-                  value={{ value: pageSize, label: `${pageSize}` }}
-                  onChange={(selected) => {
-                  updatePageSize(Number(selected.value));
-                  updatePage(1);
-                  updatePagination({
-                    page: 1,
-                    page_size: Number(selected.value),
-                  });
-                }}
-                className="me-2"
-                classNamePrefix="react-select"
-                styles={{
-                  control: (base) => ({
-                    ...base,
-                    minHeight: "32px",
-                    width: "95px",
-                  }),
-                  menuPortal: (base) => ({
-                    ...base,
-                    zIndex: 99999,
-                  }),
-                }}
-                menuPortalTarget={document.body}
+          )}
+          <div className="d-flex align-items-center col-md-8 col-sm-6 mt-2">
+            <Select
+              options={pageSizeData.map((size) => ({
+                value: size,
+                label: `${size}`,
+              }))}
+              value={{ value: pageSize, label: `${pageSize}` }}
+              onChange={(selected) => {
+                updatePageSize(Number(selected.value));
+                updatePage(1);
+                updatePagination({
+                  page: 1,
+                  page_size: Number(selected.value),
+                });
+              }}
+              className="me-2"
+              classNamePrefix="react-select"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  minHeight: "32px",
+                  width: "95px",
+                }),
+                menuPortal: (base) => ({
+                  ...base,
+                  zIndex: 99999,
+                }),
+              }}
+              menuPortalTarget={document.body}
             />
 
             {filters.length > 0 && (

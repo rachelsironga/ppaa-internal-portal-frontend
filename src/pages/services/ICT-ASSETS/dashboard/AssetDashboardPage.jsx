@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import React from "react";
 import "animate.css";
-import { dashboardService } from "../services/dashboardService";
+import { dashboardService } from "./DashboardQueries.jsx";
 import Swal from "sweetalert2";
 
 // Chart components

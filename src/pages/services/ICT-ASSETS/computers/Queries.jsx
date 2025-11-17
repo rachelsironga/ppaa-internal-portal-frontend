@@ -1,9 +1,8 @@
-// Queries.js
 import axios from "axios";
 import { API_BASE_URL } from "../../../../Costants";
 import api from "../../../../api";
 
-const API_URL = `${API_BASE_URL}/api/assets`;
+const API_URL = `${API_BASE_URL}/api`;
 
 const config = {
     headers: {
@@ -16,18 +15,19 @@ const setConfig = (pagination = {}) => ({
     params: { ...pagination },
 });
 
-// Get Assets (with optional search, pagination, and single asset by UID)
-export const getAssets = async ({
-    uid = "",
-    search = "",
-    pagination = {},
-}) => {
+export const getComputerAssets = async ({ uid = "", search = "", pagination = {} }) => {
     try {
-        const response = await api.get(
-            `${API_URL}${uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`
-            }`,
-            uid == "" ? setConfig(pagination) : {}
-        );
+        let url = `${API_URL}/asset-computers`;
+
+        if (uid) {
+            url += `/${uid}`;
+        } else if (search) {
+            url += `?search=${search}`;
+        }
+
+        const config = uid === "" ? setConfig(pagination) : {};
+
+        const response = await api.get(url, config);
         return response.data;
     } catch (error) {
         console.error("Error fetching assets:", error);
@@ -35,13 +35,16 @@ export const getAssets = async ({
     }
 };
 
-// Create or Update Asset
+
 export const createUpdateAsset = async (assetData) => {
     try {
-        // If UID exists, it's an update - use PUT, otherwise POST for create
-        const method = assetData.uid ? 'put' : 'post';
-        const url = assetData.uid ? `${API_URL}/${assetData.uid}/update` : API_URL;
-        
+        const isUpdate = Boolean(assetData.uid);
+
+        const method = isUpdate ? "put" : "post";
+        const url = isUpdate
+            ? `${API_BASE_URL}/api/asset-computers/${assetData.uid}/update`
+            : `${API_BASE_URL}/api/asset-computers/create`;
+
         const response = await api[method](url, assetData, config);
         return response.data;
     } catch (error) {
@@ -50,10 +53,10 @@ export const createUpdateAsset = async (assetData) => {
     }
 };
 
-// Delete Asset
+
 export const deleteAsset = async (uid) => {
     try {
-        const response = await api.delete(`${API_URL}/${uid}`);
+        const response = await api.delete(`${API_URL}/asset-computers/${uid}/delete`);
         return response.data;
     } catch (error) {
         console.error("Error deleting asset:", error);
@@ -61,7 +64,16 @@ export const deleteAsset = async (uid) => {
     }
 };
 
-// Bulk Import Assets
+export const bulkDeleteAssets = async (assetUids) => {
+    try {
+        const response = await api.post(`${API_URL}/bulk-delete`, { asset_uids: assetUids }, config);
+        return response.data;
+    } catch (error) {
+        console.error("Error in bulk deleting assets:", error);
+        throw error;
+    }
+};
+
 export const uploadAssets = async (formData) => {
     try {
         const response = await api.post(
@@ -80,7 +92,23 @@ export const uploadAssets = async (formData) => {
     }
 };
 
-// Get Related Data for Dropdowns
+export const exportAssets = async (filters = {}) => {
+    try {
+        const response = await api.post(
+            `${API_URL}/export`,
+            filters,
+            {
+                ...config,
+                responseType: 'blob'
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error("Error exporting assets:", error);
+        throw error;
+    }
+};
+
 export const getAssetTypes = async ({
     search = "",
     pagination = {},
@@ -161,6 +189,22 @@ export const getUsers = async ({
     }
 };
 
+export const getCustodians = async ({
+    search = "",
+    pagination = {},
+}) => {
+    try {
+        const response = await api.get(
+            `${API_BASE_URL}/api/assets-custodians${search !== "" ? `?search=${search}` : ""}`,
+            setConfig(pagination)
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching custodians:", error);
+        throw error;
+    }
+};
+
 export const getTechnicians = async ({
     search = "",
     pagination = {},
@@ -177,7 +221,6 @@ export const getTechnicians = async ({
     }
 };
 
-// Asset-specific operations
 export const bulkUpdateAssets = async (assetData) => {
     try {
         const response = await api.post(`${API_URL}/bulk-update`, assetData, config);
@@ -188,9 +231,27 @@ export const bulkUpdateAssets = async (assetData) => {
     }
 };
 
+export const bulkAssignAssets = async (assetUids, custodianGuid, locationUid = null) => {
+    try {
+        const response = await api.post(
+            `${API_URL}/bulk-assign`,
+            {
+                asset_uids: assetUids,
+                custodian_guid: custodianGuid,
+                location_uid: locationUid,
+            },
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error in bulk assigning assets:", error);
+        throw error;
+    }
+};
+
 export const getAssetHistory = async (uid) => {
     try {
-        const response = await api.get(`${API_BASE_URL}api/assets-activities/${uid}/history`);
+        const response = await api.get(`${API_BASE_URL}/api/assets-activities/${uid}/history`);
         return response.data;
     } catch (error) {
         console.error("Error fetching asset history:", error);
@@ -198,7 +259,6 @@ export const getAssetHistory = async (uid) => {
     }
 };
 
-// Asset Status Operations
 export const updateAssetStatus = async (uid, statusData) => {
     try {
         const response = await api.patch(`${API_URL}/${uid}/update`, statusData, config);
@@ -209,10 +269,9 @@ export const updateAssetStatus = async (uid, statusData) => {
     }
 };
 
-// Asset Assignment Operations
 export const assignAsset = async (assignmentData) => {
     try {
-        const response = await api.post(`${API_URL}/update`, assignmentData, config);
+        const response = await api.post(`${API_URL}/assign`, assignmentData, config);
         return response.data;
     } catch (error) {
         console.error("Error assigning asset:", error);
@@ -222,7 +281,7 @@ export const assignAsset = async (assignmentData) => {
 
 export const unassignAsset = async (uid) => {
     try {
-        const response = await api.post(`${API_URL}/${uid}/unassign/`, {}, config);
+        const response = await api.post(`${API_URL}/${uid}/unassign`, {}, config);
         return response.data;
     } catch (error) {
         console.error("Error unassigning asset:", error);
@@ -230,7 +289,20 @@ export const unassignAsset = async (uid) => {
     }
 };
 
-// Maintenance Records
+export const transferAsset = async (uid, transferData) => {
+    try {
+        const response = await api.post(
+            `${API_URL}/${uid}/transfer`,
+            transferData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error transferring asset:", error);
+        throw error;
+    }
+};
+
 export const getMaintenanceRecords = async (assetUid = "", pagination = {}) => {
     try {
         const params = { ...pagination };
@@ -261,6 +333,20 @@ export const createMaintenanceRecord = async (recordData) => {
     }
 };
 
+export const updateMaintenanceRecord = async (uid, recordData) => {
+    try {
+        const response = await api.put(
+            `${API_BASE_URL}/api/asset-maintenance-records/${uid}/update`,
+            recordData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error updating maintenance record:", error);
+        throw error;
+    }
+};
+
 export const deleteMaintenanceRecord = async (uid) => {
     try {
         const response = await api.delete(
@@ -273,7 +359,6 @@ export const deleteMaintenanceRecord = async (uid) => {
     }
 };
 
-// Support Tickets
 export const getSupportTickets = async (assetUid = "", pagination = {}) => {
     try {
         const params = { ...pagination };
@@ -318,7 +403,18 @@ export const updateSupportTicket = async (uid, ticketData) => {
     }
 };
 
-// Asset History
+export const deleteSupportTicket = async (uid) => {
+    try {
+        const response = await api.delete(
+            `${API_BASE_URL}/api/asset-support-tickets/${uid}/delete`
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting support ticket:", error);
+        throw error;
+    }
+};
+
 export const getCustodianHistory = async (assetUid = "", pagination = {}) => {
     try {
         const params = { ...pagination };
@@ -351,7 +447,6 @@ export const getLocationHistory = async (assetUid = "", pagination = {}) => {
     }
 };
 
-// Assignment
 export const getAssetAssignments = async (assetUid = "", pagination = {}) => {
     try {
         const params = { ...pagination };
@@ -364,6 +459,64 @@ export const getAssetAssignments = async (assetUid = "", pagination = {}) => {
         return response.data;
     } catch (error) {
         console.error("Error fetching asset assignments:", error);
+        throw error;
+    }
+};
+
+export const generateAssetReport = async (reportType, filters = {}) => {
+    try {
+        const response = await api.post(
+            `${API_URL}/reports/${reportType}`,
+            filters,
+            {
+                ...config,
+                responseType: 'blob'
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error("Error generating asset report:", error);
+        throw error;
+    }
+};
+
+export const getAssetStatistics = async (filters = {}) => {
+    try {
+        const response = await api.get(
+            `${API_URL}assets/statistics`,
+            { params: filters }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching asset statistics:", error);
+        throw error;
+    }
+};
+
+export const verifyAsset = async (uid, verificationData) => {
+    try {
+        const response = await api.post(
+            `${API_URL}/${uid}/verify`,
+            verificationData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error verifying asset:", error);
+        throw error;
+    }
+};
+
+export const auditAsset = async (uid, auditData) => {
+    try {
+        const response = await api.post(
+            `${API_URL}/${uid}/audit`,
+            auditData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error auditing asset:", error);
         throw error;
     }
 };

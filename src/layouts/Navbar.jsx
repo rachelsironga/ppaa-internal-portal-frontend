@@ -141,7 +141,7 @@ const Navbar = ({ isService = false }) => {
               className="btn btn-sm btn-outline-primary me-2 me-xl-4"
               onClick={toggleDropdown}
             >
-              <i className="bx bx-menu me-1"></i> Services
+              <i className="bx bx-menu me-1"></i> Quick Access to Services
               {activeService && (
                 <span className="active-service-badge ms-2 text-dark">&nbsp;|&nbsp;&nbsp;&nbsp;
                   {activeService.split('-').map(word => 

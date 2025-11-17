@@ -3,7 +3,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../../../Costants";
 import api from "../../../../api";
 
-const API_URL = `${API_BASE_URL}/api/assets`;
+const API_URL = `${API_BASE_URL}/api`;
 
 const config = {
     headers: {
@@ -16,47 +16,63 @@ const setConfig = (pagination = {}) => ({
     params: { ...pagination },
 });
 
-// Get Assets (with optional search, pagination, and single asset by UID)
-export const getAssets = async ({
-    uid = "",
-    search = "",
-    pagination = {},
-}) => {
+// Get Peripheral Assets (with optional search, pagination, and single asset by UID)
+export const getPeripheralAssets = async ({ uid = "", search = "", pagination = {} }) => {
     try {
-        const response = await api.get(
-            `${API_URL}${uid == "" ? (search !== "" ? `?search=${search}` : "") : `/${uid}`
-            }`,
-            uid == "" ? setConfig(pagination) : {}
-        );
+        let url = `${API_URL}/asset-peripherals`;
+
+        if (uid) {
+            url += `/${uid}`;
+        } else if (search) {
+            url += `?search=${search}`;
+        }
+
+        const config = uid === "" ? setConfig(pagination) : {};
+
+        const response = await api.get(url, config);
         return response.data;
     } catch (error) {
-        console.error("Error fetching assets:", error);
+        console.error("Error fetching peripheral assets:", error);
         throw error;
     }
 };
 
-// Create or Update Asset
+// Create or Update Peripheral Asset
 export const createUpdateAsset = async (assetData) => {
     try {
-        // If UID exists, it's an update - use PUT, otherwise POST for create
-        const method = assetData.uid ? 'put' : 'post';
-        const url = assetData.uid ? `${API_URL}/${assetData.uid}/update` : API_URL;
-        
+        const isUpdate = Boolean(assetData.uid);
+
+        const method = isUpdate ? "put" : "post";
+        const url = isUpdate
+            ? `${API_BASE_URL}/api/asset-peripherals/${assetData.uid}/update`
+            : `${API_BASE_URL}/api/asset-peripherals/create`;
+
         const response = await api[method](url, assetData, config);
         return response.data;
     } catch (error) {
-        console.error(`Error while ${assetData.uid ? 'updating' : 'creating'} asset:`, error);
+        console.error(`Error while ${assetData.uid ? 'updating' : 'creating'} peripheral asset:`, error);
         throw error;
     }
 };
 
-// Delete Asset
+// Delete Peripheral Asset
 export const deleteAsset = async (uid) => {
     try {
-        const response = await api.delete(`${API_URL}/${uid}`);
+        const response = await api.delete(`${API_URL}/asset-peripherals/${uid}/delete`);
         return response.data;
     } catch (error) {
-        console.error("Error deleting asset:", error);
+        console.error("Error deleting peripheral asset:", error);
+        throw error;
+    }
+};
+
+// Bulk Delete Peripheral Assets
+export const bulkDeleteAssets = async (assetUids) => {
+    try {
+        const response = await api.post(`${API_URL}/asset-peripherals/bulk-delete`, { asset_uids: assetUids }, config);
+        return response.data;
+    } catch (error) {
+        console.error("Error in bulk deleting peripheral assets:", error);
         throw error;
     }
 };

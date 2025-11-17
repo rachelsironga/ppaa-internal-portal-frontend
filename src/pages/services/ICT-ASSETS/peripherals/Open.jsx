@@ -6,7 +6,7 @@ import "animate.css";
 import { AssetContext } from "../../../../utils/context";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    getAssets,
+    getPeripheralAssets,
     deleteAsset,
     getAssetHistory,
     updateAssetStatus,
@@ -23,12 +23,12 @@ import {
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
-import { AssetModal } from "./Modal";
-import { MaintenanceRecordModal } from "./MaintenanceModal";
-import { SupportTicketModal } from "./SupportTicketModal";
+import { PeripheralAssetModal } from "./PeripheralAssetModal";
+import { MaintenanceRecordModal } from "../assets_list/MaintenanceModal";
+import { SupportTicketModal } from "../assets_list/SupportTicketModal";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
-export const AssetViewPage = () => {
+export const PeripheralDeviceViewPage = () => {
     const [assetData, setAssetData] = useState(null);
     const [selectedObj, setSelectedObj] = useState(null);
     const [selectedTicket, setSelectedTicket] = useState(null);
@@ -58,17 +58,17 @@ export const AssetViewPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getAssets({ uid: uid });
+            const result = await getPeripheralAssets({ uid: uid });
             if (result.status === 200 || result.status === 8000) {
                 setAssetData(result.data);
             } else {
                 setError(true);
-                showToast("Asset Not Found", "warning", "Fetch Completed");
+                showToast("warning", "Asset Not Found");
             }
         } catch (err) {
-            console.error("Error fetching asset:", err);
+            console.error("Error fetching peripheral asset:", err);
             setError(true);
-            showToast("Unable to Fetch Asset Details", "warning", "Failed");
+            showToast("warning", "Unable to Fetch Asset Details");
         } finally {
             setLoading(false);
         }
@@ -406,19 +406,19 @@ export const AssetViewPage = () => {
     if (error || !assetData) {
         return (
             <>
-                <BreadCumb pageList={["Assets", "View"]} />
+                <BreadCumb pageList={["Peripheral Assets", "View"]} />
                 <div className="card">
                     <div className="card-body">
                         <div className="alert alert-danger" role="alert">
                             <div className="alert-body text-center">
                                 <p className="mb-0">
-                                    Sorry! Unable to get Asset Details. Please Contact System Administrator
+                                    Sorry! Unable to get Peripheral Asset Details. Please Contact System Administrator
                                 </p>
                                 <button
                                     className="btn btn-primary btn-sm mt-3"
-                                    onClick={() => navigate("/ict-assets/assets")}
+                                    onClick={() => navigate("/ict-assets/peripherals")}
                                 >
-                                    <i className="bx bx-arrow-back me-1"></i> Back to Assets List
+                                    <i className="bx bx-arrow-back me-1"></i> Back to Peripheral Assets List
                                 </button>
                             </div>
                         </div>
@@ -437,7 +437,7 @@ export const AssetViewPage = () => {
                 setTableRefresh,
             }}
         >
-            <BreadCumb pageList={["Assets", assetData?.asset_tag || "View"]} />
+            <BreadCumb pageList={["Peripheral Assets", assetData?.asset_tag || "View"]} />
 
             {/* Asset Header Card */}
             <div className="card mb-4 shadow-sm animate__animated animate__fadeInDown animate__faster">
@@ -454,8 +454,8 @@ export const AssetViewPage = () => {
                                                 className="rounded"
                                             />
                                         ) : (
-                                            <span className="avatar-initial rounded bg-label-primary">
-                                                <i className="bx bx-desktop bx-lg"></i>
+                                            <span className="avatar-initial rounded bg-label-info">
+                                                <i className="bx bx-devices bx-lg"></i>
                                             </span>
                                         )}
                                     </div>
@@ -469,7 +469,7 @@ export const AssetViewPage = () => {
                                     </h4>
                                     <p className="mb-2 text-muted">
                                         <strong>{assetData.model || "N/A"}</strong>
-                                        {assetData.asset_type_name && ` • ${assetData.asset_type_name}`}
+                                        {assetData.peripheral_type && ` • ${assetData.peripheral_type}`}
                                         {assetData.manufacturer_name && ` • ${assetData.manufacturer_name}`}
                                     </p>
                                     <div className="d-flex gap-2 flex-wrap">
@@ -485,7 +485,7 @@ export const AssetViewPage = () => {
                                 <button
                                     className="btn btn-primary btn-sm me-2"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#assetModal"
+                                    data-bs-target="#peripheralAssetModal"
                                     onClick={() => setSelectedObj(assetData)}
                                 >
                                     <i className="bx bx-edit-alt me-1"></i> Edit
@@ -730,13 +730,17 @@ export const AssetViewPage = () => {
                         {/* Specifications Tab */}
                         {activeTab === "specifications" && (
                             <div className="animate__animated animate__fadeIn animate__faster">
-                                <h5 className="mb-3 fw-semibold">Technical Specifications</h5>
+                                <h5 className="mb-3 fw-semibold">Peripheral Specifications</h5>
                                 <div className="row">
                                     <div className="col-md-6">
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Model:</td>
+                                                    <td className="fw-medium" style={{ width: "40%" }}>Peripheral Type:</td>
+                                                    <td>{assetData.peripheral_type || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Model:</td>
                                                     <td>{assetData.model || "-"}</td>
                                                 </tr>
                                                 <tr>
@@ -744,12 +748,16 @@ export const AssetViewPage = () => {
                                                     <td>{assetData.manufacturer_name || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Serial Number:</td>
-                                                    <td>{assetData.serial_number || "-"}</td>
+                                                    <td className="fw-medium">Color:</td>
+                                                    <td>{assetData.color || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Asset Type:</td>
-                                                    <td>{assetData.asset_type_name || "-"}</td>
+                                                    <td className="fw-medium">Connection Type:</td>
+                                                    <td>{assetData.connection_type || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Interface Type:</td>
+                                                    <td>{assetData.interface_type || "-"}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -758,18 +766,24 @@ export const AssetViewPage = () => {
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Condition:</td>
+                                                    <td className="fw-medium" style={{ width: "40%" }}>Resolution:</td>
+                                                    <td>{assetData.resolution || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Screen Size:</td>
+                                                    <td>{assetData.screen_size || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Compatibility:</td>
+                                                    <td>{assetData.compatibility || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Serial Number:</td>
+                                                    <td>{assetData.serial_number || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Condition:</td>
                                                     <td>{assetData.condition ? getConditionBadge(assetData.condition) : "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Barcode:</td>
-                                                    <td>{assetData.barcode || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Asset Tag:</td>
-                                                    <td>
-                                                        <span className="badge bg-primary">{assetData.asset_tag}</span>
-                                                    </td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -1162,7 +1176,7 @@ export const AssetViewPage = () => {
                 </div>
             </div>
 
-            <AssetModal loadOnlyModal={true} />
+            <PeripheralAssetModal loadOnlyModal={true} />
             <MaintenanceRecordModal
                 assetUid={uid}
                 assetTag={assetData?.asset_tag}

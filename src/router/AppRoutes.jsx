@@ -32,8 +32,15 @@ import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handli
 import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
 
 // ICT ASSETS MANAGEMENT
-import { AssetListPage } from "../pages/services/ICT-ASSETS/assets_list/View.jsx";
 import { AssetDashboardPage } from "../pages/services/ICT-ASSETS/dashboard/AssetDashboardPage.jsx"
+import { AssetListPage } from "../pages/services/ICT-ASSETS/assets_list/View.jsx";
+import { AssetViewPage } from "../pages/services/ICT-ASSETS/assets_list/Open.jsx"
+import { ComputerListPage } from "../pages/services/ICT-ASSETS/computers/View.jsx";
+import { ComputerViewPage } from "../pages/services/ICT-ASSETS/computers/Open.jsx";
+import { NetworkingDeviceListPage } from "../pages/services/ICT-ASSETS/networking/View.jsx";
+import { NetworkingDeviceViewPage } from "../pages/services/ICT-ASSETS/networking/Open.jsx";
+import { PeripheralDeviceListPage } from "../pages/services/ICT-ASSETS/peripherals/View.jsx";
+import { PeripheralDeviceViewPage } from "../pages/services/ICT-ASSETS/peripherals/Open.jsx";
 
 
 
@@ -296,7 +303,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
-            requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
              <AssetDashboardPage />
           </ProtectedRoute>
@@ -304,13 +311,97 @@ const AppRoutes = () => {
       />
       
       <Route
-        path="/ict-assets/assets/list"
+        path="/ict-assets/assets"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
-            requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
              <AssetListPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/assets/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <AssetViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/computers/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <ComputerViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/computers"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <ComputerListPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/network-devices/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <NetworkingDeviceViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/network-devices"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <NetworkingDeviceListPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/peripheral-devices/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <PeripheralDeviceViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/peripheral-devices"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <PeripheralDeviceListPage />
           </ProtectedRoute>
         }
       />

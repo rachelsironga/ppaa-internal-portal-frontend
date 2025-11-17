@@ -6,7 +6,7 @@ import "animate.css";
 import { AssetContext } from "../../../../utils/context";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    getAssets,
+    getComputerAssets,
     deleteAsset,
     getAssetHistory,
     updateAssetStatus,
@@ -23,17 +23,18 @@ import {
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
-import { AssetModal } from "./Modal";
-import { MaintenanceRecordModal } from "./MaintenanceModal";
-import { SupportTicketModal } from "./SupportTicketModal";
+import { ComputerAssetModal } from "./Modal";
+import { MaintenanceRecordModal } from "../assets_list/MaintenanceModal";
+import { SupportTicketModal } from "../assets_list/SupportTicketModal";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
-export const AssetViewPage = () => {
+export const ComputerViewPage = () => {
     const [assetData, setAssetData] = useState(null);
     const [selectedObj, setSelectedObj] = useState(null);
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [tableRefresh, setTableRefresh] = useState(0);
     const [activeTab, setActiveTab] = useState("overview");
+    const [assetUid, setAssetUid] = useState(null);
     const navigate = useNavigate();
     const user = useSelector((state) => state.userReducer?.data);
 
@@ -58,9 +59,19 @@ export const AssetViewPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getAssets({ uid: uid });
+            const result = await getComputerAssets({ uid: uid });
             if (result.status === 200 || result.status === 8000) {
                 setAssetData(result.data);
+
+                // Extract asset UID from computer data
+                const extractedAssetUid = result.data?.asset_uid ||
+                    result.data?.asset?.uid ||
+                    result.data?.asset;
+
+                console.log("Computer Data Keys:", Object.keys(result.data));
+                console.log("Extracted Asset UID:", extractedAssetUid);
+
+                setAssetUid(extractedAssetUid);
             } else {
                 setError(true);
                 showToast("Asset Not Found", "warning", "Fetch Completed");
@@ -75,10 +86,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchAssetHistory = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching asset history");
+            return;
+        }
         setLoadingHistory(true);
         try {
-            const result = await getAssetHistory(uid);
+            const result = await getAssetHistory(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setAssetHistory(result.data || []);
             }
@@ -90,10 +104,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchMaintenanceRecords = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching maintenance records");
+            return;
+        }
         setLoadingMaintenance(true);
         try {
-            const result = await getMaintenanceRecords(uid);
+            const result = await getMaintenanceRecords(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setMaintenanceRecords(result.data || []);
             }
@@ -105,10 +122,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchSupportTickets = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching support tickets");
+            return;
+        }
         setLoadingTickets(true);
         try {
-            const result = await getSupportTickets(uid);
+            const result = await getSupportTickets(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setSupportTickets(result.data || []);
             }
@@ -120,10 +140,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchCustodianHistory = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching custodian history");
+            return;
+        }
         setLoadingCustodianHistory(true);
         try {
-            const result = await getCustodianHistory(uid);
+            const result = await getCustodianHistory(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setCustodianHistory(result.data || []);
             }
@@ -135,10 +158,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchLocationHistory = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching location history");
+            return;
+        }
         setLoadingLocationHistory(true);
         try {
-            const result = await getLocationHistory(uid);
+            const result = await getLocationHistory(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setLocationHistory(result.data || []);
             }
@@ -150,10 +176,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchAssignments = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching assignments");
+            return;
+        }
         setLoadingAssignments(true);
         try {
-            const result = await getAssetAssignments(uid);
+            const result = await getAssetAssignments(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setAssignments(result.data || []);
             }
@@ -297,7 +326,7 @@ export const AssetViewPage = () => {
     }, [uid, tableRefresh]);
 
     useEffect(() => {
-        if (!uid) return;
+        if (!assetUid) return;
 
         switch (activeTab) {
             case "history":
@@ -317,7 +346,7 @@ export const AssetViewPage = () => {
             default:
                 break;
         }
-    }, [activeTab, uid]);
+    }, [activeTab, assetUid]);
 
     const getStatusBadge = (status) => {
         const statusConfig = {
@@ -485,7 +514,7 @@ export const AssetViewPage = () => {
                                 <button
                                     className="btn btn-primary btn-sm me-2"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#assetModal"
+                                    data-bs-target="#computerAssetModal"
                                     onClick={() => setSelectedObj(assetData)}
                                 >
                                     <i className="bx bx-edit-alt me-1"></i> Edit
@@ -730,51 +759,378 @@ export const AssetViewPage = () => {
                         {/* Specifications Tab */}
                         {activeTab === "specifications" && (
                             <div className="animate__animated animate__fadeIn animate__faster">
-                                <h5 className="mb-3 fw-semibold">Technical Specifications</h5>
-                                <div className="row">
-                                    <div className="col-md-6">
-                                        <table className="table table-borderless">
-                                            <tbody>
-                                                <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Model:</td>
-                                                    <td>{assetData.model || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Manufacturer:</td>
-                                                    <td>{assetData.manufacturer_name || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Serial Number:</td>
-                                                    <td>{assetData.serial_number || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Asset Type:</td>
-                                                    <td>{assetData.asset_type_name || "-"}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <table className="table table-borderless">
-                                            <tbody>
-                                                <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Condition:</td>
-                                                    <td>{assetData.condition ? getConditionBadge(assetData.condition) : "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Barcode:</td>
-                                                    <td>{assetData.barcode || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Asset Tag:</td>
-                                                    <td>
-                                                        <span className="badge bg-primary">{assetData.asset_tag}</span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                <div className="alert alert-primary border-0 mb-4">
+                                    <div className="d-flex align-items-center">
+                                        <i className="bx bx-info-circle fs-4 me-2"></i>
+                                        <div>
+                                            <h6 className="alert-heading mb-1">Complete Computer Specifications</h6>
+                                            <p className="mb-0 small">Detailed hardware, software, and network configuration for this asset</p>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* Device Information Section */}
+                                <div className="card mb-3 shadow-sm border-start border-primary border-3">
+                                    <div className="card-header bg-gradient" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                                        <h6 className="mb-0 fw-semibold">
+                                            <i className="bx bx-info-square me-2"></i>Device Information
+                                        </h6>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="row">
+                                            <div className="col-md-6">
+                                                <table className="table table-sm table-borderless mb-0">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted" style={{ width: "45%" }}>
+                                                                <i className="bx bx-purchase-tag me-1 text-primary"></i> Asset Tag:
+                                                            </td>
+                                                            <td>
+                                                                <span className="badge bg-primary bg-opacity-10 text-primary border border-primary">{assetData.asset_tag}</span>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted">
+                                                                <i className="bx bx-barcode me-1 text-success"></i> Serial Number:
+                                                            </td>
+                                                            <td>
+                                                                {assetData.serial_number ? (
+                                                                    <span className="badge bg-light text-dark border fw-normal">{assetData.serial_number}</span>
+                                                                ) : <span className="text-muted">Not assigned</span>}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted">
+                                                                <i className="bx bx-barcode-reader me-1 text-info"></i> Barcode:
+                                                            </td>
+                                                            <td>{assetData.barcode || <span className="text-muted">Not assigned</span>}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted">
+                                                                <i className="bx bx-desktop me-1 text-warning"></i> Hostname:
+                                                            </td>
+                                                            <td>
+                                                                {assetData.hostname ? (
+                                                                    <code className="text-primary bg-light px-2 py-1 rounded">{assetData.hostname}</code>
+                                                                ) : <span className="text-muted">Not configured</span>}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <table className="table table-sm table-borderless mb-0">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted" style={{ width: "45%" }}>
+                                                                <i className="bx bx-category me-1 text-primary"></i> Asset Type:
+                                                            </td>
+                                                            <td>
+                                                                <span className="badge bg-info bg-opacity-10 text-info border border-info">
+                                                                    {assetData.asset_type_name || "Not specified"}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted">
+                                                                <i className="bx bx-buildings me-1 text-success"></i> Manufacturer:
+                                                            </td>
+                                                            <td className="fw-semibold">{assetData.manufacturer_name || "Unknown"}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted">
+                                                                <i className="bx bx-chip me-1 text-danger"></i> Model:
+                                                            </td>
+                                                            <td className="fw-bold text-dark">{assetData.model || "Not specified"}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="fw-medium text-muted">
+                                                                <i className="bx bx-check-shield me-1 text-warning"></i> Condition:
+                                                            </td>
+                                                            <td>{assetData.condition ? getConditionBadge(assetData.condition) : <span className="text-muted">Not rated</span>}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Hardware Specifications Section */}
+                                <div className="card mb-3 shadow-sm border-start border-success border-3">
+                                    <div className="card-header bg-gradient" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+                                        <h6 className="mb-0 fw-semibold">
+                                            <i className="bx bx-chip me-2"></i>Hardware Specifications
+                                        </h6>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="row g-4">
+                                            <div className="col-md-6">
+                                                {/* Processor Card */}
+                                                <div className="p-3 bg-light rounded-3 mb-3">
+                                                    <div className="d-flex align-items-center mb-2">
+                                                        <div className="avatar avatar-sm flex-shrink-0 me-2">
+                                                            <span className="avatar-initial rounded bg-label-primary">
+                                                                <i className="bx bx-chip"></i>
+                                                            </span>
+                                                        </div>
+                                                        <h6 className="mb-0 text-muted">Processor</h6>
+                                                    </div>
+                                                    <p className="mb-1 fw-semibold text-dark">{assetData.processor || "Not specified"}</p>
+                                                    {assetData.cpu_cores && (
+                                                        <span className="badge bg-primary bg-opacity-10 text-primary">
+                                                            <i className="bx bx-cog me-1"></i>{assetData.cpu_cores} Cores
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* RAM Card */}
+                                                <div className="p-3 bg-light rounded-3">
+                                                    <div className="d-flex align-items-center mb-2">
+                                                        <div className="avatar avatar-sm flex-shrink-0 me-2">
+                                                            <span className="avatar-initial rounded bg-label-success">
+                                                                <i className="bx bx-memory-card"></i>
+                                                            </span>
+                                                        </div>
+                                                        <h6 className="mb-0 text-muted">Memory (RAM)</h6>
+                                                    </div>
+                                                    <p className="mb-0">
+                                                        {assetData.ram_gb ? (
+                                                            <>
+                                                                <span className="fs-4 fw-bold text-success">{assetData.ram_gb}</span>
+                                                                <span className="text-muted ms-1">GB</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-muted">Not specified</span>
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="col-md-6">
+                                                {/* Storage Card */}
+                                                <div className="p-3 bg-light rounded-3 mb-3">
+                                                    <div className="d-flex align-items-center mb-2">
+                                                        <div className="avatar avatar-sm flex-shrink-0 me-2">
+                                                            <span className="avatar-initial rounded bg-label-info">
+                                                                <i className="bx bx-hdd"></i>
+                                                            </span>
+                                                        </div>
+                                                        <h6 className="mb-0 text-muted">Storage</h6>
+                                                    </div>
+                                                    <div className="d-flex align-items-baseline gap-2 mb-1">
+                                                        {assetData.storage_gb ? (
+                                                            <>
+                                                                <span className="fs-4 fw-bold text-info">{assetData.storage_gb}</span>
+                                                                <span className="text-muted">GB</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-muted">Not specified</span>
+                                                        )}
+                                                    </div>
+                                                    {assetData.storage_type && (
+                                                        <span className="badge bg-dark bg-opacity-10 text-dark">
+                                                            <i className="bx bx-data me-1"></i>{assetData.storage_type}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Quick Specs Summary */}
+                                                <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)' }}>
+                                                    <small className="text-muted d-block mb-1">Configuration Summary</small>
+                                                    <div className="d-flex flex-wrap gap-1">
+                                                        {assetData.cpu_cores && (
+                                                            <span className="badge bg-white text-dark border">{assetData.cpu_cores}-Core</span>
+                                                        )}
+                                                        {assetData.ram_gb && (
+                                                            <span className="badge bg-white text-dark border">{assetData.ram_gb}GB RAM</span>
+                                                        )}
+                                                        {assetData.storage_gb && (
+                                                            <span className="badge bg-white text-dark border">{assetData.storage_gb}GB Storage</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Operating System Section */}
+                                <div className="card mb-3 shadow-sm border-start border-info border-3">
+                                    <div className="card-header bg-gradient" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
+                                        <h6 className="mb-0 fw-semibold">
+                                            <i className="bx bx-windows me-2"></i>Operating System
+                                        </h6>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="row align-items-center">
+                                            <div className="col-md-8">
+                                                <div className="d-flex align-items-center">
+                                                    <div className="avatar avatar-lg flex-shrink-0 me-3">
+                                                        <span className="avatar-initial rounded bg-label-info">
+                                                            <i className="bx bx-windows bx-lg"></i>
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <h5 className="mb-1 fw-bold">{assetData.operating_system || "Not installed"}</h5>
+                                                        {assetData.os_version && (
+                                                            <span className="badge bg-info bg-opacity-10 text-info border border-info">
+                                                                <i className="bx bx-git-branch me-1"></i>Version {assetData.os_version}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="col-md-4 text-end">
+                                                {assetData.operating_system && (
+                                                    <div className="text-muted small">
+                                                        <i className="bx bx-check-circle text-success me-1"></i>
+                                                        OS Installed
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Network Configuration Section */}
+                                <div className="card mb-3 shadow-sm border-start border-warning border-3">
+                                    <div className="card-header bg-gradient" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
+                                        <h6 className="mb-0 fw-semibold">
+                                            <i className="bx bx-network-chart me-2"></i>Network Configuration
+                                        </h6>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <div className="border rounded-3 p-3 h-100">
+                                                    <div className="d-flex align-items-center mb-3">
+                                                        <div className="avatar avatar-sm flex-shrink-0 me-2">
+                                                            <span className="avatar-initial rounded bg-label-primary">
+                                                                <i className="bx bx-globe"></i>
+                                                            </span>
+                                                        </div>
+                                                        <h6 className="mb-0">IP Addresses</h6>
+                                                    </div>
+                                                    {assetData.ip_addresses && assetData.ip_addresses.length > 0 ? (
+                                                        <div className="d-flex flex-column gap-2">
+                                                            {assetData.ip_addresses.map((ip, index) => (
+                                                                <div key={index} className="d-flex align-items-center">
+                                                                    <i className="bx bx-radio-circle-marked text-success me-2 small"></i>
+                                                                    <code className="bg-light px-3 py-2 rounded border flex-grow-1" style={{ fontFamily: 'monospace' }}>
+                                                                        {ip}
+                                                                    </code>
+                                                                </div>
+                                                            ))}
+                                                            <small className="text-muted mt-1">
+                                                                <i className="bx bx-info-circle me-1"></i>
+                                                                {assetData.ip_addresses.length} IP address(es) configured
+                                                            </small>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="alert alert-warning mb-0 py-2">
+                                                            <small><i className="bx bx-error-circle me-1"></i>No IP addresses configured</small>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <div className="border rounded-3 p-3 h-100">
+                                                    <div className="d-flex align-items-center mb-3">
+                                                        <div className="avatar avatar-sm flex-shrink-0 me-2">
+                                                            <span className="avatar-initial rounded bg-label-success">
+                                                                <i className="bx bx-network-chart"></i>
+                                                            </span>
+                                                        </div>
+                                                        <h6 className="mb-0">MAC Addresses</h6>
+                                                    </div>
+                                                    {assetData.mac_addresses && assetData.mac_addresses.length > 0 ? (
+                                                        <div className="d-flex flex-column gap-2">
+                                                            {assetData.mac_addresses.map((mac, index) => (
+                                                                <div key={index} className="d-flex align-items-center">
+                                                                    <i className="bx bx-radio-circle-marked text-primary me-2 small"></i>
+                                                                    <code className="bg-light px-3 py-2 rounded border flex-grow-1" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                                                                        {mac}
+                                                                    </code>
+                                                                </div>
+                                                            ))}
+                                                            <small className="text-muted mt-1">
+                                                                <i className="bx bx-info-circle me-1"></i>
+                                                                {assetData.mac_addresses.length} MAC address(es) configured
+                                                            </small>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="alert alert-warning mb-0 py-2">
+                                                            <small><i className="bx bx-error-circle me-1"></i>No MAC addresses configured</small>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Network Summary */}
+                                        {((assetData.ip_addresses && assetData.ip_addresses.length > 0) ||
+                                            (assetData.mac_addresses && assetData.mac_addresses.length > 0)) && (
+                                                <div className="mt-3 p-3 rounded-3" style={{ background: '#f8f9fa' }}>
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        <div>
+                                                            <small className="text-muted d-block">Network Status</small>
+                                                            <span className="badge bg-success">
+                                                                <i className="bx bx-check me-1"></i>Configured
+                                                            </span>
+                                                        </div>
+                                                        {assetData.hostname && (
+                                                            <div className="text-end">
+                                                                <small className="text-muted d-block">Hostname</small>
+                                                                <code className="text-primary">{assetData.hostname}</code>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                    </div>
+                                </div>
+
+                                {/* Additional Information */}
+                                {(assetData.notes || assetData.purchase_cost || assetData.warranty_expiry) && (
+                                    <div className="card shadow-sm border-start border-secondary border-3">
+                                        <div className="card-header bg-light">
+                                            <h6 className="mb-0 fw-semibold text-dark">
+                                                <i className="bx bx-note me-2"></i>Additional Information
+                                            </h6>
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="row">
+                                                {assetData.purchase_cost && (
+                                                    <div className="col-md-4 mb-2">
+                                                        <small className="text-muted d-block">Purchase Cost</small>
+                                                        <strong className="text-success">TSH {Number(assetData.purchase_cost).toLocaleString()}</strong>
+                                                    </div>
+                                                )}
+                                                {assetData.warranty_expiry && (
+                                                    <div className="col-md-4 mb-2">
+                                                        <small className="text-muted d-block">Warranty Expiry</small>
+                                                        <div>{getWarrantyStatus(assetData.warranty_expiry)}</div>
+                                                    </div>
+                                                )}
+                                                {assetData.location_name && (
+                                                    <div className="col-md-4 mb-2">
+                                                        <small className="text-muted d-block">Location</small>
+                                                        <strong>{assetData.location_name}</strong>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {assetData.notes && (
+                                                <div className="mt-3">
+                                                    <small className="text-muted d-block mb-1">Notes</small>
+                                                    <div className="alert alert-info mb-0 py-2">
+                                                        <small>{assetData.notes}</small>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -942,6 +1298,9 @@ export const AssetViewPage = () => {
                                         className="btn btn-sm btn-primary"
                                         data-bs-toggle="modal"
                                         data-bs-target="#maintenanceRecordModal"
+                                        disabled={!assetUid}
+                                        title={!assetUid ? "Loading asset information..." : "Add maintenance record"}
+                                        onClick={() => console.log("Opening maintenance modal with assetUid:", assetUid)}
                                     >
                                         <i className="bx bx-plus me-1"></i> Add Record
                                     </button>
@@ -1042,7 +1401,12 @@ export const AssetViewPage = () => {
                                         className="btn btn-sm btn-primary"
                                         data-bs-toggle="modal"
                                         data-bs-target="#supportTicketModal"
-                                        onClick={() => setSelectedTicket(null)}
+                                        disabled={!assetUid}
+                                        title={!assetUid ? "Loading asset information..." : "Create new support ticket"}
+                                        onClick={() => {
+                                            console.log("Opening support ticket modal with assetUid:", assetUid);
+                                            setSelectedTicket(null);
+                                        }}
                                     >
                                         <i className="bx bx-plus me-1"></i> New Ticket
                                     </button>
@@ -1162,14 +1526,14 @@ export const AssetViewPage = () => {
                 </div>
             </div>
 
-            <AssetModal loadOnlyModal={true} />
+            <ComputerAssetModal loadOnlyModal={true} />
             <MaintenanceRecordModal
-                assetUid={uid}
+                assetUid={assetUid}
                 assetTag={assetData?.asset_tag}
                 onSuccess={fetchMaintenanceRecords}
             />
             <SupportTicketModal
-                assetUid={uid}
+                assetUid={assetUid}
                 assetTag={assetData?.asset_tag}
                 selectedTicket={selectedTicket}
                 onSuccess={fetchSupportTickets}

@@ -18,18 +18,10 @@
           "role": ["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]
         },
         {
-          "text": "Assets",
-          "icon": "bx bx-desktop",
-          "available": true,
-          "link": "/ict-assets/assets/list",
-          "permission": ["view_asset"],
-          "role": ["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]
-        },
-        {
           "text": "Computers",
           "icon": "bx bx-laptop",
           "available": true,
-          "link": "/ict-assets/asset-computers",
+          "link": "/ict-assets/computers",
           "permission": ["view_computer"],
           "role": ["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]
         },
@@ -37,7 +29,7 @@
           "text": "Network Devices",
           "icon": "bx bx-wifi",
           "available": true,
-          "link": "/ict-assets/asset-network-devices",
+          "link": "/ict-assets/network-devices",
           "permission": ["view_networkdevice"],
           "role": ["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]
         },
@@ -45,7 +37,7 @@
           "text": "Peripherals",
           "icon": "bx bx-printer",
           "available": true,
-          "link": "/ict-assets/asset-peripherals",
+          "link": "/ict-assets/peripheral-devices",
           "permission": ["view_peripheral"],
           "role": ["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]
         }

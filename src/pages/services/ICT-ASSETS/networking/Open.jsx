@@ -6,7 +6,7 @@ import "animate.css";
 import { AssetContext } from "../../../../utils/context";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    getAssets,
+    getNetworkAssets,
     deleteAsset,
     getAssetHistory,
     updateAssetStatus,
@@ -23,17 +23,19 @@ import {
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
-import { AssetModal } from "./Modal";
-import { MaintenanceRecordModal } from "./MaintenanceModal";
-import { SupportTicketModal } from "./SupportTicketModal";
+import { AssetNetworkModal } from "./Modal";
+import { MaintenanceRecordModal } from "../assets_list/MaintenanceModal.jsx";
+import { SupportTicketModal } from "../assets_list/SupportTicketModal.jsx";
+import { NetworkOverviewTab } from "./NetworkOverviewTab";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
-export const AssetViewPage = () => {
+export const NetworkingDeviceViewPage = () => {
     const [assetData, setAssetData] = useState(null);
     const [selectedObj, setSelectedObj] = useState(null);
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [tableRefresh, setTableRefresh] = useState(0);
     const [activeTab, setActiveTab] = useState("overview");
+    const [assetUid, setAssetUid] = useState(null);
     const navigate = useNavigate();
     const user = useSelector((state) => state.userReducer?.data);
 
@@ -58,9 +60,19 @@ export const AssetViewPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getAssets({ uid: uid });
+            const result = await getNetworkAssets({ uid: uid });
             if (result.status === 200 || result.status === 8000) {
                 setAssetData(result.data);
+
+                // Extract asset UID from network device data
+                const extractedAssetUid = result.data?.asset_uid ||
+                    result.data?.asset?.uid ||
+                    result.data?.asset;
+
+                console.log("Network Device Data Keys:", Object.keys(result.data));
+                console.log("Extracted Asset UID:", extractedAssetUid);
+
+                setAssetUid(extractedAssetUid);
             } else {
                 setError(true);
                 showToast("Asset Not Found", "warning", "Fetch Completed");
@@ -75,10 +87,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchAssetHistory = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching asset history");
+            return;
+        }
         setLoadingHistory(true);
         try {
-            const result = await getAssetHistory(uid);
+            const result = await getAssetHistory(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setAssetHistory(result.data || []);
             }
@@ -90,10 +105,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchMaintenanceRecords = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching maintenance records");
+            return;
+        }
         setLoadingMaintenance(true);
         try {
-            const result = await getMaintenanceRecords(uid);
+            const result = await getMaintenanceRecords(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setMaintenanceRecords(result.data || []);
             }
@@ -105,10 +123,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchSupportTickets = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching support tickets");
+            return;
+        }
         setLoadingTickets(true);
         try {
-            const result = await getSupportTickets(uid);
+            const result = await getSupportTickets(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setSupportTickets(result.data || []);
             }
@@ -120,10 +141,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchCustodianHistory = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching custodian history");
+            return;
+        }
         setLoadingCustodianHistory(true);
         try {
-            const result = await getCustodianHistory(uid);
+            const result = await getCustodianHistory(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setCustodianHistory(result.data || []);
             }
@@ -135,10 +159,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchLocationHistory = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching location history");
+            return;
+        }
         setLoadingLocationHistory(true);
         try {
-            const result = await getLocationHistory(uid);
+            const result = await getLocationHistory(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setLocationHistory(result.data || []);
             }
@@ -150,10 +177,13 @@ export const AssetViewPage = () => {
     };
 
     const fetchAssignments = async () => {
-        if (!uid) return;
+        if (!assetUid) {
+            console.warn("Asset UID not available for fetching assignments");
+            return;
+        }
         setLoadingAssignments(true);
         try {
-            const result = await getAssetAssignments(uid);
+            const result = await getAssetAssignments(assetUid);
             if (result.status === 200 || result.status === 8000) {
                 setAssignments(result.data || []);
             }
@@ -297,7 +327,7 @@ export const AssetViewPage = () => {
     }, [uid, tableRefresh]);
 
     useEffect(() => {
-        if (!uid) return;
+        if (!assetUid) return;
 
         switch (activeTab) {
             case "history":
@@ -317,7 +347,7 @@ export const AssetViewPage = () => {
             default:
                 break;
         }
-    }, [activeTab, uid]);
+    }, [activeTab, assetUid]);
 
     const getStatusBadge = (status) => {
         const statusConfig = {
@@ -390,7 +420,7 @@ export const AssetViewPage = () => {
     if (loading) {
         return (
             <>
-                <BreadCumb pageList={["Assets", "View"]} />
+                <BreadCumb pageList={["Network Devices", assetData?.asset_tag || "View"]} />
                 <div className="card">
                     <div className="card-body">
                         <center>
@@ -437,7 +467,7 @@ export const AssetViewPage = () => {
                 setTableRefresh,
             }}
         >
-            <BreadCumb pageList={["Assets", assetData?.asset_tag || "View"]} />
+            <BreadCumb pageList={["Network Devices", assetData?.asset_tag || "View"]} />
 
             {/* Asset Header Card */}
             <div className="card mb-4 shadow-sm animate__animated animate__fadeInDown animate__faster">
@@ -454,8 +484,8 @@ export const AssetViewPage = () => {
                                                 className="rounded"
                                             />
                                         ) : (
-                                            <span className="avatar-initial rounded bg-label-primary">
-                                                <i className="bx bx-desktop bx-lg"></i>
+                                            <span className="avatar-initial rounded bg-label-info">
+                                                <i className="bx bx-network-chart bx-lg"></i>
                                             </span>
                                         )}
                                     </div>
@@ -485,7 +515,7 @@ export const AssetViewPage = () => {
                                 <button
                                     className="btn btn-primary btn-sm me-2"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#assetModal"
+                                    data-bs-target="#NetworkAssetModal"
                                     onClick={() => setSelectedObj(assetData)}
                                 >
                                     <i className="bx bx-edit-alt me-1"></i> Edit
@@ -598,14 +628,7 @@ export const AssetViewPage = () => {
                                 <i className="bx bx-info-circle me-1"></i> Overview
                             </button>
                         </li>
-                        <li className="nav-item me-1">
-                            <button
-                                className={`nav-link ${activeTab === "specifications" ? "active" : ""}`}
-                                onClick={() => setActiveTab("specifications")}
-                            >
-                                <i className="bx bx-cog me-1"></i> Specifications
-                            </button>
-                        </li>
+
                         <li className="nav-item me-1">
                             <button
                                 className={`nav-link ${activeTab === "financial" ? "active" : ""}`}
@@ -651,31 +674,57 @@ export const AssetViewPage = () => {
                     <div className="tab-content">
                         {/* Overview Tab */}
                         {activeTab === "overview" && (
+                            <NetworkOverviewTab
+                                assetData={assetData}
+                                getStatusBadge={getStatusBadge}
+                                getConditionBadge={getConditionBadge}
+                            />
+                        )}
+
+                        {/* Specifications Tab */}
+                        {activeTab === "specifications" && (
                             <div className="animate__animated animate__fadeIn animate__faster">
+                                <h5 className="mb-3 fw-semibold">Technical Specifications</h5>
                                 <div className="row">
                                     <div className="col-md-6">
-                                        <h5 className="mb-3 fw-semibold">Basic Information</h5>
+                                        <h6 className="mb-3 text-primary">
+                                            <i className="bx bx-info-circle me-1"></i>Device Information
+                                        </h6>
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Asset Tag:</td>
-                                                    <td>{assetData.asset_tag || "-"}</td>
+                                                    <td className="fw-medium" style={{ width: "40%" }}>Device Type:</td>
+                                                    <td>
+                                                        <span className="badge bg-info">
+                                                            {assetData.device_type || "-"}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Model:</td>
+                                                    <td>{assetData.model || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Manufacturer:</td>
+                                                    <td>{assetData.manufacturer_name || "-"}</td>
                                                 </tr>
                                                 <tr>
                                                     <td className="fw-medium">Serial Number:</td>
-                                                    <td>{assetData.serial_number || "-"}</td>
+                                                    <td>
+                                                        <span className="badge bg-light text-dark border">
+                                                            {assetData.serial_number || "-"}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Asset Tag:</td>
+                                                    <td>
+                                                        <span className="badge bg-primary">{assetData.asset_tag}</span>
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td className="fw-medium">Barcode:</td>
                                                     <td>{assetData.barcode || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Asset Type:</td>
-                                                    <td>{assetData.asset_type_name || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Status:</td>
-                                                    <td>{getStatusBadge(assetData.status)}</td>
                                                 </tr>
                                                 <tr>
                                                     <td className="fw-medium">Condition:</td>
@@ -685,96 +734,106 @@ export const AssetViewPage = () => {
                                         </table>
                                     </div>
                                     <div className="col-md-6">
-                                        <h5 className="mb-3 fw-semibold">Additional Details</h5>
+                                        <h6 className="mb-3 text-primary">
+                                            <i className="bx bx-network-chart me-1"></i>Network Configuration
+                                        </h6>
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Model:</td>
-                                                    <td>{assetData.model || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Manufacturer:</td>
-                                                    <td>{assetData.manufacturer_name || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Supplier:</td>
-                                                    <td>{assetData.supplier_name || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Location:</td>
-                                                    <td>{assetData.location_name || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Active Status:</td>
+                                                    <td className="fw-medium" style={{ width: "40%" }}>Number of Ports:</td>
                                                     <td>
-                                                        <span className={`badge bg-${assetData.is_active ? "success" : "danger"}`}>
-                                                            {assetData.is_active ? "Active" : "Inactive"}
-                                                        </span>
+                                                        {assetData.ports ? (
+                                                            <span className="badge bg-success">
+                                                                <i className="bx bx-cable-car me-1"></i>
+                                                                {assetData.ports} Ports
+                                                            </span>
+                                                        ) : "-"}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">IP Address:</td>
+                                                    <td>
+                                                        {assetData.ip_address ? (
+                                                            <span className="font-monospace text-dark">
+                                                                <i className="bx bx-globe me-1 text-info"></i>
+                                                                {assetData.ip_address}
+                                                            </span>
+                                                        ) : "-"}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">MAC Address:</td>
+                                                    <td>
+                                                        {assetData.mac_address ? (
+                                                            <span className="font-monospace text-dark">
+                                                                <i className="bx bx-network-chart me-1 text-primary"></i>
+                                                                {assetData.mac_address}
+                                                            </span>
+                                                        ) : "-"}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Firmware Version:</td>
+                                                    <td>{assetData.firmware_version || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Management URL:</td>
+                                                    <td>
+                                                        {assetData.management_url ? (
+                                                            <a href={assetData.management_url} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                                                <i className="bx bx-link-external me-1"></i>
+                                                                Access Panel
+                                                            </a>
+                                                        ) : "-"}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">VLAN Support:</td>
+                                                    <td>
+                                                        {assetData.vlan_support !== undefined ? (
+                                                            <span className={`badge bg-${assetData.vlan_support ? "success" : "secondary"}`}>
+                                                                {assetData.vlan_support ? "Yes" : "No"}
+                                                            </span>
+                                                        ) : "-"}
                                                     </td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
-                                {assetData.notes && (
-                                    <div className="mt-4">
-                                        <h5 className="mb-2 fw-semibold">Notes</h5>
-                                        <div className="alert alert-info">
-                                            <p className="mb-0">{assetData.notes}</p>
+
+                                {/* Additional Technical Details */}
+                                {(assetData.power_consumption || assetData.max_throughput || assetData.protocol_support) && (
+                                    <div className="row mt-4">
+                                        <div className="col-12">
+                                            <h6 className="mb-3 text-primary">
+                                                <i className="bx bx-chip me-1"></i>Additional Specifications
+                                            </h6>
+                                            <table className="table table-borderless">
+                                                <tbody>
+                                                    {assetData.power_consumption && (
+                                                        <tr>
+                                                            <td className="fw-medium" style={{ width: "20%" }}>Power Consumption:</td>
+                                                            <td>{assetData.power_consumption}</td>
+                                                        </tr>
+                                                    )}
+                                                    {assetData.max_throughput && (
+                                                        <tr>
+                                                            <td className="fw-medium">Max Throughput:</td>
+                                                            <td>{assetData.max_throughput}</td>
+                                                        </tr>
+                                                    )}
+                                                    {assetData.protocol_support && (
+                                                        <tr>
+                                                            <td className="fw-medium">Protocol Support:</td>
+                                                            <td>{assetData.protocol_support}</td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        )}
-
-                        {/* Specifications Tab */}
-                        {activeTab === "specifications" && (
-                            <div className="animate__animated animate__fadeIn animate__faster">
-                                <h5 className="mb-3 fw-semibold">Technical Specifications</h5>
-                                <div className="row">
-                                    <div className="col-md-6">
-                                        <table className="table table-borderless">
-                                            <tbody>
-                                                <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Model:</td>
-                                                    <td>{assetData.model || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Manufacturer:</td>
-                                                    <td>{assetData.manufacturer_name || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Serial Number:</td>
-                                                    <td>{assetData.serial_number || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Asset Type:</td>
-                                                    <td>{assetData.asset_type_name || "-"}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <table className="table table-borderless">
-                                            <tbody>
-                                                <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Condition:</td>
-                                                    <td>{assetData.condition ? getConditionBadge(assetData.condition) : "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Barcode:</td>
-                                                    <td>{assetData.barcode || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Asset Tag:</td>
-                                                    <td>
-                                                        <span className="badge bg-primary">{assetData.asset_tag}</span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
                             </div>
                         )}
 
@@ -942,6 +1001,9 @@ export const AssetViewPage = () => {
                                         className="btn btn-sm btn-primary"
                                         data-bs-toggle="modal"
                                         data-bs-target="#maintenanceRecordModal"
+                                        disabled={!assetUid}
+                                        title={!assetUid ? "Loading asset information..." : "Add maintenance record"}
+                                        onClick={() => console.log("Opening maintenance modal with assetUid:", assetUid)}
                                     >
                                         <i className="bx bx-plus me-1"></i> Add Record
                                     </button>
@@ -1042,7 +1104,12 @@ export const AssetViewPage = () => {
                                         className="btn btn-sm btn-primary"
                                         data-bs-toggle="modal"
                                         data-bs-target="#supportTicketModal"
-                                        onClick={() => setSelectedTicket(null)}
+                                        disabled={!assetUid}
+                                        title={!assetUid ? "Loading asset information..." : "Create new support ticket"}
+                                        onClick={() => {
+                                            console.log("Opening support ticket modal with assetUid:", assetUid);
+                                            setSelectedTicket(null);
+                                        }}
                                     >
                                         <i className="bx bx-plus me-1"></i> New Ticket
                                     </button>
@@ -1162,14 +1229,14 @@ export const AssetViewPage = () => {
                 </div>
             </div>
 
-            <AssetModal loadOnlyModal={true} />
+            <AssetNetworkModal loadOnlyModal={true} />
             <MaintenanceRecordModal
-                assetUid={uid}
+                assetUid={assetUid}
                 assetTag={assetData?.asset_tag}
                 onSuccess={fetchMaintenanceRecords}
             />
             <SupportTicketModal
-                assetUid={uid}
+                assetUid={assetUid}
                 assetTag={assetData?.asset_tag}
                 selectedTicket={selectedTicket}
                 onSuccess={fetchSupportTickets}
