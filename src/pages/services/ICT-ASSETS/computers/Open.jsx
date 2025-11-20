@@ -218,7 +218,7 @@ export const ComputerViewPage = () => {
                         "The Asset has been deleted.",
                         "success"
                     );
-                    navigate("/ict-assets/assets");
+                    navigate("/ict-assets/network-devices");
                 } else {
                     console.error("Error deleting Asset:", result);
                     Swal.fire("Error Occurred!", `${result.message}`, "error");

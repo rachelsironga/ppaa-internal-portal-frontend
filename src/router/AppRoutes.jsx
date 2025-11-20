@@ -41,6 +41,10 @@ import { NetworkingDeviceListPage } from "../pages/services/ICT-ASSETS/networkin
 import { NetworkingDeviceViewPage } from "../pages/services/ICT-ASSETS/networking/Open.jsx";
 import { PeripheralDeviceListPage } from "../pages/services/ICT-ASSETS/peripherals/View.jsx";
 import { PeripheralDeviceViewPage } from "../pages/services/ICT-ASSETS/peripherals/Open.jsx";
+import { SoftwareAssetListPage } from "../pages/services/ICT-ASSETS/softwares/View.jsx";
+import { SoftwareAssetViewPage } from "../pages/services/ICT-ASSETS/softwares/Open.jsx";
+import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
+import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
 
 
 
@@ -405,7 +409,55 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      
+
+       <Route
+        path="/ict-assets/asset-software/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <SoftwareAssetViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/asset-software"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <SoftwareAssetListPage />
+          </ProtectedRoute>
+        }
+      />
+
+       <Route
+        path="/ict-assets/asset-software-installations"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <SowareInstallationListPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/asset-software-installations/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <SoftwareInstallationViewPage />
+          </ProtectedRoute>
+        }
+      />
+
      
 
       {/*<Route*/}

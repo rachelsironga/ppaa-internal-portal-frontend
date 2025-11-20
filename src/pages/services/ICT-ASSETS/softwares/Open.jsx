@@ -6,32 +6,30 @@ import "animate.css";
 import { AssetContext } from "../../../../utils/context";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    getPeripheralAssets,
+    getSoftwareAssets,
     deleteAsset,
     getAssetHistory,
     updateAssetStatus,
-    getMaintenanceRecords,
     getSupportTickets,
-    getCustodianHistory,
-    getLocationHistory,
-    getAssetAssignments,
-    createMaintenanceRecord,
-    createSupportTicket,
     updateSupportTicket,
-    deleteMaintenanceRecord
+    getSoftwareInstallations,
+    deleteInstallation,
+    verifyInstallation,
+    uninstallSoftware
 } from "./Queries";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
-import { PeripheralAssetModal } from "./PeripheralAssetModal";
-import { MaintenanceRecordModal } from "../assets_list/MaintenanceModal";
+import { SoftwareAssetModal } from "./SoftwareAssetModal";
 import { SupportTicketModal } from "../assets_list/SupportTicketModal";
+import { InstallationModal } from "./InstallationModal";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
-export const PeripheralDeviceViewPage = () => {
+export const SoftwareAssetViewPage = () => {
     const [assetData, setAssetData] = useState(null);
     const [selectedObj, setSelectedObj] = useState(null);
     const [selectedTicket, setSelectedTicket] = useState(null);
+    const [selectedInstallation, setSelectedInstallation] = useState(null);
     const [tableRefresh, setTableRefresh] = useState(0);
     const [activeTab, setActiveTab] = useState("overview");
     const navigate = useNavigate();
@@ -40,35 +38,29 @@ export const PeripheralDeviceViewPage = () => {
     const { uid } = useParams();
     const [loading, setLoading] = useState(true);
     const [loadingHistory, setLoadingHistory] = useState(false);
-    const [loadingMaintenance, setLoadingMaintenance] = useState(false);
     const [loadingTickets, setLoadingTickets] = useState(false);
-    const [loadingCustodianHistory, setLoadingCustodianHistory] = useState(false);
-    const [loadingLocationHistory, setLoadingLocationHistory] = useState(false);
-    const [loadingAssignments, setLoadingAssignments] = useState(false);
+    const [loadingInstallations, setLoadingInstallations] = useState(false);
 
     const [error, setError] = useState(null);
     const [assetHistory, setAssetHistory] = useState([]);
-    const [maintenanceRecords, setMaintenanceRecords] = useState([]);
     const [supportTickets, setSupportTickets] = useState([]);
-    const [custodianHistory, setCustodianHistory] = useState([]);
-    const [locationHistory, setLocationHistory] = useState([]);
-    const [assignments, setAssignments] = useState([]);
+    const [installations, setInstallations] = useState([]);
 
     const handleFetchAsset = async () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await getPeripheralAssets({ uid: uid });
+            const result = await getSoftwareAssets({ uid: uid });
             if (result.status === 200 || result.status === 8000) {
                 setAssetData(result.data);
             } else {
                 setError(true);
-                showToast("warning", "Asset Not Found");
+                showToast("warning", "Software Asset Not Found");
             }
         } catch (err) {
-            console.error("Error fetching peripheral asset:", err);
+            console.error("Error fetching software asset:", err);
             setError(true);
-            showToast("warning", "Unable to Fetch Asset Details");
+            showToast("warning", "Unable to Fetch Software Asset Details");
         } finally {
             setLoading(false);
         }
@@ -89,80 +81,41 @@ export const PeripheralDeviceViewPage = () => {
         }
     };
 
-    const fetchMaintenanceRecords = async () => {
-        if (!uid) return;
-        setLoadingMaintenance(true);
-        try {
-            const result = await getMaintenanceRecords(uid);
-            if (result.status === 200 || result.status === 8000) {
-                setMaintenanceRecords(result.data || []);
-            }
-        } catch (err) {
-            console.error("Error fetching maintenance records:", err);
-        } finally {
-            setLoadingMaintenance(false);
-        }
-    };
 
     const fetchSupportTickets = async () => {
-        if (!uid) return;
-        setLoadingTickets(true);
-        try {
-            const result = await getSupportTickets(uid);
-            if (result.status === 200 || result.status === 8000) {
-                setSupportTickets(result.data || []);
+            if (!uid) {
+                console.warn("Asset UID not available for fetching support tickets");
+                return;
             }
-        } catch (err) {
-            console.error("Error fetching support tickets:", err);
-        } finally {
-            setLoadingTickets(false);
-        }
-    };
+            setLoadingTickets(true);
+            try {
+                const result = await getSupportTickets(uid);
+                if (result.status === 200 || result.status === 8000) {
+                    setSupportTickets(result.data || []);
+                }
+            } catch (err) {
+                console.error("Error fetching support tickets:", err);
+            } finally {
+                setLoadingTickets(false);
+            }
+        };
 
-    const fetchCustodianHistory = async () => {
+    const fetchInstallations = async () => {
         if (!uid) return;
-        setLoadingCustodianHistory(true);
+        setLoadingInstallations(true);
         try {
-            const result = await getCustodianHistory(uid);
+            const result = await getSoftwareInstallations(uid);
             if (result.status === 200 || result.status === 8000) {
-                setCustodianHistory(result.data || []);
+                setInstallations(result.data || []);
             }
         } catch (err) {
-            console.error("Error fetching custodian history:", err);
+            console.error("Error fetching installations:", err);
         } finally {
-            setLoadingCustodianHistory(false);
+            setLoadingInstallations(false);
         }
     };
+    
 
-    const fetchLocationHistory = async () => {
-        if (!uid) return;
-        setLoadingLocationHistory(true);
-        try {
-            const result = await getLocationHistory(uid);
-            if (result.status === 200 || result.status === 8000) {
-                setLocationHistory(result.data || []);
-            }
-        } catch (err) {
-            console.error("Error fetching location history:", err);
-        } finally {
-            setLoadingLocationHistory(false);
-        }
-    };
-
-    const fetchAssignments = async () => {
-        if (!uid) return;
-        setLoadingAssignments(true);
-        try {
-            const result = await getAssetAssignments(uid);
-            if (result.status === 200 || result.status === 8000) {
-                setAssignments(result.data || []);
-            }
-        } catch (err) {
-            console.error("Error fetching assignments:", err);
-        } finally {
-            setLoadingAssignments(false);
-        }
-    };
 
     const handleDelete = async () => {
         if (!assetData) {
@@ -189,7 +142,7 @@ export const PeripheralDeviceViewPage = () => {
                         "The Asset has been deleted.",
                         "success"
                     );
-                    navigate("/ict-assets/peripheral-devices");
+                    navigate("/ict-assets/asset-software");
                 } else {
                     console.error("Error deleting Asset:", result);
                     Swal.fire("Error Occurred!", `${result.message}`, "error");
@@ -230,32 +183,6 @@ export const PeripheralDeviceViewPage = () => {
         }
     };
 
-    const handleDeleteMaintenanceRecord = async (record) => {
-        try {
-            const confirmation = await Swal.fire({
-                title: "Delete Maintenance Record?",
-                text: `Delete ${record.maintenance_type} scheduled for ${formatDate(record.scheduled_date, "DD/MM/YYYY")}?`,
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#DD6B55",
-                confirmButtonText: "Yes, delete it!",
-            });
-
-            if (confirmation.isConfirmed) {
-                const result = await deleteMaintenanceRecord(record.uid);
-                if (result.status === 200 || result.status === 8000) {
-                    showToast("Maintenance Record Deleted", "success", "Complete");
-                    fetchMaintenanceRecords();
-                } else {
-                    showToast(`${result.message}`, "warning", "Delete Failed");
-                }
-            }
-        } catch (error) {
-            console.error("Error deleting maintenance record:", error);
-            showToast("Unable to Delete Record", "error", "Failed");
-        }
-    };
-
     const handleResolveTicket = async (ticket) => {
         const { value: resolutionNotes } = await Swal.fire({
             title: 'Resolve Ticket',
@@ -292,6 +219,97 @@ export const PeripheralDeviceViewPage = () => {
         }
     };
 
+    const handleDeleteInstallation = async (installation) => {
+        try {
+            const confirmation = await Swal.fire({
+                title: "Delete Installation?",
+                text: `Remove ${assetData.software_name} from ${installation.asset_tag}?`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, delete it!",
+            });
+
+            if (confirmation.isConfirmed) {
+                const result = await deleteInstallation(installation.uid);
+                if (result.status === 200 || result.status === 8000) {
+                    showToast("Installation Deleted", "success", "Complete");
+                    fetchInstallations();
+                    handleFetchAsset(); // Refresh to update license counts
+                } else {
+                    showToast(`${result.message}`, "warning", "Delete Failed");
+                }
+            }
+        } catch (error) {
+            console.error("Error deleting installation:", error);
+            showToast("Unable to Delete Installation", "error", "Failed");
+        }
+    };
+
+    const handleVerifyInstallation = async (installation) => {
+        try {
+            const confirmation = await Swal.fire({
+                title: "Verify Installation?",
+                text: `Mark this installation as verified?`,
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Yes, verify it!",
+            });
+
+            if (confirmation.isConfirmed) {
+                const result = await verifyInstallation(installation.uid, {
+                    last_verified_date: new Date().toISOString().split('T')[0]
+                });
+                if (result.status === 200 || result.status === 8000) {
+                    showToast("Installation Verified", "success", "Complete");
+                    fetchInstallations();
+                } else {
+                    showToast(`${result.message}`, "warning", "Verification Failed");
+                }
+            }
+        } catch (error) {
+            console.error("Error verifying installation:", error);
+            showToast("Unable to Verify Installation", "error", "Failed");
+        }
+    };
+
+    const handleUninstallSoftware = async (installation) => {
+        const { value: uninstallReason } = await Swal.fire({
+            title: 'Uninstall Software',
+            input: 'textarea',
+            inputLabel: 'Uninstall Reason',
+            inputPlaceholder: 'Why is this software being uninstalled?',
+            showCancelButton: true,
+            confirmButtonText: 'Mark as Uninstalled',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please provide a reason!';
+                }
+            }
+        });
+
+        if (uninstallReason) {
+            try {
+                const result = await uninstallSoftware(installation.uid, {
+                    status: 'uninstalled',
+                    uninstall_reason: uninstallReason,
+                    uninstall_date: new Date().toISOString().split('T')[0]
+                });
+
+                if (result.status === 200 || result.status === 8000) {
+                    showToast("Software Marked as Uninstalled", "success", "Complete");
+                    fetchInstallations();
+                    handleFetchAsset(); // Refresh to update license counts
+                } else {
+                    showToast(`${result.message}`, "warning", "Uninstall Failed");
+                }
+            } catch (error) {
+                console.error("Error uninstalling software:", error);
+                showToast("Unable to Mark as Uninstalled", "error", "Failed");
+            }
+        }
+    };
+
     useEffect(() => {
         handleFetchAsset();
     }, [uid, tableRefresh]);
@@ -303,16 +321,11 @@ export const PeripheralDeviceViewPage = () => {
             case "history":
                 fetchAssetHistory();
                 break;
-            case "maintenance":
-                fetchMaintenanceRecords();
-                break;
             case "support":
                 fetchSupportTickets();
                 break;
-            case "tracking":
-                fetchCustodianHistory();
-                fetchLocationHistory();
-                fetchAssignments();
+            case "installations":
+                fetchInstallations();
                 break;
             default:
                 break;
@@ -387,6 +400,18 @@ export const PeripheralDeviceViewPage = () => {
         return <span className={`badge bg-${badge.class}`}>{badge.label}</span>;
     };
 
+    const getInstallationStatusBadge = (status) => {
+        const config = {
+            active: { class: "success", label: "Active" },
+            inactive: { class: "warning", label: "Inactive" },
+            pending: { class: "info", label: "Pending" },
+            failed: { class: "danger", label: "Failed" },
+            uninstalled: { class: "secondary", label: "Uninstalled" }
+        };
+        const badge = config[status] || { class: "secondary", label: status };
+        return <span className={`badge bg-${badge.class}`}>{badge.label}</span>;
+    };
+
     if (loading) {
         return (
             <>
@@ -406,19 +431,19 @@ export const PeripheralDeviceViewPage = () => {
     if (error || !assetData) {
         return (
             <>
-                <BreadCumb pageList={["Peripheral Assets", "View"]} />
+                <BreadCumb pageList={["Software Assets", "View"]} />
                 <div className="card">
                     <div className="card-body">
                         <div className="alert alert-danger" role="alert">
                             <div className="alert-body text-center">
                                 <p className="mb-0">
-                                    Sorry! Unable to get Peripheral Asset Details. Please Contact System Administrator
+                                    Sorry! Unable to get Software Asset Details. Please Contact System Administrator
                                 </p>
                                 <button
                                     className="btn btn-primary btn-sm mt-3"
-                                    onClick={() => navigate("/ict-assets/peripherals")}
+                                    onClick={() => navigate("/ict-assets/asset-software")}
                                 >
-                                    <i className="bx bx-arrow-back me-1"></i> Back to Peripheral Assets List
+                                    <i className="bx bx-arrow-back me-1"></i> Back to Software Assets List
                                 </button>
                             </div>
                         </div>
@@ -437,7 +462,7 @@ export const PeripheralDeviceViewPage = () => {
                 setTableRefresh,
             }}
         >
-            <BreadCumb pageList={["Peripheral Assets", assetData?.asset_tag || "View"]} />
+            <BreadCumb pageList={["Software Assets", assetData?.asset_tag || "View"]} />
 
             {/* Asset Header Card */}
             <div className="card mb-4 shadow-sm animate__animated animate__fadeInDown animate__faster">
@@ -454,8 +479,8 @@ export const PeripheralDeviceViewPage = () => {
                                                 className="rounded"
                                             />
                                         ) : (
-                                            <span className="avatar-initial rounded bg-label-info">
-                                                <i className="bx bx-devices bx-lg"></i>
+                                            <span className="avatar-initial rounded bg-label-success">
+                                                <i className="bx bx-code-alt bx-lg"></i>
                                             </span>
                                         )}
                                     </div>
@@ -463,14 +488,14 @@ export const PeripheralDeviceViewPage = () => {
                                 <div className="flex-grow-1">
                                     <h4 className="mb-1 fw-bold">
                                         {assetData.asset_tag}
-                                        {assetData.barcode && (
-                                            <small className="text-muted ms-2 fw-normal">({assetData.barcode})</small>
+                                        {assetData.software_name && (
+                                            <small className="text-muted ms-2 fw-normal">({assetData.software_name})</small>
                                         )}
                                     </h4>
                                     <p className="mb-2 text-muted">
-                                        <strong>{assetData.model || "N/A"}</strong>
-                                        {assetData.peripheral_type && ` • ${assetData.peripheral_type}`}
-                                        {assetData.manufacturer_name && ` • ${assetData.manufacturer_name}`}
+                                        <strong>{assetData.software_name || "N/A"}</strong>
+                                        {assetData.version && ` • v${assetData.version}`}
+                                        {assetData.publisher && ` • ${assetData.publisher}`}
                                     </p>
                                     <div className="d-flex gap-2 flex-wrap">
                                         {getStatusBadge(assetData.status)}
@@ -485,7 +510,7 @@ export const PeripheralDeviceViewPage = () => {
                                 <button
                                     className="btn btn-primary btn-sm me-2"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#peripheralAssetModal"
+                                    data-bs-target="#softwareAssetModal"
                                     onClick={() => setSelectedObj(assetData)}
                                 >
                                     <i className="bx bx-edit-alt me-1"></i> Edit
@@ -603,31 +628,15 @@ export const PeripheralDeviceViewPage = () => {
                                 className={`nav-link ${activeTab === "specifications" ? "active" : ""}`}
                                 onClick={() => setActiveTab("specifications")}
                             >
-                                <i className="bx bx-cog me-1"></i> Specifications
+                                <i className="bx bx-cog me-1"></i> Technical Details
                             </button>
                         </li>
                         <li className="nav-item me-1">
                             <button
-                                className={`nav-link ${activeTab === "financial" ? "active" : ""}`}
-                                onClick={() => setActiveTab("financial")}
+                                className={`nav-link ${activeTab === "installations" ? "active" : ""}`}
+                                onClick={() => setActiveTab("installations")}
                             >
-                                <i className="bx bx-dollar me-1"></i> Financial
-                            </button>
-                        </li>
-                        <li className="nav-item me-1">
-                            <button
-                                className={`nav-link ${activeTab === "tracking" ? "active" : ""}`}
-                                onClick={() => setActiveTab("tracking")}
-                            >
-                                <i className="bx bx-map me-1"></i> Tracking
-                            </button>
-                        </li>
-                        <li className="nav-item me-1">
-                            <button
-                                className={`nav-link ${activeTab === "maintenance" ? "active" : ""}`}
-                                onClick={() => setActiveTab("maintenance")}
-                            >
-                                <i className="bx bx-wrench me-1"></i> Maintenance
+                                <i className="bx bx-download me-1"></i> Installations
                             </button>
                         </li>
                         <li className="nav-item me-1">
@@ -654,62 +663,100 @@ export const PeripheralDeviceViewPage = () => {
                             <div className="animate__animated animate__fadeIn animate__faster">
                                 <div className="row">
                                     <div className="col-md-6">
-                                        <h5 className="mb-3 fw-semibold">Basic Information</h5>
+                                        <h5 className="mb-3 fw-semibold">Software Information</h5>
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
                                                     <td className="fw-medium" style={{ width: "40%" }}>Asset Tag:</td>
-                                                    <td>{assetData.asset_tag || "-"}</td>
+                                                    <td><span className="badge bg-success">{assetData.asset_tag}</span></td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Serial Number:</td>
-                                                    <td>{assetData.serial_number || "-"}</td>
+                                                    <td className="fw-medium">Software Name:</td>
+                                                    <td className="fw-bold">{assetData.software_name || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Barcode:</td>
-                                                    <td>{assetData.barcode || "-"}</td>
+                                                    <td className="fw-medium">Version:</td>
+                                                    <td><span className="badge bg-info">{assetData.version || "-"}</span></td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Asset Type:</td>
-                                                    <td>{assetData.asset_type_name || "-"}</td>
+                                                    <td className="fw-medium">Publisher/Vendor:</td>
+                                                    <td>{assetData.publisher || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Software Type:</td>
+                                                    <td><span className="badge bg-label-primary">{assetData.software_type || "-"}</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Platform:</td>
+                                                    <td>{assetData.platform || "-"}</td>
                                                 </tr>
                                                 <tr>
                                                     <td className="fw-medium">Status:</td>
                                                     <td>{getStatusBadge(assetData.status)}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Condition:</td>
-                                                    <td>{assetData.condition ? getConditionBadge(assetData.condition) : "-"}</td>
+                                                    <td className="fw-medium">Custodian:</td>
+                                                    <td>{assetData.custodian_name || "Unassigned"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Location:</td>
+                                                    <td>{assetData.location_name || "Not Specified"}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                     <div className="col-md-6">
-                                        <h5 className="mb-3 fw-semibold">Additional Details</h5>
+                                        <h5 className="mb-3 fw-semibold">License Management</h5>
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Model:</td>
-                                                    <td>{assetData.model || "-"}</td>
+                                                    <td className="fw-medium" style={{ width: "40%" }}>License Type:</td>
+                                                    <td><span className="badge bg-label-warning">{assetData.license_type || "-"}</span></td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Manufacturer:</td>
-                                                    <td>{assetData.manufacturer_name || "-"}</td>
+                                                    <td className="fw-medium">Total Licenses:</td>
+                                                    <td className="fw-bold text-primary">{assetData.total_licenses || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Supplier:</td>
-                                                    <td>{assetData.supplier_name || "-"}</td>
+                                                    <td className="fw-medium">Used Licenses:</td>
+                                                    <td className="text-danger">{assetData.used_licenses || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Location:</td>
-                                                    <td>{assetData.location_name || "-"}</td>
+                                                    <td className="fw-medium">Available Licenses:</td>
+                                                    <td className="text-success fw-bold fs-5">
+                                                        {assetData.available_licenses || 
+                                                         ((assetData.total_licenses || 0) - (assetData.used_licenses || 0)) || "-"}
+                                                    </td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Active Status:</td>
+                                                    <td className="fw-medium">License Expiry:</td>
                                                     <td>
-                                                        <span className={`badge bg-${assetData.is_active ? "success" : "danger"}`}>
-                                                            {assetData.is_active ? "Active" : "Inactive"}
-                                                        </span>
+                                                        {assetData.license_expiry ? (
+                                                            <>
+                                                                {formatDate(assetData.license_expiry, "DD/MM/YYYY")}
+                                                                {getWarrantyStatus(assetData.license_expiry)}
+                                                            </>
+                                                        ) : "-"}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">License Key:</td>
+                                                    <td>
+                                                        {assetData.license_key ? (
+                                                            <code className="small bg-light p-2 rounded d-block">{assetData.license_key}</code>
+                                                        ) : <span className="text-muted">-</span>}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Purchase Date:</td>
+                                                    <td>{formatDate(assetData.purchase_date, "DD/MM/YYYY") || "-"}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Purchase Cost:</td>
+                                                    <td className="text-success fw-bold">
+                                                        {assetData.purchase_cost
+                                                            ? `TSH ${Number(assetData.purchase_cost).toLocaleString()}`
+                                                            : "-"}
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -718,7 +765,7 @@ export const PeripheralDeviceViewPage = () => {
                                 </div>
                                 {assetData.notes && (
                                     <div className="mt-4">
-                                        <h5 className="mb-2 fw-semibold">Notes</h5>
+                                        <h5 className="mb-2 fw-semibold">Additional Notes</h5>
                                         <div className="alert alert-info">
                                             <p className="mb-0">{assetData.notes}</p>
                                         </div>
@@ -730,105 +777,101 @@ export const PeripheralDeviceViewPage = () => {
                         {/* Specifications Tab */}
                         {activeTab === "specifications" && (
                             <div className="animate__animated animate__fadeIn animate__faster">
-                                <h5 className="mb-3 fw-semibold">Peripheral Specifications</h5>
                                 <div className="row">
                                     <div className="col-md-6">
+                                        <h5 className="mb-3 fw-semibold">Technical Specifications</h5>
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Peripheral Type:</td>
-                                                    <td>{assetData.peripheral_type || "-"}</td>
+                                                    <td className="fw-medium" style={{ width: "40%" }}>Software Version:</td>
+                                                    <td><span className="badge bg-info">{assetData.version || "-"}</span></td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Model:</td>
-                                                    <td>{assetData.model || "-"}</td>
+                                                    <td className="fw-medium">Platform/OS:</td>
+                                                    <td>{assetData.platform || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Manufacturer:</td>
-                                                    <td>{assetData.manufacturer_name || "-"}</td>
+                                                    <td className="fw-medium">System Requirements:</td>
+                                                    <td className="small">{assetData.system_requirements || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Color:</td>
-                                                    <td>{assetData.color || "-"}</td>
+                                                    <td className="fw-medium">Installation Path:</td>
+                                                    <td><code className="small bg-light p-2 rounded d-block">{assetData.installation_path || "-"}</code></td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Connection Type:</td>
-                                                    <td>{assetData.connection_type || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Interface Type:</td>
-                                                    <td>{assetData.interface_type || "-"}</td>
+                                                    <td className="fw-medium">Software Type:</td>
+                                                    <td><span className="badge bg-label-primary">{assetData.software_type || "-"}</span></td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                     <div className="col-md-6">
+                                        <h5 className="mb-3 fw-semibold">License & Support Details</h5>
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Resolution:</td>
-                                                    <td>{assetData.resolution || "-"}</td>
+                                                    <td className="fw-medium" style={{ width: "40%" }}>License Type:</td>
+                                                    <td><span className="badge bg-label-warning">{assetData.license_type || "-"}</span></td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Screen Size:</td>
-                                                    <td>{assetData.screen_size || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Compatibility:</td>
-                                                    <td>{assetData.compatibility || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Serial Number:</td>
-                                                    <td>{assetData.serial_number || "-"}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="fw-medium">Condition:</td>
-                                                    <td>{assetData.condition ? getConditionBadge(assetData.condition) : "-"}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Financial Tab */}
-                        {activeTab === "financial" && (
-                            <div className="animate__animated animate__fadeIn animate__faster">
-                                <h5 className="mb-3 fw-semibold">Financial Information</h5>
-                                <div className="row">
-                                    <div className="col-md-6">
-                                        <table className="table table-borderless">
-                                            <tbody>
-                                                <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Purchase Cost:</td>
-                                                    <td className="text-success fw-bold">
-                                                        {assetData.purchase_cost
-                                                            ? `TSH ${Number(assetData.purchase_cost).toLocaleString()}`
-                                                            : "-"}
+                                                    <td className="fw-medium">License Key:</td>
+                                                    <td>
+                                                        {assetData.license_key ? (
+                                                            <code className="small bg-light p-2 rounded d-block">{assetData.license_key}</code>
+                                                        ) : <span className="text-muted">-</span>}
                                                     </td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Purchase Date:</td>
-                                                    <td>{formatDate(assetData.purchase_date, "DD/MM/YYYY") || "-"}</td>
+                                                    <td className="fw-medium">Total Licenses:</td>
+                                                    <td className="fw-bold text-primary">{assetData.total_licenses || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Supplier:</td>
-                                                    <td>{assetData.supplier_name || "-"}</td>
+                                                    <td className="fw-medium">Support URL:</td>
+                                                    <td>
+                                                        {assetData.support_url ? (
+                                                            <a href={assetData.support_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-success">
+                                                                <i className="bx bx-link-external me-1"></i>Visit Support
+                                                            </a>
+                                                        ) : <span className="text-muted">-</span>}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="fw-medium">Documentation URL:</td>
+                                                    <td>
+                                                        {assetData.documentation_url ? (
+                                                            <a href={assetData.documentation_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-info">
+                                                                <i className="bx bx-book me-1"></i>View Docs
+                                                            </a>
+                                                        ) : <span className="text-muted">-</span>}
+                                                    </td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div className="col-md-6">
+                                </div>
+                                <hr />
+                                <div className="row mt-4">
+                                    <div className="col-md-12">
+                                        <h6 className="mb-3 fw-semibold">Supplier & Procurement Information</h6>
                                         <table className="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td className="fw-medium" style={{ width: "40%" }}>Warranty Expiry:</td>
-                                                    <td>{formatDate(assetData.warranty_expiry, "DD/MM/YYYY") || "-"}</td>
+                                                    <td className="fw-medium" style={{ width: "20%" }}>Publisher/Vendor:</td>
+                                                    <td>{assetData.publisher || "-"}</td>
+                                                    <td className="fw-medium" style={{ width: "20%" }}>Supplier:</td>
+                                                    <td>{assetData.supplier_name || "-"}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td className="fw-medium">Warranty Status:</td>
-                                                    <td>{getWarrantyStatus(assetData.warranty_expiry)}</td>
+                                                    <td className="fw-medium">Asset Type:</td>
+                                                    <td>{assetData.asset_type_name || "-"}</td>
+                                                    <td className="fw-medium">Warranty Expiry:</td>
+                                                    <td>
+                                                        {assetData.warranty_expiry ? (
+                                                            <>
+                                                                {formatDate(assetData.warranty_expiry, "DD/MM/YYYY")} {getWarrantyStatus(assetData.warranty_expiry)}
+                                                            </>
+                                                        ) : "-"}
+                                                    </td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -837,179 +880,130 @@ export const PeripheralDeviceViewPage = () => {
                             </div>
                         )}
 
-                        {/* Tracking Tab - Location, Custodian & Assignment History */}
-                        {activeTab === "tracking" && (
-                            <div className="animate__animated animate__fadeIn animate__faster">
-                                <div className="row">
-                                    <div className="col-md-6 mb-4">
-                                        <h5 className="mb-3 fw-semibold">Current Assignment</h5>
-                                        <div className="card bg-light">
-                                            <div className="card-body">
-                                                <div className="d-flex align-items-center mb-3">
-                                                    <i className="bx bx-user-circle fs-1 text-primary me-3"></i>
-                                                    <div>
-                                                        <small className="text-muted d-block">Custodian</small>
-                                                        <h6 className="mb-0">{assetData.custodian_name || "Unassigned"}</h6>
-                                                    </div>
-                                                </div>
-                                                <div className="d-flex align-items-center">
-                                                    <i className="bx bx-map fs-1 text-info me-3"></i>
-                                                    <div>
-                                                        <small className="text-muted d-block">Location</small>
-                                                        <h6 className="mb-0">{assetData.location_name || "Not Specified"}</h6>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6 mb-4">
-                                        <h5 className="mb-3 fw-semibold">Quick Info</h5>
-                                        <div className="card bg-light">
-                                            <div className="card-body">
-                                                <p className="mb-2">
-                                                    <strong>Last Audit:</strong>{" "}
-                                                    {formatDate(assetData.last_audit_date, "DD/MM/YYYY") || "Never"}
-                                                </p>
-                                                <p className="mb-0">
-                                                    <strong>Status:</strong>{" "}
-                                                    {getStatusBadge(assetData.status)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Custodian History */}
-                                <div className="mb-4">
-                                    <h5 className="mb-3 fw-semibold">Custodian History</h5>
-                                    {loadingCustodianHistory ? (
-                                        <div className="text-center py-3">
-                                            <ReactLoading type={"spin"} color={"#696cff"} height={30} width={30} />
-                                        </div>
-                                    ) : custodianHistory.length === 0 ? (
-                                        <div className="alert alert-info">No custodian history found</div>
-                                    ) : (
-                                        <div className="table-responsive">
-                                            <table className="table table-sm table-hover">
-                                                <thead className="table-light">
-                                                    <tr>
-                                                        <th>Date</th>
-                                                        <th>Custodian</th>
-                                                        <th>Notes</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {custodianHistory.map((record, idx) => (
-                                                        <tr key={idx}>
-                                                            <td>{formatDate(record.assigned_date, "DD/MM/YYYY")}</td>
-                                                            <td>{record.custodian_name}</td>
-                                                            <td>{record.notes || "-"}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Location History */}
-                                <div className="mb-4">
-                                    <h5 className="mb-3 fw-semibold">Location History</h5>
-                                    {loadingLocationHistory ? (
-                                        <div className="text-center py-3">
-                                            <ReactLoading type={"spin"} color={"#696cff"} height={30} width={30} />
-                                        </div>
-                                    ) : locationHistory.length === 0 ? (
-                                        <div className="alert alert-info">No location history found</div>
-                                    ) : (
-                                        <div className="table-responsive">
-                                            <table className="table table-sm table-hover">
-                                                <thead className="table-light">
-                                                    <tr>
-                                                        <th>Date</th>
-                                                        <th>Location</th>
-                                                        <th>Notes</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {locationHistory.map((record, idx) => (
-                                                        <tr key={idx}>
-                                                            <td>{formatDate(record.moved_date, "DD/MM/YYYY")}</td>
-                                                            <td>{record.location_name}</td>
-                                                            <td>{record.notes || "-"}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Maintenance Tab */}
-                        {activeTab === "maintenance" && (
+                        {/* Installations Tab */}
+                        {activeTab === "installations" && (
                             <div className="animate__animated animate__fadeIn animate__faster">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 className="mb-0 fw-semibold">Maintenance Records</h5>
+                                    <h5 className="mb-0 fw-semibold">Software Installations</h5>
                                     <button
                                         className="btn btn-sm btn-primary"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#maintenanceRecordModal"
+                                        data-bs-target="#installationModal"
+                                        onClick={() => setSelectedInstallation(null)}
                                     >
-                                        <i className="bx bx-plus me-1"></i> Add Record
+                                        <i className="bx bx-plus me-1"></i> New Installation
                                     </button>
                                 </div>
 
-                                {loadingMaintenance ? (
+                                {loadingInstallations ? (
                                     <div className="text-center py-4">
                                         <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
-                                        <p className="text-muted mt-2">Loading maintenance records...</p>
+                                        <p className="text-muted mt-2">Loading installations...</p>
                                     </div>
-                                ) : maintenanceRecords.length === 0 ? (
+                                ) : installations.length === 0 ? (
                                     <div className="alert alert-info">
                                         <i className="bx bx-info-circle me-2"></i>
-                                        No maintenance records found for this asset.
+                                        No installations found for this software.
                                     </div>
                                 ) : (
                                     <div className="table-responsive">
                                         <table className="table table-hover">
                                             <thead className="table-light">
                                                 <tr>
-                                                    <th>Type</th>
-                                                    <th>Scheduled</th>
-                                                    <th>Completed</th>
+                                                    <th>Asset</th>
+                                                    <th>Version</th>
                                                     <th>Status</th>
-                                                    <th>Cost</th>
-                                                    <th>Technician</th>
+                                                    <th>Installed</th>
+                                                    <th>Installed By</th>
+                                                    <th>Assigned To</th>
+                                                    <th>Verified</th>
+                                                    <th>Compliant</th>
                                                     <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {maintenanceRecords.map((record) => (
-                                                    <tr key={record.uid}>
+                                                {Object.values(installations).map((installation) => (
+                                                    <tr key={installation.uid}>
                                                         <td>
-                                                            <span className="badge bg-label-primary">
-                                                                {record.maintenance_type}
+                                                            <div>
+                                                                <strong>{installation.asset_details.asset_tag || "N/A"}</strong>
+                                                                {installation.installation_path && (
+                                                                    <div className="small text-muted text-truncate" style={{ maxWidth: "200px" }}>
+                                                                        {installation.installation_path}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span className="badge bg-info">
+                                                                {installation.version_installed || "-"}
                                                             </span>
                                                         </td>
-                                                        <td>{formatDate(record.scheduled_date, "DD/MM/YYYY")}</td>
-                                                        <td>{formatDate(record.completed_date, "DD/MM/YYYY") || "-"}</td>
+                                                        <td>{getInstallationStatusBadge(installation.status)}</td>
+                                                        <td>{formatDate(installation.installation_date, "DD/MM/YYYY")}</td>
+                                                        <td>{installation.installed_by_name || "-"}</td>
+                                                        <td>{installation.assigned_to_name || "Unassigned"}</td>
                                                         <td>
-                                                            <span className={`badge bg-${record.status === 'completed' ? 'success' : record.status === 'scheduled' ? 'warning' : 'info'}`}>
-                                                                {record.status}
-                                                            </span>
+                                                            {installation.last_verified_date ? (
+                                                                <div>
+                                                                    <span className="badge bg-success">✓</span>
+                                                                    <div className="small text-muted">
+                                                                        {formatDate(installation.last_verified_date, "DD/MM/YYYY")}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="badge bg-warning">Not Verified</span>
+                                                            )}
                                                         </td>
-                                                        <td>{record.cost ? `TSH ${Number(record.cost).toLocaleString()}` : "-"}</td>
-                                                        <td>{record.technician_name || "-"}</td>
                                                         <td>
-                                                            <button
-                                                                className="btn btn-sm btn-outline-danger border-0"
-                                                                onClick={() => handleDeleteMaintenanceRecord(record)}
-                                                                title="Delete"
-                                                            >
-                                                                <i className="bx bx-trash"></i>
-                                                            </button>
+                                                            {installation.is_compliant ? (
+                                                                <span className="badge bg-success">✓ Yes</span>
+                                                            ) : (
+                                                                <span className="badge bg-danger">✗ No</span>
+                                                            )}
+                                                        </td>
+                                                        <td>
+                                                            <div className="btn-group">
+                                                                <button
+                                                                    className="btn btn-sm btn-outline-primary border-0"
+                                                                    title="Edit"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#installationModal"
+                                                                    onClick={() => setSelectedInstallation(installation)}
+                                                                >
+                                                                    <i className="bx bx-edit"></i>
+                                                                </button>
+                                                                {installation.status !== 'uninstalled' && (
+                                                                    <>
+                                                                        {!installation.last_verified_date && (
+                                                                            <button
+                                                                                className="btn btn-sm btn-outline-success border-0"
+                                                                                title="Verify"
+                                                                                onClick={() => handleVerifyInstallation(installation)}
+                                                                            >
+                                                                                <i className="bx bx-check-circle"></i>
+                                                                            </button>
+                                                                        )}
+                                                                        {installation.status === 'active' && (
+                                                                            <button
+                                                                                className="btn btn-sm btn-outline-warning border-0"
+                                                                                title="Uninstall"
+                                                                                onClick={() => handleUninstallSoftware(installation)}
+                                                                            >
+                                                                                <i className="bx bx-trash-alt"></i>
+                                                                            </button>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                                <button
+                                                                    className="btn btn-sm btn-outline-danger border-0"
+                                                                    title="Delete"
+                                                                    onClick={() => handleDeleteInstallation(installation)}
+                                                                >
+                                                                    <i className="bx bx-x"></i>
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1018,32 +1012,49 @@ export const PeripheralDeviceViewPage = () => {
                                     </div>
                                 )}
 
-                                {/* Quick Actions */}
-                                <div className="row mt-4">
-                                    <div className="col-md-12">
-                                        <h6 className="mb-3 fw-semibold">Quick Status Actions</h6>
-                                        <div className="d-flex gap-2 flex-wrap">
-                                            <button
-                                                className="btn btn-sm btn-outline-warning"
-                                                onClick={() => handleStatusUpdate('under_maintenance')}
-                                            >
-                                                <i className="bx bx-wrench me-1"></i> Mark as Under Maintenance
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-outline-info"
-                                                onClick={() => handleStatusUpdate('in_repair')}
-                                            >
-                                                <i className="bx bx-cog me-1"></i> Mark as In Repair
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-outline-success"
-                                                onClick={() => handleStatusUpdate('operational')}
-                                            >
-                                                <i className="bx bx-check me-1"></i> Mark as Operational
-                                            </button>
+                                {/* Installation Summary */}
+                                {installations.length > 0 && (
+                                    <div className="row mt-4">
+                                        <div className="col-md-12">
+                                            <div className="alert alert-light">
+                                                <div className="row text-center">
+                                                    <div className="col-md-3">
+                                                        <div className="mb-0">
+                                                            <strong className="text-primary fs-4">
+                                                                {Object.values(installations).filter(i => i.status === 'active').length}
+                                                            </strong>
+                                                            <div className="small text-muted">Active Installations</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <div className="mb-0">
+                                                            <strong className="text-success fs-4">
+                                                                {Object.values(installations).filter(i => i.last_verified_date).length}
+                                                            </strong>
+                                                            <div className="small text-muted">Verified</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <div className="mb-0">
+                                                            <strong className="text-success fs-4">
+                                                                {Object.values(installations).filter(i => i.is_compliant).length}
+                                                            </strong>
+                                                            <div className="small text-muted">Compliant</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <div className="mb-0">
+                                                            <strong className="text-info fs-4">
+                                                                {Object.values(installations).filter(i => i.status === 'pending').length}
+                                                            </strong>
+                                                            <div className="small text-muted">Pending</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         )}
 
@@ -1176,11 +1187,12 @@ export const PeripheralDeviceViewPage = () => {
                 </div>
             </div>
 
-            <PeripheralAssetModal loadOnlyModal={true} />
-            <MaintenanceRecordModal
-                assetUid={uid}
-                assetTag={assetData?.asset_tag}
-                onSuccess={fetchMaintenanceRecords}
+            <SoftwareAssetModal loadOnlyModal={true} />
+            <InstallationModal
+                softwareUid={uid}
+                softwareName={assetData?.software_name}
+                selectedInstallation={selectedInstallation}
+                onSuccess={fetchInstallations}
             />
             <SupportTicketModal
                 assetUid={uid}

@@ -16,10 +16,10 @@ const setConfig = (pagination = {}) => ({
     params: { ...pagination },
 });
 
-// Get Network Assets (with optional search, pagination, and single asset by UID)
-export const getNetworkAssets = async ({ uid = "", search = "", pagination = {} }) => {
+// Get Software Assets (with optional search, pagination, and single asset by UID)
+export const getSoftwareAssets = async ({ uid = "", search = "", pagination = {} }) => {
     try {
-        let url = `${API_URL}/asset-network-devices`;
+        let url = `${API_URL}/asset-software`;
 
         if (uid) {
             url += `/${uid}`;
@@ -27,54 +27,52 @@ export const getNetworkAssets = async ({ uid = "", search = "", pagination = {} 
             url += `?search=${search}`;
         }
 
-        const requestConfig = uid === "" ? setConfig(pagination) : {};
+        const config = uid === "" ? setConfig(pagination) : {};
 
-        const response = await api.get(url, requestConfig);
+        const response = await api.get(url, config);
         return response.data;
     } catch (error) {
-        console.error("Error fetching network devices:", error);
+        console.error("Error fetching software assets:", error);
         throw error;
     }
 };
 
-
-// Create or Update Network Device
+// Create or Update Software Asset
 export const createUpdateAsset = async (assetData) => {
     try {
         const isUpdate = Boolean(assetData.uid);
 
         const method = isUpdate ? "put" : "post";
         const url = isUpdate
-            ? `${API_BASE_URL}/api/asset-network-devices/${assetData.uid}/update`
-            : `${API_BASE_URL}/api/asset-network-devices/create`;
+            ? `${API_BASE_URL}/api/asset-software/${assetData.uid}/update`
+            : `${API_BASE_URL}/api/asset-software/create`;
 
         const response = await api[method](url, assetData, config);
         return response.data;
     } catch (error) {
-        console.error(`Error while ${assetData.uid ? 'updating' : 'creating'} network device:`, error);
+        console.error(`Error while ${assetData.uid ? 'updating' : 'creating'} software asset:`, error);
         throw error;
     }
 };
 
-
-// Delete Network Device
+// Delete Software Asset
 export const deleteAsset = async (uid) => {
     try {
-        const response = await api.delete(`${API_URL}/asset-network-devices/${uid}/delete`);
+        const response = await api.delete(`${API_URL}/asset-software/${uid}/delete`);
         return response.data;
     } catch (error) {
-        console.error("Error deleting network device:", error);
+        console.error("Error deleting software asset:", error);
         throw error;
     }
 };
 
-// Bulk Delete Network Devices
+// Bulk Delete Software Assets
 export const bulkDeleteAssets = async (assetUids) => {
     try {
-        const response = await api.post(`${API_URL}/asset-network-devices/bulk-delete`, { asset_uids: assetUids }, config);
+        const response = await api.post(`${API_URL}/asset-software/bulk-delete`, { asset_uids: assetUids }, config);
         return response.data;
     } catch (error) {
-        console.error("Error in bulk deleting network devices:", error);
+        console.error("Error in bulk deleting software assets:", error);
         throw error;
     }
 };
@@ -83,7 +81,7 @@ export const bulkDeleteAssets = async (assetUids) => {
 export const uploadAssets = async (formData) => {
     try {
         const response = await api.post(
-            `${API_BASE_URL}/api/asset-network-import`,
+            `${API_BASE_URL}/api/import-assets`,
             formData,
             {
                 headers: {
@@ -169,7 +167,7 @@ export const getUsers = async ({
 }) => {
     try {
         const response = await api.get(
-            `${API_BASE_URL}/api/users${search !== "" ? `?search=${search}` : ""}`,
+            `${API_BASE_URL}/api/assets-custodians${search !== "" ? `?search=${search}` : ""}`,
             setConfig(pagination)
         );
         return response.data;
@@ -250,9 +248,10 @@ export const unassignAsset = async (uid) => {
 
 // Maintenance Records
 export const getMaintenanceRecords = async (assetUid = "", pagination = {}) => {
+    
     try {
         const params = { ...pagination };
-        if (assetUid) params.asset = assetUid;
+        // if (assetUid) params.asset = assetUid;
         
         const response = await api.get(
             `${API_BASE_URL}/api/asset-maintenance-records`,
@@ -298,8 +297,7 @@ export const getSupportTickets = async (assetUid = "", pagination = {}) => {
         if (assetUid) params.asset = assetUid;
         
         const response = await api.get(
-            `${API_BASE_URL}/api/asset-support-tickets`,
-            { params }
+            `${API_BASE_URL}/api/asset-support-tickets/${assetUid}`
         );
         return response.data;
     } catch (error) {
@@ -307,6 +305,7 @@ export const getSupportTickets = async (assetUid = "", pagination = {}) => {
         throw error;
     }
 };
+
 
 
 export const createSupportTicket = async (ticketData) => {
@@ -383,6 +382,109 @@ export const getAssetAssignments = async (assetUid = "", pagination = {}) => {
         return response.data;
     } catch (error) {
         console.error("Error fetching asset assignments:", error);
+        throw error;
+    }
+};
+
+// Software Installations
+export const getSoftwareInstallations = async (softwareUid = "", pagination = {}) => {
+    try {
+        const params = { ...pagination };
+        if (softwareUid) params.software_uid = softwareUid;
+        
+        const response = await api.get(
+            `${API_BASE_URL}/api/asset-software-installations`,
+            { params }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching software installations:", error);
+        throw error;
+    }
+};
+
+export const createInstallation = async (installationData) => {
+    try {
+        const response = await api.post(
+            `${API_BASE_URL}/api/asset-software-installations/create`,
+            installationData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error creating installation:", error);
+        throw error;
+    }
+};
+
+export const updateInstallation = async (uid, installationData) => {
+    try {
+        const response = await api.put(
+            `${API_BASE_URL}/api/asset-software-installations/${uid}/update`,
+            installationData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error updating installation:", error);
+        throw error;
+    }
+};
+
+export const deleteInstallation = async (uid) => {
+    try {
+        const response = await api.delete(
+            `${API_BASE_URL}/api/asset-software-installations/${uid}/delete`
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting installation:", error);
+        throw error;
+    }
+};
+
+export const verifyInstallation = async (uid, verificationData) => {
+    try {
+        const response = await api.patch(
+            `${API_BASE_URL}/api/asset-software-installations/${uid}/verify`,
+            verificationData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error verifying installation:", error);
+        throw error;
+    }
+};
+
+export const uninstallSoftware = async (uid, uninstallData) => {
+    try {
+        const response = await api.patch(
+            `${API_BASE_URL}/api/asset-software-installations/${uid}/uninstall`,
+            uninstallData,
+            config
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error uninstalling software:", error);
+        throw error;
+    }
+};
+
+// Get available assets for installation (assets that don't have this software installed)
+export const getAvailableAssets = async (softwareUid = "", search = "", pagination = {}) => {
+    try {
+        const params = { ...pagination };
+        if (search) params.search = search;
+        if (softwareUid) params.exclude_software = softwareUid;
+        
+        const response = await api.get(
+            `${API_BASE_URL}/api/assets`,
+            { params }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching available assets:", error);
         throw error;
     }
 };

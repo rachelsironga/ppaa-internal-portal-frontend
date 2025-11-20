@@ -116,7 +116,7 @@ export const PeripheralDeviceListPage = () => {
                                             hasAccess(user, [
                                                 ["view_asset", "add_asset", "change_asset"]
                                             ])
-                                                ? navigate(`/ict-assets/assets/${row.uid}`)
+                                                ? navigate(`/ict-assets/peripheral-devices/${row.uid}`)
                                                 : null
                                         }
                                     >
@@ -432,7 +432,7 @@ export const PeripheralDeviceListPage = () => {
                                     aria-label="View"
                                     type="button"
                                     className="btn btn-sm btn-outline-info border-0"
-                                    onClick={() => navigate(`/ict-assets/assets/${row.uid}`)}
+                                    onClick={() => navigate(`/ict-assets/peripheral-devices/${row.uid}`)}
                                     title="View Asset"
                                 >
                                     <i className="bx bx-show"></i>

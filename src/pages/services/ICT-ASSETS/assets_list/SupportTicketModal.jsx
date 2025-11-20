@@ -2,34 +2,40 @@ import React, { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Swal from "sweetalert2";
-import { createSupportTicket, updateSupportTicket, getTechnicians } from "./Queries";
+import { createSupportTicket, updateSupportTicket, getUsers } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 export const SupportTicketModal = ({ assetUid, assetTag, onSuccess, selectedTicket = null }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [technicians, setTechnicians] = useState([]);
-    const [loadingTechnicians, setLoadingTechnicians] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
 
     const isEditMode = !!selectedTicket;
 
     useEffect(() => {
         console.log("SupportTicketModal received assetUid:", assetUid);
         console.log("SupportTicketModal selectedTicket:", selectedTicket);
-        fetchTechnicians();
+        fetchUsers();
     }, [assetUid, selectedTicket]);
 
-    const fetchTechnicians = async () => {
-        setLoadingTechnicians(true);
+    const fetchUsers = async () => {
+        setLoadingUsers(true);
         try {
-            const result = await getTechnicians({ pagination: { paginated: false } });
+            console.log('Fetching users/custodians for technician assignment...');
+            const result = await getUsers({});
+            console.log('Users result:', result);
             if (result.status === 200 || result.status === 8000) {
-                setTechnicians(result.data || []);
+                const userData = result.data || [];
+                // Convert object to array if needed
+                const usersArray = Array.isArray(userData) ? userData : Object.values(userData);
+                console.log('Users data (converted to array):', usersArray);
+                setUsers(usersArray);
             }
         } catch (error) {
-            console.error("Error fetching technicians:", error);
+            console.error("Error fetching users:", error);
         } finally {
-            setLoadingTechnicians(false);
+            setLoadingUsers(false);
         }
     };
 
@@ -73,7 +79,7 @@ export const SupportTicketModal = ({ assetUid, assetTag, onSuccess, selectedTick
         try {
             console.log("Submitting support ticket with values:", values);
             console.log("Current assetUid prop:", assetUid);
-            
+
             setIsSubmitting(true);
 
             // Ensure asset field is not empty
@@ -189,7 +195,7 @@ export const SupportTicketModal = ({ assetUid, assetTag, onSuccess, selectedTick
                                                 />
                                             </div>
                                         )}
-                                        
+
                                         {isEditMode && (
                                             <div className="col-12 mb-3">
                                                 <div className="alert alert-info">
@@ -236,22 +242,24 @@ export const SupportTicketModal = ({ assetUid, assetTag, onSuccess, selectedTick
 
                                         <div className="col-12 mb-3">
                                             <label htmlFor="assigned_technician" className="form-label">
+                                                <i className="bx bx-user-check me-1 text-primary"></i>
                                                 Assigned Technician
                                             </label>
                                             <FormikSelect
                                                 name="assigned_technician"
-                                                options={technicians}
+                                                options={users}
                                                 getOptionLabel={(option) => option.first_name && option.last_name
                                                     ? `${option.first_name} ${option.last_name}`
                                                     : option.email || option.username
                                                 }
-                                                getOptionValue={(option) => option.guid}
-                                                placeholder={loadingTechnicians ? "Loading technicians..." : "Select technician"}
+                                                getOptionValue={(option) => option.guid || option.user || option.id || option.uid}
+                                                placeholder={loadingUsers ? "Loading users..." : "Select technician to assign"}
                                                 isClearable
-                                                isLoading={loadingTechnicians}
+                                                isLoading={loadingUsers}
                                             />
                                             <small className="text-muted d-block mt-1">
-                                                Leave empty to assign later
+                                                <i className="bx bx-info-circle me-1"></i>
+                                                Assign a user/technician to handle this support ticket (leave empty to assign later)
                                             </small>
                                         </div>
 

@@ -9,6 +9,14 @@
       "link": "",
       "header": "ASSET MANAGEMENT",
       "submenu": [
+         {
+          "text": "Services",
+          "icon": "bx bxl-microsoft",
+          "available": true,
+          "link": "/",
+          "permission": [],
+          "role": ["staff","admin"]
+        },
         {
           "text": "Dashboard",
           "icon": "bx bx-home",

@@ -219,7 +219,7 @@ export const NetworkingDeviceViewPage = () => {
                         "The Asset has been deleted.",
                         "success"
                     );
-                    navigate("/ict-assets/assets");
+                    navigate("/ict-assets/peripheral-devices");
                 } else {
                     console.error("Error deleting Asset:", result);
                     Swal.fire("Error Occurred!", `${result.message}`, "error");
