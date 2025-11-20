@@ -150,7 +150,7 @@ export const PositionalLevelPage = () => {
                       handleDelete(row);
                     }}
                   >
-                    <i className="bx bx-trash me-1"></i> Delete
+                    <i className="bx bx-trash me-1"></i> Disable
                   </a>
                 </div>
               </div>

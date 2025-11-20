@@ -7,7 +7,7 @@
     "role": ["admin"]
   },
   {
-    "text": "ICT Asserts Management",
+    "text": "ICT Assets Management",
     "icon": "bx bx-desktop",
     "link": "/medical-records",
     "permission": [],

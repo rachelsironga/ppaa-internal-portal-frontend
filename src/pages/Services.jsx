@@ -104,7 +104,7 @@ export const Services = () => {
             className="card"
             style={{
               position: "relative",
-              backgroundImage: `linear-gradient(rgba(253, 248, 248, 0.59), rgba(253, 247, 247, 0.65)), url('/assets/img/hospital-mohimbili.jpg')`,
+              backgroundImage: `linear-gradient(rgba(85, 80, 80, 0.59), rgba(78, 75, 75, 0.65)), url('/assets/img/hospital-mohimbili-inner.jpg')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               borderRadius: "18px",
@@ -115,7 +115,28 @@ export const Services = () => {
             }}
           >
             <div className="card-body">
-              <h3 className="card-title text-center">MNH-CONECT SERVICES</h3>
+              <h2
+                className="card-title text-center text-white"
+                style={{ margin: "0px", marginBottom: "0px" }}
+              >
+                MNH-CONNECT SERVICES
+              </h2>
+              <div
+                className="input-group text-center"
+                style={{
+                  marginBottom: "15px",
+                  width: "100%",
+                  marginTop: "10px",
+                  color: "#f0e3e3ff",
+                  textAlign: "center",
+                  fontSize: "1.3em",
+                  alignContent: "center",
+                  justifyContent: "center",
+                }}
+              >
+                A streamlined portal connecting you to all MNH systems.
+              </div>
+
               <div
                 className="input-group"
                 style={{
@@ -123,6 +144,7 @@ export const Services = () => {
                   maxWidth: "500px",
                   margin: "0 auto",
                   marginTop: "10px",
+                  color: "#f0e3e3ff",
                 }}
               >
                 <span className="input-group-text">
@@ -152,7 +174,7 @@ export const Services = () => {
                 <div
                   key={service.text + idx}
                   className="col-md-3 col-sm-6 mb-3 col-lg-3"
-                  onClick={() => {
+                  onClick={async () => {
                     // determine route: prefer explicit link/path/route, otherwise build slug from text
                     const target =
                       service.link ||
@@ -166,11 +188,26 @@ export const Services = () => {
                       )}`;
 
                     // if external URL, use window.location, otherwise use react-router navigate
+                    // if (/^https?:\/\//i.test(target)) {
+                    //   window.location.href = target;
+                    // } else {
+                    //   navigate(target);
+                    // }
+
+                    // external URLs just open normally
                     if (/^https?:\/\//i.test(target)) {
                       window.location.href = target;
-                    } else {
-                      navigate(target);
+                      return;
                     }
+
+                    const response = await fetch(target, { method: "GET" });
+
+                    if (!response.ok) {
+                      alert("Page not found!");
+                      return;
+                    }
+
+                    navigate(target);
                   }}
                 >
                   <button
@@ -188,7 +225,7 @@ export const Services = () => {
                     </div>
                     <div
                       className="d-flex flex-column text-start"
-                      style={{ width: "85%" }}
+                      style={{ width: "90%" }}
                     >
                       <span className="fw-bold">{service.text}</span>
                     </div>

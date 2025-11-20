@@ -14,7 +14,7 @@
         "text": "Dashboard",
         "icon": "bx bx-home",
         "available": true,
-        "link": "/dashboard",
+        "link": "/e-approval",
         "permission": [],
         "role": ["admin", "staff"]
       },

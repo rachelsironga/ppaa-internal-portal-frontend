@@ -1,0 +1,301 @@
+[
+  {
+    "uid": "group-001",
+    "name": "Clinic MNH F/U",
+    "modules": [
+      {
+        "codename": "CLINIC-MNH-FU",
+        "name": "Clinic MNH F/U",
+        "Permissions": [
+          { "codename": "CLINIC-MNH-FU-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-002",
+    "name": "Clinic Outside",
+    "modules": [
+      {
+        "codename": "CLINIC-OUTSIDE",
+        "name": "Clinic Outside",
+        "Permissions": [
+          { "codename": "CLINIC-OUTSIDE-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-003",
+    "name": "EM Registrar",
+    "modules": [
+      {
+        "codename": "EM-REGISTRAR",
+        "name": "EM Registrar",
+        "Permissions": [
+          { "codename": "EM-REGISTRAR-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-004",
+    "name": "EM Resident",
+    "modules": [
+      {
+        "codename": "EM-RESIDENT",
+        "name": "EM Resident",
+        "Permissions": [
+          { "codename": "EM-RESIDENT-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-005",
+    "name": "EM Specialist",
+    "modules": [
+      {
+        "codename": "EM-SPECIALIST",
+        "name": "EM Specialist",
+        "Permissions": [
+          { "codename": "EM-SPECIALIST-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-006",
+    "name": "EM Visiting Faculty",
+    "modules": [
+      {
+        "codename": "EM-VISITING-FACULTY",
+        "name": "EM Visiting Faculty",
+        "Permissions": [
+          { "codename": "EM-VISITING-FACULTY-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-007",
+    "name": "EMD Cashier",
+    "modules": [
+      {
+        "codename": "EMD-CASHIER",
+        "name": "EMD Cashier",
+        "Permissions": [
+          { "codename": "EMD-CASHIER-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-008",
+    "name": "EMD Health Attendant",
+    "modules": [
+      {
+        "codename": "EMD-HEALTH-ATTENDANT",
+        "name": "EMD Health Attendant",
+        "Permissions": [
+          { "codename": "EMD-HEALTH-ATTENDANT-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-009",
+    "name": "EMD Medical Recorder",
+    "modules": [
+      {
+        "codename": "EMD-MEDICAL-RECORDER",
+        "name": "EMD Medical Recorder",
+        "Permissions": [
+          { "codename": "EMD-MEDICAL-RECORDER-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-010",
+    "name": "EMD Nurse",
+    "modules": [
+      {
+        "codename": "EMD-NURSE",
+        "name": "EMD Nurse",
+        "Permissions": [
+          { "codename": "EMD-NURSE-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-011",
+    "name": "EMD Nurse Charge",
+    "modules": [
+      {
+        "codename": "EMD-NURSE-CHARGE",
+        "name": "EMD Nurse Charge",
+        "Permissions": [
+          { "codename": "EMD-NURSE-CHARGE-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-012",
+    "name": "EMD Nursing Student",
+    "modules": [
+      {
+        "codename": "EMD-NURSING-STUDENT",
+        "name": "EMD Nursing Student",
+        "Permissions": [
+          { "codename": "EMD-NURSING-STUDENT-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-013",
+    "name": "EMD Pharmacy Tech",
+    "modules": [
+      {
+        "codename": "EMD-PHARMACY-TECH",
+        "name": "EMD Pharmacy Tech",
+        "Permissions": [
+          { "codename": "EMD-PHARMACY-TECH-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-014",
+    "name": "EMD Social Worker",
+    "modules": [
+      {
+        "codename": "EMD-SOCIAL-WORKER",
+        "name": "EMD Social Worker",
+        "Permissions": [
+          { "codename": "EMD-SOCIAL-WORKER-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-015",
+    "name": "Hospital",
+    "modules": [
+      {
+        "codename": "HOSPITAL",
+        "name": "Hospital",
+        "Permissions": [
+          { "codename": "HOSPITAL-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-016",
+    "name": "Intern",
+    "modules": [
+      {
+        "codename": "INTERN",
+        "name": "Intern",
+        "Permissions": [
+          { "codename": "INTERN-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-017",
+    "name": "Pharmacy",
+    "modules": [
+      {
+        "codename": "PHARMACY",
+        "name": "Pharmacy",
+        "Permissions": [
+          { "codename": "PHARMACY-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-018",
+    "name": "Staff Nurse",
+    "modules": [
+      {
+        "codename": "STAFF-NURSE",
+        "name": "Staff Nurse",
+        "Permissions": [
+          { "codename": "STAFF-NURSE-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-019",
+    "name": "Staff Physician (Laboratory)",
+    "modules": [
+      {
+        "codename": "STAFF-PHYSICIAN-LAB",
+        "name": "Staff Physician (Laboratory)",
+        "Permissions": [
+          { "codename": "STAFF-PHYSICIAN-LAB-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-020",
+    "name": "Staff Physician (Radiologist)",
+    "modules": [
+      {
+        "codename": "STAFF-PHYSICIAN-RAD",
+        "name": "Staff Physician (Radiologist)",
+        "Permissions": [
+          { "codename": "STAFF-PHYSICIAN-RAD-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-021",
+    "name": "Staff Physician (Resident)",
+    "modules": [
+      {
+        "codename": "STAFF-PHYSICIAN-RESIDENT",
+        "name": "Staff Physician (Resident)",
+        "Permissions": [
+          { "codename": "STAFF-PHYSICIAN-RESIDENT-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-022",
+    "name": "Staff Physician (Specialist)",
+    "modules": [
+      {
+        "codename": "STAFF-PHYSICIAN-SPECIALIST",
+        "name": "Staff Physician (Specialist)",
+        "Permissions": [
+          { "codename": "STAFF-PHYSICIAN-SPECIALIST-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  },
+  {
+    "uid": "group-023",
+    "name": "Support Staff",
+    "modules": [
+      {
+        "codename": "SUPPORT-STAFF",
+        "name": "Support Staff",
+        "Permissions": [
+          { "codename": "SUPPORT-STAFF-All-associated", "name": "All Associated Permissions" }
+        ]
+      }
+    ]
+  }
+]
