@@ -2,6 +2,14 @@
     
  {
   "items": [
+     {
+        "text": "Services",
+        "icon": "bx bxl-microsoft",
+        "available": true,
+        "link": "/",
+        "permission": [],
+        "role": ["Staff","Admin"]
+      },
     {
       "text": "ICT Assets Management",
       "icon": "bx bx-cog",

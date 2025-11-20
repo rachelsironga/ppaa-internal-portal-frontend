@@ -506,7 +506,8 @@ export const ApprovalRequestOpenPage = () => {
                               data-bs-target="#approvalHandleActionModal"
                               onClick={() => {}}
                             >
-                              <i className="bx bx-grid-small"></i>
+                              <i className="bx bx-grid-small"></i> Write Final
+                              Response
                             </button>
                           )}
                       </div>

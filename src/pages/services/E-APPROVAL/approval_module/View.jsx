@@ -36,32 +36,24 @@ export const ApprovalModulePage = () => {
             key: "name",
             label: "Module Name",
             className: "cursor-pointer",
-
             render: (row) => (
-              <span
-                className="text-bold"
-                onClick={() => {
-                  // navigate(
-                  //   `/roles-managements/open/` + HashUtil.hashNumber(row.id)
-                  // );
-                }}
-              >
-                {row.name}
-              </span>
+              <div className="d-flex flex-column">
+                <span className="text-heading text-truncate">
+                  <span className="fw-medium">{row.name}</span>
+                </span>
+                <small className="text-info text-truncate">
+                  ( {row.code} )
+                </small>
+              </div>
             ),
-          },
-          {
-            key: "code",
-            label: "Code",
-            className: "text-justify",
-            style: { width: "30%" },
           },
           {
             key: "directory_uid",
             label: "Directory",
-            className: "text-justify",
-            style: { width: "30%" },
-            render: (row) => (row.directory?.name || " Not Set") + "",
+            className: "text-justify text-truncate",
+            style: { maxWidth: "250px", overFlow: "hidden" },
+            render: (row) =>
+              (row.directory?.name + row.directory?.name || " Not Set") + "",
           },
           {
             key: "created_at",

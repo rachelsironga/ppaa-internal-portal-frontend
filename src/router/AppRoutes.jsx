@@ -30,14 +30,10 @@ import { OpenRolesManagementPage } from "../pages/services/MANAGMENTS/roles_mana
 import NewUserPage from "../pages/authentication/NewUserPage.jsx";
 import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handling/View.jsx";
 import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
-import ResetPasswordPage from "../pages/authentication/ResetPasswordPage.jsx";
 
 // ICT ASSETS MANAGEMENT
 import { AssetListPage } from "../pages/services/ICT-ASSETS/assets_list/View.jsx";
-import { AssetDashboardPage } from "../pages/services/ICT-ASSETS/dashboard/AssetDashboardPage.jsx"
-
-
-
+import { AssetDashboardPage } from "../pages/services/ICT-ASSETS/dashboard/AssetDashboardPage.jsx";
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -51,10 +47,6 @@ const AppRoutes = () => {
       <Route
         path="/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF"
         element={<NewUserPage />}
-      />
-      <Route
-        path="/auth/user-password-UF56HJUIrZafX2riMPDQFgQG2L06IOKHJDD"
-        element={<ResetPasswordPage />}
       />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
@@ -289,8 +281,6 @@ const AppRoutes = () => {
         }
       />
 
-
-
       {/* ===================================================== */}
       {/* ICT ASSETS ROUTES */}
       {/* ===================================================== */}
@@ -301,26 +291,40 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
-            requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredRoles={[
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "Department_User",
+              "ReadOnly_User",
+            ]}
           >
-             <AssetDashboardPage />
+            <AssetDashboardPage />
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/ict-assets/assets/list"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
-            requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredRoles={[
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "Department_User",
+              "ReadOnly_User",
+            ]}
           >
-             <AssetListPage />
+            <AssetListPage />
           </ProtectedRoute>
         }
       />
-      
-     
 
       {/*<Route*/}
       {/*    path="/requests/open/:uid"*/}

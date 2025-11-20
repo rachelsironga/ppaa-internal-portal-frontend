@@ -139,7 +139,7 @@ export const ApprovalRequestPage = () => {
         filters={[
           { value: "ALL", label: "All Request" },
           { value: "MY_REQUEST", label: "My Requests" },
-          { value: "RELATED", label: "Related Requests" },
+          { value: "RELATED", label: "Approval Requests" },
           { value: "NEW", label: "New" },
           { value: "PENDING", label: "Pending" },
           { value: "APPROVED", label: "Approved" },
