@@ -47,8 +47,6 @@ import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwar
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
 
 
-
-
 function RegisterAndLogout() {
   localStorage.clear;
   return <RegisterPage />;

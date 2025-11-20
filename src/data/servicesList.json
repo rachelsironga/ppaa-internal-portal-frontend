@@ -17,7 +17,21 @@
     "permission": [],
     "role": ["admin"]
   },
-   {
+  {
+    "text": "ICT Asserts Management",
+    "icon": "bx bx-desktop",
+    "link": "/medical-records",
+    "permission": [],
+    "role": ["admin", "records"]
+  },
+  {
+    "text": "Equipment Tracking",
+    "icon": "bx bx-file-find",
+    "link": "/hr",
+    "permission": [],
+    "role": ["admin", "hr"]
+  },
+  {
     "text": "E-Jobcards",
     "icon": "bx bx-wallet",
     "link": "/finance",
