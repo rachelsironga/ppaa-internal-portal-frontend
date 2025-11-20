@@ -1,7 +1,6 @@
 import axios from "axios";
 import React from "react";
 import { createRoot } from "react-dom/client"; // Import createRoot
-import { API_BASE_URL } from "../../Costants";
 import { Provider, useSelector } from "react-redux";
 import store from "../../redux/store";
 

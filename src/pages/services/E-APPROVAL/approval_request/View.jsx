@@ -71,25 +71,32 @@ export const ApprovalRequestPage = () => {
           {
             key: "status",
             label: "Status",
-            style: { width: "150px" },
+            style: { width: "150px", textAlign: "center" },
             render: (row) => (
-              <span
-                className={
-                  row.status === "NEW"
-                    ? "badge bg-label-primary me-1"
-                    : row.status === "PENDING"
-                    ? "badge bg-label-warning me-1"
-                    : row.status === "REJECTED" ||
-                      row.status === "CANCELLED" ||
-                      row.status === "EXPIRED"
-                    ? "badge bg-label-danger me-1"
-                    : row.status === "APPROVED"
-                    ? "badge bg-label-success me-1"
-                    : "badge bg-label-info me-1"
-                }
-              >
-                {row.status}
-              </span>
+              <div>
+                <span
+                  className={
+                    row.status === "NEW"
+                      ? "badge bg-label-primary me-1"
+                      : row.status === "PENDING"
+                      ? "badge bg-label-warning me-1"
+                      : row.status === "REJECTED" ||
+                        row.status === "CANCELLED" ||
+                        row.status === "EXPIRED"
+                      ? "badge bg-label-danger me-1"
+                      : row.status === "APPROVED"
+                      ? "badge bg-label-success me-1"
+                      : "badge bg-label-info me-1"
+                  }
+                >
+                  {row.status}
+                </span>
+                {row.is_handled === true && (
+                  <span className="badge bg-info text-sm mt-1">
+                    <small>complete</small>
+                  </span>
+                )}
+              </div>
             ),
           },
           {
@@ -132,7 +139,7 @@ export const ApprovalRequestPage = () => {
         filters={[
           { value: "ALL", label: "All Request" },
           { value: "MY_REQUEST", label: "My Requests" },
-          { value: "RELATED", label: "Related Requests" },
+          { value: "RELATED", label: "Approval Requests" },
           { value: "NEW", label: "New" },
           { value: "PENDING", label: "Pending" },
           { value: "APPROVED", label: "Approved" },

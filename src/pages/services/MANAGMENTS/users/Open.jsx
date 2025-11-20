@@ -564,7 +564,7 @@ export const UserOpenPage = () => {
                               </span>
                               <span>{selectedObj.check_number}</span>
                             </li>
-                            <li
+                            {/* <li
                               className="list-group-item d-flex align-items-center"
                               style={{
                                 whiteSpace: "normal",
@@ -603,7 +603,7 @@ export const UserOpenPage = () => {
                                 <strong>Date Of Birth </strong>&nbsp;:&nbsp;
                               </span>
                               <span>{selectedObj.dob}</span>
-                            </li>
+                            </li> */}
                           </ul>
                           <h6 className="text-muted">CONTACT</h6>
                           <ul className="list-group overflow-auto">
@@ -650,19 +650,6 @@ export const UserOpenPage = () => {
                               </span>
                               <span>{selectedObj.alternative_contact}</span>
                             </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-credit-card me-2"></i>
-                                <strong>Bank Account </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.account_number}</span>
-                            </li>
                           </ul>
                         </div>
                       </div>
@@ -701,21 +688,6 @@ export const UserOpenPage = () => {
                         >
                           <i className="icon-base bx bx-lock icon-sm me-1_5"></i>
                           Security
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          aria-label="Click me"
-                          type="button"
-                          className="nav-link shadow-sm"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-documents"
-                          aria-controls="navs-pills-top-documents"
-                          aria-selected="false"
-                        >
-                          <i className="icon-base bx bx-file icon-sm me-1_5"></i>
-                          Documents
                         </button>
                       </li>
                       <li className="nav-item">
@@ -992,26 +964,6 @@ export const UserOpenPage = () => {
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      <div
-                        className="tab-pane fade"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-documents"
-                        role="tabpanel"
-                      >
-                        <p>
-                          Oat cake chupa chups dragée donut toffee. Sweet cotton
-                          candy jelly beans macaroon gummies cupcake gummi bears
-                          cake chocolate.
-                        </p>
-                        <p className="mb-0">
-                          Cake chocolate bar cotton candy apple pie tootsie roll
-                          ice cream apple pie brownie cake. Sweet roll icing
-                          sesame snaps caramels danish toffee. Brownie biscuit
-                          dessert dessert. Pudding jelly jelly-o tart brownie
-                          jelly.
-                        </p>
                       </div>
 
                       <div

@@ -10,5 +10,9 @@
   {
     "key": "EDMS_ACCESS",
     "name": "EDMS ACCESS"
+  },
+  {
+    "key": "WELSOFT_ACCESS",
+    "name": "WELSOFT ACCESS"
   }
 ]

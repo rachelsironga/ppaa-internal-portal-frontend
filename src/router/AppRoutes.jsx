@@ -295,8 +295,6 @@ const AppRoutes = () => {
         }
       />
 
-
-
       {/* ===================================================== */}
       {/* ICT ASSETS ROUTES */}
       {/* ===================================================== */}
@@ -307,21 +305,37 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
-            requiredRoles={["admin", "ReadOnly_User"]}
+            requiredRoles={[
+              "ICT_Superuser",
+              "admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "Department_User",
+              "ReadOnly_User",
+            ]}
           >
-             <AssetDashboardPage />
+            <AssetDashboardPage />
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/ict-assets/assets"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
-            requiredRoles={["admin", "ReadOnly_User"]}
+            requiredRoles={[
+              "ICT_Superuser",
+              "admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "Department_User",
+              "ReadOnly_User",
+            ]}
           >
-             <AssetListPage />
+            <AssetListPage />
           </ProtectedRoute>
         }
       />

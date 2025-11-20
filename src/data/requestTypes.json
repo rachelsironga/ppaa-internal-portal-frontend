@@ -19,6 +19,13 @@
         "color": "#33FF57",
         "icon": "bx-subdirectory-right",
         "description": "Issues related to accessing the EDMS system."
+    },
+    {
+        "title": "WELSOFT Access",
+        "type": "WELSOFT_ACCESS",
+        "color": "#3357FF",
+        "icon": "bx-subdirectory-right",
+        "description": "Issues related to accessing the WELSOFT system."
     }
 ]
   

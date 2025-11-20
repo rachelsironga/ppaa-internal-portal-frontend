@@ -252,7 +252,7 @@ export const RequestHandlingOpenPage = () => {
                 }}
                 type="button"
               >
-                <i className="bx bx-trash me-1"></i> Delete
+                <i className="bx bx-trash me-1"></i> Disable
               </button>
             </div>
           )}
