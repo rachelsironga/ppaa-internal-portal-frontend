@@ -694,21 +694,6 @@ export const UserOpenPage = () => {
                         <button
                           aria-label="Click me"
                           type="button"
-                          className="nav-link shadow-sm"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-documents"
-                          aria-controls="navs-pills-top-documents"
-                          aria-selected="false"
-                        >
-                          <i className="icon-base bx bx-file icon-sm me-1_5"></i>
-                          Documents
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          aria-label="Click me"
-                          type="button"
                           className="nav-link shadow-sm me-3"
                           role="tab"
                           data-bs-toggle="tab"
@@ -979,26 +964,6 @@ export const UserOpenPage = () => {
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      <div
-                        className="tab-pane fade"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-documents"
-                        role="tabpanel"
-                      >
-                        <p>
-                          Oat cake chupa chups dragée donut toffee. Sweet cotton
-                          candy jelly beans macaroon gummies cupcake gummi bears
-                          cake chocolate.
-                        </p>
-                        <p className="mb-0">
-                          Cake chocolate bar cotton candy apple pie tootsie roll
-                          ice cream apple pie brownie cake. Sweet roll icing
-                          sesame snaps caramels danish toffee. Brownie biscuit
-                          dessert dessert. Pudding jelly jelly-o tart brownie
-                          jelly.
-                        </p>
                       </div>
 
                       <div

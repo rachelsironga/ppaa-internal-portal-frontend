@@ -363,13 +363,12 @@ return (
               <table className="table table-hover table-align-middle mb-0 table-bordered">
                 <thead style={{ backgroundColor: "#f1f1f1" }}>
                   <tr>
-                    <th style={{ width: "50px" }}>S/N</th>
+                    <th style={{ width: "60px" }}>Sort</th>
                     <th>Name</th>
                     <th>Action</th>
-                    <th>Location</th>
+                    <th style={{ width: "50px" }}>Order</th>
                     <th style={{ width: "100px" }}>Is Signatory</th>
                     <th style={{ width: "100px" }}>Status</th>
-                    <th style={{ width: "60px" }}>Sort</th>
                     <th style={{ width: "100px" }}>Options</th>
                   </tr>
                 </thead>
@@ -423,14 +422,26 @@ return (
                                 {...provider.draggableProps}
                                 ref={provider.innerRef}
                               >
-                                <td>{index + 1}</td>
-                                <td className="fw-medium">{`${dataRows.level.name}`}</td>
-                                <td className="fw-medium">
-                                  {dataRows.action.name}
+                                <td {...provider.dragHandleProps}>
+                                  <i
+                                    className="bx bx-chevrons-up ms-1"
+                                    style={{ cursor: "pointer" }}
+                                  ></i>
+                                  <i
+                                    className="bx bx-chevrons-down ms-1"
+                                    style={{ cursor: "pointer" }}
+                                  ></i>
                                 </td>
                                 <td className="fw-medium">
-                                  {dataRows.department !== null ? (
+                                  {dataRows.department !== null &&
+                                  dataRows.level !== null ? (
                                     <div className="d-flex flex-column text-start">
+                                      <span className="small">
+                                        Position:{" "}
+                                        <span className="text-muted">
+                                          {dataRows.level.name}
+                                        </span>
+                                      </span>
                                       <span className="fw-bold text-muted">
                                         {dataRows.department?.directory?.name}
                                       </span>
@@ -444,6 +455,13 @@ return (
                                   ) : (
                                     <span>{dataRows.department?.name}</span>
                                   )}
+                                </td>
+
+                                <td className="fw-medium">
+                                  {dataRows.action.name}
+                                </td>
+                                <td className="fw-medium text-center">
+                                  {dataRows.order}
                                 </td>
                                 <td className="fw-medium text-center">
                                   {dataRows.is_signatory ? (
@@ -466,16 +484,6 @@ return (
                                       Inactive
                                     </span>
                                   )}
-                                </td>
-                                <td {...provider.dragHandleProps}>
-                                  <i
-                                    className="bx bx-chevrons-up ms-1"
-                                    style={{ cursor: "pointer" }}
-                                  ></i>
-                                  <i
-                                    className="bx bx-chevrons-down ms-1"
-                                    style={{ cursor: "pointer" }}
-                                  ></i>
                                 </td>
 
                                 <td className="text-center">

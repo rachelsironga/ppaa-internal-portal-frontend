@@ -1153,7 +1153,7 @@ export const AccountPage = () => {
                                     data-bs-toggle="modal"
                                     data-bs-target="#resetPasswordModal"
                                   >
-                                    Reset Password
+                                    Change Password
                                   </button>
                                 </form>
                               </div>
