@@ -45,7 +45,8 @@ export const RolesManagementPage = () => {
                 className="text-bold"
                 onClick={() => {
                   navigate(
-                    `/roles-managements/open/` + HashUtil.hashNumber(row.id)
+                    `/mnh-connect/roles-managements/open/` +
+                      HashUtil.hashNumber(row.id)
                   );
                 }}
               >
@@ -95,7 +96,8 @@ export const RolesManagementPage = () => {
                 className="btn btn-sm btn-outline-primary text-center"
                 onClick={() => {
                   navigate(
-                    `/roles-managements/open/` + HashUtil.hashNumber(row.id)
+                    `/mnh-connect/roles-managements/open/` +
+                      HashUtil.hashNumber(row.id)
                   );
                 }}
               >

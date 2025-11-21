@@ -96,7 +96,9 @@ export const DirectoryPage = () => {
                       "change_directory",
                     ],
                   ])
-                    ? navigate(`/settings/directories/open/${row.uid}`)
+                    ? navigate(
+                        `/mnh-connect/settings/directories/open/${row.uid}`
+                      )
                     : null
                 }
               >
@@ -142,7 +144,9 @@ export const DirectoryPage = () => {
                       "change_directory",
                     ],
                   ])
-                    ? navigate(`/settings/directories/open/${row.uid}`)
+                    ? navigate(
+                        `/mnh-connect/settings/directories/open/${row.uid}`
+                      )
                     : null
                 }
               >

@@ -111,7 +111,7 @@ export const ApprovalRequestPage = () => {
                 className="btn p-0 dropdown-toggle hide-arrow text-info"
                 data-bs-toggle="dropdown"
                 onClick={() => {
-                  navigate(`/requests/open/${row.uid}`);
+                  navigate(`/mnh-connect/requests/open/${row.uid}`);
                 }}
               >
                 <i className="bx bx-link-external"></i>&nbsp; View

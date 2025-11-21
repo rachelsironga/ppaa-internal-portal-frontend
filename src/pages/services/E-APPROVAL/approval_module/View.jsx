@@ -74,7 +74,9 @@ export const ApprovalModulePage = () => {
               <button
                 className="btn btn-sm btn-outline-primary text-center"
                 onClick={() => {
-                  navigate(`/settings/approval-modules/open/${row.uid}`);
+                  navigate(
+                    `/mnh-connect/settings/approval-modules/open/${row.uid}`
+                  );
                 }}
               >
                 <i className="bx bx-show"></i>&nbsp; View

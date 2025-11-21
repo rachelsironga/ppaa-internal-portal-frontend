@@ -14,7 +14,7 @@
         "text": "Dashboard",
         "icon": "bx bx-home",
         "available": true,
-        "link": "/e-approval",
+        "link": "/mnh-connect",
         "permission": [],
         "role": ["admin", "staff"]
       },
@@ -22,7 +22,7 @@
         "text": "Profile",
         "icon": "bx bx-user",
         "available": true,
-        "link": "/account/settings",
+        "link": "/mnh-connect/account/settings",
         "permission": [],
         "role": ["admin", "staff"]
       }
@@ -36,7 +36,7 @@
         "text": "Requests",
         "icon": "bx bx-layer",
         "available": true,
-        "link": "/requests",
+        "link": "/mnh-connect/requests",
         "permission": ["can_view_approval_request", "can_create_approval_request", "can_update_approval_request_status"],
         "role": ["staff", "admin"]
       },
@@ -44,7 +44,7 @@
         "text": "Requests Handling",
         "icon": "bx bx-redo",
         "available": true,
-        "link": "/requests-handling",
+        "link": "/mnh-connect/requests-handling",
         "permission": ["can_view_request_handling","can_perform_request_handling"],
         "role": ["Request_Handler"]
       }
@@ -59,7 +59,7 @@
         "text": "Directories",
         "icon": "bx bx-unite",
         "available": true,
-        "link": "/settings/directories",
+        "link": "/mnh-connect/settings/directories",
         "permission": ["view_directory","add_directory","change_directory"],
         "role": ["admin"]
       },
@@ -67,7 +67,7 @@
         "text": "Departments",
         "icon": "bx bx-layer",
         "available": true,
-        "link": "/settings/departments",
+        "link": "/mnh-connect/settings/departments",
         "permission": ["can_add_department","can_view_department","can_delete_department"],
         "role": ["admin"]
       },
@@ -75,7 +75,7 @@
         "text": "Designations",
         "icon": "bx bx-sitemap",
         "available": true,
-        "link": "/settings/positional-levels",
+        "link": "/mnh-connect/settings/positional-levels",
         "permission": ["change_positionallevel","view_positionallevel", "delete_positionallevel"],
         "role": ["admin"]
       },
@@ -83,7 +83,7 @@
         "text": "Approval Actions",
         "icon": "bx bx-detail",
         "available": true,
-        "link": "/settings/approval-actions",
+        "link": "/mnh-connect/settings/approval-actions",
         "permission": ["change_positionalaction","view_positionalaction", "can_delete_approval_action"],
         "role": ["admin"]
       },
@@ -91,7 +91,7 @@
         "text": "Approval Modules",
         "icon": "bx bx-box",
         "available": true,
-        "link": "/settings/approval-modules",
+        "link": "/mnh-connect/settings/approval-modules",
         "permission": ["can_view_approval_modules","can_add_approval_module", "can_edit_approval_module","can_delete_approval_module" ],
         "role": ["admin"]
       },
@@ -99,7 +99,7 @@
         "text": "Date Range",
         "icon": "bx bx-calendar",
         "available": true,
-        "link": "/settings/date-ranges",
+        "link": "/mnh-connect/settings/date-ranges",
         "permission": ["view_daterange", "can_edit_date_range","can_delete_date_range" ],
         "role": ["admin"]
       }
@@ -120,7 +120,7 @@
             "text": "Users",
             "icon": "bx bx-group",
             "available": true,
-            "link": "/users",
+            "link": "/mnh-connect/users",
             "permission": ["view_user","add_user","delete_user"],
             "role": ["admin"] 
           },
@@ -128,7 +128,7 @@
             "text": "Roles\t&Permissions",
             "icon": "bx bx-detail",
             "available": true,
-            "link": "/roles-managements",
+            "link": "/mnh-connect/roles-managements",
             "permission": ["view_group"],
             "role": ["admin"]
           }

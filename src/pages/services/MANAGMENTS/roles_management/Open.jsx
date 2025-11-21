@@ -271,14 +271,14 @@ export const OpenRolesManagementPage = () => {
                       <div
                         className="d-flex justify-content-start align-items-center user-name"
                         onClick={() => {
-                          navigate(`/users/open/${row.guid}`);
+                          navigate(`/mnh-connect/users/open/${row.guid}`);
                         }}
                       >
                         <div className="avatar-wrapper">
                           <div className="avatar avatar-sm me-4">
                             <img
                               src={
-                                row.photo || "../../assets/img/avatars/1.png"
+                                row.photo || "../../../assets/img/avatars/1.png"
                               }
                               alt="Avatar"
                               className="rounded-circle"
