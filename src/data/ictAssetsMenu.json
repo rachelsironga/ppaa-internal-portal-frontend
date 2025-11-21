@@ -75,14 +75,6 @@
           "role": ["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]
         },
         {
-          "text": "Software Installations",
-          "icon": "bx bx-download",
-          "available": true,
-          "link": "/ict-assets/asset-software-installations",
-          "permission": ["view_softwareinstallation"],
-          "role": ["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]
-        },
-        {
           "text": "Software Categories",
           "icon": "bx bx-category",
           "available": true,

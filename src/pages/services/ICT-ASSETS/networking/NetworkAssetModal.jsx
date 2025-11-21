@@ -259,7 +259,7 @@ export const NetworkAssetModal = ({ loadOnlyModal = false }) => {
     >
       <div className="modal-dialog modal-xl" role="document">
         <div className="modal-content">
-          <div className="modal-header bg-primary text-white">
+          <div className="modal-header text-white">
             <h5 className="modal-title">
               <i className="bx bx-network-chart me-2"></i>
               {selectedObj ? "Update Network Device" : "Create New Network Device"}

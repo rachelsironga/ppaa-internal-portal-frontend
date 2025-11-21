@@ -45,18 +45,8 @@ import { SoftwareAssetListPage } from "../pages/services/ICT-ASSETS/softwares/Vi
 import { SoftwareAssetViewPage } from "../pages/services/ICT-ASSETS/softwares/Open.jsx";
 import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
-import { OxygenLocationPage } from "../pages/services/OXYGEN-MANAGMENT/locations/View.jsx";
-import { OxygenLocationOpenPage } from "../pages/services/OXYGEN-MANAGMENT/locations/Open.jsx";
-import { OxygenLocationUsagePage } from "../pages/services/OXYGEN-MANAGMENT/locations/Usage.jsx";
-import { OxygenAllocationOpenPage } from "../pages/services/OXYGEN-MANAGMENT/allocation/Open.jsx";
-import { OxygenRecievingPage } from "../pages/services/OXYGEN-MANAGMENT/recieving/View.jsx";
-import { OxygenRecievingOpenPage } from "../pages/services/OXYGEN-MANAGMENT/recieving/Open.jsx";
-import { OxygenAllocationPage } from "../pages/services/OXYGEN-MANAGMENT/allocation/View.jsx";
-import { OxygenUsagePage } from "../pages/services/OXYGEN-MANAGMENT/usage/View.jsx";
-import { OxygenUsageOpenPage } from "../pages/services/OXYGEN-MANAGMENT/usage/Open.jsx";
-import { OxygenVolumePage } from "../pages/services/OXYGEN-MANAGMENT/volumes/View.jsx";
-import { OxygenSupplierPage } from "../pages/services/OXYGEN-MANAGMENT/suppliers/View.jsx";
-import { PatientAgeGroupPage } from "../pages/services/OXYGEN-MANAGMENT/patientAgeGroups/View.jsx";
+import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
+
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -548,6 +538,19 @@ const AppRoutes = () => {
         }
       />
 
+       <Route
+        path="/ict-assets/asset-software-categories"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <SoftwareCategoriesListPage />
+          </ProtectedRoute>
+        }
+      />
+
+     
       {/*<Route*/}
       {/*    path="/requests/open/:uid"*/}
       {/*    element={*/}
