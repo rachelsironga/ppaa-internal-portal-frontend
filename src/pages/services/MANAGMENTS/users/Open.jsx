@@ -634,21 +634,10 @@ export const UserOpenPage = () => {
                                 <strong>Contact </strong>&nbsp;:&nbsp;
                               </span>
                               <span className="text-primary">
-                                {selectedObj.phone_number}
+                                {selectedObj.phone_number
+                                  ? selectedObj.phone_number
+                                  : "XXXX-XXXXXX"}
                               </span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-phone me-2"></i>
-                                <strong>Alt Contact </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.alternative_contact}</span>
                             </li>
                           </ul>
                         </div>
