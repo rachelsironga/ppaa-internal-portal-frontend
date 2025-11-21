@@ -17,12 +17,12 @@
     "permission": [],
     "role": ["admin"]
   },
-  {
-    "text": "ICT Asserts Management",
-    "icon": "bx bx-desktop",
-    "link": "/medical-records",
+    {
+    "text": "Oxygen Management",
+    "icon": "bx bxs-cylinder",
+    "link": "/oxygen-management",
     "permission": [],
-    "role": ["admin", "records"]
+    "role": ["admin", "store"]
   },
   {
     "text": "Equipment Tracking",
@@ -38,15 +38,9 @@
     "permission": [],
     "role": ["admin", "finance"]
   },
+
   {
-    "text": "Oxygen Management",
-    "icon": "bx bxs-cylinder",
-    "link": "/inventory",
-    "permission": [],
-    "role": ["admin", "store"]
-  },
-  {
-    "text": "IT Support",
+    "text": "ICT Support",
     "icon": "bx bx-headphone",
     "link": "/it-support",
     "permission": [],

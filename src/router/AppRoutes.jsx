@@ -45,7 +45,18 @@ import { SoftwareAssetListPage } from "../pages/services/ICT-ASSETS/softwares/Vi
 import { SoftwareAssetViewPage } from "../pages/services/ICT-ASSETS/softwares/Open.jsx";
 import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
-
+import { OxygenLocationPage } from "../pages/services/OXYGEN-MANAGMENT/locations/View.jsx";
+import { OxygenLocationOpenPage } from "../pages/services/OXYGEN-MANAGMENT/locations/Open.jsx";
+import { OxygenLocationUsagePage } from "../pages/services/OXYGEN-MANAGMENT/locations/Usage.jsx";
+import { OxygenAllocationOpenPage } from "../pages/services/OXYGEN-MANAGMENT/allocation/Open.jsx";
+import { OxygenRecievingPage } from "../pages/services/OXYGEN-MANAGMENT/recieving/View.jsx";
+import { OxygenRecievingOpenPage } from "../pages/services/OXYGEN-MANAGMENT/recieving/Open.jsx";
+import { OxygenAllocationPage } from "../pages/services/OXYGEN-MANAGMENT/allocation/View.jsx";
+import { OxygenUsagePage } from "../pages/services/OXYGEN-MANAGMENT/usage/View.jsx";
+import { OxygenUsageOpenPage } from "../pages/services/OXYGEN-MANAGMENT/usage/Open.jsx";
+import { OxygenVolumePage } from "../pages/services/OXYGEN-MANAGMENT/volumes/View.jsx";
+import { OxygenSupplierPage } from "../pages/services/OXYGEN-MANAGMENT/suppliers/View.jsx";
+import { PatientAgeGroupPage } from "../pages/services/OXYGEN-MANAGMENT/patientAgeGroups/View.jsx";
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -294,6 +305,64 @@ const AppRoutes = () => {
       />
 
       {/* ===================================================== */}
+      {/* OXYGEN MANAGMENT ROUTES */}
+      {/* ===================================================== */}
+      <Route
+        path="/oxygen-management/locations"
+        element={<OxygenLocationPage />}
+      />
+
+      <Route
+        path="/oxygen-management/locations/open/:uid"
+        element={<OxygenLocationOpenPage />}
+      />
+      <Route
+        path="/oxygen-management/locational-oxygen-usages/open/:uid"
+        element={<OxygenLocationUsagePage />}
+      />
+
+      <Route
+        path="/oxygen-management/locations/open/:uid"
+        element={<OxygenAllocationOpenPage />}
+      />
+
+      <Route
+        path="/oxygen-management/recievings"
+        element={<OxygenRecievingPage />}
+      />
+      <Route
+        path="/oxygen-management/recievings/open/:uid"
+        element={<OxygenRecievingOpenPage />}
+      />
+
+      <Route
+        path="/oxygen-management/allocations"
+        element={<OxygenAllocationPage />}
+      />
+      <Route
+        path="/oxygen-management/allocations/open/:uid"
+        element={<OxygenAllocationOpenPage />}
+      />
+
+      <Route path="/oxygen-management/usages" element={<OxygenUsagePage />} />
+      <Route
+        path="/oxygen-management/usages/open/:uid"
+        element={<OxygenUsageOpenPage />}
+      />
+
+      <Route path="/oxygen-management/volumes" element={<OxygenVolumePage />} />
+
+      <Route
+        path="/oxygen-management/suppliers"
+        element={<OxygenSupplierPage />}
+      />
+
+      <Route
+        path="/oxygen-management/patient-age-groups"
+        element={<PatientAgeGroupPage />}
+      />
+
+      {/* ===================================================== */}
       {/* ICT ASSETS ROUTES */}
       {/* ===================================================== */}
 
@@ -345,7 +414,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <AssetViewPage />
+            <AssetViewPage />
           </ProtectedRoute>
         }
       />
@@ -357,7 +426,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <ComputerViewPage />
+            <ComputerViewPage />
           </ProtectedRoute>
         }
       />
@@ -369,7 +438,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <ComputerListPage />
+            <ComputerListPage />
           </ProtectedRoute>
         }
       />
@@ -381,7 +450,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <NetworkingDeviceViewPage />
+            <NetworkingDeviceViewPage />
           </ProtectedRoute>
         }
       />
@@ -393,7 +462,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <NetworkingDeviceListPage />
+            <NetworkingDeviceListPage />
           </ProtectedRoute>
         }
       />
@@ -405,7 +474,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <PeripheralDeviceViewPage />
+            <PeripheralDeviceViewPage />
           </ProtectedRoute>
         }
       />
@@ -417,19 +486,19 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <PeripheralDeviceListPage />
+            <PeripheralDeviceListPage />
           </ProtectedRoute>
         }
       />
 
-       <Route
+      <Route
         path="/ict-assets/asset-software/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SoftwareAssetViewPage />
+            <SoftwareAssetViewPage />
           </ProtectedRoute>
         }
       />
@@ -441,19 +510,19 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SoftwareAssetListPage />
+            <SoftwareAssetListPage />
           </ProtectedRoute>
         }
       />
 
-       <Route
+      <Route
         path="/ict-assets/asset-software-installations"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SowareInstallationListPage />
+            <SowareInstallationListPage />
           </ProtectedRoute>
         }
       />
@@ -465,12 +534,10 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SoftwareInstallationViewPage />
+            <SoftwareInstallationViewPage />
           </ProtectedRoute>
         }
       />
-
-     
 
       {/*<Route*/}
       {/*    path="/requests/open/:uid"*/}
