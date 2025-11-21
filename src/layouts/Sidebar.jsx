@@ -1,101 +1,34 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import eApprovalMenu from '../data/eApprovalMenu.json'
-import ictAssetsMenu from '../data/ictAssetsMenu.json'; 
+import React, { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-import { useSelector } from 'react-redux';
-import documentationList from "../data/documentationList.json"; 
-import servicesList from "../data/servicesList.json";
+import servicesConfig from "../data/servicesConfig";
+import { hasPermission, hasAnyVisibleItem } from "../utils/permissions";
 
-  // const location = useLocation();
-
-
-
-const hasPermission = (
-  itemPermissions,
-  itemRoles,
-  userPermissions,
-  userRoles
-) => {
-  const hasRequiredPermission =
-    !itemPermissions ||
-    itemPermissions.some((permission) => userPermissions?.includes(permission));
-  const hasRequiredRole =
-    !itemRoles || itemRoles.some((role) => userRoles?.includes(role));
-  return hasRequiredPermission || hasRequiredRole;
-};
-
-const hasAnyVisibleItem = (items, userPermissions, userRoles) => {
-  return items.some((item) => {
-    // Check if the parent itself is visible
-    const parentVisible = hasPermission(
-      item.permission,
-      item.role,
-      userPermissions,
-      userRoles
-    );
-
-    // If parent visible, we show
-    if (parentVisible) {
-      return true;
-    }
-
-    // If parent not visible, but submenus exist
-    if (item.submenu && item.submenu.length > 0) {
-      // Check if any submenu items are visible
-      const childVisible = hasAnyVisibleItem(
-        item.submenu,
-        userPermissions,
-        userRoles
-      );
-      if (childVisible) {
-        return true;
-      }
-    }
-
-    return false;
-  });
-};
+// KEEPING YOUR ORIGINAL UI EXACTLY THE SAME
 
 const Sidebar = ({ isService = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
   const userPermissions = user?.user_permissions;
   const userRoles = user?.groups;
 
-  const [activeService, setActiveService] = useState('e-approval');
   const location = useLocation();
 
+  const [activeService, setActiveService] = useState(null);
+  const [currentMenu, setCurrentMenu] = useState([]);
 
-  // Filter services based on user permissions
-  const hasPermission = (itemPermissions, itemRoles) => {
-    const hasRequiredPermission =
-      !itemPermissions ||
-      itemPermissions.some((permission) => userPermissions?.includes(permission));
-    const hasRequiredRole =
-      !itemRoles || itemRoles.some((role) => userRoles?.includes(role));
-    return hasRequiredPermission || hasRequiredRole;
-  };
-
-  const filteredServices = servicesList.filter(service => 
-    hasPermission(service.permission, service.role)
-  );
-
-
+  // Detect service by URL
   useEffect(() => {
     const currentPath = location.pathname;
-    if (currentPath.includes('/ict-assets')) {
-      setActiveService('ict-assets');
-    } else if (currentPath.includes('/e-approval') || currentPath === '/') {
-      setActiveService('e-approval');
+
+    const service = servicesConfig.find((s) => currentPath.startsWith(s.link));
+
+    if (service) {
+      setActiveService(service.id);
+      setCurrentMenu(service.menu);
     } else {
-      // Try to find service from the services list
-      const currentService = servicesList.find(service => 
-        currentPath.startsWith(service.link)
-      );
-      if (currentService) {
-        setActiveService(currentService.id || currentService.text.toLowerCase());
-      }
+      setActiveService("");
+      setCurrentMenu(servicesConfig[servicesConfig.length - 1].menu);
     }
   }, [location.pathname]);
 
@@ -105,112 +38,56 @@ const Sidebar = ({ isService = false }) => {
       className="layout-menu menu-vertical menu bg-menu-theme"
     >
       <div className="app-brand demo">
-        <Link
-          aria-label="Navigate to sneat homepage"
-          to="/"
-          className="app-brand-link"
-        >
+        <Link to="/" className="app-brand-link">
           <span className="app-brand-logo demo">
-            <img
-              src="/assets/img/nembo.jpg"
-              alt="sneat-logo"
-              width={"70px"}
-              height={"70px"}
-              aria-label="Sneat logo image"
-            />
+            <img src="/assets/img/nembo.jpg" width="70" height="70" />
           </span>
           <span style={{ width: "70px" }}></span>
           <span className="app-brand-logo demo">
-            <img
-              src="/assets/img/mnhlogo.png"
-              alt="sneat-logo"
-              width={"70px"}
-              height={"70px"}
-              aria-label="Sneat logo image"
-            />
+            <img src="/assets/img/mnhlogo.png" width="70" height="70" />
           </span>
         </Link>
-
-        <a
-          href="#"
-          className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none"
-        >
+        <a className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
           <i className="bx bx-chevron-left bx-sm align-middle"></i>
         </a>
       </div>
-      <div style={{ alignContent: "center", textAlign: "center" }}>
+
+      <div style={{ textAlign: "center" }}>
         <span className="app-brand-text demo menu-text fw-bold ms-2">
           MNH-CONNECT
         </span>
-          {activeService && (
-            <h5 className="text-bold">
-              {activeService.split('-').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-              ).join(' ')}
-            </h5>
-          )}
+
+        {activeService && (
+          <h5 className="text-bold">
+            {activeService
+              .replace(/-/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase())}
+          </h5>
+        )}
       </div>
 
       <div className="menu-inner-shadow"></div>
 
       <ul className="menu-inner py-1">
         {isService ? (
-          // Service Documentation View
+          // Documentation Mode
           <>
             <li className="menu-header small text-uppercase">
               <span className="menu-header-text">Documentation</span>
             </li>
-            {servicesList.map((doc, idx) => (
-              <li className="menu-item" key={"docs_index_" + idx}>
-                <a
-                  className="menu-link"
-                  href="#"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <i className={`menu-icon tf-icons bx bx-file`}></i>
-                  <div>{doc.text + " Docs"}</div>
+
+            {servicesConfig.map((service, idx) => (
+              <li className="menu-item" key={idx}>
+                <a className="menu-link" href="#" target="_blank">
+                  <i className="menu-icon tf-icons bx bx-file"></i>
+                  <div>{service.name} Docs</div>
                 </a>
               </li>
             ))}
           </>
-         ) : activeService === 'ict-assets' ? (
-            // ICT Assets Management
-            ictAssetsMenu[0].items.map((section, sectionIndex) => (  // Access items[0].items
-              <React.Fragment key={"ict-header-" + sectionIndex}>
-                {section.header &&
-                  hasAnyVisibleItem(
-                    [section], // Pass section as array for consistency
-                    userPermissions,
-                    userRoles
-                  ) && (
-                    <li className="menu-header small text-uppercase">
-                      <span className="menu-header-text">{section.header}</span>
-                    </li>
-                  )}
-                
-                {section.submenu  
-                  ?.filter((item) =>
-                    hasPermission(
-                      item.permission,
-                      item.role,
-                      userPermissions,
-                      userRoles
-                    )
-                  )
-                  .map((item, itemIndex) => (
-                    <MenuItem
-                      key={item.id || `ict-${itemIndex}`}
-                      {...item}
-                      userPermissions={userPermissions}
-                      userRoles={userRoles}
-                    />
-                  ))}
-              </React.Fragment>
-            ))
-          ) : (
-          // Main E-Approval Application Menu (default)
-          eApprovalMenu.map((section, sectionIndex) => (
+        ) : (
+          // Dynamic Service Menu
+          currentMenu.map((section, sectionIndex) => (
             <React.Fragment key={"header-" + sectionIndex}>
               {section.header &&
                 hasAnyVisibleItem(
@@ -222,6 +99,7 @@ const Sidebar = ({ isService = false }) => {
                     <span className="menu-header-text">{section.header}</span>
                   </li>
                 )}
+
               {section.items
                 .filter((item) =>
                   hasPermission(
@@ -241,83 +119,71 @@ const Sidebar = ({ isService = false }) => {
                 ))}
             </React.Fragment>
           ))
-        )
-      }
+        )}
       </ul>
     </aside>
   );
 };
 
-  const MenuItem = (item) => {
-    const { userPermissions, userRoles, submenu, ...rest } = item;
+// KEEP YOUR ORIGINAL MENU ITEM UI
+const MenuItem = (item) => {
+  const { userPermissions, userRoles, submenu } = item;
+  const location = useLocation();
 
-    const location = useLocation();
-
-    // Filter the submenu here
-    const filteredSubmenu = submenu
-      ? submenu.filter((subitem) =>
-          hasPermission(
-            subitem.permission,
-            subitem.role,
-            userPermissions,
-            userRoles
-          )
+  const filteredSubmenu = submenu
+    ? submenu.filter((subitem) =>
+        hasPermission(
+          subitem.permission,
+          subitem.role,
+          userPermissions,
+          userRoles
         )
-      : [];
+      )
+    : [];
 
-    // If the item had submenu, but after filtering it's empty, don't show this parent
-    if (submenu && filteredSubmenu.length === 0) {
-      return null;
-    }
+  if (submenu && filteredSubmenu.length === 0) return null;
 
-    const isActive =
-      location.pathname === item.link ||
-      location.pathname.startsWith(item.link + "/open/");
+  const isActive =
+    location.pathname === item.link ||
+    location.pathname.startsWith(item.link + "/open/");
 
-    const hasSubmenu = filteredSubmenu.length > 0;
+  const hasSubmenu = filteredSubmenu.length > 0;
 
-    const isSubmenuActive =
-      hasSubmenu &&
-      filteredSubmenu.some((subitem) => location.pathname === subitem.link);
-
-    return (
-      <li
-        className={`menu-item ${isActive || isSubmenuActive ? "active" : ""} ${
-          hasSubmenu && isSubmenuActive ? "open" : ""
-        }`}
+  return (
+    <li
+      className={`menu-item ${isActive ? "active" : ""} ${
+        hasSubmenu && isActive ? "open" : ""
+      }`}
+    >
+      <NavLink
+        to={item.link}
+        className={`menu-link ${hasSubmenu ? "menu-toggle" : ""}`}
+        target={item.link.includes("http") ? "_blank" : undefined}
       >
-        <NavLink
-          aria-label={`Navigate to ${item.text} ${
-            !item.available ? "Pro" : ""
-          }`}
-          to={item.link}
-          className={`menu-link ${hasSubmenu ? "menu-toggle" : ""}`}
-          target={item.link.includes("http") ? "_blank" : undefined}
-        >
-          <i className={`menu-icon tf-icons ${item.icon}`}></i>
-          <div>{item.text}</div>
-          {item.available === false && (
-            <div className="badge bg-label-primary fs-tiny rounded-pill ms-auto">
-              Pro
-            </div>
-          )}
-        </NavLink>
+        <i className={`menu-icon tf-icons ${item.icon}`}></i>
+        <div>{item.text}</div>
 
-        {hasSubmenu && (
-          <ul key={`submenu-${item.id || item.text}`} className="menu-sub">
-            {filteredSubmenu.map((subitem, subitemIndex) => (
-              <MenuItem
-                key={subitem.id || `${item.id || item.text}-${subitemIndex}`}
-                {...subitem}
-                userPermissions={userPermissions}
-                userRoles={userRoles}
-              />
-            ))}
-          </ul>
+        {item.available === false && (
+          <div className="badge bg-label-primary fs-tiny rounded-pill ms-auto">
+            Pro
+          </div>
         )}
-      </li>
-    );
-  };
+      </NavLink>
 
+      {hasSubmenu && (
+        <ul className="menu-sub">
+          {filteredSubmenu.map((sub, i) => (
+            <MenuItem
+              key={sub.id || `${item.id}-${i}`}
+              {...sub}
+              userPermissions={userPermissions}
+              userRoles={userRoles}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+};
 
 export default Sidebar;

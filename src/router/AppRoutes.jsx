@@ -63,19 +63,28 @@ const AppRoutes = () => {
       />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/e-approval" element={<DashboardPage />} />
+      <Route path="/mnh-connect" element={<DashboardPage />} />
       <Route path="/" element={<Services />} />
 
       <Route path="*" element={<ErrorPage />} />
 
-      <Route path="/account/settings" element={<AccountPage />} />
-      <Route path="/account/notifications" element={<NotificationPage />} />
-      <Route path="/account/connections" element={<Connections />} />
-      <Route path="/account/password" element={<ChangePassword />} />
+      <Route path="/mnh-connect/account/settings" element={<AccountPage />} />
+      <Route
+        path="/mnh-connect/account/notifications"
+        element={<NotificationPage />}
+      />
+      <Route
+        path="/mnh-connect/account/connections"
+        element={<Connections />}
+      />
+      <Route
+        path="/mnh-connect/account/password"
+        element={<ChangePassword />}
+      />
 
       {/* Settings */}
       <Route
-        path="/settings/directories"
+        path="/mnh-connect/settings/directories"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -89,7 +98,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/directories/open/:uid"
+        path="/mnh-connect/settings/directories/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -103,7 +112,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/departments"
+        path="/mnh-connect/settings/departments"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -117,7 +126,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/positional-levels"
+        path="/mnh-connect/settings/positional-levels"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -131,7 +140,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-actions"
+        path="/mnh-connect/settings/approval-actions"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -145,7 +154,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules"
+        path="/mnh-connect/settings/approval-modules"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -161,7 +170,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules/open/:uid"
+        path="/mnh-connect/settings/approval-modules/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -177,7 +186,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/date-ranges"
+        path="/mnh-connect/settings/date-ranges"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -194,7 +203,7 @@ const AppRoutes = () => {
 
       {/* Users */}
       <Route
-        path="/users"
+        path="/mnh-connect/users"
         element={
           <ProtectedRoute
             requiredPermissions={["view_user", "add_user", "delete_user"]}
@@ -204,7 +213,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/users/open/:uid"
+        path="/mnh-connect/users/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={["view_user", "add_user", "delete_user"]}
@@ -216,7 +225,7 @@ const AppRoutes = () => {
 
       {/* Requests */}
       <Route
-        path="/requests"
+        path="/mnh-connect/requests"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -231,7 +240,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/requests/open/:uid"
+        path="/mnh-connect/requests/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -247,7 +256,7 @@ const AppRoutes = () => {
       {/* Requests Handling*/}
 
       <Route
-        path="/requests-handling"
+        path="/mnh-connect/requests-handling"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -261,7 +270,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/requests-handling/open/:uid"
+        path="/mnh-connect/requests-handling/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -277,7 +286,7 @@ const AppRoutes = () => {
 
       {/* Roles Managements */}
       <Route
-        path="/roles-managements"
+        path="/mnh-connect/roles-managements"
         element={
           <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
             <RolesManagementPage />
@@ -286,12 +295,70 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/roles-managements/open/:uid"
+        path="/mnh-connect/roles-managements/open/:uid"
         element={
           <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
             <OpenRolesManagementPage />
           </ProtectedRoute>
         }
+      />
+
+      {/* ===================================================== */}
+      {/* OXYGEN MANAGMENT ROUTES */}
+      {/* ===================================================== */}
+      <Route
+        path="/oxygen-management/locations"
+        element={<OxygenLocationPage />}
+      />
+
+      <Route
+        path="/oxygen-management/locations/open/:uid"
+        element={<OxygenLocationOpenPage />}
+      />
+      <Route
+        path="/oxygen-management/locational-oxygen-usages/open/:uid"
+        element={<OxygenLocationUsagePage />}
+      />
+
+      <Route
+        path="/oxygen-management/locations/open/:uid"
+        element={<OxygenAllocationOpenPage />}
+      />
+
+      <Route
+        path="/oxygen-management/recievings"
+        element={<OxygenRecievingPage />}
+      />
+      <Route
+        path="/oxygen-management/recievings/open/:uid"
+        element={<OxygenRecievingOpenPage />}
+      />
+
+      <Route
+        path="/oxygen-management/allocations"
+        element={<OxygenAllocationPage />}
+      />
+      <Route
+        path="/oxygen-management/allocations/open/:uid"
+        element={<OxygenAllocationOpenPage />}
+      />
+
+      <Route path="/oxygen-management/usages" element={<OxygenUsagePage />} />
+      <Route
+        path="/oxygen-management/usages/open/:uid"
+        element={<OxygenUsageOpenPage />}
+      />
+
+      <Route path="/oxygen-management/volumes" element={<OxygenVolumePage />} />
+
+      <Route
+        path="/oxygen-management/suppliers"
+        element={<OxygenSupplierPage />}
+      />
+
+      <Route
+        path="/oxygen-management/patient-age-groups"
+        element={<PatientAgeGroupPage />}
       />
 
       {/* ===================================================== */}
@@ -346,7 +413,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <AssetViewPage />
+            <AssetViewPage />
           </ProtectedRoute>
         }
       />
@@ -358,7 +425,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <ComputerViewPage />
+            <ComputerViewPage />
           </ProtectedRoute>
         }
       />
@@ -370,7 +437,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <ComputerListPage />
+            <ComputerListPage />
           </ProtectedRoute>
         }
       />
@@ -382,7 +449,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <NetworkingDeviceViewPage />
+            <NetworkingDeviceViewPage />
           </ProtectedRoute>
         }
       />
@@ -394,7 +461,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <NetworkingDeviceListPage />
+            <NetworkingDeviceListPage />
           </ProtectedRoute>
         }
       />
@@ -406,7 +473,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <PeripheralDeviceViewPage />
+            <PeripheralDeviceViewPage />
           </ProtectedRoute>
         }
       />
@@ -418,19 +485,19 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <PeripheralDeviceListPage />
+            <PeripheralDeviceListPage />
           </ProtectedRoute>
         }
       />
 
-       <Route
+      <Route
         path="/ict-assets/asset-software/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SoftwareAssetViewPage />
+            <SoftwareAssetViewPage />
           </ProtectedRoute>
         }
       />
@@ -442,19 +509,19 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SoftwareAssetListPage />
+            <SoftwareAssetListPage />
           </ProtectedRoute>
         }
       />
 
-       <Route
+      <Route
         path="/ict-assets/asset-software-installations"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SowareInstallationListPage />
+            <SowareInstallationListPage />
           </ProtectedRoute>
         }
       />
@@ -466,7 +533,7 @@ const AppRoutes = () => {
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SoftwareInstallationViewPage />
+            <SoftwareInstallationViewPage />
           </ProtectedRoute>
         }
       />

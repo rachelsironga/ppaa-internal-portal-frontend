@@ -8,7 +8,7 @@
         "available": true,
         "link": "/",
         "permission": [],
-        "role": ["Staff","Admin"]
+        "role": ["staff","admin"]
       },
     {
       "text": "ICT Assets Management",
