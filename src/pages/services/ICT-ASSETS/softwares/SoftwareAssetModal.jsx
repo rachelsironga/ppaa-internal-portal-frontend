@@ -253,7 +253,7 @@ export const SoftwareAssetModal = ({ loadOnlyModal = false }) => {
     >
       <div className="modal-dialog modal-xl" role="document">
         <div className="modal-content">
-          <div className="modal-header bg-success text-white">
+          <div className="modal-header text-white">
             <h5 className="modal-title">
               <i className="bx bx-code-alt me-2"></i>
               {selectedObj ? "Update Software Asset" : "Create New Software Asset"}
@@ -285,7 +285,6 @@ export const SoftwareAssetModal = ({ loadOnlyModal = false }) => {
               <Form>
                 <FormWizard
                   shape="circle"
-                  color="#28a745"
                   stepSize="xs"
                   onTabChange={({ prevIndex, nextIndex }) => {
                     setTimeout(() => setTabIndex(nextIndex), 0);
@@ -293,7 +292,7 @@ export const SoftwareAssetModal = ({ loadOnlyModal = false }) => {
                   backButtonTemplate={(handlePrevious) => (
                     <button
                       type="button"
-                      className="btn btn-sm btn-success"
+                      className="btn btn-sm btn-primary"
                       style={{ width: "100px" }}
                       onClick={handlePrevious}
                     >
@@ -303,7 +302,7 @@ export const SoftwareAssetModal = ({ loadOnlyModal = false }) => {
                   nextButtonTemplate={(handleNext) => (
                     <button
                       type="button"
-                      className="btn btn-sm btn-success"
+                      className="btn btn-sm btn-primary"
                       style={{ width: "100px", marginLeft: "auto" }}
                       onClick={async () =>
                         await tabChanged(
@@ -324,7 +323,7 @@ export const SoftwareAssetModal = ({ loadOnlyModal = false }) => {
                   finishButtonTemplate={(handleNext) => (
                     <button
                       type="button"
-                      className="btn btn-sm btn-success"
+                      className="btn btn-sm btn-pr"
                       style={{ width: "150px", marginLeft: "auto" }}
                       disabled={isSubmitting}
                       onClick={async () =>

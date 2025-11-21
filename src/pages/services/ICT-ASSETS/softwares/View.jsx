@@ -24,6 +24,19 @@ export const SoftwareAssetListPage = () => {
     const navigate = useNavigate();
     const user = useSelector((state) => state.userReducer?.data);
 
+
+    const platformIcons = {
+        windows: "bx bxl-windows text-primary",
+        linux: "bx bxl-tux text-success",
+        macos: "bx bxl-apple text-dark",
+        web: "bx bx-globe text-info",
+        cross_platform: "bx bx-shape-triangle text-warning",
+        android: "bx bxl-android text-success",
+        ios: "bx bxl-apple text-dark",
+        other: "bx bx-question-mark text-muted",
+    };
+
+
     useEffect(() => {
         setShowBulkActions(selectedAssets.length > 0);
     }, [selectedAssets]);
@@ -88,38 +101,43 @@ export const SoftwareAssetListPage = () => {
                         label: "Software Details",
                         className: "fw-bold",
                         style: { width: "200px" },
-                        render: (row) => (
-                            <div className="d-flex align-items-center">
-                                <div className="flex-shrink-0">
-                                    <i className="bx bxl-windows text-primary me-2 fs-5"></i>
+                        render: (row) => {
+                            const platform = row.platform || "other";
+                            const iconClass = platformIcons[platform] || platformIcons.other;
+
+                            return (
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-shrink-0">
+                                        <i className={`${iconClass} me-2 fs-5`}></i>
+                                    </div>
+                                    <div className="flex-grow-1">
+                                        <span
+                                            className="text-primary cursor-pointer fw-semibold"
+                                            onClick={() =>
+                                                hasAccess(user, [["view_asset", "add_asset", "change_asset"]])
+                                                    ? navigate(`/ict-assets/asset-software/${row.uid}`)
+                                                    : null
+                                            }
+                                        >
+                                            {row.software_name || "-"}
+                                        </span>
+
+                                        {row.version && (
+                                            <small className="d-block text-muted fs-12">
+                                                Version: {row.version}
+                                            </small>
+                                        )}
+                                        {row.publisher && (
+                                            <small className="d-block text-muted fs-12">
+                                                🏢 {row.publisher}
+                                            </small>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex-grow-1">
-                                    <span
-                                        className="text-primary cursor-pointer fw-semibold"
-                                        onClick={() =>
-                                            hasAccess(user, [
-                                                ["view_asset", "add_asset", "change_asset"]
-                                            ])
-                                                ? navigate(`/ict-assets/asset-software/${row.uid}`)
-                                                : null
-                                        }
-                                    >
-                                        {row.name || "-"}
-                                    </span>
-                                    {row.version && (
-                                        <small className="d-block text-muted fs-12">
-                                            Version: {row.version}
-                                        </small>
-                                    )}
-                                    {row.publisher && (
-                                        <small className="d-block text-muted fs-12">
-                                            🏢 {row.publisher}
-                                        </small>
-                                    )}
-                                </div>
-                            </div>
-                        ),
+                            );
+                        },
                     },
+
                     {
                         key: "category",
                         label: "Category & License",

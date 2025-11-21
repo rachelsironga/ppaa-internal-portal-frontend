@@ -45,6 +45,7 @@ import { SoftwareAssetListPage } from "../pages/services/ICT-ASSETS/softwares/Vi
 import { SoftwareAssetViewPage } from "../pages/services/ICT-ASSETS/softwares/Open.jsx";
 import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
+import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
 
 
 function RegisterAndLogout() {
@@ -470,8 +471,19 @@ const AppRoutes = () => {
         }
       />
 
-     
+       <Route
+        path="/ict-assets/asset-software-categories"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+             <SoftwareCategoriesListPage />
+          </ProtectedRoute>
+        }
+      />
 
+     
       {/*<Route*/}
       {/*    path="/requests/open/:uid"*/}
       {/*    element={*/}

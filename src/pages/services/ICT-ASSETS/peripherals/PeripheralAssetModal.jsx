@@ -252,7 +252,7 @@ export const PeripheralAssetModal = ({ loadOnlyModal = false }) => {
     >
       <div className="modal-dialog modal-xl" role="document">
         <div className="modal-content">
-          <div className="modal-header bg-info text-white">
+          <div className="modal-header text-white">
             <h5 className="modal-title">
               <i className="bx bx-devices me-2"></i>
               {selectedObj ? "Update Peripheral Asset" : "Create New Peripheral Asset"}
