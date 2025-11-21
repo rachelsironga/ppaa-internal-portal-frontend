@@ -4,7 +4,7 @@
     "text": "E-Approval",
     "icon": "bx bxl-microsoft",
     "available": true,
-    "link": "/e-approval",
+    "link": "/mnh-connect",
     "permission": [],
     "role": ["admin"]
   },

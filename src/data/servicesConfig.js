@@ -9,7 +9,7 @@ const servicesConfig = [
     {
         id: "e-approval",
         name: "E-Approval",
-        link: "/e-approval",
+        link: "/mnh-connect",
         menu: eApprovalMenu
     },
     {

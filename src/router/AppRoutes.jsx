@@ -73,19 +73,28 @@ const AppRoutes = () => {
       />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/e-approval" element={<DashboardPage />} />
+      <Route path="/mnh-connect" element={<DashboardPage />} />
       <Route path="/" element={<Services />} />
 
       <Route path="*" element={<ErrorPage />} />
 
-      <Route path="/account/settings" element={<AccountPage />} />
-      <Route path="/account/notifications" element={<NotificationPage />} />
-      <Route path="/account/connections" element={<Connections />} />
-      <Route path="/account/password" element={<ChangePassword />} />
+      <Route path="/mnh-connect/account/settings" element={<AccountPage />} />
+      <Route
+        path="/mnh-connect/account/notifications"
+        element={<NotificationPage />}
+      />
+      <Route
+        path="/mnh-connect/account/connections"
+        element={<Connections />}
+      />
+      <Route
+        path="/mnh-connect/account/password"
+        element={<ChangePassword />}
+      />
 
       {/* Settings */}
       <Route
-        path="/settings/directories"
+        path="/mnh-connect/settings/directories"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -99,7 +108,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/directories/open/:uid"
+        path="/mnh-connect/settings/directories/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -113,7 +122,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/departments"
+        path="/mnh-connect/settings/departments"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -127,7 +136,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/positional-levels"
+        path="/mnh-connect/settings/positional-levels"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -141,7 +150,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-actions"
+        path="/mnh-connect/settings/approval-actions"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -155,7 +164,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules"
+        path="/mnh-connect/settings/approval-modules"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -171,7 +180,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules/open/:uid"
+        path="/mnh-connect/settings/approval-modules/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -187,7 +196,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/date-ranges"
+        path="/mnh-connect/settings/date-ranges"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -204,7 +213,7 @@ const AppRoutes = () => {
 
       {/* Users */}
       <Route
-        path="/users"
+        path="/mnh-connect/users"
         element={
           <ProtectedRoute
             requiredPermissions={["view_user", "add_user", "delete_user"]}
@@ -214,7 +223,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/users/open/:uid"
+        path="/mnh-connect/users/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={["view_user", "add_user", "delete_user"]}
@@ -226,7 +235,7 @@ const AppRoutes = () => {
 
       {/* Requests */}
       <Route
-        path="/requests"
+        path="/mnh-connect/requests"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -241,7 +250,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/requests/open/:uid"
+        path="/mnh-connect/requests/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -257,7 +266,7 @@ const AppRoutes = () => {
       {/* Requests Handling*/}
 
       <Route
-        path="/requests-handling"
+        path="/mnh-connect/requests-handling"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -271,7 +280,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/requests-handling/open/:uid"
+        path="/mnh-connect/requests-handling/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -287,7 +296,7 @@ const AppRoutes = () => {
 
       {/* Roles Managements */}
       <Route
-        path="/roles-managements"
+        path="/mnh-connect/roles-managements"
         element={
           <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
             <RolesManagementPage />
@@ -296,7 +305,7 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/roles-managements/open/:uid"
+        path="/mnh-connect/roles-managements/open/:uid"
         element={
           <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
             <OpenRolesManagementPage />

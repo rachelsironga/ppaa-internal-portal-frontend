@@ -247,7 +247,7 @@ const UserPermissionModal = () => {
                                 src={
                                   selectedObj.photo && selectedObj.photo !== ""
                                     ? selectedObj.photo
-                                    : "../../assets/img/avatars/1.png"
+                                    : "../../../assets/img/avatars/1.png"
                                 }
                                 alt="Avatar"
                                 className="rounded-circle"

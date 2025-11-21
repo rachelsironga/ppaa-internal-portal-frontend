@@ -141,7 +141,7 @@ const UsersModal = () => {
                                   src={
                                     user.photo && user.photo !== ""
                                       ? user.photo
-                                      : "../../assets/img/avatars/1.png"
+                                      : "../../../assets/img/avatars/1.png"
                                   }
                                   alt="Avatar"
                                   className="rounded-circle"
