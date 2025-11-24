@@ -13,6 +13,7 @@ import BreadCumb from "../../../../layouts/BreadCumb";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 import { useSelector } from "react-redux";
 import UserPermissionModal from "./UserPermissionModal";
+import { createUpdateData } from "../../../../utils/GlobalQueries";
 
 export const UserOpenPage = () => {
   const { uid } = useParams();
@@ -204,6 +205,57 @@ export const UserOpenPage = () => {
       setIsFileSelected(true); // Enable buttons when a file is selected
     } else {
       setIsFileSelected(false); // Disable buttons if no file is selected
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedObj) {
+      Swal.fire(
+        "Attension!",
+        "Refresh Page or Reopen User to Correct the Issue.",
+        "info"
+      );
+      return;
+    }
+
+    try {
+      const confirmation = await Swal.fire({
+        // title: "Save New Profile Photo",
+        text: "Once confirmed, the user's password will be reset and a temporary password will be sent to their registered email address.",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#696cff",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Confirm Reset",
+        customClass: {
+          confirmButton: "btn btn-sm btn-outline-primary",
+          cancelButton: "btn btn-sm",
+          popup: "custom-swal-popup",
+        },
+      });
+
+      if (confirmation.isConfirmed) {
+        const result = await createUpdateData({
+          url: `/user/reset-password`,
+          isFullPath: true,
+          formData: { uid: selectedObj?.guid },
+        });
+        if (result.status === 200 || result.status === 8000) {
+          Swal.fire(
+            "Completed",
+            "An email with a temporary password has been sent to the user.",
+            "success"
+          );
+        } else {
+          Swal.fire("Failed!", `${result.message}`, "error");
+        }
+      }
+    } catch (error) {
+      Swal.fire(
+        "Unsuccessful",
+        `Unable to Reset Password. Please Try Again or Contact Support Team`,
+        "error"
+      );
     }
   };
 
@@ -899,8 +951,11 @@ export const UserOpenPage = () => {
                                   <div className="row gx-6">
                                     <div className="text-center">
                                       <button
-                                        type="submit"
-                                        className="btn btn-sm btn-danger me-2"
+                                        type="button"
+                                        className="btn btn-sm btn-outline-primary me-3"
+                                        onClick={() => {
+                                          handleResetPassword();
+                                        }}
                                       >
                                         Reset User Password
                                       </button>
