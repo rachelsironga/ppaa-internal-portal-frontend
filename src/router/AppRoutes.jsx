@@ -8,7 +8,6 @@ import { Connections } from "../pages/account/ConnectionsPage";
 import { NotificationPage } from "../pages/account/NotificationPage";
 import { ErrorPage } from "../pages/misc/ErrorPage";
 
-import { DashboardPage } from "../pages/DashboardPage";
 
 import ChangePassword from "../pages/account/ChangePassword";
 import { ApprovalActionPage } from "../pages/services/E-APPROVAL/approval_action/View";
@@ -25,16 +24,17 @@ import ProtectedRoute from "../components/wrapper/ProtectedRoute";
 import { Services } from "../pages/Services";
 import { DepartmentPage } from "../pages/services/MANAGMENTS/department/View";
 import { PositionalLevelPage } from "../pages/services/E-APPROVAL/positional_level/View";
-import {RolesManagementPage} from "../pages/services/MANAGMENTS/roles_management/View.jsx";
+import { RolesManagementPage } from "../pages/services/MANAGMENTS/roles_management/View.jsx";
 import { OpenRolesManagementPage } from "../pages/services/MANAGMENTS/roles_management/Open.jsx";
 import NewUserPage from "../pages/authentication/NewUserPage.jsx";
 import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handling/View.jsx";
 import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
+import { StaffDashboard } from "../pages/services/E-APPROVAL/Dashboards/StaffDashboard.jsx";
 
 // ICT ASSETS MANAGEMENT
-import { AssetDashboardPage } from "../pages/services/ICT-ASSETS/dashboard/AssetDashboardPage.jsx"
+import { AssetDashboardPage } from "../pages/services/ICT-ASSETS/dashboard/AssetDashboardPage.jsx";
 import { AssetListPage } from "../pages/services/ICT-ASSETS/assets_list/View.jsx";
-import { AssetViewPage } from "../pages/services/ICT-ASSETS/assets_list/Open.jsx"
+import { AssetViewPage } from "../pages/services/ICT-ASSETS/assets_list/Open.jsx";
 import { ComputerListPage } from "../pages/services/ICT-ASSETS/computers/View.jsx";
 import { ComputerViewPage } from "../pages/services/ICT-ASSETS/computers/Open.jsx";
 import { NetworkingDeviceListPage } from "../pages/services/ICT-ASSETS/networking/View.jsx";
@@ -46,7 +46,6 @@ import { SoftwareAssetViewPage } from "../pages/services/ICT-ASSETS/softwares/Op
 import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
 import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
-
 
 import { OxygenLocationPage } from "../pages/services/OXYGEN-MANAGMENT/locations/View.jsx";
 import { OxygenLocationOpenPage } from "../pages/services/OXYGEN-MANAGMENT/locations/Open.jsx";
@@ -60,7 +59,6 @@ import { OxygenUsageOpenPage } from "../pages/services/OXYGEN-MANAGMENT/usage/Op
 import { OxygenVolumePage } from "../pages/services/OXYGEN-MANAGMENT/volumes/View.jsx";
 import { OxygenSupplierPage } from "../pages/services/OXYGEN-MANAGMENT/suppliers/View.jsx";
 import { PatientAgeGroupPage } from "../pages/services/OXYGEN-MANAGMENT/patientAgeGroups/View.jsx";
-
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -77,7 +75,7 @@ const AppRoutes = () => {
       />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/mnh-connect" element={<DashboardPage />} />
+      <Route path="/mnh-connect" element={<StaffDashboard />} />
       <Route path="/" element={<Services />} />
 
       <Route path="*" element={<ErrorPage />} />
@@ -552,19 +550,18 @@ const AppRoutes = () => {
         }
       />
 
-       <Route
+      <Route
         path="/ict-assets/asset-software-categories"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
             requiredRoles={["admin", "ReadOnly_User"]}
           >
-             <SoftwareCategoriesListPage />
+            <SoftwareCategoriesListPage />
           </ProtectedRoute>
         }
       />
 
-     
       {/*<Route*/}
       {/*    path="/requests/open/:uid"*/}
       {/*    element={*/}
