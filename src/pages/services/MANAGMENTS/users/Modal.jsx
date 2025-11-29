@@ -20,6 +20,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   const [tabIndex, setTabIndex] = useState(0); // current tab index
 
   const initialValues = {
+    user_guid: selectedObj?.guid || "",
     pf_number: selectedObj?.pf_number || "",
     first_name: selectedObj?.first_name || "",
     middle_name: selectedObj?.middle_name || "",
@@ -66,9 +67,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
         handleClose();
-        resetForm();
         setTableRefresh((prev) => prev + 1);
-      } else if (result.status === 8002) {
+      } else if (result.status === 8001) {
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);
         setOtherError(result.data);
@@ -79,8 +79,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
       }
     } catch (error) {
       showToast("Something went wrong while saving", "error", "Failed");
-      handleClose(); // Close the modal after submission
-      resetForm();
+      // handleClose();
+      // resetForm();
     } finally {
       setSubmitting(false);
     }
