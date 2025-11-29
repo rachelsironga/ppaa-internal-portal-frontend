@@ -18,17 +18,23 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   const [isValidTab, setSInValidTab] = useState([false, false, false]);
   const [isFirstTabChange, setIsFirstTabChange] = useState(true);
   const [tabIndex, setTabIndex] = useState(0); // current tab index
+  const defaultDobISO = new Date(
+    new Date().setFullYear(new Date().getFullYear() - 17)
+  )
+    .toISOString()
+    .split("T")[0];
 
   const initialValues = {
+    user_guid: selectedObj?.guid || "",
     pf_number: selectedObj?.pf_number || "",
+    check_number: selectedObj?.check_number || "",
     first_name: selectedObj?.first_name || "",
     middle_name: selectedObj?.middle_name || "",
     last_name: selectedObj?.last_name || "",
-    dob: selectedObj?.dob || "",
+    dob: selectedObj?.dob || defaultDobISO,
     sex: selectedObj?.sex || "",
 
     email: selectedObj?.email || "",
-    check_number: selectedObj?.check_number || "",
 
     phone_number: selectedObj?.phone_number || "",
     alternative_contact: selectedObj?.alternative_contact || "",
@@ -36,6 +42,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 
   const validationSchema = Yup.object().shape({
     pf_number: Yup.string().required("pf number is required"),
+    check_number: Yup.string().required("check number is required"),
     first_name: Yup.string().required("first name is required"),
     middle_name: Yup.string().required("middle name is required"),
     last_name: Yup.string().required("last name is required"),
@@ -58,17 +65,21 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   ) => {
     try {
       if (selectedObj) {
-        values.uid = selectedObj.uid;
+        values.user_guid = selectedObj.guid;
+      } else {
+        delete values.user_guid;
       }
       setSubmitting(true);
       const result = await createUpdateUser(values);
 
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
+        if (!selectedObj) {
+          resetForm();
+        }
         handleClose();
-        resetForm();
         setTableRefresh((prev) => prev + 1);
-      } else if (result.status === 8002) {
+      } else if (result.status === 8001) {
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);
         setOtherError(result.data);
@@ -79,8 +90,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
       }
     } catch (error) {
       showToast("Something went wrong while saving", "error", "Failed");
-      handleClose(); // Close the modal after submission
-      resetForm();
+      // handleClose();
+      // resetForm();
     } finally {
       setSubmitting(false);
     }
@@ -101,16 +112,15 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     try {
       if (tabIndex === 1) {
         await validationSchema.validateAt("pf_number", values);
-        await validationSchema.validateAt("dob", values);
+        await validationSchema.validateAt("check_number", values);
         await validationSchema.validateAt("first_name", values);
         await validationSchema.validateAt("middle_name", values);
         await validationSchema.validateAt("last_name", values);
+        await validationSchema.validateAt("dob", values);
         await validationSchema.validateAt("sex", values);
       }
       if (tabIndex === 2) {
         await validationSchema.validateAt("email", values);
-      }
-      if (tabIndex === 3) {
         await validationSchema.validateAt("phone_number", values);
       }
 
@@ -180,18 +190,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 
   return (
     <>
-      {/* {!loadOnlyModal && (
-        <button
-          aria-label="Click me"
-          type="button"
-          className="btn btn-primary ms-auto btn-sm  animate__animated animate__fadeInRight animate__slow"
-          data-bs-toggle="modal"
-          data-bs-target="#viewCreateUserModal"
-        >
-          <i className="bx bx-edit-alt me-1"></i> Add User
-        </button>
-      )} */}
-
       <div
         className="modal modal-slide-in"
         id="viewCreateUserModal"
@@ -261,7 +259,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                             setErrors,
                             setFieldError,
                             setTouched,
-                            3 // last tab index
+                            2 // last tab index
                           )
                         }
                       >
@@ -283,7 +281,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                             setErrors,
                             setFieldError,
                             setTouched,
-                            3 // last tab index
+                            2 // last tab index
                           )
                         }
                       >
@@ -325,41 +323,27 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                           />
                         </div>
                         <div className="col-md-6 mb-3">
-                          <label htmlFor="dobLarge" className="form-label">
-                            Date Of Birth
+                          <label
+                            htmlFor="checkNumberLarge"
+                            className="form-label"
+                          >
+                            Check Number
                           </label>
                           <Field
-                            type="date"
-                            name="dob"
-                            id="dobLarge"
+                            type="text"
+                            name="check_number"
+                            id="checkNumberLarge"
                             className="form-control"
-                            placeholder="Enter Date of Birth"
-                            min={
-                              new Date(
-                                new Date().setFullYear(
-                                  new Date().getFullYear() - 60
-                                )
-                              )
-                                .toISOString()
-                                .split("T")[0]
-                            } // optional: 60 years ago
-                            max={
-                              new Date(
-                                new Date().setFullYear(
-                                  new Date().getFullYear() - 17
-                                )
-                              )
-                                .toISOString()
-                                .split("T")[0]
-                            } // 17 years ago from today
-                          />{" "}
+                            placeholder="Enter Check Number"
+                          />
                           <ErrorMessage
-                            name="dob"
+                            name="check_number"
                             component="div"
                             className="text-danger"
                           />
                         </div>
                       </div>
+
                       <div className="row text-start">
                         <div className="col-md-4 mb-3">
                           <label
@@ -421,6 +405,41 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                       </div>
                       <div className="row text-start">
                         <div className="col-md-6 mb-3">
+                          <label htmlFor="dobLarge" className="form-label">
+                            Date Of Birth
+                          </label>
+                          <Field
+                            type="date"
+                            name="dob"
+                            id="dobLarge"
+                            className="form-control"
+                            placeholder="Enter Date of Birth"
+                            min={
+                              new Date(
+                                new Date().setFullYear(
+                                  new Date().getFullYear() - 60
+                                )
+                              )
+                                .toISOString()
+                                .split("T")[0]
+                            } // optional: 60 years ago
+                            max={
+                              new Date(
+                                new Date().setFullYear(
+                                  new Date().getFullYear() - 17
+                                )
+                              )
+                                .toISOString()
+                                .split("T")[0]
+                            } // 17 years ago from today
+                          />{" "}
+                          <ErrorMessage
+                            name="dob"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+                        <div className="col-md-6 mb-3">
                           <label className="form-label d-block">Gender</label>
                           <div className="form-check form-check-inline">
                             <Field
@@ -461,7 +480,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                       </div>
                     </FormWizard.TabContent>
                     <FormWizard.TabContent
-                      title="Contact Info"
+                      title="Submition Details"
                       icon="ti-world"
                       isValid={isValidTab[0]}
                       showErrorOnTab={tabsError[1]}
@@ -486,36 +505,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                           />
                         </div>
                       </div>
-                      <div className="row text-start">
-                        <div className="col mb-3">
-                          <label
-                            htmlFor="checkNumberLarge"
-                            className="form-label"
-                          >
-                            Check Number
-                          </label>
-                          <Field
-                            type="text"
-                            name="check_number"
-                            id="checkNumberLarge"
-                            className="form-control"
-                            placeholder="Enter Check Number"
-                          />
-                          <ErrorMessage
-                            name="check_number"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
-                      </div>
-                    </FormWizard.TabContent>
-                    <FormWizard.TabContent
-                      title="Submition"
-                      icon="ti-check"
-                      isValid={isValidTab[1]}
-                      showErrorOnTab={tabsError[2]}
-                    >
-                      {/* Tab 3 content */}
                       <div className="row text-start">
                         <div className="col-md-6 mb-3">
                           <label

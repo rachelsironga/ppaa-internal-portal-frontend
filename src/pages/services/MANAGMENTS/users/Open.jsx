@@ -14,6 +14,7 @@ import { hasAccess } from "../../../../hooks/AccessHandler";
 import { useSelector } from "react-redux";
 import UserPermissionModal from "./UserPermissionModal";
 import { createUpdateData } from "../../../../utils/GlobalQueries";
+import { UserModal } from "./Modal";
 
 export const UserOpenPage = () => {
   const { uid } = useParams();
@@ -392,8 +393,11 @@ export const UserOpenPage = () => {
             <button
               aria-label="dropdown action link"
               className="dropdown-item d-flex align-items-center"
-              data-bs-toggle="dropdown"
               aria-expanded="false"
+              data-bs-toggle="modal"
+              type="button"
+              data-bs-target="#viewCreateUserModal"
+              onClick={() => setIsModalOpen(true)}
             >
               <i className="bx bx-pencil mx-2"></i>Edit User
             </button>
@@ -411,7 +415,7 @@ export const UserOpenPage = () => {
               <i className="bx bxs-user-detail mx-2"></i>Change User Position
             </button>
           </li>
-          <li>
+          {/* <li>
             <button
               aria-label="dropdown action link"
               className="dropdown-item d-flex align-items-center"
@@ -423,8 +427,8 @@ export const UserOpenPage = () => {
           </li>
           <li>
             <hr className="dropdown-divider" />
-          </li>
-          <li className="pl-3 text-center">
+          </li> */}
+          {/* <li className="pl-3 text-center">
             <button
               aria-label="dropdown action link"
               className="btn btn-sm btn-danger btn-block "
@@ -433,7 +437,7 @@ export const UserOpenPage = () => {
             >
               <i className="bx bxs-trash mx-2"></i>Delete This User
             </button>
-          </li>
+          </li> */}
         </ul>
       </BreadCumb>
       <div className="content-wrapper">
@@ -1163,7 +1167,7 @@ export const UserOpenPage = () => {
         </div>
       </div>
 
-      {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} /> */}
+      <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} />
       <PositionsModal />
       <UserPermissionModal />
     </UsersContext.Provider>
