@@ -144,7 +144,7 @@ const HandlerActionModal = ({ loadOnlyModal = false }) => {
         data-bs-backdrop="static"
         data-bs-keyboard="false"
       >
-        <div className="modal-dialog modal-lg" role="document">
+        <div className="modal-dialog modal-xl" role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="exampleModalLabel3">
@@ -158,6 +158,7 @@ const HandlerActionModal = ({ loadOnlyModal = false }) => {
                 aria-label="Close"
               ></button>
             </div>
+
             <Formik
               enableReinitialize
               initialValues={initialValues}
@@ -176,14 +177,92 @@ const HandlerActionModal = ({ loadOnlyModal = false }) => {
                   <div className="modal-body">
                     <div className="row">
                       <div className="col-sm-12 col-md-12">
+                        <div className=" text-justify">
+                          <p className="mb-1 fw-bold">
+                            Bellow is Requester Full Details
+                          </p>
+                        </div>
+                      </div>
+                      <hr />
+                      <div className="col-sm-12 col-md-5">
+                        <div className="m-2">
+                          <p className="text-nowrap mb-2">
+                            <i className="icon-base bx bx-user me-2 align-top" />
+                            <span className=" me-3 ">Full Name:</span>
+                            <strong className="bold">
+                              {selectedRequest?.created_by?.first_name} &nbsp;
+                              {selectedRequest?.created_by?.middle_name}&nbsp;
+                              {selectedRequest?.created_by?.last_name}
+                            </strong>
+                          </p>
+
+                          <p className="text-nowrap mb-2">
+                            <i className="icon-base bx bx-phone me-2 align-bottom" />
+                            <span className=" me-3 ">PF-Number :</span>
+                            <strong className="bold">
+                              {selectedRequest?.created_by?.pf_number ?? "N/A"}
+                            </strong>
+                          </p>
+                          <p className="text-nowrap mb-2">
+                            <i className="icon-base bx bx-phone me-2 align-bottom" />
+                            <span className=" me-3 ">Check Number :</span>
+                            <strong className="bold">
+                              {selectedRequest?.created_by?.check_number ??
+                                "N/A"}
+                            </strong>
+                          </p>
+                          <p className="text-nowrap mb-2">
+                            <i className="icon-base bx bx-user me-2 align-bottom" />
+                            <span className=" me-3 ">Contact:</span>
+                            <strong className="bold">
+                              {selectedRequest?.created_by?.phone_number ??
+                                "N/A"}
+                            </strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="col-sm-12 col-md-7">
+                        <div className="m-2">
+                          <p className="text-wrap mb-2">
+                            <i className="icon-base bx bx-user me-2 align-top" />
+                            <span className=" me-3 ">Position:</span>
+                            <strong className="bold">
+                              {selectedRequest?.created_by?.position
+                                ?.level_name ?? "N/A"}
+                            </strong>
+                          </p>
+                          <p className="text-wrap mb-2">
+                            <i className="icon-base bx bx-user me-2 align-bottom" />
+                            <span className=" me-3 ">Department:</span>
+                            <strong className="bold">
+                              {selectedRequest?.created_by?.position
+                                .department_name ?? "N/A"}
+                            </strong>
+                          </p>
+                          <p className="text-wrap mb-2">
+                            <i className="icon-base bx bx-phone me-2 align-bottom" />
+                            <span className=" me-3 ">Director :</span>
+                            <strong className="bold">
+                              {selectedRequest?.created_by?.position
+                                ?.directory_name ?? "N/A"}
+                            </strong>
+                          </p>
+                        </div>
+                      </div>
+                      <hr />
+                    </div>
+
+                    <div className="row">
+                      <div className="col-sm-12 col-md-12">
                         <div className=" text-justify mb-4">
                           <p className="mb-1 fw-bold">
-                            <i className="bx bx-info-circle me-2"></i>
-                            Attension
+                            Attension: Handler Action Required
                           </p>
                           <p className="mb-0">
-                            Please write a comment to Notify the Requester about
-                            your Action on this Request.
+                            Use the comment box below to write your action
+                            regarding this request. Your comment will be sent to
+                            the requester for their notification.
                           </p>
                         </div>
                       </div>

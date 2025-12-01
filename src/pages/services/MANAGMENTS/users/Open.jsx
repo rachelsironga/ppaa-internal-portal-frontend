@@ -13,6 +13,8 @@ import BreadCumb from "../../../../layouts/BreadCumb";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 import { useSelector } from "react-redux";
 import UserPermissionModal from "./UserPermissionModal";
+import { createUpdateData } from "../../../../utils/GlobalQueries";
+import { UserModal } from "./Modal";
 
 export const UserOpenPage = () => {
   const { uid } = useParams();
@@ -207,6 +209,57 @@ export const UserOpenPage = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!selectedObj) {
+      Swal.fire(
+        "Attension!",
+        "Refresh Page or Reopen User to Correct the Issue.",
+        "info"
+      );
+      return;
+    }
+
+    try {
+      const confirmation = await Swal.fire({
+        // title: "Save New Profile Photo",
+        text: "Once confirmed, the user's password will be reset and a temporary password will be sent to their registered email address.",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#696cff",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Confirm Reset",
+        customClass: {
+          confirmButton: "btn btn-sm btn-outline-primary",
+          cancelButton: "btn btn-sm",
+          popup: "custom-swal-popup",
+        },
+      });
+
+      if (confirmation.isConfirmed) {
+        const result = await createUpdateData({
+          url: `/user/reset-password`,
+          isFullPath: true,
+          formData: { uid: selectedObj?.guid },
+        });
+        if (result.status === 200 || result.status === 8000) {
+          Swal.fire(
+            "Completed",
+            "An email with a temporary password has been sent to the user.",
+            "success"
+          );
+        } else {
+          Swal.fire("Failed!", `${result.message}`, "error");
+        }
+      }
+    } catch (error) {
+      Swal.fire(
+        "Unsuccessful",
+        `Unable to Reset Password. Please Try Again or Contact Support Team`,
+        "error"
+      );
+    }
+  };
+
   const handleResetImage = () => {
     setPreviewImage(
       selectedObj?.photo && selectedObj.photo.trim() !== ""
@@ -340,8 +393,11 @@ export const UserOpenPage = () => {
             <button
               aria-label="dropdown action link"
               className="dropdown-item d-flex align-items-center"
-              data-bs-toggle="dropdown"
               aria-expanded="false"
+              data-bs-toggle="modal"
+              type="button"
+              data-bs-target="#viewCreateUserModal"
+              onClick={() => setIsModalOpen(true)}
             >
               <i className="bx bx-pencil mx-2"></i>Edit User
             </button>
@@ -359,7 +415,7 @@ export const UserOpenPage = () => {
               <i className="bx bxs-user-detail mx-2"></i>Change User Position
             </button>
           </li>
-          <li>
+          {/* <li>
             <button
               aria-label="dropdown action link"
               className="dropdown-item d-flex align-items-center"
@@ -371,8 +427,8 @@ export const UserOpenPage = () => {
           </li>
           <li>
             <hr className="dropdown-divider" />
-          </li>
-          <li className="pl-3 text-center">
+          </li> */}
+          {/* <li className="pl-3 text-center">
             <button
               aria-label="dropdown action link"
               className="btn btn-sm btn-danger btn-block "
@@ -381,7 +437,7 @@ export const UserOpenPage = () => {
             >
               <i className="bx bxs-trash mx-2"></i>Delete This User
             </button>
-          </li>
+          </li> */}
         </ul>
       </BreadCumb>
       <div className="content-wrapper">
@@ -634,21 +690,10 @@ export const UserOpenPage = () => {
                                 <strong>Contact </strong>&nbsp;:&nbsp;
                               </span>
                               <span className="text-primary">
-                                {selectedObj.phone_number}
+                                {selectedObj.phone_number
+                                  ? selectedObj.phone_number
+                                  : "XXXX-XXXXXX"}
                               </span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-phone me-2"></i>
-                                <strong>Alt Contact </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.alternative_contact}</span>
                             </li>
                           </ul>
                         </div>
@@ -910,8 +955,11 @@ export const UserOpenPage = () => {
                                   <div className="row gx-6">
                                     <div className="text-center">
                                       <button
-                                        type="submit"
-                                        className="btn btn-sm btn-danger me-2"
+                                        type="button"
+                                        className="btn btn-sm btn-outline-primary me-3"
+                                        onClick={() => {
+                                          handleResetPassword();
+                                        }}
                                       >
                                         Reset User Password
                                       </button>
@@ -1119,7 +1167,7 @@ export const UserOpenPage = () => {
         </div>
       </div>
 
-      {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} /> */}
+      <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} />
       <PositionsModal />
       <UserPermissionModal />
     </UsersContext.Provider>

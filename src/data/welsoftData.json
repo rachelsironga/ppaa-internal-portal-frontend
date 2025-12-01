@@ -161,6 +161,26 @@
       ]
     },
     {
+      "codename": "INTERN_NURSING",
+      "name": "Intern Nursing",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
+      "codename": "INTERN_DOCTOR",
+      "name": "Intern DOCTOR",
+      "Permissions": [
+        {
+          "codename": "All-associated",
+          "name": "All Associated Privilege"
+        }
+      ]
+    },
+    {
       "codename": "PHARMACY",
       "name": "Pharmacy",
       "Permissions": [

@@ -2,18 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import "animate.css";
 import { useNavigate } from "react-router-dom";
-import { ApprovalRequestsContext } from "../utils/context";
-import PaginatedTable from "../components/ui-templates/PaginatedTable";
-import { formatDate } from "../helpers/DateFormater";
+import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
+import { ApprovalRequestsContext } from "../../../../utils/context";
+import { formatDate } from "../../../../helpers/DateFormater";
 
-export const DashboardPage = () => {
+export const StaffDashboard = () => {
   const user = useSelector((state) => state.userReducer?.data);
   const [selectedObj, setSelectedObj] = useState(null);
   const [tableRefresh, setTableRefresh] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    dashboardAnalitics();
+    // dashboardAnalitic();
   }, []);
   return (
     <>
