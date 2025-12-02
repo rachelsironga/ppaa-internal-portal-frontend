@@ -35,7 +35,7 @@
         "text": "Profile",
         "icon": "bx bx-user",
         "available": true,
-        "link": "/mnh-connect/account/settings",
+        "link": "/ict-assets/account/settings",
         "permission": [],
         "role": ["admin", "staff"]
       }
