@@ -1,38 +1,54 @@
 import { Route, Routes } from "react-router-dom";
+
+import { authenticationRoutes } from "./microservices/auth/authentication.jsx";
+import { accountRoutes } from "./microservices/auth/account.jsx";
+import { settingsRoutes } from "./microservices/e_approval/settings.jsx";
+import { usersRoutes } from "./microservices/e_approval/users.jsx";
+import { eApprovalRoutes } from "./microservices/e_approval/operations.jsx";
+import { ictAssetsRoutes } from "./microservices/ict_assets/ict-assets.jsx";
+import { analyticsRoutes } from "./microservices/analytics/analytics.jsx";
 import { ErrorPage } from "../pages/misc/ErrorPage";
 import { Services } from "../pages/Services";
-import ProtectedRoute from "../components/wrapper/ProtectedRoute";
-
-// Import all service routes
-import { authRoutes } from "./authRoutes";
-import { eApprovalRoutes } from "./eApprovalRoutes";
-import { managementRoutes } from "./managementRoutes";
-import { ictAssetsRoutes } from "./ictAssetsRoutes";
-import { oxygenRoutes } from "./oxygenRoutes";
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Home & Services */}
+      {/* Public Routes */}
+      {authenticationRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+
+      {/* Core Routes */}
       <Route path="/" element={<Services />} />
-
-      {/* Auth Routes */}
-      {authRoutes}
-
-      {/* Management Routes */}
-      {managementRoutes}
-
-      {/* E-Approval Routes */}
-      {eApprovalRoutes}
-
-      {/* ICT Assets Routes */}
-      {ictAssetsRoutes}
-
-      {/* Oxygen Management Routes */}
-      {oxygenRoutes}
-
-      {/* Catch-all 404 */}
       <Route path="*" element={<ErrorPage />} />
+
+      {/* Account Routes */}
+      {accountRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+
+      {/* Module Routes */}
+      {settingsRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+
+      {usersRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+
+      {eApprovalRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+
+      {ictAssetsRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+
+      {analyticsRoutes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+
+      {/* Add future modules here */}
     </Routes>
   );
 };

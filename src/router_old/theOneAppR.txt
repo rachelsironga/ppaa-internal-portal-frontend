@@ -83,7 +83,7 @@ const AppRoutes = () => {
 
       {/* Settings */}
       <Route
-        path="/settings/directories"
+        path=`/mnh-connect/settings/directories"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -97,7 +97,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/directories/open/:uid"
+        path=`/mnh-connect/settings/directories/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -111,7 +111,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/departments"
+        path=`/mnh-connect/settings/departments"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -125,7 +125,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/positional-levels"
+        path=`/mnh-connect/settings/positional-levels"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -139,7 +139,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-actions"
+        path=`/mnh-connect/settings/approval-actions"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -153,7 +153,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules"
+        path=`/mnh-connect/settings/approval-modules"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -169,7 +169,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules/open/:uid"
+        path=`/mnh-connect/settings/approval-modules/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -185,7 +185,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/date-ranges"
+        path=`/mnh-connect/settings/date-ranges"
         element={
           <ProtectedRoute
             requiredPermissions={[

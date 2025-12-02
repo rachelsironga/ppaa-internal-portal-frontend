@@ -1,0 +1,1287 @@
+@login_required
+def clinics(request):
+    # Initialize base query
+    base_query = Clinic.objects.filter(is_deleted=False).order_by('-created_at')
+    show_modal = False
+    form = ClinicForm()
+    
+    # Process filters
+    filters = {
+        'name': request.GET.get('name', '').strip(),
+        'code': request.GET.get('code', '').strip(),
+        'block': request.GET.get('block', '').strip(),
+        'department': request.GET.get('department', '').strip(),
+    }
+    
+    # Apply filters
+    if filters['code']:
+        base_query = base_query.filter(code__icontains=filters['code'])
+    if filters['block']:
+        base_query = base_query.filter(code__icontains=filters['block'])
+    if filters['department']:
+        base_query = base_query.filter(code__icontains=filters['department'])
+    if filters['name']:
+        base_query = base_query.filter(
+            Q(name__icontains=filters['name']) |
+            Q(code__icontains=filters['name']) |
+            Q(description__icontains=filters['name'])
+        )
+    
+    filters_active = any(filters.values())
+    
+    # Handle POST (form submission)
+    if request.method == 'POST':
+        form = ClinicForm(request.POST)
+        uid = request.POST.get('uid') 
+        
+        if uid:
+            clinic = get_object_or_404(Clinic, uid=uid, is_deleted=False)
+            form = ClinicForm(request.POST, instance=clinic)
+            success_message = 'Clinic updated successfully!'
+        else:
+            form = ClinicForm(request.POST)
+            success_message = 'Clinic created successfully!'
+
+        if form.is_valid():
+            clinic = form.save(commit=False)
+            clinic.created_by = request.user
+            clinic.save()
+            messages.success(request, success_message)
+            return redirect('clinic-list')
+        else:
+            show_modal = True
+            # Keep the submitted data in the form instance
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    # Handle viewing existing clinic
+    if 'clinic' in request.GET:
+        clinic_uid = request.GET.get('clinic')
+        try:
+            clinic = Clinic.objects.get(uid=clinic_uid, is_deleted=False)
+            form = ClinicForm(instance=clinic)  # Form with clinic instance
+            show_modal = True
+        except clinic.DoesNotExist:
+            messages.error(request, 'Clinic not found.')
+            return redirect('clinic-list')
+    
+    # Pagination
+    paginator = Paginator(base_query if filters_active else base_query[:10], 10)
+    page_number = request.GET.get('page', 1)
+    
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.get_page(1)
+    
+    return render(request, 'clinics/clinic_list.html', {
+        'page_obj': page_obj,
+        'current_filters': filters,
+        'filters_active': filters_active,
+        'form': form,
+        'show_modal': show_modal,
+    })
+
+# This view handles bulk upload of clinics from a CSV or Excel file.
+# It processes the uploaded file, validates each row, and saves valid clinics.
+@login_required
+def clinic_bulk_upload(request):
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('file')
+        
+        if not uploaded_file:
+            messages.error(request, 'Please select a file to upload.')
+            return redirect('clinic-list')
+        
+        try:
+            success_count = 0
+            error_count = 0
+            error_rows = []
+            
+            if uploaded_file.name.endswith('.csv'):
+                decoded_file = uploaded_file.read().decode('utf-8').splitlines()
+                reader = csv.DictReader(decoded_file)
+                rows = list(reader)
+            elif uploaded_file.name.endswith(('.xlsx', '.xls')):
+                wb = load_workbook(uploaded_file)
+                ws = wb.active
+                headers = [cell.value for cell in ws[1]]
+                rows = []
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    rows.append(dict(zip(headers, row)))
+            else:
+                messages.error(request, 'Unsupported file format. Please upload a CSV or Excel file.')
+                return redirect('clinic-list')
+            
+            for i, row in enumerate(rows, start=2):
+                try:
+                    # Process block
+                    block = None
+                    if row.get('block'):
+                        block_name = str(row['block']).strip()
+                        block_code = block_name.upper().replace(' ', '_')
+                        block, created = Block.objects.get_or_create(
+                            code=block_code,
+                            defaults={
+                                'name': block_name,
+                                'created_by': request.user,
+                                'is_deleted': False
+                            }
+                        )
+                        if created:
+                            messages.info(request, f"Created new block: {block_name} ({block_code})")
+
+                    # Process department
+                    department = None
+                    if row.get('department'):
+                        dept_name = str(row['department']).strip()
+                        dept_code = dept_name.upper().replace(' ', '_')
+                        department, created = Department.objects.get_or_create(
+                            code=dept_code,
+                            defaults={
+                                'name': dept_name,
+                                'created_by': request.user
+                            }
+                        )
+                        if created:
+                            messages.info(request, f"Created new department: {dept_name} ({dept_code})")
+
+                    # Prepare form data with model instances (not UIDs)
+                    form_data = {
+                        'name': str(row.get('name', '')).strip(),
+                        'code': str(row.get('code', '')).strip().upper(),
+                        'description': str(row.get('description', '')).strip(),
+                    }
+                    
+                    # Initialize form with data
+                    form = ClinicForm(form_data)
+                    
+                    if form.is_valid():
+                        clinic = form.save(commit=False)
+                        clinic.created_by = request.user
+                        
+                        # Set relationships directly
+                        if block:
+                            clinic.block = block
+                        if department:
+                            clinic.department = department
+                        
+                        clinic.save()
+                        success_count += 1
+                    else:
+                        raise ValueError(form.errors.as_text())
+                        
+                except Exception as e:
+                    error_count += 1
+                    error_rows.append(f"Row {i}: {str(e)}")
+            
+            # Show results
+            if success_count > 0:
+                messages.success(request, f'Successfully imported {success_count} clinics.')
+            if error_count > 0:
+                messages.error(request, f'Failed to import {error_count} clinics.')
+                for error in error_rows[:10]:
+                    messages.error(request, error)
+                if error_count > 10:
+                    messages.warning(request, f'... and {error_count - 10} more errors not shown.')
+            
+            return redirect('clinic-list')
+            
+        except Exception as e:
+            messages.error(request, f'Error processing file: {str(e)}')
+            return redirect('clinic-list')
+    
+    return redirect('clinic-list')
+
+@login_required
+def attendances(request):
+    # Initialize base query
+    base_query = Attendance.objects.filter(is_deleted=False, processed_date__isnull=True).order_by(
+        models.F('processed_date').asc(nulls_first=True), 
+        'processed_date',
+        '-date'
+    )
+    show_modal = False
+    form = AttendanceForm()
+
+    all_clinics = Clinic.objects.filter(is_deleted=False).order_by('name')
+    
+    # Process filters
+    filters = {
+        'date_from': request.GET.get('created_at_from', '').strip(),
+        'date_to': request.GET.get('created_at_to', '').strip(),
+        'notes': request.GET.get('notes', '').strip(),
+    }
+
+    # Apply date filters
+    if filters['date_from']:
+        try:
+            date_from = datetime.strptime(filters['date_from'], '%Y-%m-%d').date()
+            base_query = base_query.filter(date__gte=date_from)
+        except ValueError:
+            messages.error(request, 'Invalid start date format. Use YYYY-MM-DD.')
+    
+    if filters['date_to']:
+        try:
+            date_to = datetime.strptime(filters['date_to'], '%Y-%m-%d').date()
+            base_query = base_query.filter(date__lte=date_to)
+        except ValueError:
+            messages.error(request, 'Invalid end date format. Use YYYY-MM-DD.')
+    
+    # Apply general notes
+    if filters['notes']:
+        notes_term = filters['notes']
+        base_query = base_query.filter(
+            Q(notes__icontains=notes_term)
+        )
+    
+    filters_active = any(filters.values())
+
+    # Handle POST (form submission)
+    if request.method == 'POST':
+        form = AttendanceForm(request.POST, request.FILES)
+        uid = request.POST.get('attendance') 
+        
+        if uid:
+            attendance = get_object_or_404(Attendance, uid=uid, is_deleted=False)
+            form = AttendanceForm(request.POST, request.FILES, instance=attendance)
+            success_message = 'Attendance record updated successfully!'
+        else:
+            form = AttendanceForm(request.POST, request.FILES)
+            success_message = 'Attendance record created successfully!'
+
+        if form.is_valid():
+            attendance = form.save(commit=False)
+            attendance.created_by = request.user
+            attendance.save()
+            messages.success(request, success_message)
+            return redirect('attendance-list')
+        else:
+            show_modal = True
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    # Handle viewing existing attendance record
+    if 'attendance' in request.GET:
+        attendance_uid = request.GET.get('attendance')
+        try:
+            attendance = Attendance.objects.get(uid=attendance_uid, is_deleted=False)
+            form = AttendanceForm(instance=attendance)
+            show_modal = True
+        except Attendance.DoesNotExist:
+            messages.error(request, 'Attendance record not found.')
+            return redirect('attendance-list')
+    
+    # General analytics
+    analytics = base_query.aggregate(
+        total_records=Count('id'),
+        sum_new_patients=Sum('total_new_patients'),
+        sum_follow_up_patients=Sum('total_follow_up_patients'),
+        sum_grand_total=Sum('grand_total_patients')
+    )
+    
+    # Pagination
+    paginator = Paginator(base_query, 10)  # Show 10 records per page
+    page_number = request.GET.get('page', 1)
+    
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.get_page(1)
+
+    return render(request, 'attendance/attendance_list.html', {
+        'page_obj': page_obj,
+        'current_filters': filters,
+        'filters_active': filters_active,
+        'form': form,
+        'show_modal': show_modal,
+        'all_clinics': all_clinics,
+        'analytics': analytics,
+    })
+
+# Safely convert a value to integer, handling various edge cases.
+def safe_int(value, default=0):
+    """
+    Safely convert a value to integer, handling various edge cases.
+    
+    Args:
+        value: The value to convert
+        default: Default value if conversion fails
+    
+    Returns:
+        int: Converted integer value
+    """
+    if value is None:
+        return default
+        
+    if isinstance(value, int):
+        return value
+        
+    if isinstance(value, float):
+        return int(value)
+    
+    # Handle string values
+    if isinstance(value, str):
+        cleaned_value = value.strip()
+        
+        # Handle empty strings
+        if not cleaned_value:
+            return default
+            
+        # Handle numeric strings
+        if cleaned_value.isdigit():
+            return int(cleaned_value)
+            
+        # Handle strings with decimal points
+        if cleaned_value.replace('.', '', 1).isdigit() and cleaned_value.count('.') < 2:
+            try:
+                return int(float(cleaned_value))
+            except (ValueError, TypeError):
+                return default
+                
+        # Handle strings with commas (like "1,000")
+        if ',' in cleaned_value and cleaned_value.replace(',', '').isdigit():
+            return int(cleaned_value.replace(',', ''))
+    
+    # Handle other numeric types
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+    
+# Get or create a clinic with proper validation and naming.
+def get_or_create_clinic(clinic_name, user, report_date):
+    """
+    Get or create a clinic with proper validation and naming.
+    
+    Args:
+        clinic_name: Name of the clinic from Excel
+        user: User creating the clinic
+        report_date: Date of the report for description
+    
+    Returns:
+        Clinic object
+    """
+    # Clean and validate clinic name
+    clinic_name = clinic_name.strip()
+    
+    if not clinic_name or len(clinic_name) < 2:
+        raise ValueError(f"Invalid clinic name: {clinic_name}")
+    
+    # Generate standardized clinic code
+    clinic_code = (
+        clinic_name.upper()
+        .replace(' ', '_')
+        .replace('-', '_')
+        .replace('/', '_')
+        .replace('\\', '_')
+        .replace('(', '')
+        .replace(')', '')
+        .replace("'", "")
+        .replace('"', '')
+    )
+    
+    # Clean up multiple underscores
+    while '__' in clinic_code:
+        clinic_code = clinic_code.replace('__', '_')
+    
+    clinic_code = clinic_code.strip('_')
+    
+    # Try to find existing clinic with fuzzy matching
+    existing_clinics = Clinic.objects.filter(
+        Q(name__iexact=clinic_name) | 
+        Q(code__iexact=clinic_code) |
+        Q(name__icontains=clinic_name) |
+        Q(code__icontains=clinic_code)
+    )
+    
+    if existing_clinics.exists():
+        # Prefer exact matches
+        exact_match = existing_clinics.filter(
+            Q(name__iexact=clinic_name) | Q(code__iexact=clinic_code)
+        ).first()
+        
+        if exact_match:
+            return exact_match
+        
+        # Return the first fuzzy match
+        return existing_clinics.first()
+    
+    # Create new clinic
+    clinic = Clinic.objects.create(
+        name=clinic_name,
+        code=clinic_code,
+        created_by=user,
+        block=None,  # Can be updated later
+        department=None,  # Can be updated later
+        description=f"Automatically created from attendance report on {report_date}"
+    )
+    
+    logger.info(f"Created new clinic: {clinic_name} (Code: {clinic_code})")
+    return clinic
+    
+
+# Update the attendance record with processed totals and metrics.
+def update_attendance_totals(attendance, user, total_columns, success_columns, failed_columns):
+    """
+    Update the attendance record with processed totals and metrics.
+    
+    Args:
+        attendance: Attendance object to update
+        user: User who processed the report
+        total_columns: Total columns processed
+        success_columns: Successfully processed columns
+        failed_columns: Failed columns
+    """
+    # Recalculate totals from the actual PatientAttendance records
+    totals = PatientAttendance.objects.filter(
+        attendance=attendance
+    ).aggregate(
+        total_new=Sum('new_patients'),
+        total_follow_up=Sum('follow_up_patients')
+    )
+    
+    attendance.total_new_patients = totals['total_new'] or 0
+    attendance.total_follow_up_patients = totals['total_follow_up'] or 0
+    attendance.grand_total_patients = attendance.total_new_patients + attendance.total_follow_up_patients
+    
+    # Update processing metrics
+    attendance.processed_date = timezone.now().date()
+    attendance.processed_by = user
+    attendance.total_column = total_columns
+    attendance.success_colums = success_columns
+    attendance.failed_colums = failed_columns
+    
+    attendance.save()
+    
+    # Log the processing results
+    logger.info(
+        f"Attendance {attendance.uid} processed: "
+        f"Total: {attendance.grand_total_patients} patients, "
+        f"New: {attendance.total_new_patients}, "
+        f"Follow-up: {attendance.total_follow_up_patients}, "
+        f"Columns: {success_columns}/{total_columns} successful"
+    )
+
+
+# Get or create a clinic with proper validation and naming.
+@login_required
+def process_attendance_report(request, uid):
+    """
+    Process the uploaded attendance report Excel file and create PatientAttendance records
+    """
+    attendance = get_object_or_404(Attendance, uid=uid, is_deleted=False)
+
+    if not attendance.attendance_report:
+        messages.error(request, "No attendance report file found")
+        return redirect('attendance-list')
+    
+    try:
+        total_columns = 0
+        success_columns = 0
+        failed_columns = 0
+
+        file_path = attendance.attendance_report.path
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("Attendance report file not found on server")
+        
+        wb = load_workbook(filename=file_path, data_only=True)
+        sheet = wb.active
+
+        # Reset totals
+        attendance.total_new_patients = 0
+        attendance.total_follow_up_patients = 0
+        attendance.grand_total_patients = 0
+
+        # Assume first two rows are headers
+        first_header = [str(c).strip() if c else "" for c in next(sheet.iter_rows(min_row=1, max_row=1, values_only=True))]
+        second_header = [str(c).strip() if c else "" for c in next(sheet.iter_rows(min_row=2, max_row=2, values_only=True))]
+
+        # Build mapping: payment mode → (follow_up_col, new_col)
+        payment_mode_mapping = {}
+        i = 1  # Start from column B (skip "Clinic")
+        while i < len(first_header):
+            mode_name = first_header[i]
+            if not mode_name:
+                i += 1
+                continue
+
+            follow_up_header = second_header[i]
+            new_header = second_header[i+1] if i+1 < len(second_header) else None
+
+            if follow_up_header == "F-Up" and new_header == "New":
+                try:
+                    payment_mode = PaymentMode.objects.get(name__iexact=mode_name)
+                    payment_mode_mapping[mode_name] = (i, i+1, payment_mode)
+                except PaymentMode.DoesNotExist:
+                    messages.warning(request, f"Payment mode '{mode_name}' not found in database")
+            i += 2
+
+        # Process each clinic row (start at 3rd row)
+        for row in sheet.iter_rows(min_row=3, values_only=True):
+            if not row or not row[0]:
+                continue
+
+            clinic_name = str(row[0]).strip()
+            if not clinic_name or clinic_name.lower() in ["none", "null", ""]:
+                continue
+
+            try:
+                clinic = get_or_create_clinic(clinic_name, request.user, attendance.date)
+            except ValueError as e:
+                logger.warning(f"Skipping invalid clinic: {str(e)}")
+                continue
+
+            # Process payment modes
+            for mode_name, (f_col, n_col, payment_mode) in payment_mode_mapping.items():
+                total_columns += 1
+                try:
+                    follow_up = safe_int(row[f_col] if f_col < len(row) else 0)
+                    new = safe_int(row[n_col] if n_col < len(row) else 0)
+
+                    if follow_up == 0 and new == 0:
+                        continue
+
+                    PatientAttendance.objects.update_or_create(
+                        attendance=attendance,
+                        clinic=clinic,
+                        payment=payment_mode,
+                        defaults={
+                            'follow_up_patients': follow_up,
+                            'new_patients': new,
+                            'created_by': request.user,
+                            'updated_by': request.user
+                        }
+                    )
+                    success_columns += 1
+
+                except Exception as e:
+                    failed_columns += 1
+                    logger.warning(f"Failed processing {mode_name} for clinic {clinic_name}: {str(e)}")
+
+        update_attendance_totals(attendance, request.user, total_columns, success_columns, failed_columns)
+
+        messages.success(
+            request,
+            f"Attendance report processed successfully. "
+            f"Processed {success_columns}/{total_columns} payment mode columns. "
+            f"Created {PatientAttendance.objects.filter(attendance=attendance).count()} records."
+        )
+
+    except Exception as e:
+        attendance.processed_date = timezone.now().date()
+        attendance.processed_by = request.user
+        attendance.total_column = total_columns
+        attendance.success_colums = success_columns
+        attendance.failed_colums = failed_columns
+        attendance.save()
+
+        messages.error(request, f"Error processing attendance report: {str(e)}")
+        logger.exception("Error processing attendance report")
+
+    return redirect('attendance-list')
+
+# Helper function to find the header row containing "Clinic"
+def find_header_row(sheet):
+    for row in sheet.iter_rows(values_only=True):
+        if row and any("Clinic" in str(cell) for cell in row if cell):
+            return row
+    return None
+
+# Helper function to extract payment modes from header row
+def extract_payment_modes(header_row):
+    payment_modes = []
+    for i, cell in enumerate(header_row):
+        cell_value = str(cell).strip() if cell else ""
+        if (cell_value and 
+            "Clinic" not in cell_value and 
+            "F-Up" not in cell_value and 
+            "New" not in cell_value):
+            try:
+                payment_mode = PaymentMode.objects.get(name__iexact=cell_value)
+                payment_modes.append((i, payment_mode))
+            except PaymentMode.DoesNotExist:
+                logger.warning(f"Payment mode not found: {cell_value}")
+    return payment_modes
+
+# Process a single payment mode column for a given clinic row
+def process_payment_column(row, col_idx, header_row, clinic, payment_mode, 
+                         attendance, user):
+    follow_up_col = col_idx + 1
+    new_col = col_idx + 2
+    
+    # Validate column structure
+    if (follow_up_col >= len(header_row) or new_col >= len(header_row) or
+        "F-Up" not in str(header_row[follow_up_col]) or 
+        "New" not in str(header_row[new_col])):
+        raise ValueError("Invalid column structure")
+    
+    # Get and validate values
+    follow_up = safe_int(row[follow_up_col] if follow_up_col < len(row) else 0)
+    new = safe_int(row[new_col] if new_col < len(row) else 0)
+    
+    if follow_up == 0 and new == 0:
+        return  # Skip empty records
+    
+    # Create/update record
+    patient_attendance, created = PatientAttendance.objects.update_or_create(
+        attendance=attendance,
+        clinic=clinic,
+        payment=payment_mode,
+        defaults={
+            'follow_up_patients': follow_up,
+            'new_patients': new,
+            'created_by': user,
+            'updated_by': user
+        }
+    )
+
+# View for detailed attendance report by block
+@login_required    
+def detailed_attendance_report_by_block(request, date=None):
+    # Get the requested date or use today
+
+    # Get date is frovided in the url
+    date = request.GET.get('date')
+
+    try:
+        report_date = timezone.datetime.strptime(date, '%Y-%m-%d').date() if date else timezone.now().date()
+    except:
+        report_date = timezone.now().date()
+    
+    # Get all blocks as a list
+    blocks = list(Block.objects.all().order_by('name'))
+    
+    # Get attendance for the date
+    attendance = Attendance.objects.filter(date=report_date).first()
+    
+    if not attendance:
+        return render(request, 'reports/attendance_report_blocks.html', {
+            'error': f"No attendance records found for {report_date}"
+        })
+    
+    # Get all clinics with attendance data
+    clinic_data = []
+    unique_clinics = PatientAttendance.objects.filter(
+        attendance=attendance
+    ).values_list('clinic', flat=True).distinct()
+    
+    for clinic_id in unique_clinics:
+        clinic_attendance = PatientAttendance.objects.filter(
+            attendance=attendance,
+            clinic_id=clinic_id
+        ).select_related('clinic', 'payment')
+        
+        clinic = clinic_attendance.first().clinic
+        block_data = {}
+        
+        # Initialize block data structure
+        for block in blocks:
+            block_data[block.id] = {
+                'name': block.name,
+                'follow_up': 0,
+                'new': 0
+            }
+        
+        # Populate block data
+        for record in clinic_attendance:
+            if record.clinic.block:
+                block_id = record.clinic.block.id
+                block_data[block_id]['follow_up'] += record.follow_up_patients
+                block_data[block_id]['new'] += record.new_patients
+        
+        # Prepare clinic row
+        clinic_row = {
+            'name': clinic.name,
+            'blocks': []
+        }
+        
+        for block in blocks:
+            clinic_row['blocks'].append({
+                'follow_up': block_data.get(block.id, {}).get('follow_up', 0),
+                'new': block_data.get(block.id, {}).get('new', 0)
+            })
+        
+        clinic_data.append(clinic_row)
+    
+    # Calculate totals per block
+    block_totals = []
+    for block in blocks:
+        totals = {
+            'follow_up': 0,
+            'new': 0
+        }
+        
+        for clinic in clinic_data:
+            # Get the index safely
+            block_index = [b.id for b in blocks].index(block.id)
+            if block_index < len(clinic['blocks']):
+                totals['follow_up'] += clinic['blocks'][block_index]['follow_up']
+                totals['new'] += clinic['blocks'][block_index]['new']
+        
+        block_totals.append(totals)
+    
+    return render(request, 'reports/attendance_report_blocks.html', {
+        'report_date': report_date,
+        'blocks': blocks,
+        'clinic_data': clinic_data,
+        'block_totals': block_totals
+    })
+
+# View for detailed attendance report by payment mode
+@login_required
+def detailed_attendance_report_by_payment_mode(request, date=None):
+
+    # Get date is frovided in the url
+    date = request.GET.get('date')
+
+    # Get the requested date or use today
+    try:
+        report_date = timezone.datetime.strptime(date, '%Y-%m-%d').date() if date else timezone.now().date()
+    except:
+        report_date = timezone.now().date()
+    
+    # Get all payment modes
+    payment_modes = list(PaymentMode.objects.all().order_by('name'))
+    
+    # Get attendance for the date
+    attendance = Attendance.objects.filter(date=report_date).first()
+    
+    if not attendance:
+        return render(request, 'reports/attendance_report_payments.html', {
+            'error': f"No attendance records found for {report_date}"
+        })
+    
+    # Get all clinics with attendance data
+    clinic_data = []
+    unique_clinics = PatientAttendance.objects.filter(
+        attendance=attendance
+    ).values_list('clinic', flat=True).distinct()
+    
+    for clinic_id in unique_clinics:
+        clinic_attendance = PatientAttendance.objects.filter(
+            attendance=attendance,
+            clinic_id=clinic_id
+        ).select_related('clinic', 'payment')
+        
+        clinic = clinic_attendance.first().clinic
+        payment_data = {}
+        
+        # Initialize payment mode data structure
+        for payment in payment_modes:
+            payment_data[payment.id] = {
+                'name': payment.name,
+                'follow_up': 0,
+                'new': 0
+            }
+        
+        # Populate payment mode data
+        for record in clinic_attendance:
+            payment_id = record.payment.id
+            payment_data[payment_id]['follow_up'] += record.follow_up_patients
+            payment_data[payment_id]['new'] += record.new_patients
+        
+        # Prepare clinic row
+        clinic_row = {
+            'name': clinic.name,
+            'payments': []
+        }
+        
+        for payment in payment_modes:
+            clinic_row['payments'].append({
+                'follow_up': payment_data.get(payment.id, {}).get('follow_up', 0),
+                'new': payment_data.get(payment.id, {}).get('new', 0)
+            })
+        
+        clinic_data.append(clinic_row)
+    
+    # Calculate totals per payment mode
+    payment_totals = []
+    for payment in payment_modes:
+        totals = {
+            'follow_up': 0,
+            'new': 0
+        }
+        
+        for clinic in clinic_data:
+            payment_index = [p.id for p in payment_modes].index(payment.id)
+            if payment_index < len(clinic['payments']):
+                totals['follow_up'] += clinic['payments'][payment_index]['follow_up']
+                totals['new'] += clinic['payments'][payment_index]['new']
+        
+        payment_totals.append(totals)
+    
+    return render(request, 'reports/attendance_report_payments.html', {
+        'report_date': report_date,
+        'payment_modes': payment_modes,
+        'clinic_data': clinic_data,
+        'payment_totals': payment_totals
+    })
+
+# NOT IN USE NOW
+def summary_attendance_report_by_department(request, date=None):
+    # Get date is frovided in the url
+    date = request.GET.get('date')
+
+    # Get the requested date or use today
+    try:
+        report_date = timezone.datetime.strptime(date, '%Y-%m-%d').date() if date else timezone.now().date()
+    except:
+        report_date = timezone.now().date()
+    
+    # Get all departments
+    departments = list(Department.objects.all().order_by('name'))
+    
+    # Get attendance for the date
+    attendance = Attendance.objects.filter(date=report_date).first()
+    
+    if not attendance:
+        return render(request, 'reports/summary_attendance_report_departments.html', {
+            'error': f"No attendance records found for {report_date}"
+        })
+    
+    # Get all clinics with attendance data
+    clinic_data = []
+    unique_clinics = PatientAttendance.objects.filter(
+        attendance=attendance
+    ).values_list('clinic', flat=True).distinct()
+    
+    for clinic_id in unique_clinics:
+        clinic_attendance = PatientAttendance.objects.filter(
+            attendance=attendance,
+            clinic_id=clinic_id
+        ).select_related('clinic', 'clinic__department', 'payment')
+        
+        clinic = clinic_attendance.first().clinic
+        department_data = {}
+        
+        # Initialize department data structure
+        for dept in departments:
+            department_data[dept.id] = {
+                'name': dept.name,
+                'follow_up': 0,
+                'new': 0
+            }
+        
+        # Populate department data
+        for record in clinic_attendance:
+            if record.clinic.department:
+                dept_id = record.clinic.department.id
+                department_data[dept_id]['follow_up'] += record.follow_up_patients
+                department_data[dept_id]['new'] += record.new_patients
+        
+        # Prepare clinic row
+        clinic_row = {
+            'name': clinic.name,
+            'department': clinic.department.name if clinic.department else 'No Department',
+            'departments': []
+        }
+        
+        for dept in departments:
+            clinic_row['departments'].append({
+                'follow_up': department_data.get(dept.id, {}).get('follow_up', 0),
+                'new': department_data.get(dept.id, {}).get('new', 0)
+            })
+        
+        clinic_data.append(clinic_row)
+    
+    # Group clinics by department first
+    department_clinics = {}
+    for clinic in clinic_data:
+        dept_name = clinic['department']
+        if dept_name not in department_clinics:
+            department_clinics[dept_name] = []
+        department_clinics[dept_name].append(clinic)
+    
+    # Calculate totals per department
+    department_totals = []
+    for dept in departments:
+        totals = {
+            'follow_up': 0,
+            'new': 0
+        }
+        
+        for clinic in clinic_data:
+            dept_index = [d.id for d in departments].index(dept.id)
+            if dept_index < len(clinic['departments']):
+                totals['follow_up'] += clinic['departments'][dept_index]['follow_up']
+                totals['new'] += clinic['departments'][dept_index]['new']
+        
+        department_totals.append(totals)
+    
+    return render(request, 'reports/summary_attendance_report_departments.html', {
+        'report_date': report_date,
+        'departments': departments,
+        'department_clinics': department_clinics,
+        'department_totals': department_totals
+    })
+
+# New version of summary attendance report by department
+def detailed_attendance_report_by_department(request, date=None):
+    # Get date is frovided in the url
+    date = request.GET.get('date')
+    
+    # Get the requested date or use today
+    try:
+        report_date = timezone.datetime.strptime(date, '%Y-%m-%d').date() if date else timezone.now().date()
+    except:
+        report_date = timezone.now().date()
+    
+    # Get attendance for the date
+    attendance = Attendance.objects.filter(date=report_date).first()
+    
+    if not attendance:
+        return render(request, 'reports/summary_attendance_report_departments.html', {
+            'error': "No attendance records found for this date"
+        })
+    
+    # Get all departments and clinics
+    departments = Department.objects.all().order_by('name')
+    clinics = Clinic.objects.select_related('department').order_by('name')
+    
+    # Prepare data structure
+    report_data = []
+    
+    # Get all attendance records at once for efficiency
+    attendance_records = PatientAttendance.objects.filter(
+        attendance=attendance
+    ).select_related('clinic', 'clinic__department', 'payment')
+    
+    # Create a dictionary to store all data
+    data_dict = {}
+    for clinic in clinics:
+        data_dict[clinic.id] = {
+            'name': clinic.name,
+            'department': clinic.department.name if clinic.department else 'No Department',
+            'counts': {dept.id: {'follow_up': 0, 'new': 0} for dept in departments}
+        }
+    
+    # Populate the data
+    for record in attendance_records:
+        if record.clinic.department:
+            clinic_data = data_dict.get(record.clinic.id)
+            if clinic_data:
+                dept_id = record.clinic.department.id
+                clinic_data['counts'][dept_id]['follow_up'] += record.follow_up_patients
+                clinic_data['counts'][dept_id]['new'] += record.new_patients
+    
+    # Convert to list format for template
+    report_data = list(data_dict.values())
+    
+    # Calculate department totals
+    department_totals = {dept.id: {'follow_up': 0, 'new': 0} for dept in departments}
+    for clinic in report_data:
+        for dept_id, counts in clinic['counts'].items():
+            department_totals[dept_id]['follow_up'] += counts['follow_up']
+            department_totals[dept_id]['new'] += counts['new']
+    
+    return render(request, 'reports/summary_attendance_report_departments.html', {
+        'report_date': report_date,
+        'departments': departments,
+        'clinics': report_data,
+        'department_totals': department_totals
+    })
+
+
+# View for patient attendance trends with charts and tables
+def patient_attendance_trends(request):
+    # Time period processing (existing code)
+    time_periods = [
+        ('daily', TruncDay, 30),
+        ('weekly', TruncWeek, 12),
+        ('monthly', TruncMonth, 12),
+        ('yearly', TruncYear, None)
+    ]
+
+    graphics = {}
+    chart_types = ['line', 'bar', 'area']
+
+    for period, trunc_func, limit in time_periods:
+        try:
+            qs = Attendance.objects.annotate(
+                period=trunc_func('date')
+            ).values('period').annotate(
+                total=Sum('grand_total_patients'),
+                new=Sum('total_new_patients'),
+                follow_up=Sum('total_follow_up_patients')
+            ).order_by('period')
+
+            if limit:
+                qs = qs[:limit]
+
+            df = pd.DataFrame(list(qs))
+            if not df.empty:
+                df['period'] = pd.to_datetime(df['period'])
+                df.set_index('period', inplace=True)
+
+                for chart_type in chart_types:
+                    plt.figure(figsize=(10, 5))
+                    ax = plt.gca()
+
+                    if chart_type == 'line':
+                        df.plot(marker='o', ax=ax)
+                        for col in df.columns:
+                            for i, val in enumerate(df[col]):
+                                ax.text(df.index[i], val, str(int(val)), ha='center', va='bottom', fontsize=8)
+                    elif chart_type == 'bar':
+                        df.plot(kind='bar', ax=ax)
+                        for p in ax.patches:
+                            height = p.get_height()
+                            if not pd.isna(height):
+                                ax.annotate(f'{int(height)}', (p.get_x() + p.get_width() / 2, height),
+                                            ha='center', va='bottom', fontsize=8)
+                    elif chart_type == 'area':
+                        df.plot(kind='area', ax=ax, alpha=0.4)
+                        for col in df.columns:
+                            for i, val in enumerate(df[col]):
+                                ax.text(df.index[i], val, str(int(val)), ha='center', va='bottom', fontsize=8)
+
+                    plt.title(f"{period.capitalize()} Patient Attendance Trends")
+                    plt.xlabel('Date')
+                    plt.ylabel('Number of Patients')
+                    plt.legend(['Total', 'New', 'Follow-up'])
+                    plt.grid(True)
+                    plt.xticks(rotation=45)
+                    plt.tight_layout()
+
+                    buffer = BytesIO()
+                    plt.savefig(buffer, format='png', dpi=100)
+                    buffer.seek(0)
+                    img_data = base64.b64encode(buffer.read()).decode('utf-8')
+                    plt.close()
+
+                    graphics[f"{period}_{chart_type}_graphic"] = img_data
+                    if chart_type == 'line':
+                        graphics[f"{period}_graphic"] = img_data
+
+        except Exception as e:
+            print(f"Error generating {period} chart: {str(e)}")
+            continue
+
+    # Get tabular data for monthly
+    monthly_data = Attendance.objects.annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        total=Sum('grand_total_patients'),
+        new=Sum('total_new_patients'),
+        follow_up=Sum('total_follow_up_patients')
+    ).order_by('-month')[:12] 
+
+    # 1. Clinic by Payment Modes (new)
+    payment_mode_data = PatientAttendance.objects.values(
+        'payment__name'
+    ).annotate(
+        total_patients=Sum('total_patients'),
+        new_patients=Sum('new_patients'),
+        follow_up_patients=Sum('follow_up_patients')
+    ).order_by('-total_patients')
+
+    # Generate payment mode chart
+    plt.figure(figsize=(10, 6))
+    payment_df = pd.DataFrame(list(payment_mode_data))
+    if not payment_df.empty:
+        ax = payment_df.plot(x='payment__name', y='total_patients', kind='bar', legend=False)
+        plt.title('Patient Distribution by Payment Mode')
+        plt.xlabel('Payment Mode')
+        plt.ylabel('Number of Patients')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        
+        payment_buffer = BytesIO()
+        plt.savefig(payment_buffer, format='png', dpi=100)
+        payment_buffer.seek(0)
+        payment_img_data = base64.b64encode(payment_buffer.read()).decode('utf-8')
+        plt.close()
+        graphics['payment_mode_graphic'] = payment_img_data
+
+    # 2. Top Ten Clinics (new)
+    top_clinics_data = PatientAttendance.objects.values(
+        'clinic__name', 'clinic__code'
+    ).annotate(
+        total_patients=Sum('total_patients'),
+        new_patients=Sum('new_patients'),
+        follow_up_patients=Sum('follow_up_patients')
+    ).order_by('-total_patients')[:10]
+
+    # Generate top clinics chart
+    plt.figure(figsize=(10, 6))
+    top_clinics_df = pd.DataFrame(list(top_clinics_data))
+    if not top_clinics_df.empty:
+        ax = top_clinics_df.plot(x='clinic__name', y='total_patients', kind='barh', legend=False)
+        plt.title('Top 10 Clinics by Patient Volume')
+        plt.xlabel('Number of Patients')
+        plt.ylabel('Clinic')
+        plt.tight_layout()
+        
+        top_clinics_buffer = BytesIO()
+        plt.savefig(top_clinics_buffer, format='png', dpi=100)
+        top_clinics_buffer.seek(0)
+        top_clinics_img_data = base64.b64encode(top_clinics_buffer.read()).decode('utf-8')
+        plt.close()
+        graphics['top_clinics_graphic'] = top_clinics_img_data
+
+    context = {
+        **graphics,
+        'monthly_data': monthly_data,
+        'payment_mode_data': payment_mode_data,
+        'top_clinics_data': top_clinics_data,
+        'time_periods': ['daily', 'weekly', 'monthly', 'yearly']
+    }
+
+    return render(request, 'charts/patient_trends.html', context)
+
+# View for clinic-specific attendance trends with charts and tables
+def clinic_attendance_trends(request):
+    time_periods = [
+        ('daily', TruncDay, 30),
+        ('weekly', TruncWeek, 12),
+        ('monthly', TruncMonth, 12),
+        ('yearly', TruncYear, None)
+    ]
+
+    graphics = {}
+    chart_types = ['line', 'bar', 'area']
+
+    # Get top 10 clinics by patient volume (using PatientAttendance model)
+    top_clinics = PatientAttendance.objects.values(
+        'clinic__name',
+        'clinic__code'
+    ).annotate(
+        total_patients=Sum('total_patients'),
+        new_patients=Sum('new_patients'),
+        follow_up_patients=Sum('follow_up_patients')
+    ).order_by('-total_patients')[:10]
+
+    # Generate clinic-specific trends for top clinics
+    clinic_trends = {}
+    for clinic in top_clinics:
+        clinic_data = PatientAttendance.objects.filter(
+            clinic__code=clinic['clinic__code']
+        ).annotate(
+            month=TruncMonth('attendance__date')
+        ).values('month').annotate(
+            total=Sum('total_patients'),
+            new=Sum('new_patients'),
+            follow_up=Sum('follow_up_patients')
+        ).order_by('month')[:12]  # Last 12 months
+        
+        clinic_trends[clinic['clinic__name']] = {
+            'code': clinic['clinic__code'],
+            'data': list(clinic_data),
+            'total_patients': clinic['total_patients'],
+            'new_patients': clinic['new_patients'],
+            'follow_up_patients': clinic['follow_up_patients']
+        }
+
+    # Original trend generation code (unchanged)
+    for period, trunc_func, limit in time_periods:
+        try:
+            qs = Attendance.objects.annotate(
+                period=trunc_func('date')
+            ).values('period').annotate(
+                total=Sum('grand_total_patients'),
+                new=Sum('total_new_patients'),
+                follow_up=Sum('total_follow_up_patients')
+            ).order_by('period')
+
+            if limit:
+                qs = qs[:limit]
+
+            df = pd.DataFrame(list(qs))
+            if not df.empty:
+                df['period'] = pd.to_datetime(df['period'])
+                df.set_index('period', inplace=True)
+
+                for chart_type in chart_types:
+                    plt.figure(figsize=(10, 5))
+                    ax = plt.gca()
+
+                    if chart_type == 'line':
+                        df.plot(marker='o', ax=ax)
+                        for col in df.columns:
+                            for i, val in enumerate(df[col]):
+                                ax.text(df.index[i], val, str(int(val)), ha='center', va='bottom', fontsize=8)
+                    elif chart_type == 'bar':
+                        df.plot(kind='bar', ax=ax)
+                        for p in ax.patches:
+                            height = p.get_height()
+                            if not pd.isna(height):
+                                ax.annotate(f'{int(height)}', (p.get_x() + p.get_width() / 2, height),
+                                            ha='center', va='bottom', fontsize=8)
+                    elif chart_type == 'area':
+                        df.plot(kind='area', ax=ax, alpha=0.4)
+                        for col in df.columns:
+                            for i, val in enumerate(df[col]):
+                                ax.text(df.index[i], val, str(int(val)), ha='center', va='bottom', fontsize=8)
+
+                    plt.title(f"{period.capitalize()} Patient Attendance Trends")
+                    plt.xlabel('Date')
+                    plt.ylabel('Number of Patients')
+                    plt.legend(['Total', 'New', 'Follow-up'])
+                    plt.grid(True)
+                    plt.xticks(rotation=45)
+                    plt.tight_layout()
+
+                    buffer = BytesIO()
+                    plt.savefig(buffer, format='png', dpi=100)
+                    buffer.seek(0)
+                    img_data = base64.b64encode(buffer.read()).decode('utf-8')
+                    plt.close()
+
+                    graphics[f"{period}_{chart_type}_graphic"] = img_data
+                    if chart_type == 'line':
+                        graphics[f"{period}_graphic"] = img_data
+
+        except Exception as e:
+            print(f"Error generating {period} chart: {str(e)}")
+            continue
+
+    # Get tabular data for monthly
+    monthly_data = Attendance.objects.annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        total=Sum('grand_total_patients'),
+        new=Sum('total_new_patients'),
+        follow_up=Sum('total_follow_up_patients')
+    ).order_by('-month')[:12]
+
+    context = {
+        **graphics,
+        'monthly_data': monthly_data,
+        'top_clinics': top_clinics,
+        'clinic_trends': clinic_trends
+    }
+
+    return render(request, 'charts/clinic_trends.html', context)
+
+# Export attendance data to Excel
+def export_attendance_excel(request):
+    qs = Attendance.objects.annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        total=Sum('grand_total_patients'),
+        new=Sum('total_new_patients'),
+        follow_up=Sum('total_follow_up_patients')
+    ).order_by('-month')[:12]
+
+    df = pd.DataFrame(list(qs))
+    if df.empty:
+        return HttpResponse("No data available", content_type="text/plain")
+
+    df['month'] = pd.to_datetime(df['month']).dt.strftime('%B %Y')
+    df.rename(columns={
+        'month': 'Month',
+        'total': 'Total Patients',
+        'new': 'New Patients',
+        'follow_up': 'Follow-up Patients'
+    }, inplace=True)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="monthly_attendance.xlsx"'
+
+    with pd.ExcelWriter(response, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Attendance')
+
+    return response
