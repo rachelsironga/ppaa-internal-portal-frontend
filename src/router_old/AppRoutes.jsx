@@ -8,8 +8,6 @@ import { Connections } from "../pages/account/ConnectionsPage";
 import { NotificationPage } from "../pages/account/NotificationPage";
 import { ErrorPage } from "../pages/misc/ErrorPage";
 
-import { DashboardPage } from "../pages/DashboardPage";
-
 import ChangePassword from "../pages/account/ChangePassword";
 import { ApprovalActionPage } from "../pages/services/E-APPROVAL/approval_action/View";
 import { ApprovalModulePage } from "../pages/services/E-APPROVAL/approval_module/View";
@@ -25,33 +23,31 @@ import ProtectedRoute from "../components/wrapper/ProtectedRoute";
 import { Services } from "../pages/Services";
 import { DepartmentPage } from "../pages/services/MANAGMENTS/department/View";
 import { PositionalLevelPage } from "../pages/services/E-APPROVAL/positional_level/View";
-import {RolesManagementPage} from "../pages/services/MANAGMENTS/roles_management/View.jsx";
+import { RolesManagementPage } from "../pages/services/MANAGMENTS/roles_management/View.jsx";
 import { OpenRolesManagementPage } from "../pages/services/MANAGMENTS/roles_management/Open.jsx";
 import NewUserPage from "../pages/authentication/NewUserPage.jsx";
 import { RequestHandlingPage } from "../pages/services/E-APPROVAL/request_handling/View.jsx";
 import { RequestHandlingOpenPage } from "../pages/services/E-APPROVAL/request_handling/Open.jsx";
 
-// ICT Assets Pages
-// import ICTAssetsDashboard from "../pages/services/ICT-ASSETS/Dashboard";
-import Assets from "../pages/services/ICT-ASSETS/assets/Assets.jsx";
-// import ComputersList from "../pages/services/ICT-ASSETS/ComputersList";
-// import NetworkDevicesList from "../pages/services/ICT-ASSETS/NetworkDevicesList";
-// import PeripheralsList from "../pages/services/ICT-ASSETS/PeripheralsList";
-// import SoftwareList from "../pages/services/ICT-ASSETS/SoftwareList";
-// import SoftwareInstallationsList from "../pages/services/ICT-ASSETS/SoftwareInstallationsList";
-// import SoftwareCategoriesList from "../pages/services/ICT-ASSETS/SoftwareCategoriesList";
-// import BuildingsList from "../pages/services/ICT-ASSETS/BuildingsList";
-// import FloorsList from "../pages/services/ICT-ASSETS/FloorsList";
-// import LocationsList from "../pages/services/ICT-ASSETS/LocationsList";
-// import AssetCategoriesList from "../pages/services/ICT-ASSETS/AssetCategoriesList";
-// import AssetTypesList from "../pages/services/ICT-ASSETS/AssetTypesList";
-// import ManufacturersList from "../pages/services/ICT-ASSETS/ManufacturersList";
-// import SuppliersList from "../pages/services/ICT-ASSETS/SuppliersList";
-// import AssetAssignmentsList from "../pages/services/ICT-ASSETS/AssetAssignmentsList";
-// import MaintenanceRecordsList from "../pages/services/ICT-ASSETS/MaintenanceRecordsList";
-// import SupportTicketsList from "../pages/services/ICT-ASSETS/SupportTicketsList";
-// import WarrantiesList from "../pages/services/ICT-ASSETS/WarrantiesList";
-// import DisposalRecordsList from "../pages/services/ICT-ASSETS/DisposalRecordsList";
+// ICT ASSETS MANAGEMENT
+import { AssetDashboardPage } from "../pages/services/ICT-ASSETS/dashboard/AssetDashboardPage.jsx"
+import { AssetListPage } from "../pages/services/ICT-ASSETS/assets_list/View.jsx";
+import { AssetViewPage } from "../pages/services/ICT-ASSETS/assets_list/Open.jsx"
+import { ComputerListPage } from "../pages/services/ICT-ASSETS/computers/View.jsx";
+import { ComputerViewPage } from "../pages/services/ICT-ASSETS/computers/Open.jsx";
+import { NetworkingDeviceListPage } from "../pages/services/ICT-ASSETS/networking/View.jsx";
+import { NetworkingDeviceViewPage } from "../pages/services/ICT-ASSETS/networking/Open.jsx";
+import { PeripheralDeviceListPage } from "../pages/services/ICT-ASSETS/peripherals/View.jsx";
+import { PeripheralDeviceViewPage } from "../pages/services/ICT-ASSETS/peripherals/Open.jsx";
+import { SoftwareAssetListPage } from "../pages/services/ICT-ASSETS/softwares/View.jsx";
+import { SoftwareAssetViewPage } from "../pages/services/ICT-ASSETS/softwares/Open.jsx";
+import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
+import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
+import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
+import { AssetLocationListPage } from "../pages/services/ICT-ASSETS/locations/AssetLocationListPage.jsx";
+import { BuildingLocationListPage } from "../pages/services/ICT-ASSETS/locations/buildings/BuildingLocationListPage.jsx";
+import { LocationFloorListPage } from "../pages/services/ICT-ASSETS/locations/floors/LocationFloorListPage.jsx";
+
 
 function RegisterAndLogout() {
   localStorage.clear;
@@ -61,7 +57,6 @@ function RegisterAndLogout() {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Authentication Routes */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route
         path="/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF"
@@ -69,21 +64,27 @@ const AppRoutes = () => {
       />
       <Route path="/auth/register" element={<RegisterAndLogout />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-      
-      {/* Main App Routes */}
-      <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/" element={<Services />} />
+
       <Route path="*" element={<ErrorPage />} />
 
-      {/* Account Routes */}
-      <Route path="/account/settings" element={<AccountPage />} />
-      <Route path="/account/notifications" element={<NotificationPage />} />
-      <Route path="/account/connections" element={<Connections />} />
-      <Route path="/account/password" element={<ChangePassword />} />
+      <Route path="/mnh-connect/account/settings" element={<AccountPage />} />
+      <Route
+        path="/mnh-connect/account/notifications"
+        element={<NotificationPage />}
+      />
+      <Route
+        path="/mnh-connect/account/connections"
+        element={<Connections />}
+      />
+      <Route
+        path="/mnh-connect/account/password"
+        element={<ChangePassword />}
+      />
 
       {/* Settings */}
       <Route
-        path="/settings/directories"
+        path="/mnh-connect/settings/directories"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -97,7 +98,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/directories/open/:uid"
+        path="/mnh-connect/settings/directories/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -111,7 +112,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/departments"
+        path="/mnh-connect/settings/departments"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -125,7 +126,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/positional-levels"
+        path="/mnh-connect/settings/positional-levels"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -139,7 +140,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-actions"
+        path="/mnh-connect/settings/approval-actions"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -153,7 +154,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules"
+        path="/mnh-connect/settings/approval-modules"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -169,7 +170,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/approval-modules/open/:uid"
+        path="/mnh-connect/settings/approval-modules/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -185,7 +186,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings/date-ranges"
+        path="/mnh-connect/settings/date-ranges"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -202,7 +203,7 @@ const AppRoutes = () => {
 
       {/* Users */}
       <Route
-        path="/users"
+        path="/mnh-connect/users"
         element={
           <ProtectedRoute
             requiredPermissions={["view_user", "add_user", "delete_user"]}
@@ -212,7 +213,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/users/open/:uid"
+        path="/mnh-connect/users/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={["view_user", "add_user", "delete_user"]}
@@ -224,7 +225,7 @@ const AppRoutes = () => {
 
       {/* Requests */}
       <Route
-        path="/requests"
+        path="/mnh-connect/requests"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -239,7 +240,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/requests/open/:uid"
+        path="/mnh-connect/requests/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -252,10 +253,10 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       {/* Requests Handling*/}
+
       <Route
-        path="/requests-handling"
+        path="/mnh-connect/requests-handling"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -269,7 +270,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/requests-handling/open/:uid"
+        path="/mnh-connect/requests-handling/open/:uid"
         element={
           <ProtectedRoute
             requiredPermissions={[
@@ -285,15 +286,16 @@ const AppRoutes = () => {
 
       {/* Roles Managements */}
       <Route
-        path="/roles-managements"
+        path="/mnh-connect/roles-managements"
         element={
           <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
             <RolesManagementPage />
           </ProtectedRoute>
         }
       />
+
       <Route
-        path="/roles-managements/open/:uid"
+        path="/mnh-connect/roles-managements/open/:uid"
         element={
           <ProtectedRoute requiredPermissions={[]} requiredRoles={["admin"]}>
             <OpenRolesManagementPage />
@@ -301,254 +303,243 @@ const AppRoutes = () => {
         }
       />
 
-      {/* ==================================================================== */}
+
+
+      {/* ===================================================== */}
       {/* ICT ASSETS ROUTES */}
-      {/* ==================================================================== */}
+      {/* ===================================================== */}
 
       {/* ICT Assets Dashboard */}
-      {/* <Route
-        path="/ict-assets"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_dashboard"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
-          >
-            <ICTAssetsDashboard />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path="/ict-assets/dashboard"
         element={
           <ProtectedRoute
             requiredPermissions={["view_dashboard"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredRoles={[
+              "ICT_Superuser",
+              "admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "Department_User",
+              "ReadOnly_User",
+            ]}
           >
-            <ICTAssetsDashboard />
+            <AssetDashboardPage />
           </ProtectedRoute>
         }
-      /> */}
+      />
 
-      {/* Asset Management */}
       <Route
         path="/ict-assets/assets"
         element={
           <ProtectedRoute
-            requiredPermissions={["view_asset"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={[
+              "ICT_Superuser",
+              "admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "Department_User",
+              "ReadOnly_User",
+            ]}
           >
-            <Assets />
-          </ProtectedRoute>
-        }
-      />
-      {/* <Route
-        path="/ict-assets/asset-computers"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_computer"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
-          >
-            <ComputersList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-network-devices"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_networkdevice"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <NetworkDevicesList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-peripherals"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_peripheral"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <PeripheralsList />
+            <AssetListPage />
           </ProtectedRoute>
         }
       />
 
-      {/* Software Management */}
-      {/* <Route
-        path="/ict-assets/asset-software"
+      <Route
+        path="/ict-assets/assets/:uid"
         element={
           <ProtectedRoute
-            requiredPermissions={["view_software"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
-            <SoftwareList />
+            <AssetViewPage />
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/ict-assets/computers/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <ComputerViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/computers"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <ComputerListPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/network-devices/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <NetworkingDeviceViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/network-devices"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <NetworkingDeviceListPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/peripheral-devices/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <PeripheralDeviceViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/peripheral-devices"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <PeripheralDeviceListPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/asset-software/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <SoftwareAssetViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/ict-assets/asset-software"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <SoftwareAssetListPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/ict-assets/asset-software-installations"
         element={
           <ProtectedRoute
-            requiredPermissions={["view_softwareinstallation"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
-            <SoftwareInstallationsList />
+            <SowareInstallationListPage />
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/ict-assets/asset-software-installations/:uid"
+        element={
+          <ProtectedRoute
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
+          >
+            <SoftwareInstallationViewPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/ict-assets/asset-software-categories"
         element={
           <ProtectedRoute
-            requiredPermissions={["view_softwarecategory"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
-            <SoftwareCategoriesList />
+            <SoftwareCategoriesListPage />
           </ProtectedRoute>
         }
-      /> */}
+      />
 
-      {/* Location Management */}
-      {/* <Route
-        path="/ict-assets/asset-buildings"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_building"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <BuildingsList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-floors"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_floor"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <FloorsList />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path="/ict-assets/asset-locations"
         element={
           <ProtectedRoute
-            requiredPermissions={["view_location"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
-            <LocationsList />
+            <AssetLocationListPage />
           </ProtectedRoute>
         }
-      /> */}
+      />
 
-      {/* Configuration */}
-      {/* <Route
-        path="/ict-assets/asset-categories"
+      <Route
+        path="/ict-assets/asset-buildings"
         element={
           <ProtectedRoute
-            requiredPermissions={["view_assetcategory"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
-            <AssetCategoriesList />
+            <BuildingLocationListPage />
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/ict-assets/asset-types"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_assettype"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <AssetTypesList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-manufacturers"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_manufacturer"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <ManufacturersList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-suppliers"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_supplier"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <SuppliersList />
-          </ProtectedRoute>
-        }
-      /> */}
 
-      {/* Operations */}
-      {/* <Route
-        path="/ict-assets/asset-asset-assignments"
+      <Route
+        path="/ict-assets/asset-floors"
         element={
           <ProtectedRoute
-            requiredPermissions={["view_assetassignment"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
+            requiredPermissions={["view_dashboard"]}
+            requiredRoles={["admin", "ReadOnly_User"]}
           >
-            <AssetAssignmentsList />
+            <LocationFloorListPage />
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/ict-assets/asset-maintenance-records"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_maintenancerecord"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <MaintenanceRecordsList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-support-tickets"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_supportticket"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "Department_User", "ReadOnly_User"]}
-          >
-            <SupportTicketsList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-warranties"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_warranty"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor", "ReadOnly_User"]}
-          >
-            <WarrantiesList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ict-assets/asset-disposal-records"
-        element={
-          <ProtectedRoute
-            requiredPermissions={["view_disposalrecord"]}
-            requiredRoles={["ICT_Superuser", "admin", "ICT_Manager", "ICT_Auditor"]}
-          >
-            <DisposalRecordsList />
-          </ProtectedRoute>
-        }
-      /> */}
+
+
+      {/*<Route*/}
+      {/*    path="/requests/open/:uid"*/}
+      {/*    element={*/}
+      {/*        <ProtectedRoute requiredPermissions={["view_approvalrequest"]}>*/}
+      {/*            <ApprovalRequestOpenPage />*/}
+      {/*        </ProtectedRoute>*/}
+      {/*    }*/}
+      {/*/>*/}
     </Routes>
   );
 };
-
 export default AppRoutes;

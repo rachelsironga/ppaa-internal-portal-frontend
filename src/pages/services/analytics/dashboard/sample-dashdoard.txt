@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% load math_filters %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+
+    <!-- Page Title -->
+    <div class="row mb-4 animate__animated animate__fadeInDown">
+        <div class="col">
+            <h1 class="fw-bold">📊 Attendance Analytics Dashboard</h1>
+            <p class="text-muted">Comprehensive Overview of Patient Attendance and Clinic Performance</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group">
+                <a href="{% url 'attendance-list' %}" class="btn btn-primary me-2">
+                    <i class="ri-calendar-event-line"></i> View Attendance
+                </a>
+                <a href="{% url 'clinic-list' %}" class="btn btn-success">
+                    <i class="ri-hospital-line"></i> Manage Clinics
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Range Selector -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   value="{{ start_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   value="{{ end_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="clinic" class="form-label">Clinic</label>
+                            <select class="form-select" id="clinic" name="clinic">
+                                <option value="">All Clinics</option>
+                                {% for clinic in all_clinics %}
+                                <option value="{{ clinic.uid }}" {% if selected_clinic == clinic.uid %}selected{% endif %}>
+                                    {{ clinic.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                                <a href="{% url 'attendance-analytics' %}" class="btn btn-secondary">Reset</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row">
+        <!-- Total Patients -->
+        <div class="col-md-3">
+            <div class="card widget-flat bg-primary text-white animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
+                <div class="card-body">
+                    <div class="float-end">
+                        <i class="ri-user-line widget-icon bg-white text-primary"></i>
+                    </div>
+                    <h5 class="fw-normal mt-0">Total Patients</h5>
+                    <h3 class="my-3">{{ total_patients|default:0 }}</h3>
+                    <span>{{ start_date|date:'M d' }} - {{ end_date|date:'M d, Y' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Patients -->
+        <div class="col-md-3">
+            <div class="card widget-flat bg-info text-white animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
+                <div class="card-body">
+                    <div class="float-end">
+                        <i class="ri-user-add-line widget-icon bg-white text-info"></i>
+                    </div>
+                    <h5 class="fw-normal mt-0">New Patients</h5>
+                    <h3 class="my-3">{{ new_patients|default:0 }}</h3>
+                    <span>{{ new_patient_percentage|default:0 }}% of total</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Follow-up Patients -->
+        <div class="col-md-3">
+            <div class="card widget-flat bg-success text-white animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
+                <div class="card-body">
+                    <div class="float-end">
+                        <i class="ri-user-heart-line widget-icon bg-white text-success"></i>
+                    </div>
+                    <h5 class="fw-normal mt-0">Follow-up Patients</h5>
+                    <h3 class="my-3">{{ follow_up_patients|default:0 }}</h3>
+                    <span>{{ follow_up_percentage|default:0 }}% of total</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Daily Patients -->
+        <div class="col-md-3">
+            <div class="card widget-flat bg-warning text-white animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
+                <div class="card-body">
+                    <div class="float-end">
+                        <i class="ri-dashboard-line widget-icon bg-white text-warning"></i>
+                    </div>
+                    <h5 class="fw-normal mt-0">Avg Daily Patients</h5>
+                    <h3 class="my-3">{{ avg_daily_patients|default:0 }}</h3>
+                    <span>{{ days_in_period }} day period</span>
+                </div>
+            </div>
+        </div>
+    </div> <!-- end row-->
+
+    <!-- Charts Row -->
+    <div class="row mt-4">
+        <!-- Patient Volume Trend -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">📈 Patient Volume Trend</h5>
+                </div>
+                <div class="card-body">
+                    <div id="patient-volume-chart" style="min-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Type Distribution -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">📊 Patient Type Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="patient-type-chart" style="min-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Charts Row -->
+    <div class="row mt-4">
+        <!-- Top Clinics by Patient Volume -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">🏥 Top 10 Clinics by Patient Volume</h5>
+                </div>
+                <div class="card-body">
+                    <div id="top-clinics-chart" style="min-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Mode Distribution -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">💳 Payment Mode Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="payment-mode-chart" style="min-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Alerts -->
+    {% if underperforming_clinics or high_growth_clinics %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="card-title mb-0">⚠️ Performance Insights</h5>
+                </div>
+                <div class="card-body">
+                    {% if underperforming_clinics %}
+                    <div class="mb-3">
+                        <h6>Clinics with Declining Attendance:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Clinic</th>
+                                        <th>Current Patients</th>
+                                        <th>Previous Period</th>
+                                        <th>Change</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for clinic in underperforming_clinics %}
+                                    <tr>
+                                        <td><strong>{{ clinic.name }}</strong></td>
+                                        <td>{{ clinic.current_patients }}</td>
+                                        <td>{{ clinic.previous_patients }}</td>
+                                        <td class="text-danger">{{ clinic.growth_rate|floatformat:1 }}%</td>
+                                        <td><i class="ri-arrow-down-line text-danger"></i></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if high_growth_clinics %}
+                    <div>
+                        <h6>Clinics with High Growth:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Clinic</th>
+                                        <th>Current Patients</th>
+                                        <th>Previous Period</th>
+                                        <th>Growth</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for clinic in high_growth_clinics %}
+                                    <tr>
+                                        <td><strong>{{ clinic.name }}</strong></td>
+                                        <td>{{ clinic.current_patients }}</td>
+                                        <td>{{ clinic.previous_patients }}</td>
+                                        <td class="text-success">+{{ clinic.growth_rate|floatformat:1 }}%</td>
+                                        <td><i class="ri-arrow-up-line text-success"></i></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">🔄 Recent Attendance Records</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Total Patients</th>
+                                    <th>New Patients</th>
+                                    <th>Follow-up</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in recent_attendance %}
+                                <tr>
+                                    <td><strong>{{ record.date|date:"M d, Y" }}</strong></td>
+                                    <td>{{ record.grand_total_patients }}</td>
+                                    <td>{{ record.total_new_patients }}</td>
+                                    <td>{{ record.total_follow_up_patients }}</td>
+                                    <td>
+                                        {% if record.processed_date %}
+                                        <span class="badge bg-success">Processed</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No attendance records found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        .widget-flat { transition: transform 0.2s; }
+        .widget-flat:hover { transform: translateY(-5px); }
+        .progress { background-color: #e9ecef; border-radius: 4px; overflow: hidden; }
+    </style>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'assets/vendor/apexcharts/apexcharts.min.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Patient Volume Trend Chart
+            const dailyTrends = {{ daily_trends|safe }};
+            const volumeCategories = dailyTrends.map(item => item.day);
+            const totalData = dailyTrends.map(item => item.total || 0);
+            const newData = dailyTrends.map(item => item.new || 0);
+            const followUpData = dailyTrends.map(item => item.follow_up || 0);
+
+            new ApexCharts(document.querySelector("#patient-volume-chart"), {
+                chart: { type: 'line', height: 300, toolbar: { show: true } },
+                series: [
+                    { name: 'Total Patients', data: totalData },
+                    { name: 'New Patients', data: newData },
+                    { name: 'Follow-up Patients', data: followUpData }
+                ],
+                xaxis: { 
+                    categories: volumeCategories,
+                    type: 'datetime',  // Add this for proper date handling
+                    labels: {
+                        format: 'MMM dd'  // Format for displaying dates
+                    }
+                },
+                colors: ['#3e60d5', '#39afd1', '#47ad77'],
+                stroke: { curve: 'smooth', width: 3 },
+                markers: { size: 4 }
+            }).render();
+
+            // Patient Type Distribution
+            const patientTypeData = [
+                {{ new_patients|default:0 }},
+                {{ follow_up_patients|default:0 }}
+            ];
+
+            new ApexCharts(document.querySelector("#patient-type-chart"), {
+                chart: { type: 'donut', height: 350 },
+                series: patientTypeData,
+                labels: ['New Patients', 'Follow-up Patients'],
+                colors: ['#39afd1', '#47ad77'],
+                legend: { position: 'bottom' }
+            }).render();
+
+            // Top Clinics Chart
+            const topClinics = {{ top_clinics|safe }};
+            const clinicLabels = topClinics.map(item => item.clinic__name);
+            const clinicData = topClinics.map(item => item.total_patients);
+
+            new ApexCharts(document.querySelector("#top-clinics-chart"), {
+                chart: { type: 'bar', height: 300 },
+                series: [{ name: 'Patients', data: clinicData }],
+                xaxis: { categories: clinicLabels },
+                plotOptions: { 
+                    bar: { 
+                        horizontal: true, 
+                        borderRadius: 4,
+                        dataLabels: {
+                            position: 'center'
+                        }
+                    } 
+                },
+                dataLabels: {
+                    enabled: true
+                },
+                colors: ['#3e60d5']
+            }).render();
+
+            // Payment Mode Distribution
+            const paymentData = {{ payment_distribution|safe }};
+            const paymentLabels = paymentData.map(item => item.payment__name);
+            const paymentValues = paymentData.map(item => item.total);
+
+            new ApexCharts(document.querySelector("#payment-mode-chart"), {
+                chart: { type: 'pie', height: 350 },
+                series: paymentValues,
+                labels: paymentLabels,
+                legend: { position: 'bottom' },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function (val, opts) {
+                        return opts.w.globals.labels[opts.seriesIndex] + ": " + val.toFixed(1) + "%";
+                    }
+                }
+            }).render();
+        });
+    </script>
+{% endblock %}
