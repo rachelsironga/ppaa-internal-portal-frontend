@@ -135,6 +135,40 @@
               "ICT_Auditor",
               "ReadOnly_User"
             ]
+          },
+          {
+            "text": "Buildings",
+            "icon": "bx bx-building",
+            "available": true,
+            "link": "/ict-assets/asset-buildings",
+            "permission": [
+              "view_location"
+            ],
+            "role": [
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "ReadOnly_User"
+            ]
+          },
+          {
+            "text": "Floors",
+            "icon": "bx bx-layer",
+            "available": true,
+            "link": "/ict-assets/asset-floors",
+            "permission": [
+              "view_location"
+            ],
+            "role": [
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "ReadOnly_User"
+            ]
           }
         ]
       },
