@@ -6,7 +6,9 @@
     "available": true,
     "link": "/mnh-connect",
     "permission": [],
-    "role": ["admin"]
+    "role": [
+      "admin"
+    ]
   },
   {
     "id": "ict-assets-service",
@@ -15,71 +17,108 @@
     "available": true,
     "link": "/ict-assets/dashboard",
     "permission": [],
-    "role": ["admin"]
+    "role": [
+      "admin"
+    ]
   },
-    {
+  {
     "text": "Oxygen Management",
     "icon": "bx bxs-cylinder",
     "link": "/oxygen-management",
     "permission": [],
-    "role": ["admin", "store"]
+    "role": [
+      "admin",
+      "store"
+    ]
+  },
+  {
+    "text": "Hospital Analytics",
+    "icon": "bx bx-bar-chart-alt",
+    "available": true,
+    "link": "/analytics/dashboard",
+    "permission": [],
+    "role": [
+      "admin"
+    ]
   },
   {
     "text": "Equipment Tracking",
     "icon": "bx bx-file-find",
     "link": "/hr",
     "permission": [],
-    "role": ["admin", "hr"]
+    "role": [
+      "admin",
+      "hr"
+    ]
   },
   {
     "text": "E-Jobcards",
     "icon": "bx bx-wallet",
     "link": "/finance",
     "permission": [],
-    "role": ["admin", "finance"]
+    "role": [
+      "admin",
+      "finance"
+    ]
   },
-
   {
     "text": "ICT Support",
     "icon": "bx bx-headphone",
     "link": "/it-support",
     "permission": [],
-    "role": ["admin", "it"]
+    "role": [
+      "admin",
+      "it"
+    ]
   },
   {
     "text": "Procurement",
     "icon": "bx bx-cart",
     "link": "/procurement",
     "permission": [],
-    "role": ["admin", "procurement"]
+    "role": [
+      "admin",
+      "procurement"
+    ]
   },
   {
     "text": "Transport",
     "icon": "bx bx-bus",
     "link": "/transport",
     "permission": [],
-    "role": ["admin", "transport"]
+    "role": [
+      "admin",
+      "transport"
+    ]
   },
-  
   {
     "text": "Payroll",
     "icon": "bx bx-credit-card",
     "link": "/payroll",
     "permission": [],
-    "role": ["admin", "finance"]
+    "role": [
+      "admin",
+      "finance"
+    ]
   },
   {
     "text": "Training",
     "icon": "bx bx-book-open",
     "link": "/training",
     "permission": [],
-    "role": ["admin", "hr"]
+    "role": [
+      "admin",
+      "hr"
+    ]
   },
   {
     "text": "Facility Management",
     "icon": "bx bx-building-house",
     "link": "/facility",
     "permission": [],
-    "role": ["admin", "facility"]
+    "role": [
+      "admin",
+      "facility"
+    ]
   }
 ]

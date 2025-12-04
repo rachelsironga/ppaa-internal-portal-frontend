@@ -9,6 +9,7 @@ import { eApprovalRoutes } from "./eApprovalRoutes";
 import { managementRoutes } from "./managementRoutes";
 import { ictAssetsRoutes } from "./ictAssetsRoutes";
 import { oxygenRoutes } from "./oxygenRoutes";
+import { analyticsRoutes } from "./analyticsRoutes";
 
 const AppRoutes = () => {
   return (
@@ -30,6 +31,9 @@ const AppRoutes = () => {
 
       {/* Oxygen Management Routes */}
       {oxygenRoutes}
+
+      {/* Hospital Analitics Routes */}
+      {analyticsRoutes}
 
       {/* Catch-all 404 */}
       <Route path="*" element={<ErrorPage />} />

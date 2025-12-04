@@ -1,0 +1,63 @@
+[
+  {
+    "header": "ANALYTICS",
+    "items": [
+      {
+        "text": "Analytics Dashboard",
+        "icon": "bx bx-bar-chart-alt",
+        "available": true,
+        "link": "/analytics/dashboard",
+        "permission": [],
+        "role": ["admin", "analyst", "management"]
+      },
+      {
+        "text": "Dep Management",
+        "icon": "bx bx-store-alt",
+        "available": true,
+        "link": "/analytics/departments",
+        "permission": [],
+        "role": ["admin", "analyst", "management", "medical"]
+      },
+      {
+        "text": "Blocks Management",
+        "icon": "bx bx-cube",
+        "available": true,
+        "link": "/analytics/blocks",
+        "permission": [],
+        "role": ["admin", "analyst", "management"]
+      },
+      {
+        "text": "Clinics Management",
+        "icon": "bx bx-clinic",
+        "available": true,
+        "link": "/analytics/clinics",
+        "permission": [],
+        "role": ["admin", "analyst", "management", "medical"]
+      },
+      {
+        "text": "Payment Modes",
+        "icon": "bx bx-credit-card",
+        "available": true,
+        "link": "/analytics/payment-modes",
+        "permission": [],
+        "role": ["admin", "analyst", "finance", "management"]
+      },
+      {
+        "text": "Attendance Tracking",
+        "icon": "bx bx-calendar-check",
+        "available": true,
+        "link": "/analytics/attendances",
+        "permission": [],
+        "role": ["admin", "analyst", "hr", "management"]
+      },
+      {
+        "text": "Patient Trends",
+        "icon": "bx bx-line-chart",
+        "available": true,
+        "link": "/analytics/patient-trends",
+        "permission": [],
+        "role": ["admin", "analyst", "medical", "management"]
+      }
+    ]
+  }
+]
