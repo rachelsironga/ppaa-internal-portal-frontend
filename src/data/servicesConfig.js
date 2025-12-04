@@ -2,6 +2,7 @@ import eApprovalMenu from "./eApprovalMenu.json";
 import ictAssetsMenu from "./ictAssetsMenu.json";
 import oxygenMenu from "./oxygeServiceMenu.json";
 import defaultMenu from "./defaultMenu.json";
+import analyticsMenu from "./analyticsMenu.json";
 
 
 // Add new services here without touching Sidebar.js
@@ -23,6 +24,12 @@ const servicesConfig = [
         name: "Oxygen Management",
         link: "/oxygen-management",
         menu: oxygenMenu
+    },
+    {
+        id: "hospital-analytics",
+        name: "Hospital Analytics",
+        link: "/analytics",
+        menu: analyticsMenu
     },
     {
         id: "default-menu",
