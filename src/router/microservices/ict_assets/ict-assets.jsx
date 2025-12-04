@@ -12,7 +12,15 @@ import { SoftwareAssetViewPage } from "../../../pages/services/ICT-ASSETS/softwa
 import { SowareInstallationListPage } from "../../../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
 import { SoftwareInstallationViewPage } from "../../../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
 import { SoftwareCategoriesListPage } from "../../../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
+
+import { AssetLocationListPage } from "../../../pages/services/ICT-ASSETS/locations/AssetLocationListPage.jsx";
+import { BuildingLocationListPage } from "../../../pages/services/ICT-ASSETS/locations/buildings/BuildingLocationListPage.jsx";
+import { LocationFloorListPage } from "../../../pages/services/ICT-ASSETS/locations/floors/LocationFloorListPage.jsx";
+
+
 import ProtectedRoute from "../../../components/wrapper/ProtectedRoute";
+
+
 
 const ictAssetsPermissions = {
     dashboard: ["view_dashboard"],
@@ -180,6 +188,39 @@ export const ictAssetsRoutes = [
                 requiredRoles={ictAssetsPermissions.readOnlyRoles}
             >
                 <SoftwareCategoriesListPage />
+            </ProtectedRoute>
+        ),
+    },
+    {
+        path: "/ict-assets/asset-locations",
+        element: (
+            <ProtectedRoute
+                requiredPermissions={ictAssetsPermissions.dashboard}
+                requiredRoles={ictAssetsPermissions.readOnlyRoles}
+            >
+                <AssetLocationListPage />
+            </ProtectedRoute>
+        ),
+    },
+    {
+        path: "/ict-assets/asset-buildings",
+        element: (
+            <ProtectedRoute
+                requiredPermissions={ictAssetsPermissions.dashboard}
+                requiredRoles={ictAssetsPermissions.readOnlyRoles}
+            >
+                <BuildingLocationListPage />
+            </ProtectedRoute>
+        ),
+    },
+    {
+        path: "/ict-assets/asset-floors",
+        element: (
+            <ProtectedRoute
+                requiredPermissions={ictAssetsPermissions.dashboard}
+                requiredRoles={ictAssetsPermissions.readOnlyRoles}
+            >
+                <LocationFloorListPage />
             </ProtectedRoute>
         ),
     },
