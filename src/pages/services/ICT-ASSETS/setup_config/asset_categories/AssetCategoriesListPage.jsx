@@ -83,6 +83,12 @@ export const AssetCategoriesListPage = () => {
                 onDataFetched={(data) => setTableData(data)}
                 columns={[
                     {
+                        key: "SN",
+                        label: "SN",
+                        style: { width: "80px" },
+                        className: "text-center",
+                    },
+                    {
                         key: "name",
                         label: "Asset Category",
                         className: "fw-bold",
@@ -91,7 +97,9 @@ export const AssetCategoriesListPage = () => {
                             <div className="d-flex align-items-center">
                                 <i className="bx bx-category text-primary me-2 fs-5"></i>
                                 <div>
-                                    <span className="text-primary cursor-pointer fw-semibold">
+                                    <span className="text-primary cursor-pointer fw-semibold"
+                                        style={{ textTransform: 'uppercase' }}
+                                    >
                                         {row.name || "-"}
                                     </span>
 
@@ -218,7 +226,7 @@ export const AssetCategoriesListPage = () => {
                         ),
                     },
 
-                  
+
                 ]}
                 onSelect={(row) => {
                     setSelectedObj(row);
