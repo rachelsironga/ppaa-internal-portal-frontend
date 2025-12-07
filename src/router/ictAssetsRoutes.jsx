@@ -18,6 +18,7 @@ import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwar
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
 import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
 import { AssetCategoriesListPage } from "../pages/services/ICT-ASSETS/setup_config/asset_categories/AssetCategoriesListPage.jsx";
+import {AssetTypesListPage} from "../pages/services/ICT-ASSETS/setup_config/asset_types/AssetTypesListPage.jsx";
 import { AccountPage } from "../pages/account/AccountPage.jsx";
 const requiredRoles = [
   "ICT_Superuser",
@@ -195,6 +196,18 @@ export const ictAssetsRoutes = (
           requiredRoles={["admin", "ReadOnly_User"]}
         >
           <AssetCategoriesListPage />
+        </ProtectedRoute>
+      }
+    />
+
+    <Route
+      path="/ict-assets/asset-types"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_dashboard"]}
+          requiredRoles={["admin", "ReadOnly_User"]}
+        >
+        <AssetTypesListPage />
         </ProtectedRoute>
       }
     />
