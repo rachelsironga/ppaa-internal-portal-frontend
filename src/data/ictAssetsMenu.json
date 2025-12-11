@@ -290,7 +290,7 @@
             "text": "Manufacturers",
             "icon": "bx bx-wrench",
             "available": true,
-            "link": "/ict-assets/asset-manufacturers",
+            "link": "/ict-assets/manufactures",
             "permission": [
               "view_manufacturer"
             ],
