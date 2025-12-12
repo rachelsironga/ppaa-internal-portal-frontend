@@ -19,6 +19,8 @@ import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softw
 import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
 import { AssetCategoriesListPage } from "../pages/services/ICT-ASSETS/setup_config/asset_categories/AssetCategoriesListPage.jsx";
 import {AssetTypesListPage} from "../pages/services/ICT-ASSETS/setup_config/asset_types/AssetTypesListPage.jsx";
+import { ManufacturesListPage } from "../pages/services/ICT-ASSETS/setup_config/manufactures/ManufacturesListPage.jsx";
+import {ViewAssetType} from "../pages/services/ICT-ASSETS/setup_config/asset_types/ViewAssetType.tsx";
 import { AccountPage } from "../pages/account/AccountPage.jsx";
 const requiredRoles = [
   "ICT_Superuser",
@@ -210,6 +212,32 @@ export const ictAssetsRoutes = (
         <AssetTypesListPage />
         </ProtectedRoute>
       }
+    />
+
+
+    <Route
+    path="/ict-assets/view-asset-type/:uid"
+    element={
+      <ProtectedRoute
+        requiredPermissions={["view_dashboard"]}
+        requiredRoles={["admin", "ReadOnly_User"]}
+      >
+      <ViewAssetType />
+      </ProtectedRoute>
+    }
+
+    />
+
+<Route
+    path="/ict-assets/manufactures"
+    element={
+      <ProtectedRoute
+        requiredPermissions={["view_dashboard"]}
+        requiredRoles={["admin", "ReadOnly_User"]}
+      >
+      <ManufacturesListPage />
+      </ProtectedRoute>
+    }
     />
 
 
