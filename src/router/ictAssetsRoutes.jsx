@@ -18,8 +18,9 @@ import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwar
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
 import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
 import { AssetCategoriesListPage } from "../pages/services/ICT-ASSETS/setup_config/asset_categories/AssetCategoriesListPage.jsx";
-import {AssetTypesListPage} from "../pages/services/ICT-ASSETS/setup_config/asset_types/AssetTypesListPage.jsx";
+import { AssetTypesListPage } from "../pages/services/ICT-ASSETS/setup_config/asset_types/AssetTypesListPage.jsx";
 import { ManufacturesListPage } from "../pages/services/ICT-ASSETS/setup_config/manufactures/ManufacturesListPage.jsx";
+import { SuppliersListPage } from "../pages/services/ICT-ASSETS/setup_config/suppliers/SuppliersListPage.jsx";
 import {ViewAssetType} from "../pages/services/ICT-ASSETS/setup_config/asset_types/ViewAssetType.tsx";
 import { AccountPage } from "../pages/account/AccountPage.jsx";
 const requiredRoles = [
@@ -229,7 +230,7 @@ export const ictAssetsRoutes = (
     />
 
 <Route
-    path="/ict-assets/manufactures"
+    path="/ict-assets/asset-manufactures"
     element={
       <ProtectedRoute
         requiredPermissions={["view_dashboard"]}
@@ -240,6 +241,17 @@ export const ictAssetsRoutes = (
     }
     />
 
+<Route
+    path="/ict-assets/asset-suppliers"
+    element={
+      <ProtectedRoute
+        requiredPermissions={["view_dashboard"]}
+        requiredRoles={["admin", "ReadOnly_User"]}
+      >
+      <SuppliersListPage />
+      </ProtectedRoute>
+    }
+    />
 
   </>
 );
