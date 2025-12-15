@@ -38,9 +38,7 @@ export const ManufactureModal = ({ loadOnlyModal = false }) => {
           .nullable(),
       
         is_active: Yup.boolean(),
-      
-        description: Yup.string().nullable(),
-      });
+            });
       
 
     const handleSubmit = async (values, { setSubmitting, resetForm, setErrors }) => {

@@ -21,8 +21,10 @@ import { AssetCategoriesListPage } from "../pages/services/ICT-ASSETS/setup_conf
 import { AssetTypesListPage } from "../pages/services/ICT-ASSETS/setup_config/asset_types/AssetTypesListPage.jsx";
 import { ManufacturesListPage } from "../pages/services/ICT-ASSETS/setup_config/manufactures/ManufacturesListPage.jsx";
 import { SuppliersListPage } from "../pages/services/ICT-ASSETS/setup_config/suppliers/SuppliersListPage.jsx";
+import { DisposalRecordsListPage } from "../pages/services/ICT-ASSETS/setup_config/disposal_records/DisposalRecordListPage.tsx"
 import {ViewAssetType} from "../pages/services/ICT-ASSETS/setup_config/asset_types/ViewAssetType.tsx";
 import { AccountPage } from "../pages/account/AccountPage.jsx";
+
 const requiredRoles = [
   "ICT_Superuser",
   "admin",
@@ -253,5 +255,16 @@ export const ictAssetsRoutes = (
     }
     />
 
+<Route
+    path="/ict-assets/asset-disposal-records"
+    element={
+      <ProtectedRoute
+        requiredPermissions={["view_dashboard"]}
+        requiredRoles={["admin", "ReadOnly_User"]}
+      >
+      <DisposalRecordsListPage />
+      </ProtectedRoute>
+    }
+    />
   </>
 );
