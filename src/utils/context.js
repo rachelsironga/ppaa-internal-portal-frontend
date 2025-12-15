@@ -28,7 +28,7 @@ const AssetContext = createContext();
 const AssetListPageContext = createContext();
 const AssetDashboardContext = createContext();
 const ManufactureContext = createContext()
-const SuppliersContext = createContext()
+const SupplierContext = createContext()
 
 
 // OXYGEN MANAGEMENT
@@ -59,5 +59,5 @@ export {
     AssetDashboardContext,
     AssetListPageContext,
     ManufactureContext,
-    SuppliersContext,
+    SupplierContext,
 };

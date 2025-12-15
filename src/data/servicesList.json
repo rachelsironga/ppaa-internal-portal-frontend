@@ -42,6 +42,16 @@
     ]
   },
   {
+    "text": "Training Management",
+    "icon": "bx bx-book-open",
+    "available": true,
+    "link": "/training/dashboard",
+    "permission": [],
+    "role": [
+      "admin"
+    ]
+  },
+  {
     "text": "Equipment Tracking",
     "icon": "bx bx-file-find",
     "link": "/hr",
