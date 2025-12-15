@@ -35,7 +35,7 @@
         "text": "Profile",
         "icon": "bx bx-user",
         "available": true,
-        "link": "/mnh-connect/account/settings",
+        "link": "/ict-assets/account/settings",
         "permission": [],
         "role": [
           "admin",
@@ -82,20 +82,91 @@
         ]
       },
       {
-        "text": "Network Devices",
-        "icon": "bx bx-network-chart",
-        "available": true,
-        "link": "/ict-assets/network-devices",
-        "permission": [
-          "view_networkdevice"
-        ],
-        "role": [
-          "ICT_Superuser",
-          "ICT_Admin",
-          "ICT_Manager",
-          "ICT_Technician",
-          "ICT_Auditor",
-          "ReadOnly_User"
+        "header": "SETUP & CONFIG",
+        "items": [
+          {
+            "text": "Asset Categories",
+            "icon": "bx bx-category",
+            "available": true,
+            "link": "/ict-assets/asset-categories",
+            "permission": [
+              "view_assetcategory"
+            ],
+            "role": [
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "ReadOnly_User"
+            ]
+          },
+          {
+            "text": "Asset Types",
+            "icon": "bx bx-cube",
+            "available": true,
+            "link": "/ict-assets/asset-types",
+            "permission": [
+              "view_assettype"
+            ],
+            "role": [
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "ReadOnly_User"
+            ]
+          },
+          {
+            "text": "Manufacturers",
+            "icon": "bx bx-wrench",
+            "available": true,
+            "link": "/ict-assets/asset-manufactures",
+            "permission": [
+              "view_manufacturer"
+            ],
+            "role": [
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "ReadOnly_User"
+            ]
+          },
+          {
+            "text": "Suppliers",
+            "icon": "bx bx-store",
+            "available": true,
+            "link": "/ict-assets/asset-suppliers",
+            "permission": [
+              "view_supplier"
+            ],
+            "role": [
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Technician",
+              "ICT_Auditor",
+              "ReadOnly_User"
+            ]
+          },
+          {
+            "text": "Disposal Records",
+            "icon": "bx bx-trash",
+            "available": true,
+            "link": "/ict-assets/asset-disposal-records",
+            "permission": [
+              "view_disposalrecord"
+            ],
+            "role": [
+              "ICT_Superuser",
+              "ICT_Admin",
+              "ICT_Manager",
+              "ICT_Auditor"
+            ]
+          }
         ]
       },
       {

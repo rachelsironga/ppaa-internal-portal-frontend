@@ -33,7 +33,7 @@ export const StaffDashboard = () => {
                   </p>
                   <button
                     aria-label="view badges"
-                    onClick={() => navigate("/requests")}
+                    onClick={() => navigate("/mnh-connect/requests")}
                     className="btn btn-sm btn-outline-primary"
                   >
                     View My Pending Approvals
