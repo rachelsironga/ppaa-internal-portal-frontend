@@ -6,14 +6,14 @@ import BreadCumb from "../../../../../layouts/BreadCumb";
 import PaginatedTable from "../../../../../components/ui-templates/PaginatedTable";
 import { formatDate } from "../../../../../helpers/DateFormater";
 import Swal from "sweetalert2";
-import { AssetCategoryModal } from "./AssetCategoryModal";
 import { deleteAsset } from "./Queries";
 import showToast from "../../../../../helpers/ToastHelper";
 import { hasAccess } from "../../../../../hooks/AccessHandler";
 import { useSelector } from "react-redux";
 import * as XLSX from "xlsx";
+import { AssetTypeModal } from "./AssetTypeModal";
 
-export const AssetCategoriesListPage = () => {
+export const AssetTypesListPage = () => {
     const [selectedObj, setSelectedObj] = useState(null);
     const [tableRefresh, setTableRefresh] = useState(0);
     const [selectedAssets, setSelectedAssets] = useState([]);
@@ -29,14 +29,14 @@ export const AssetCategoriesListPage = () => {
 
     const handleDelete = async (asset) => {
         if (!asset) {
-            Swal.fire("Error!", "Unable to select this asset category.", "error");
+            Swal.fire("Error!", "Unable to select this asset type.", "error");
             return;
         }
 
         try {
             const confirmation = await Swal.fire({
                 title: "Are you sure?",
-                text: `You're about to delete asset category: ${asset.name} `,
+                text: `You're about to delete asset type: ${asset.name} `,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#DD6B55",
@@ -49,19 +49,19 @@ export const AssetCategoriesListPage = () => {
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Deleted!",
-                        "The asset category has been deleted successfully.",
+                        "The asset type has been deleted successfully.",
                         "success"
                     );
                     setTableRefresh((prev) => prev + 1);
                 } else {
-                    Swal.fire("Error!", result.message || "Failed to delete asset category", "error");
+                    Swal.fire("Error!", result.message || "Failed to delete asset type", "error");
                 }
             }
         } catch (error) {
-            console.error("Error deleting asset category:", error);
+            console.error("Error deleting asset type:", error);
             Swal.fire(
                 "Error!",
-                "Unable to delete asset category. Please try again or contact support.",
+                "Unable to delete asset type. Please try again or contact support.",
                 "error"
             );
         }
@@ -76,12 +76,13 @@ export const AssetCategoriesListPage = () => {
                 setTableRefresh,
             }}
         >
-            <BreadCumb pageList={["Asset Categories", "List"]} />
+            <BreadCumb pageList={["Asset Types", "List"]} />
             <PaginatedTable
-                fetchPath="/asset-categories"
-                title="Assets Categories"
+                fetchPath="/asset-types"
+                title="Assets Types"
                 onDataFetched={(data) => setTableData(data)}
                 columns={[
+
                     {
                         key: "SN",
                         label: "SN",
@@ -90,14 +91,15 @@ export const AssetCategoriesListPage = () => {
                     },
                     {
                         key: "name",
-                        label: "Asset Category",
+                        label: "Asset Type",
                         className: "fw-bold",
                         style: { width: "200px" },
                         render: (row) => (
                             <div className="d-flex align-items-center">
-                                <i className="bx bx-category text-primary me-2 fs-5"></i>
+                                <i className="bx bx-cube text-primary me-2 fs-5"></i>
                                 <div>
-                                    <span className="text-primary cursor-pointer fw-semibold"
+                                    <span
+                                        className="text-primary cursor-pointer fw-semibold"
                                         style={{ textTransform: 'uppercase' }}
                                     >
                                         {row.name || "-"}
@@ -139,88 +141,74 @@ export const AssetCategoriesListPage = () => {
                     },
 
                     {
-                        key: "description",
-                        label: "Description",
+                        key: "category",
+                        label: "Category Name",
                         className: "text-left",
                         style: { width: "250px" },
                         render: (row) => (
                             <div>
-                                {row.description ? (
-                                    <span className="text-muted text-truncate d-block" title={row.description}>
-                                        {row.description.length > 80
-                                            ? `${row.description.substring(0, 60)}...`
-                                            : row.description}
+                                {row.category ? (
+                                    <span
+                                        className="text-muted text-truncate d-block"
+                                        style={{ textTransform: 'uppercase' }}
+
+                                        title={row.category.name}>
+                                        {row.name.length > 50
+                                            ? `${row.category.substring(0, 50)}...`
+                                            : row.category.name}
                                     </span>
                                 ) : (
-                                    <span className="text-muted">No description</span>
+                                    <span className="text-muted">No Category</span>
                                 )}
                             </div>
                         ),
                     },
-
+                 
                     {
                         key: "actions",
                         label: "Actions",
                         style: { width: "120px" },
                         className: "text-center",
                         render: (row) => (
-                            <div className="btn-group">
-                                {hasAccess(user, [["change_asset"]]) && (
-                                    <button
-                                        aria-label="Edit"
-                                        type="button"
-                                        className="btn btn-sm btn-outline-primary border-0"
-                                        onClick={() => setSelectedObj(row)}
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#AssetCategoryModal"
-                                        title="Edit Category"
-                                    >
-                                        <i className="bx bx-edit"></i>
-                                    </button>
-                                )}
-
-                                {hasAccess(user, [["delete_asset"]]) && (
-                                    <button
-                                        aria-label="Delete"
-                                        type="button"
-                                        className="btn btn-sm btn-outline-danger border-0"
-                                        onClick={() => handleDelete(row)}
-                                        title="Delete Category"
-                                    >
-                                        <i className="bx bx-trash"></i>
-                                    </button>
-                                )}
-                            </div>
+                            <button
+                                aria-label="View"
+                                type="button"
+                                className="btn p-0 dropdown-toggle hide-arrow text-info"
+                                data-bs-toggle="dropdown"
+                                onClick={() =>
+                                    hasAccess(user,
+                                        [
+                                        "view_asset",
+                                        ],
+                                        []
+                                    )   
+                                        ? navigate(
+                                            `/ict-assets/view-asset-type/${row.uid}`
+                                        )
+                                        : null
+                                }
+                            >
+                                <i className="bx bx-link-external"></i>&nbsp; View
+                            </button>
+                        
                         ),
                     },
                 ]}
                 buttons={[
+
                     {
-                        label: "Import Assets",
+                        label: "Add  Asset Type",
                         render: () => (
-                            <button
-                                type="button"
-                                className="btn btn-success btn-sm me-2"
-                                data-bs-toggle="modal"
-                                data-bs-target="#assetImportModal"
-                            >
-                                <i className="bx bx-upload me-1"></i> Import
-                            </button>
-                        ),
-                    },
-                    {
-                        label: "Add New Category",
-                        render: () => (
-                            hasAccess(user, [["add_asset"]]) && (
+                            hasAccess(user, ["add_asset"], []) && (
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-sm"
                                     onClick={() => setSelectedObj(null)}
                                     data-bs-toggle="modal"
-                                    data-bs-target="#AssetCategoryModal"
-                                    title="Add new asset category"
+                                    data-bs-target="#assetTypeModal"
+                                    title="Add new asset type"
                                 >
-                                    <i className="bx bx-plus me-1"></i> Add Asset Category
+                                    <i className="bx bx-plus me-1"></i> Add Asset Type
                                 </button>
                             )
                         ),
@@ -233,7 +221,7 @@ export const AssetCategoriesListPage = () => {
                 }}
                 isRefresh={tableRefresh}
             />
-            <AssetCategoryModal />
+            <AssetTypeModal />
         </AssetContext.Provider>
     );
 };

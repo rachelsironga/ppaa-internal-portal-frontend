@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import "animate.css";
-import { AssetContext } from "../../../../../utils/context";
+import { ManufactureContext } from "../../../../../utils/context";
 import { useNavigate } from "react-router-dom";
 import BreadCumb from "../../../../../layouts/BreadCumb";
 import PaginatedTable from "../../../../../components/ui-templates/PaginatedTable";
 import { formatDate } from "../../../../../helpers/DateFormater";
 import Swal from "sweetalert2";
-import { AssetCategoryModal } from "./AssetCategoryModal";
-import { deleteAsset } from "./Queries";
+import { ManufactureModal } from "./ManufactureModal";
+import { deleteManufacture } from "./Queries";
 import showToast from "../../../../../helpers/ToastHelper";
 import { hasAccess } from "../../../../../hooks/AccessHandler";
 import { useSelector } from "react-redux";
 import * as XLSX from "xlsx";
 
-export const AssetCategoriesListPage = () => {
+export const ManufacturesListPage = () => {
     const [selectedObj, setSelectedObj] = useState(null);
     const [tableRefresh, setTableRefresh] = useState(0);
     const [selectedAssets, setSelectedAssets] = useState([]);
@@ -27,48 +27,50 @@ export const AssetCategoriesListPage = () => {
         setShowBulkActions(selectedAssets.length > 0);
     }, [selectedAssets]);
 
-    const handleDelete = async (asset) => {
-        if (!asset) {
-            Swal.fire("Error!", "Unable to select this asset category.", "error");
+    const handleDelete = async (manufacturer) => {
+        if (!manufacturer) {
+            Swal.fire("Error!", "Unable to select this manufacturer.", "error");
+            showToast("Unable to select manufacturer", "error", "Error");
             return;
         }
 
         try {
             const confirmation = await Swal.fire({
                 title: "Are you sure?",
-                text: `You're about to delete asset category: ${asset.name} `,
+                text: `You're about to delete manufacturer: ${manufacturer.name}`,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#DD6B55",
                 cancelButtonColor: "#aaa",
                 confirmButtonText: "Yes, delete it!",
+                cancelButtonText: "Cancel",
             });
 
             if (confirmation.isConfirmed) {
-                const result = await deleteAsset(asset.uid);
+                const result = await deleteManufacture(manufacturer.uid);
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Deleted!",
-                        "The asset category has been deleted successfully.",
+                        "The Manufacture has been deleted successfully.",
                         "success"
                     );
                     setTableRefresh((prev) => prev + 1);
                 } else {
-                    Swal.fire("Error!", result.message || "Failed to delete asset category", "error");
+                    const errorMessage = result?.message || "Failed to delete manufacturer";
+                    Swal.fire("Error!", errorMessage, "error");
+                    showToast(errorMessage, "error", "Error");
                 }
             }
         } catch (error) {
-            console.error("Error deleting asset category:", error);
-            Swal.fire(
-                "Error!",
-                "Unable to delete asset category. Please try again or contact support.",
-                "error"
-            );
+            console.error("Error deleting manufacturer:", error);
+            const errorMessage = "Unable to delete manufacturer. Please try again or contact support.";
+            Swal.fire("Error!", errorMessage, "error");
+            showToast(errorMessage, "error", "Error");
         }
     };
 
     return (
-        <AssetContext.Provider
+        <ManufactureContext.Provider
             value={{
                 selectedObj,
                 setSelectedObj,
@@ -76,10 +78,10 @@ export const AssetCategoriesListPage = () => {
                 setTableRefresh,
             }}
         >
-            <BreadCumb pageList={["Asset Categories", "List"]} />
+            <BreadCumb pageList={["Manufacturers", "List"]} />
             <PaginatedTable
-                fetchPath="/asset-categories"
-                title="Assets Categories"
+                fetchPath="/asset-manufacturers"
+                title="Manufacturers"
                 onDataFetched={(data) => setTableData(data)}
                 columns={[
                     {
@@ -90,12 +92,12 @@ export const AssetCategoriesListPage = () => {
                     },
                     {
                         key: "name",
-                        label: "Asset Category",
+                        label: "Manufacturer Name",
                         className: "fw-bold",
                         style: { width: "200px" },
                         render: (row) => (
                             <div className="d-flex align-items-center">
-                                <i className="bx bx-category text-primary me-2 fs-5"></i>
+                                <i className="bx bx-wrench text-primary me-2 fs-5"></i>
                                 <div>
                                     <span className="text-primary cursor-pointer fw-semibold"
                                         style={{ textTransform: 'uppercase' }}
@@ -139,20 +141,62 @@ export const AssetCategoriesListPage = () => {
                     },
 
                     {
-                        key: "description",
-                        label: "Description",
+                        key: "contact_email",
+                        label: "Contact Email",
                         className: "text-left",
-                        style: { width: "250px" },
+                        style: { width: "200px" },
                         render: (row) => (
                             <div>
-                                {row.description ? (
-                                    <span className="text-muted text-truncate d-block" title={row.description}>
-                                        {row.description.length > 80
-                                            ? `${row.description.substring(0, 60)}...`
-                                            : row.description}
-                                    </span>
+                                {row.contact_email ? (
+                                          <span className="text-muted d-block "
+                                      >
+                                          {row.contact_email || "-"}
+                                      </span>
+                                  
                                 ) : (
-                                    <span className="text-muted">No description</span>
+                                    <span className="text-muted">No Email</span>
+                                )}
+                            </div>
+                        ),
+                    }, 
+                    {
+                        key: "support_phone",
+                        label: "Phone Number",
+                        className: "text-left",
+                        style: { width: "200px" },
+                        render: (row) => (
+                            <div>
+                                {row.support_phone ? (
+                                          <span className="text-muted d-block "
+                                      >
+                                          {row.support_phone || "-"}
+                                      </span>
+                                  
+                                ) : (
+                                    <span className="text-muted">No Phone Number</span>
+                                )}
+                            </div>
+                        ),
+                    },
+
+                    {
+                        key: "website",
+                        label: "Website",
+                        className: "text-left",
+                        style: { width: "200px" },
+                        render: (row) => (
+                            <div>
+                                {row.website ? (
+                                    <a 
+                                        href={row.website} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-primary text-decoration-none"
+                                    >
+                                        {row.website}
+                                    </a>
+                                ) : (
+                                    <span className="text-muted">No Website</span>
                                 )}
                             </div>
                         ),
@@ -165,27 +209,27 @@ export const AssetCategoriesListPage = () => {
                         className: "text-center",
                         render: (row) => (
                             <div className="btn-group">
-                                {hasAccess(user, [["change_asset"]]) && (
+                                {hasAccess(user, [["change_manufacturer"]]) && (
                                     <button
                                         aria-label="Edit"
                                         type="button"
                                         className="btn btn-sm btn-outline-primary border-0"
                                         onClick={() => setSelectedObj(row)}
                                         data-bs-toggle="modal"
-                                        data-bs-target="#AssetCategoryModal"
-                                        title="Edit Category"
+                                        data-bs-target="#manufacturesModal"
+                                        title="Edit Manufacturer"
                                     >
                                         <i className="bx bx-edit"></i>
                                     </button>
                                 )}
 
-                                {hasAccess(user, [["delete_asset"]]) && (
+                                {hasAccess(user, [["delete_manufacturer"]]) && (
                                     <button
                                         aria-label="Delete"
                                         type="button"
                                         className="btn btn-sm btn-outline-danger border-0"
                                         onClick={() => handleDelete(row)}
-                                        title="Delete Category"
+                                        title="Delete Manufacturer"
                                     >
                                         <i className="bx bx-trash"></i>
                                     </button>
@@ -195,32 +239,20 @@ export const AssetCategoriesListPage = () => {
                     },
                 ]}
                 buttons={[
+              
                     {
-                        label: "Import Assets",
+                        label: "Add Manufacturer",
                         render: () => (
-                            <button
-                                type="button"
-                                className="btn btn-success btn-sm me-2"
-                                data-bs-toggle="modal"
-                                data-bs-target="#assetImportModal"
-                            >
-                                <i className="bx bx-upload me-1"></i> Import
-                            </button>
-                        ),
-                    },
-                    {
-                        label: "Add New Category",
-                        render: () => (
-                            hasAccess(user, [["add_asset"]]) && (
+                            hasAccess(user, [["add_manufacturer"]]) && (
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-sm"
                                     onClick={() => setSelectedObj(null)}
                                     data-bs-toggle="modal"
-                                    data-bs-target="#AssetCategoryModal"
-                                    title="Add new asset category"
+                                    data-bs-target="#manufacturesModal"
+                                    title="Add Manufacturer"
                                 >
-                                    <i className="bx bx-plus me-1"></i> Add Asset Category
+                                    <i className="bx bx-plus me-1"></i> Add Manufacturer
                                 </button>
                             )
                         ),
@@ -233,7 +265,7 @@ export const AssetCategoriesListPage = () => {
                 }}
                 isRefresh={tableRefresh}
             />
-            <AssetCategoryModal />
-        </AssetContext.Provider>
+            <ManufactureModal />
+        </ManufactureContext.Provider>
     );
 };

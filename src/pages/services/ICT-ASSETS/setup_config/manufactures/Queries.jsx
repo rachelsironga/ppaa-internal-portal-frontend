@@ -64,4 +64,32 @@ export const deleteManufacture = async (uid) => {
     }
 };
 
+// Bulk Delete Manufactured  
+export const bulkDeleteManufacture = async (assetUids) => {
+    try {
+        const response = await api.post(`${API_URL}/asset-manufacturers/bulk-delete`, { asset_uids: assetUids }, config);
+        return response.data;
+    } catch (error) {
+        console.error("Error in bulk deleting asset categories:", error);
+        throw error;
+    }
+};
 
+// Bulk Import Manufacture
+export const uploadManufacture = async (formData) => {
+    try {
+        const response = await api.post(
+            `${API_BASE_URL}/api/import-assets`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error(`Error while importing assets:`, error);
+        throw error;
+    }
+};
