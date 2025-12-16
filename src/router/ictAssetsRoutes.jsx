@@ -22,7 +22,7 @@ import { AssetTypesListPage } from "../pages/services/ICT-ASSETS/setup_config/as
 import { ManufacturesListPage } from "../pages/services/ICT-ASSETS/setup_config/manufactures/ManufacturesListPage.jsx";
 import { SuppliersListPage } from "../pages/services/ICT-ASSETS/setup_config/suppliers/SuppliersListPage.jsx";
 import { DisposalRecordsListPage } from "../pages/services/ICT-ASSETS/setup_config/disposal_records/DisposalRecordListPage.tsx"
-import {ViewAssetType} from "../pages/services/ICT-ASSETS/setup_config/asset_types/ViewAssetType.tsx";
+import { ViewAssetType } from "../pages/services/ICT-ASSETS/setup_config/asset_types/ViewAssetType.tsx";
 import { AccountPage } from "../pages/account/AccountPage.jsx";
 
 const requiredRoles = [
@@ -193,7 +193,7 @@ export const ictAssetsRoutes = (
       }
     />
 
-<Route
+    <Route
       path="/ict-assets/asset-categories"
       element={
         <ProtectedRoute
@@ -212,59 +212,59 @@ export const ictAssetsRoutes = (
           requiredPermissions={["view_dashboard"]}
           requiredRoles={["admin", "ReadOnly_User"]}
         >
-        <AssetTypesListPage />
+          <AssetTypesListPage />
         </ProtectedRoute>
       }
     />
 
 
     <Route
-    path="/ict-assets/view-asset-type/:uid"
-    element={
-      <ProtectedRoute
-        requiredPermissions={["view_dashboard"]}
-        requiredRoles={["admin", "ReadOnly_User"]}
-      >
-      <ViewAssetType />
-      </ProtectedRoute>
-    }
+      path="/ict-assets/view-asset-type/:uid"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_dashboard"]}
+          requiredRoles={["admin", "ReadOnly_User"]}
+        >
+          <ViewAssetType />
+        </ProtectedRoute>
+      }
 
     />
 
-<Route
-    path="/ict-assets/asset-manufactures"
-    element={
-      <ProtectedRoute
-        requiredPermissions={["view_dashboard"]}
-        requiredRoles={["admin", "ReadOnly_User"]}
-      >
-      <ManufacturesListPage />
-      </ProtectedRoute>
-    }
+    <Route
+      path="/ict-assets/asset-manufactures"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_dashboard"]}
+          requiredRoles={["admin", "ReadOnly_User"]}
+        >
+          <ManufacturesListPage />
+        </ProtectedRoute>
+      }
     />
 
-<Route
-    path="/ict-assets/asset-suppliers"
-    element={
-      <ProtectedRoute
-        requiredPermissions={["view_dashboard"]}
-        requiredRoles={["admin", "ReadOnly_User"]}
-      >
-      <SuppliersListPage />
-      </ProtectedRoute>
-    }
+    <Route
+      path="/ict-assets/asset-suppliers"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_dashboard"]}
+          requiredRoles={["admin", "ReadOnly_User"]}
+        >
+          <SuppliersListPage />
+        </ProtectedRoute>
+      }
     />
 
-<Route
-    path="/ict-assets/asset-disposal-records"
-    element={
-      <ProtectedRoute
-        requiredPermissions={["view_dashboard"]}
-        requiredRoles={["admin", "ReadOnly_User"]}
-      >
-      <DisposalRecordsListPage />
-      </ProtectedRoute>
-    }
+    <Route
+      path="/ict-assets/asset-disposal-records"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_dashboard"]}
+          requiredRoles={["admin", "ReadOnly_User"]}
+        >
+          <DisposalRecordsListPage />
+        </ProtectedRoute>
+      }
     />
   </>
 );

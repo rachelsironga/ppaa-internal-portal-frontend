@@ -148,17 +148,17 @@ export const SuppliersListPage = () => {
                         render: (row) => (
                             <div>
                                 {row.contact_person ? (
-                                          <span className="text-muted d-block "
-                                      >
-                                          {row.contact_person || "-"}
-                                      </span>
-                                  
+                                    <span className="text-muted d-block "
+                                    >
+                                        {row.contact_person || "-"}
+                                    </span>
+
                                 ) : (
                                     <span className="text-muted">No Contact Person</span>
                                 )}
                             </div>
                         ),
-                    }, 
+                    },
                     {
                         key: "email",
                         label: "Email Address",
@@ -167,11 +167,11 @@ export const SuppliersListPage = () => {
                         render: (row) => (
                             <div>
                                 {row.email ? (
-                                          <span className="text-muted d-block "
-                                      >
-                                          {row.email || "-"}
-                                      </span>
-                                  
+                                    <span className="text-muted d-block "
+                                    >
+                                        {row.email || "-"}
+                                    </span>
+
                                 ) : (
                                     <span className="text-muted">No Email Address</span>
                                 )}
@@ -186,11 +186,11 @@ export const SuppliersListPage = () => {
                         render: (row) => (
                             <div>
                                 {row.phone ? (
-                                          <span className="text-muted d-block "
-                                      >
-                                          {row.phone || "-"}
-                                      </span>
-                                  
+                                    <span className="text-muted d-block "
+                                    >
+                                        {row.phone || "-"}
+                                    </span>
+
                                 ) : (
                                     <span className="text-muted">No Phone Number</span>
                                 )}
@@ -205,7 +205,7 @@ export const SuppliersListPage = () => {
                         className: "text-center",
                         render: (row) => (
                             <div className="btn-group">
-                                {hasAccess(user, ["change_supplier"],[]) && (
+                                {hasAccess(user, ["change_supplier"], []) && (
                                     <button
                                         aria-label="Edit"
                                         type="button"
@@ -219,7 +219,7 @@ export const SuppliersListPage = () => {
                                     </button>
                                 )}
 
-                                {hasAccess(user,["delete_supplier"],[]) && (
+                                {hasAccess(user, ["delete_supplier"], []) && (
                                     <button
                                         aria-label="Delete"
                                         type="button"
@@ -235,11 +235,11 @@ export const SuppliersListPage = () => {
                     },
                 ]}
                 buttons={[
-              
+
                     {
                         label: "Add Supplier",
                         render: () => (
-                            hasAccess(user,["add_supplier"],[]) && (
+                            hasAccess(user, ["add_supplier"], []) && (
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-sm"

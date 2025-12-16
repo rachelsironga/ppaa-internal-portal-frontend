@@ -24,26 +24,26 @@ export const SuppliersModal = ({ loadOnlyModal = false }) => {
 
     const validationSchema = Yup.object().shape({
         name: Yup.string()
-          .required("Supplier name is required"),
+            .required("Supplier name is required"),
 
-          contact_person: Yup.string()
-          .nullable(),
-      
+        contact_person: Yup.string()
+            .nullable(),
+
         email: Yup.string()
-          .email("Invalid email format")
-          .nullable(),
+            .email("Invalid email format")
+            .nullable(),
 
-          phone: Yup.string()
-          .matches(
-            /^\+?\d{10,15}$/,
-            "Enter a valid phone number (10–15 digits, optional +)"
-          )
-          .nullable(),
+        phone: Yup.string()
+            .matches(
+                /^\+?\d{10,15}$/,
+                "Enter a valid phone number (10–15 digits, optional +)"
+            )
+            .nullable(),
 
         is_active: Yup.boolean(),
-      
-      });
-      
+
+    });
+
 
     const handleSubmit = async (values, { setSubmitting, resetForm, setErrors }) => {
         try {
@@ -122,7 +122,7 @@ export const SuppliersModal = ({ loadOnlyModal = false }) => {
                                 <div className="modal-body">
                                     <div className="row d-flex text-start mb-3">
 
-                                         <div className="col-12 col-lg-6 mb-3">
+                                        <div className="col-12 col-lg-6 mb-3">
                                             <label htmlFor="name" className="form-label">
                                                 Supplier Name <span className="text-danger">*</span>
                                             </label>
@@ -147,13 +147,13 @@ export const SuppliersModal = ({ loadOnlyModal = false }) => {
                                             />
                                             <ErrorMessage name="contact_person" component="div" className="text-danger small mt-1" />
                                         </div>
-                                       
+
 
                                     </div>
 
 
                                     <div className="row d-flex text-start mb-3">
-                                    <div className="col-12 col-lg-6 mb-3">
+                                        <div className="col-12 col-lg-6 mb-3">
                                             <label htmlFor="email" className="form-label">
                                                 Email
                                             </label>
@@ -165,7 +165,7 @@ export const SuppliersModal = ({ loadOnlyModal = false }) => {
                                             />
                                             <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
                                         </div>
-                                        
+
                                         <div className="col-12 col-lg-6 mb-3">
                                             <label htmlFor="phone" className="form-label">
                                                 Phone Number
@@ -175,14 +175,14 @@ export const SuppliersModal = ({ loadOnlyModal = false }) => {
                                                 name="phone"
                                                 className="form-control"
                                                 placeholder="e.g., +255756578778"
-                                                
+
                                             />
                                             <ErrorMessage name="phone" component="div" className="text-danger small mt-1" />
                                         </div>
                                     </div>
 
                                     <div className="row d-flex text-start mb-3">
-                                    <div className="col-12 col-lg-6 mb-3">
+                                        <div className="col-12 col-lg-6 mb-3">
                                             <label htmlFor="address" className="form-label">
                                                 Address
                                             </label>
@@ -194,9 +194,9 @@ export const SuppliersModal = ({ loadOnlyModal = false }) => {
                                             />
                                             <ErrorMessage name="address" component="div" className="text-danger small mt-1" />
                                         </div>
-                                        
+
                                     </div>
-                                  
+
 
                                     <div className="row text-start">
                                         <div className="col-12 mb-3">
