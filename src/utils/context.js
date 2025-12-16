@@ -27,8 +27,9 @@ const RolesManagementContext = createContext();
 const AssetContext = createContext();
 const AssetListPageContext = createContext();
 const AssetDashboardContext = createContext();
-const ManufactureContext = createContext()
-const SupplierContext = createContext()
+const ManufactureContext = createContext();
+const SuppliersContext = createContext();
+const DisposalRecordContext = createContext();
 
 
 // OXYGEN MANAGEMENT
@@ -53,11 +54,12 @@ export {
     AccountContext,
     UsersContext,
     RolesManagementContext,
-    
+
     // ICT ASSETS MANAGEMENT
     AssetContext,
     AssetDashboardContext,
     AssetListPageContext,
     ManufactureContext,
-    SupplierContext,
+    SuppliersContext,
+    DisposalRecordContext,
 };

@@ -16,7 +16,7 @@ const setConfig = (pagination = {}) => ({
     params: { ...pagination },
 });
 
-// Get Asset categories  (with optional search, pagination, and single asset by UID)
+// Get Asset categories  (with optional search, paginaion, and single asset by UID)
 export const getAssetCategory = async ({ uid = "", search = "", pagination = {} }) => {
     try {
         let url = `${API_URL}/asset-asset-categories`;

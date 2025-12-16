@@ -96,7 +96,7 @@ export const AssetTypesListPage = () => {
                         style: { width: "200px" },
                         render: (row) => (
                             <div className="d-flex align-items-center">
-                                <i className="bx bx-category text-primary me-2 fs-5"></i>
+                                <i className="bx bx-cube text-primary me-2 fs-5"></i>
                                 <div>
                                     <span
                                         className="text-primary cursor-pointer fw-semibold"

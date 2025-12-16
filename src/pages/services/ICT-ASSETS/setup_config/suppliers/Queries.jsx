@@ -35,20 +35,20 @@ export const getSupplier = async ({
 };
 
 
-// Create or Update Supplier
+// Create or Update  Supplier
 
-export const createUpdateSupplier = async (assetData) => {
+export const createUpdateSuppliers = async (supplierData) => {
     try {
-        const isUpdate = Boolean(assetData.uid);
+        const isUpdate = Boolean(supplierData.uid);
 
-        const url = isUpdate 
+        const url = isUpdate
             ? `${API_BASE_URL}/api/asset-suppliers`
             : `${API_BASE_URL}/api/asset-suppliers`;
 
-        const response = await api['post'](url, assetData, config);
+        const response = await api['post'](url, supplierData, config);
         return response.data;
     } catch (error) {
-        console.error(`Error while ${assetData.uid ? 'updating' : 'creating'} supplier:`, error);
+        console.error(`Error while ${supplierData.uid ? 'updating' : 'creating'}  Supplier:`, error);
         throw error;
     }
 };
@@ -64,32 +64,3 @@ export const deleteSupplier = async (uid) => {
     }
 };
 
-// Bulk Delete Suppliers
-export const bulkDeleteSupplier = async (assetUids) => {
-    try {
-        const response = await api.post(`${API_URL}/asset-suppliers/bulk-delete`, { asset_uids: assetUids }, config);
-        return response.data;
-    } catch (error) {
-        console.error("Error in bulk deleting suppliers:", error);
-        throw error;
-    }
-};
-
-// Bulk Import Supplier
-export const uploadSupplier = async (formData) => {
-    try {
-        const response = await api.post(
-            `${API_BASE_URL}/api/import-assets`,
-            formData,
-            {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            }
-        );
-        return response.data;
-    } catch (error) {
-        console.error(`Error while importing suppliers:`, error);
-        throw error;
-    }
-};

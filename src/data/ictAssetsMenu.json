@@ -287,9 +287,9 @@
       },
       {
         "text": "Manufacturers",
-        "icon": "bx bx-factory",
+        "icon": "bx bx-wrench",
         "available": true,
-        "link": "/ict-assets/asset-manufacturers",
+        "link": "/ict-assets/asset-manufactures",
         "permission": [
           "view_manufacturer"
         ],

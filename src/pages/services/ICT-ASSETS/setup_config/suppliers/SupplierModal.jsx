@@ -1,12 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { createUpdateSupplier } from "./Queries";
+import { createUpdateSuppliers } from "./Queries";
 import showToast from "../../../../../helpers/ToastHelper";
-import { SupplierContext } from "../../../../../utils/context";
+import { SuppliersContext } from "../../../../../utils/context";
 
-export const SupplierModal = ({ loadOnlyModal = false }) => {
-    const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } = useContext(SupplierContext);
+export const SuppliersModal = ({ loadOnlyModal = false }) => {
+    const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } = useContext(SuppliersContext);
     const [errors, setOtherError] = useState({});
 
     useEffect(() => {
@@ -15,33 +15,35 @@ export const SupplierModal = ({ loadOnlyModal = false }) => {
 
     const initialValues = {
         name: selectedObj?.name || "",
-        contact_email: selectedObj?.contact_email || "",
-        support_phone: selectedObj?.support_phone || "",
-        website: selectedObj?.website || "",
+        contact_person: selectedObj?.contact_person || "",
+        email: selectedObj?.email || "",
+        phone: selectedObj?.phone || "",
+        address: selectedObj?.address || "",
         is_active: selectedObj?.is_active ?? true,
     };
 
     const validationSchema = Yup.object().shape({
         name: Yup.string()
-          .required("Supplier name is required"),
-      
-        contact_email: Yup.string()
-          .email("Invalid email format")
-          .nullable(),
+            .required("Supplier name is required"),
 
-        support_phone: Yup.string()
-          .matches(/^\+?[1-9]\d{7,14}$/, "Enter a valid phone (8-15 digits, optional +)")
-          .nullable(),
-      
-        website: Yup.string()
-          .url("Invalid website URL")
-          .nullable(),
-      
+        contact_person: Yup.string()
+            .nullable(),
+
+        email: Yup.string()
+            .email("Invalid email format")
+            .nullable(),
+
+        phone: Yup.string()
+            .matches(
+                /^\+?\d{10,15}$/,
+                "Enter a valid phone number (10–15 digits, optional +)"
+            )
+            .nullable(),
+
         is_active: Yup.boolean(),
-      
-        description: Yup.string().nullable(),
-      });
-      
+
+    });
+
 
     const handleSubmit = async (values, { setSubmitting, resetForm, setErrors }) => {
         try {
@@ -52,7 +54,7 @@ export const SupplierModal = ({ loadOnlyModal = false }) => {
             }
 
             setSubmitting(true);
-            const result = await createUpdateSupplier(submitData);
+            const result = await createUpdateSuppliers(submitData);
 
             if (result.status === 200 || result.status === 8000) {
                 showToast(`Supplier ${selectedObj ? 'Updated' : 'Created'} Successfully`, "success", "success");
@@ -76,7 +78,7 @@ export const SupplierModal = ({ loadOnlyModal = false }) => {
 
     const handleClose = () => {
         setSelectedObj(null);
-        const modalElement = document.getElementById("suppliersModal");
+        const modalElement = document.getElementById("supplierModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
     };
@@ -84,7 +86,7 @@ export const SupplierModal = ({ loadOnlyModal = false }) => {
     return (
         <div
             className="modal modal-slide-in fade"
-            id="suppliersModal"
+            id="supplierModal"
             tabIndex="-1"
             data-bs-backdrop="static"
             data-bs-keyboard="false"
@@ -93,7 +95,7 @@ export const SupplierModal = ({ loadOnlyModal = false }) => {
                 <div className="modal-content">
                     <div className="modal-header text-white">
                         <h5 className="modal-title">
-                            <i className="bx bx-store me-2"></i>
+                            <i className="bx bx-category me-2"></i>
                             {selectedObj ? "Update Supplier" : "Create New Supplier"}
                         </h5>
                         <button
@@ -119,6 +121,7 @@ export const SupplierModal = ({ loadOnlyModal = false }) => {
                             <Form>
                                 <div className="modal-body">
                                     <div className="row d-flex text-start mb-3">
+
                                         <div className="col-12 col-lg-6 mb-3">
                                             <label htmlFor="name" className="form-label">
                                                 Supplier Name <span className="text-danger">*</span>
@@ -131,49 +134,69 @@ export const SupplierModal = ({ loadOnlyModal = false }) => {
                                             />
                                             <ErrorMessage name="name" component="div" className="text-danger small mt-1" />
                                         </div>
+
                                         <div className="col-12 col-lg-6 mb-3">
-                                            <label htmlFor="contact_email" className="form-label">
-                                                Email
+                                            <label htmlFor="contact_person" className="form-label">
+                                                Contact Person <span className="text-danger">*</span>
                                             </label>
                                             <Field
-                                                type="email"
-                                                name="contact_email"
+                                                type="text"
+                                                name="contact_person"
                                                 className="form-control"
-                                                placeholder="e.g., supplier.email@gmail.com"
+                                                placeholder="e.g., John Doe"
                                             />
-                                            <ErrorMessage name="contact_email" component="div" className="text-danger small mt-1" />
+                                            <ErrorMessage name="contact_person" component="div" className="text-danger small mt-1" />
                                         </div>
+
+
                                     </div>
 
 
                                     <div className="row d-flex text-start mb-3">
                                         <div className="col-12 col-lg-6 mb-3">
-                                            <label htmlFor="support_phone" className="form-label">
+                                            <label htmlFor="email" className="form-label">
+                                                Email
+                                            </label>
+                                            <Field
+                                                type="email"
+                                                name="email"
+                                                className="form-control"
+                                                placeholder="e.g., supplier.email@gmail.com"
+                                            />
+                                            <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
+                                        </div>
+
+                                        <div className="col-12 col-lg-6 mb-3">
+                                            <label htmlFor="phone" className="form-label">
                                                 Phone Number
                                             </label>
                                             <Field
                                                 type="tel"
-                                                name="support_phone"
+                                                name="phone"
                                                 className="form-control"
                                                 placeholder="e.g., +255756578778"
-                                                
+
                                             />
-                                            <ErrorMessage name="support_phone" component="div" className="text-danger small mt-1" />
-                                        </div>
-                                        <div className="col-12 col-lg-6 mb-3">
-                                            <label htmlFor="website" className="form-label">
-                                                Website
-                                            </label>
-                                            <Field
-                                                type="url"
-                                                name="website"
-                                                className="form-control"
-                                                placeholder="e.g., https://supplier.website.com"
-                                            />
-                                            <ErrorMessage name="website" component="div" className="text-danger small mt-1" />
+                                            <ErrorMessage name="phone" component="div" className="text-danger small mt-1" />
                                         </div>
                                     </div>
-                                  
+
+                                    <div className="row d-flex text-start mb-3">
+                                        <div className="col-12 col-lg-6 mb-3">
+                                            <label htmlFor="address" className="form-label">
+                                                Address
+                                            </label>
+                                            <Field
+                                                type="text"
+                                                name="address"
+                                                className="form-control"
+                                                placeholder="e.g., P.O Box 65000, Dar es Salaam"
+                                            />
+                                            <ErrorMessage name="address" component="div" className="text-danger small mt-1" />
+                                        </div>
+
+                                    </div>
+
 
                                     <div className="row text-start">
                                         <div className="col-12 mb-3">
