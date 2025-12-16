@@ -25,7 +25,7 @@ export const StudentModal = ({ student = null, onSuccess, onClose }) => {
     const handleSubmit = async (values, { setSubmitting, setErrors }) => {
         setLoading(true);
         setBackendErrors({});
-        
+
         try {
             let result;
             const formData = new FormData();
@@ -68,12 +68,12 @@ export const StudentModal = ({ student = null, onSuccess, onClose }) => {
             if (onClose) onClose();
         } catch (err) {
             console.error("Error saving student:", err);
-            
+
             // Handle validation errors from backend (status 8002)
             if (err.response?.data?.status === 8002 && err.response?.data?.data) {
                 const validationErrors = err.response.data.data;
                 setBackendErrors(validationErrors);
-                
+
                 // Also set Formik errors for fields that have validation issues
                 const formikErrors = {};
                 Object.keys(validationErrors).forEach(field => {
@@ -84,7 +84,7 @@ export const StudentModal = ({ student = null, onSuccess, onClose }) => {
                     }
                 });
                 setErrors(formikErrors);
-                
+
                 showToast("Please fix validation errors", "error", "Validation Failed");
             } else {
                 // Handle other errors
@@ -98,9 +98,21 @@ export const StudentModal = ({ student = null, onSuccess, onClose }) => {
     };
 
     const initialValues = student ? {
-        ...student,
-        // Extract UUID from nationality object if it exists, otherwise use empty string
+        first_name: student.first_name || "",
+        middle_name: student.middle_name || "",
+        last_name: student.last_name || "",
+        email: student.email || "",
+        primary_phone: student.primary_phone || "",
+        secondary_phone: student.secondary_phone || "",
+        sex: student.sex || "",
+        student_id: student.student_id || "",
+        id_type: student.id_type || "",
         nationality: student.nationality?.uid || student.nationality || "",
+        type: student.type || "",
+        are_you_currently_studying: student.are_you_currently_studying || false,
+        bio: student.bio || "",
+        profile_picture: null,
+        copy_of_id: null,
     } : {
         first_name: "",
         middle_name: "",
@@ -173,7 +185,7 @@ export const StudentModal = ({ student = null, onSuccess, onClose }) => {
                                                 type="text"
                                                 name="first_name"
                                                 className="form-control"
-                                                placeholder="John"
+                                                placeholder="Gianna"
                                             />
                                             <ErrorMessage name="first_name" component="small" className="text-danger" />
                                         </div>

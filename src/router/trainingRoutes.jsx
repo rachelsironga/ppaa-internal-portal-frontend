@@ -1,8 +1,13 @@
 import { Route } from "react-router-dom";
 import ProtectedRoute from "../components/wrapper/ProtectedRoute";
 
-// TRAINING MANAGEMENT
+// TRAINING MANAGEMENT - STUDENTS
 import { StudentsListPage } from "../pages/services/TRAINING/students/ListPage";
+import { StudentDetailsPage } from "../pages/services/TRAINING/students/Details";
+
+// TRAINING MANAGEMENT - APPLICATIONS
+import { ApplicationsListPage } from "../pages/services/TRAINING/applications/ListPage";
+import { ApplicationDetailsPage } from "../pages/services/TRAINING/applications/Details";
 
 const requiredRoles = [
     "Training_Head",
@@ -48,7 +53,7 @@ export const trainingRoutes = (
                     requiredPermissions={["view_student"]}
                     requiredRoles={requiredRoles}
                 >
-                    <StudentsListPage />
+                    <StudentDetailsPage />
                 </ProtectedRoute>
             }
         />
@@ -61,6 +66,55 @@ export const trainingRoutes = (
                     requiredRoles={requiredRoles}
                 >
                     <StudentsListPage />
+                </ProtectedRoute>
+            }
+        />
+
+        {/* APPLICATIONS ROUTES */}
+        <Route
+            path="/training/applications"
+            element={
+                <ProtectedRoute
+                    requiredPermissions={["view_application"]}
+                    requiredRoles={requiredRoles}
+                >
+                    <ApplicationsListPage />
+                </ProtectedRoute>
+            }
+        />
+
+        <Route
+            path="/training/applications/create"
+            element={
+                <ProtectedRoute
+                    requiredPermissions={["add_application"]}
+                    requiredRoles={requiredRoles}
+                >
+                    <ApplicationsListPage />
+                </ProtectedRoute>
+            }
+        />
+
+        <Route
+            path="/training/applications/:uid"
+            element={
+                <ProtectedRoute
+                    requiredPermissions={["view_application"]}
+                    requiredRoles={requiredRoles}
+                >
+                    <ApplicationDetailsPage />
+                </ProtectedRoute>
+            }
+        />
+
+        <Route
+            path="/training/applications/:uid/edit"
+            element={
+                <ProtectedRoute
+                    requiredPermissions={["change_application"]}
+                    requiredRoles={requiredRoles}
+                >
+                    <ApplicationsListPage />
                 </ProtectedRoute>
             }
         />

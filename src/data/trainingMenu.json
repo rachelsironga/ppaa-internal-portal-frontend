@@ -14,6 +14,18 @@
                 ]
             },
             {
+                "text": "Dashboard",
+                "icon": "bx bx-home",
+                "available": true,
+                "link": "/training/dashboard",
+                "permission": [],
+                "role": [
+                    "admin",
+                    "staff",
+                    "management"
+                ]
+            },
+            {
                 "text": "Students",
                 "icon": "bx bx-user-circle",
                 "available": true,
@@ -23,30 +35,6 @@
                     "admin",
                     "staff",
                     "management"
-                ]
-            },
-            {
-                "text": "Add Student",
-                "icon": "bx bx-user-plus",
-                "available": true,
-                "link": "/training/student/add/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "staff",
-                    "management"
-                ]
-            },
-            {
-                "text": "Student Application",
-                "icon": "bx bx-file-blank",
-                "available": true,
-                "link": "/training/student/create/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "student",
-                    "staff"
                 ]
             }
         ]
@@ -58,7 +46,7 @@
                 "text": "All Applications",
                 "icon": "bx bx-list-ul",
                 "available": true,
-                "link": "/training/training/applications/",
+                "link": "/training/applications/",
                 "permission": [],
                 "role": [
                     "admin",
@@ -70,7 +58,7 @@
                 "text": "Add Application",
                 "icon": "bx bx-plus-circle",
                 "available": true,
-                "link": "/training/training/application/add/",
+                "link": "/training/application/add/",
                 "permission": [],
                 "role": [
                     "admin",
@@ -98,7 +86,7 @@
                 "text": "Training Form",
                 "icon": "bx bx-clipboard",
                 "available": true,
-                "link": "/training/training/form/",
+                "link": "/training/form/",
                 "permission": [],
                 "role": [
                     "admin",
@@ -110,7 +98,7 @@
                 "text": "Department Allocation",
                 "icon": "bx bx-building-house",
                 "available": true,
-                "link": "/training/training/allocation/",
+                "link": "/training/allocation/",
                 "permission": [],
                 "role": [
                     "admin",
