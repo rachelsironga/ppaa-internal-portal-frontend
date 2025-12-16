@@ -10,6 +10,7 @@ import { managementRoutes } from "./managementRoutes";
 import { ictAssetsRoutes } from "./ictAssetsRoutes";
 import { oxygenRoutes } from "./oxygenRoutes";
 import { analyticsRoutes } from "./analyticsRoutes";
+import { trainingRoutes } from "./trainingRoutes";
 
 const AppRoutes = () => {
   return (
@@ -34,6 +35,9 @@ const AppRoutes = () => {
 
       {/* Hospital Analitics Routes */}
       {analyticsRoutes}
+
+      {/* Training Management Routes */}
+      {trainingRoutes}
 
       {/* Catch-all 404 */}
       <Route path="*" element={<ErrorPage />} />

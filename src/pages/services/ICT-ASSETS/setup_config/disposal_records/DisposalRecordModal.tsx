@@ -15,7 +15,7 @@ export const DisposalRecordModal = ({ loadOnlyModal = false }) => {
     }, [selectedObj]);
 
     const initialValues = {
-        name: selectedObj?.name || "",
+        asset_tag: selectedObj?.asset_tag || "",
         category_uid: selectedObj?.category?.uid || "",  // <-- use category.uid
         specifications_template: selectedObj?.specifications_template?.length
             ? selectedObj.specifications_template
@@ -115,7 +115,7 @@ export const DisposalRecordModal = ({ loadOnlyModal = false }) => {
                             <Form>
                                 <div className="modal-body">
                                     <div className="row flex-row text-start justify-content-center mb-3">
-                                    <div className="col-md-6 mb-3">
+                                        <div className="col-md-6 mb-3">
                                             <FormikSelect
                                                 name="asset"
                                                 label="Asset"
@@ -128,8 +128,8 @@ export const DisposalRecordModal = ({ loadOnlyModal = false }) => {
                                                 }}
                                                 mapOption={(item) => ({
                                                     value: item.uid,
-                                                    label: `${item.name}`,
-                                                    name: `${item.name}`,
+                                                    label: `${item.asset_tag}`,
+                                                    name: `${item.asset_tag}`,
                                                 })}
                                                 placeholder="Search Asset ..."
                                                 debounceMs={500}

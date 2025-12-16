@@ -41,7 +41,7 @@ export const createUpdateSuppliers = async (supplierData) => {
     try {
         const isUpdate = Boolean(supplierData.uid);
 
-        const url = isUpdate 
+        const url = isUpdate
             ? `${API_BASE_URL}/api/asset-suppliers`
             : `${API_BASE_URL}/api/asset-suppliers`;
 
@@ -63,5 +63,4 @@ export const deleteSupplier = async (uid) => {
         throw error;
     }
 };
-
 
