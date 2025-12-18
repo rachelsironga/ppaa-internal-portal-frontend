@@ -30,6 +30,12 @@ import { LocationFloorListPage } from "../pages/services/ICT-ASSETS/locations/fl
 import { BuildingLocationListPage } from "../pages/services/ICT-ASSETS/locations/buildings/BuildingLocationListPage.jsx";
 import { AssetLocationListPage } from "../pages/services/ICT-ASSETS/locations/AssetLocationListPage.jsx";
 
+// Reports - ICT Assets Reporting Module
+import { AssetReportsPage } from "../pages/services/ICT-ASSETS/reporting/AssetReportsPage.jsx";
+import { MaintenanceReportsPage } from "../pages/services/ICT-ASSETS/reporting/MaintenanceReportsPage.jsx";
+import { SoftwareReportsPage } from "../pages/services/ICT-ASSETS/reporting/SoftwareReportsPage.jsx";
+import { ExportDataPage } from "../pages/services/ICT-ASSETS/reporting/ExportDataPage.jsx";
+
 const requiredRoles = [
   "ICT_Superuser",
   "admin",
@@ -284,6 +290,18 @@ export const ictAssetsRoutes = (
     />
 
     <Route
+      path="/ict-assets/view-disposal-record/:uid"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_dashboard"]}
+          requiredRoles={["admin", "ReadOnly_User"]}
+        >
+          <DisposalRecordsView />
+        </ProtectedRoute>
+      }
+    />
+
+    <Route
       path="/ict-assets/asset-locations"
       element={
         <ProtectedRoute
@@ -319,6 +337,51 @@ export const ictAssetsRoutes = (
       }
     />
 
+    {/* Reports Routes */}
+    <Route
+      path="/ict-assets/reports/assets"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_reports", "generate_asset_report"]}
+          requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Auditor"]}
+        >
+          <AssetReportsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/ict-assets/reports/maintenance"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_reports"]}
+          requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Auditor"]}
+        >
+          <MaintenanceReportsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/ict-assets/reports/software"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["view_reports"]}
+          requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Auditor"]}
+        >
+          <SoftwareReportsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/ict-assets/export"
+      element={
+        <ProtectedRoute
+          requiredPermissions={["export_assets"]}
+          requiredRoles={["ICT_Superuser", "ICT_Admin", "ICT_Manager", "ICT_Technician", "ICT_Auditor"]}
+        >
+          <ExportDataPage />
+        </ProtectedRoute>
+      }
+    />
 
   </>
 );
