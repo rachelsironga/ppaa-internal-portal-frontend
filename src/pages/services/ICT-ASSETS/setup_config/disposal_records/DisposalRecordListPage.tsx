@@ -21,14 +21,14 @@ export const DisposalRecordsListPage = () => {
     const [tableData, setTableData] = useState([]);
     const tableRef = useRef(null);
     const navigate = useNavigate();
-    const user = useSelector((state) => state.userReducer?.data);
+    const user = useSelector((state: any) => state.userReducer?.data);
 
     useEffect(() => {
         setShowBulkActions(selectedAssets.length > 0);
     }, [selectedAssets]);
 
-    const handleDelete = async (asset) => {
-        if (!asset) {
+    const handleDelete = async (disposal_record) => {
+        if (!disposal_record) {
             Swal.fire("Error!", "Unable to select this disposal record.", "error");
             return;
         }
@@ -36,7 +36,7 @@ export const DisposalRecordsListPage = () => {
         try {
             const confirmation = await Swal.fire({
                 title: "Are you sure?",
-                text: `You're about to delete disposal record: ${asset.name} `,
+                text: `You're about to delete disposal record: ${disposal_record.asset?.asset_tag} `,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#DD6B55",
@@ -45,7 +45,7 @@ export const DisposalRecordsListPage = () => {
             });
 
             if (confirmation.isConfirmed) {
-                const result = await deleteDisposalRecord(asset.uid);
+                const result = await deleteDisposalRecord(disposal_record.uid);
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Deleted!",
@@ -76,11 +76,12 @@ export const DisposalRecordsListPage = () => {
                 setTableRefresh,
             }}
         >
-            <BreadCumb pageList={["Disposal Record", "List"]} />
+            <BreadCumb pageList={["Disposal Record", "List"] as any}>
+                {null}
+            </BreadCumb>
             <PaginatedTable
                 fetchPath="/asset-disposal-records"
-                title="Assets Types"
-                onDataFetched={(data) => setTableData(data)}
+                title="Disposal Records"
                 columns={[
 
                     {
@@ -93,21 +94,45 @@ export const DisposalRecordsListPage = () => {
                         key: "asset",
                         label: "Asset",
                         className: "fw-bold",
-                        style: { width: "200px" },
-                        render: (row) => (
-                            <div className="d-flex align-items-center">
-                                <i className="bx bx-cube text-primary me-2 fs-5"></i>
-                                <div>
-                                    <span
-                                        className="text-primary cursor-pointer fw-semibold"
-                                        style={{ textTransform: 'uppercase' }}
-                                    >
-                                        {row.asset || "-"}
-                                    </span>
-
+                        style: { width: "280px" },
+                        render: (row) => {
+                            const asset = row.asset || {};
+                            const assetTag = asset.asset_tag || row.asset_tag || "-";
+                            const barcode = asset.barcode || row.barcode || null;
+                            const serialNumber = asset.serial_number || row.serial_number || null;
+                            
+                            return (
+                                <div className="d-flex align-items-start">
+                                    <i className="bx bx-cube text-primary me-2 fs-5 mt-1"></i>
+                                    <div className="flex-grow-1">
+                                        <div className="mb-1">
+                                            <span
+                                                className="text-primary cursor-pointer fw-semibold d-block"
+                                                style={{ textTransform: 'uppercase', fontSize: '0.875rem' }}
+                                            >
+                                                {assetTag}
+                                            </span>
+                                        </div>
+                                        {barcode && (
+                                            <div className="mb-1 d-flex align-items-center">
+                                                <i className="bx bx-barcode text-muted me-1" style={{ fontSize: '0.75rem' }}></i>
+                                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                                    <span className="fw-medium">BC:</span> {barcode}
+                                                </small>
+                                            </div>
+                                        )}
+                                        {serialNumber && (
+                                            <div className="d-flex align-items-center">
+                                                <i className="bx bx-hash text-muted me-1" style={{ fontSize: '0.75rem' }}></i>
+                                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                                    <span className="fw-medium">SN:</span> {serialNumber}
+                                                </small>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ),
+                            );
+                        },
                     },
 
                     {
@@ -128,7 +153,7 @@ export const DisposalRecordsListPage = () => {
                                             </small>
                                             {row.created_at && (
                                                 <small className="text-muted d-block fs-11">
-                                                    {formatDate(row.created_at, "DD/MM/YYYY")}
+                                                    {formatDate(row.created_at)}
                                                 </small>
                                             )}
                                         </div>
@@ -142,21 +167,17 @@ export const DisposalRecordsListPage = () => {
 
                     {
                         key: "disposal_date",
-                        label: "Disposal date",
+                        label: "Disposal Date",
                         className: "text-left",
-                        style: { width: "180px" },
+                        style: { width: "150px" },
                         render: (row) => (
                             <div>
                                 {row.disposal_date ? (
-                                    <span
-                                        className="text-muted text-truncate d-block"
-                                        style={{ textTransform: 'uppercase' }}
-
-                                        title={row.disposal_date}>
-                                  
+                                    <span className="text-dark">
+                                        {formatDate(row.disposal_date)}
                                     </span>
                                 ) : (
-                                    <span className="text-muted">No Disposal Date</span>
+                                    <span className="text-muted">N/A</span>
                                 )}
                             </div>
                         ),
@@ -165,19 +186,49 @@ export const DisposalRecordsListPage = () => {
                         key: "disposal_method",
                         label: "Disposal Method",
                         className: "text-left",
-                        style: { width: "180px" },
+                        style: { width: "150px" },
+                        render: (row) => {
+                            const getMethodBadge = (method) => {
+                                if (!method) return { class: 'bg-secondary', label: 'N/A' };
+                                
+                                const methodLower = method.toLowerCase();
+                                switch (methodLower) {
+                                    case 'recycled':
+                                        return { class: 'bg-success', label: 'Recycled' };
+                                    case 'sold':
+                                        return { class: 'bg-info', label: 'Sold' };
+                                    case 'donated':
+                                        return { class: 'bg-primary', label: 'Donated' };
+                                    case 'destroyed':
+                                        return { class: 'bg-danger', label: 'Destroyed' };
+                                    default:
+                                        return { class: 'bg-secondary', label: method };
+                                }
+                            };
+                            
+                            const methodInfo = getMethodBadge(row.disposal_method);
+                            return (
+                                <div>
+                                    <span className={`badge ${methodInfo.class}`}>
+                                        {methodInfo.label}
+                                    </span>
+                                </div>
+                            );
+                        },
+                    },
+                    {
+                        key: "disposal_value",
+                        label: "Disposal Value",
+                        className: "text-left",
+                        style: { width: "150px" },
                         render: (row) => (
                             <div>
-                                {row.disposal_method ? (
-                                    <span
-                                        className="text-muted text-truncate d-block"
-                                        style={{ textTransform: 'uppercase' }}
-
-                                        title={row.disposal_method}>
-                                  
+                                {row.disposal_value ? (
+                                    <span className="text-dark fw-semibold">
+                                        TZS {parseFloat(row.disposal_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                 ) : (
-                                    <span className="text-muted">No Disposal Method</span>
+                                    <span className="text-muted">N/A</span>
                                 )}
                             </div>
                         ),
@@ -186,22 +237,33 @@ export const DisposalRecordsListPage = () => {
                         key: "status",
                         label: "Status",
                         className: "text-left",
-                        style: { width: "180px" },
-                        render: (row) => (
-                            <div>
-                                {row.status ? (
-                                    <span
-                                        className="text-muted text-truncate d-block"
-                                        style={{ textTransform: 'uppercase' }}
-
-                                        title={row.status}>
-                                  
+                        style: { width: "120px" },
+                        render: (row) => {
+                            const getStatusBadge = (status) => {
+                                if (!status) return { class: 'bg-secondary', label: 'N/A' };
+                                
+                                const statusLower = status.toLowerCase();
+                                switch (statusLower) {
+                                    case 'pending':
+                                        return { class: 'bg-warning', label: 'Pending' };
+                                    case 'approved':
+                                        return { class: 'bg-success', label: 'Approved' };
+                                    case 'rejected':
+                                        return { class: 'bg-danger', label: 'Rejected' };
+                                    default:
+                                        return { class: 'bg-secondary', label: status };
+                                }
+                            };
+                            
+                            const statusInfo = getStatusBadge(row.status);
+                            return (
+                                <div>
+                                    <span className={`badge ${statusInfo.class}`}>
+                                        {statusInfo.label}
                                     </span>
-                                ) : (
-                                    <span className="text-muted">No Disposal Record Status</span>
-                                )}
-                            </div>
-                        ),
+                                </div>
+                            );
+                        },
                     },
                  
                     {
@@ -218,12 +280,12 @@ export const DisposalRecordsListPage = () => {
                                 onClick={() =>
                                     hasAccess(user,
                                         [
-                                        "view_asset",
+                                        "view_disposal_record",
                                         ],
                                         []
                                     )   
                                         ? navigate(
-                                            `/ict-assets/view-asset-type/${row.uid}`
+                                            `/ict-assets/view-disposal-record/${row.uid}`
                                         )
                                         : null
                                 }
@@ -237,9 +299,9 @@ export const DisposalRecordsListPage = () => {
                 buttons={[
 
                     {
-                        label: "Add  Asset Type",
+                        label: "Add Disposal Record",
                         render: () => (
-                            hasAccess(user, ["add_asset"], []) && (
+                            hasAccess(user, ["add_disposal_record"], []) && (
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-sm"
@@ -260,6 +322,38 @@ export const DisposalRecordsListPage = () => {
                     setSelectedObj(row);
                 }}
                 isRefresh={tableRefresh}
+                filterGroups={[
+                    {
+                        group: "status",
+                        label: "Status",
+                        placeholder: "Filter by Status",
+                        options: [
+                            { value: "pending", label: "Pending" },
+                            { value: "approved", label: "Approved" },
+                            { value: "rejected", label: "Rejected" }
+                        ]
+                    },
+                    {
+                        group: "disposal_method",
+                        label: "Disposal Method",
+                        placeholder: "Filter by Disposal Method",
+                        options: [
+                            { value: "recycled", label: "Recycled" },
+                            { value: "sold", label: "Sold" },
+                            { value: "donated", label: "Donated" },
+                            { value: "destroyed", label: "Destroyed" }
+                        ]
+                    },
+                    {
+                        group: "is_active",
+                        label: "Record Status",
+                        placeholder: "Filter by Record Status",
+                        options: [
+                            { value: "true", label: "Active" },
+                            { value: "false", label: "Inactive" }
+                        ]
+                    }
+                ] as any}
             />
             <DisposalRecordModal />
         </DisposalRecordContext.Provider>
