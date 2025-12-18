@@ -100,7 +100,7 @@ export const DisposalRecordsListPage = () => {
                             const assetTag = asset.asset_tag || row.asset_tag || "-";
                             const barcode = asset.barcode || row.barcode || null;
                             const serialNumber = asset.serial_number || row.serial_number || null;
-                            
+
                             return (
                                 <div className="d-flex align-items-start">
                                     <i className="bx bx-cube text-primary me-2 fs-5 mt-1"></i>
@@ -190,7 +190,7 @@ export const DisposalRecordsListPage = () => {
                         render: (row) => {
                             const getMethodBadge = (method) => {
                                 if (!method) return { class: 'bg-secondary', label: 'N/A' };
-                                
+
                                 const methodLower = method.toLowerCase();
                                 switch (methodLower) {
                                     case 'recycled':
@@ -205,7 +205,7 @@ export const DisposalRecordsListPage = () => {
                                         return { class: 'bg-secondary', label: method };
                                 }
                             };
-                            
+
                             const methodInfo = getMethodBadge(row.disposal_method);
                             return (
                                 <div>
@@ -241,7 +241,7 @@ export const DisposalRecordsListPage = () => {
                         render: (row) => {
                             const getStatusBadge = (status) => {
                                 if (!status) return { class: 'bg-secondary', label: 'N/A' };
-                                
+
                                 const statusLower = status.toLowerCase();
                                 switch (statusLower) {
                                     case 'pending':
@@ -254,7 +254,7 @@ export const DisposalRecordsListPage = () => {
                                         return { class: 'bg-secondary', label: status };
                                 }
                             };
-                            
+
                             const statusInfo = getStatusBadge(row.status);
                             return (
                                 <div>
@@ -265,7 +265,7 @@ export const DisposalRecordsListPage = () => {
                             );
                         },
                     },
-                 
+
                     {
                         key: "actions",
                         label: "Actions",
@@ -280,10 +280,10 @@ export const DisposalRecordsListPage = () => {
                                 onClick={() =>
                                     hasAccess(user,
                                         [
-                                        "view_disposal_record",
+                                            "view_disposal_record",
                                         ],
                                         []
-                                    )   
+                                    )
                                         ? navigate(
                                             `/ict-assets/view-disposal-record/${row.uid}`
                                         )
@@ -292,7 +292,7 @@ export const DisposalRecordsListPage = () => {
                             >
                                 <i className="bx bx-link-external"></i>&nbsp; View
                             </button>
-                        
+
                         ),
                     },
                 ]}
