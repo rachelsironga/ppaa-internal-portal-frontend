@@ -112,16 +112,6 @@
     ]
   },
   {
-    "text": "Training",
-    "icon": "bx bx-book-open",
-    "link": "/training",
-    "permission": [],
-    "role": [
-      "admin",
-      "hr"
-    ]
-  },
-  {
     "text": "Facility Management",
     "icon": "bx bx-building-house",
     "link": "/facility",

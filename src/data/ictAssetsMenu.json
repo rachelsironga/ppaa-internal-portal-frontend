@@ -82,6 +82,23 @@
         ]
       },
       {
+        "text": "Network Devices",
+        "icon": "bx bx-server",
+        "available": true,
+        "link": "/ict-assets/network-devices",
+        "permission": [
+          "view_networkdevice"
+        ],
+        "role": [
+          "ICT_Superuser",
+          "ICT_Admin",
+          "ICT_Manager",
+          "ICT_Technician",
+          "ICT_Auditor",
+          "ReadOnly_User"
+        ]
+      },
+      {
         "text": "Software Catalog",
         "icon": "bx bx-list-ul",
         "available": true,
