@@ -1,0 +1,1055 @@
+import { useEffect, useState, useCallback } from "react";
+import { useSelector } from "react-redux";
+import React from "react";
+import "animate.css";
+import Swal from "sweetalert2";
+import * as XLSX from "xlsx";
+import { fetchData } from "../../../../utils/GlobalQueries.jsx";
+import BreadCumb from "../../../../layouts/BreadCumb";
+
+const LICENSE_TYPES = [
+    { value: "", label: "All License Types" },
+    { value: "perpetual", label: "Perpetual" },
+    { value: "subscription", label: "Subscription" },
+    { value: "open_source", label: "Open Source" },
+    { value: "trial", label: "Trial" },
+    { value: "enterprise", label: "Enterprise" },
+    { value: "volume", label: "Volume" },
+    { value: "freeware", label: "Freeware" },
+    { value: "site_license", label: "Site License" },
+    { value: "oem", label: "OEM" },
+    { value: "concurrent", label: "Concurrent" },
+    { value: "other", label: "Other" },
+];
+
+const REPORT_TYPES = [
+    { value: "summary", label: "Summary Report", icon: "bx-pie-chart-alt-2" },
+    { value: "license", label: "License Report", icon: "bx-key" },
+    { value: "installation", label: "Installation Report", icon: "bx-download" },
+    { value: "compliance", label: "Compliance Report", icon: "bx-check-shield" },
+    { value: "expiring", label: "Expiring Licenses", icon: "bx-calendar-exclamation" },
+];
+
+export const SoftwareReportsPage = () => {
+    const user = useSelector((state) => state.userReducer?.data);
+    const [reportData, setReportData] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [exporting, setExporting] = useState(false);
+
+    const [filters, setFilters] = useState({
+        report_type: "summary",
+        category: "",
+        license_type: "",
+    });
+
+    const fetchCategories = useCallback(async () => {
+        try {
+            const data = await fetchData({ url: "/asset-software-categories" });
+            setCategories(Array.isArray(data) ? data : (data?.results || []));
+        } catch (err) {
+            console.error("Failed to fetch categories:", err);
+        }
+    }, []);
+
+    const fetchReportData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const data = await fetchData({
+                url: "/software-reports",
+                filter: {
+                    type: filters.report_type,
+                    category: filters.category || undefined,
+                    license_type: filters.license_type || undefined,
+                },
+            });
+            setReportData(data);
+        } catch (err) {
+            console.error("Report fetch error:", err);
+            const errorMessage =
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to load report data";
+            setError(errorMessage);
+
+            Swal.fire({
+                icon: "error",
+                title: "Report Error",
+                text: "Failed to load report data. Please try again.",
+                confirmButtonText: "Retry",
+                showCancelButton: true,
+                cancelButtonText: "Cancel",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetchReportData();
+                }
+            });
+        } finally {
+            setLoading(false);
+        }
+    }, [filters]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
+
+    useEffect(() => {
+        fetchReportData();
+    }, [fetchReportData]);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleExport = async (format) => {
+        if (!reportData) return;
+
+        setExporting(true);
+        try {
+            let exportData = [];
+            const reportType = filters.report_type;
+
+            switch (reportType) {
+                case "summary":
+                    exportData = [
+                        {
+                            Metric: "Total Licenses",
+                            Value: reportData.summary?.total_licenses || 0,
+                        },
+                        {
+                            Metric: "Total Installations",
+                            Value: reportData.summary?.total_installations || 0,
+                        },
+                        {
+                            Metric: "License Utilization",
+                            Value: `${reportData.summary?.utilization_rate || 0}%`,
+                        },
+                        {
+                            Metric: "Total License Cost",
+                            Value: reportData.summary?.total_cost || 0,
+                        },
+                        {
+                            Metric: "Compliant Licenses",
+                            Value: reportData.summary?.compliant_count || 0,
+                        },
+                        {
+                            Metric: "Non-Compliant Licenses",
+                            Value: reportData.summary?.non_compliant_count || 0,
+                        },
+                    ];
+                    break;
+                case "license":
+                    exportData = (reportData.licenses || []).map((license) => ({
+                        "Software Name": license.software_name,
+                        "License Key": license.license_key,
+                        "License Type": license.license_type,
+                        "Total Seats": license.total_seats,
+                        "Used Seats": license.used_seats,
+                        "Available Seats": license.available_seats,
+                        "Utilization %": license.utilization_percentage,
+                        "Expiry Date": license.expiry_date,
+                        Status: license.status,
+                    }));
+                    break;
+                case "installation":
+                    exportData = (reportData.installations || []).map((item) => ({
+                        "Software Name": item.software_name,
+                        Category: item.category,
+                        "Install Count": item.install_count,
+                        "Active Installations": item.active_count,
+                        "Last Installed": item.last_installed,
+                    }));
+                    break;
+                case "compliance":
+                    exportData = (reportData.compliance || []).map((item) => ({
+                        "Software Name": item.software_name,
+                        "Licensed Seats": item.licensed_seats,
+                        "Installed Count": item.installed_count,
+                        Variance: item.variance,
+                        Status: item.compliance_status,
+                        Risk: item.risk_level,
+                    }));
+                    break;
+                case "expiring":
+                    exportData = (reportData.expiring_licenses || []).map((item) => ({
+                        "Software Name": item.software_name,
+                        "License Key": item.license_key,
+                        "Expiry Date": item.expiry_date,
+                        "Days Remaining": item.days_remaining,
+                        "Renewal Cost": item.renewal_cost,
+                        Status: item.status,
+                    }));
+                    break;
+                default:
+                    break;
+            }
+
+            if (exportData.length === 0) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "No Data",
+                    text: "There is no data to export.",
+                });
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(
+                workbook,
+                worksheet,
+                `${reportType}_report`
+            );
+
+            const fileName = `software_${reportType}_report_${new Date().toISOString().split("T")[0]}`;
+
+            if (format === "xlsx") {
+                XLSX.writeFile(workbook, `${fileName}.xlsx`);
+            } else {
+                XLSX.writeFile(workbook, `${fileName}.csv`, { bookType: "csv" });
+            }
+
+            Swal.fire({
+                icon: "success",
+                title: "Export Successful",
+                text: `Report exported as ${format.toUpperCase()}`,
+                timer: 2000,
+                showConfirmButton: false,
+            });
+        } catch (err) {
+            console.error("Export error:", err);
+            Swal.fire({
+                icon: "error",
+                title: "Export Failed",
+                text: "Failed to export report. Please try again.",
+            });
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const renderReportContent = () => {
+        if (loading) {
+            return (
+                <div
+                    className="d-flex justify-content-center align-items-center"
+                    style={{ height: "300px" }}
+                >
+                    <div className="text-center">
+                        <div className="spinner-border text-primary" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                        <p className="mt-2 text-muted">Loading report data...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        if (error) {
+            return (
+                <div className="alert alert-danger" role="alert">
+                    <div className="d-flex align-items-center">
+                        <i className="bx bx-error-circle me-2"></i>
+                        <div>
+                            <h6 className="alert-heading mb-1">Failed to load report</h6>
+                            <p className="mb-0">{error}</p>
+                        </div>
+                    </div>
+                    <button
+                        className="btn btn-sm btn-outline-danger mt-2"
+                        onClick={fetchReportData}
+                    >
+                        <i className="bx bx-refresh me-1"></i>
+                        Retry
+                    </button>
+                </div>
+            );
+        }
+
+        switch (filters.report_type) {
+            case "summary":
+                return <SummaryReport data={reportData} />;
+            case "license":
+                return <LicenseReport data={reportData} />;
+            case "installation":
+                return <InstallationReport data={reportData} />;
+            case "compliance":
+                return <ComplianceReport data={reportData} />;
+            case "expiring":
+                return <ExpiringReport data={reportData} />;
+            default:
+                return <SummaryReport data={reportData} />;
+        }
+    };
+
+    return (
+        <div className="container-fluid">
+            <BreadCumb pageList={["ICT Assets", "Software", "Reports"]}>
+                <div className="dropdown">
+                    <button
+                        className="btn btn-primary dropdown-toggle"
+                        type="button"
+                        id="exportDropdown"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        disabled={exporting || loading || !reportData}
+                    >
+                        {exporting ? (
+                            <>
+                                <span
+                                    className="spinner-border spinner-border-sm me-1"
+                                    role="status"
+                                ></span>
+                                Exporting...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bx bx-export me-1"></i>
+                                Export
+                            </>
+                        )}
+                    </button>
+                    <ul className="dropdown-menu" aria-labelledby="exportDropdown">
+                        <li>
+                            <button
+                                className="dropdown-item"
+                                onClick={() => handleExport("xlsx")}
+                            >
+                                <i className="bx bx-file me-2"></i>
+                                Export to Excel (.xlsx)
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                className="dropdown-item"
+                                onClick={() => handleExport("csv")}
+                            >
+                                <i className="bx bx-spreadsheet me-2"></i>
+                                Export to CSV
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </BreadCumb>
+
+            {/* Filters Card */}
+            <div className="row mb-4">
+                <div className="col-12">
+                    <div className="card">
+                        <div className="card-header">
+                            <h5 className="card-title mb-0">
+                                <i className="bx bx-filter-alt me-2"></i>
+                                Report Filters
+                            </h5>
+                        </div>
+                        <div className="card-body">
+                            <div className="row g-3">
+                                <div className="col-md-4">
+                                    <label className="form-label">Report Type</label>
+                                    <select
+                                        className="form-select"
+                                        name="report_type"
+                                        value={filters.report_type}
+                                        onChange={handleFilterChange}
+                                    >
+                                        {REPORT_TYPES.map((type) => (
+                                            <option key={type.value} value={type.value}>
+                                                {type.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label">Category</label>
+                                    <select
+                                        className="form-select"
+                                        name="category"
+                                        value={filters.category}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <option value="">All Categories</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label">License Type</label>
+                                    <select
+                                        className="form-select"
+                                        name="license_type"
+                                        value={filters.license_type}
+                                        onChange={handleFilterChange}
+                                    >
+                                        {LICENSE_TYPES.map((type) => (
+                                            <option key={type.value} value={type.value}>
+                                                {type.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Report Type Tabs */}
+            <div className="row mb-4">
+                <div className="col-12">
+                    <div className="d-flex flex-wrap gap-2">
+                        {REPORT_TYPES.map((type) => (
+                            <button
+                                key={type.value}
+                                className={`btn ${
+                                    filters.report_type === type.value
+                                        ? "btn-primary"
+                                        : "btn-outline-primary"
+                                }`}
+                                onClick={() =>
+                                    setFilters((prev) => ({ ...prev, report_type: type.value }))
+                                }
+                            >
+                                <i className={`bx ${type.icon} me-1`}></i>
+                                {type.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Report Content */}
+            {renderReportContent()}
+        </div>
+    );
+};
+
+const SummaryReport = ({ data }) => {
+    const summary = data?.summary || {};
+    const distribution = data?.license_distribution || [];
+    const utilizationByCategory = data?.utilization_by_category || [];
+
+    return (
+        <>
+            {/* Summary Cards */}
+            <div className="row mb-4">
+                <div className="col-sm-6 col-lg-3 mb-3">
+                    <div className="card h-100 bg-primary text-white">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center">
+                                <div className="avatar flex-shrink-0">
+                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                        <i className="bx bx-key text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div className="ms-3">
+                                    <span className="d-block mb-1">Total Licenses</span>
+                                    <h3 className="mb-0">{summary.total_licenses || 0}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-sm-6 col-lg-3 mb-3">
+                    <div className="card h-100 bg-success text-white">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center">
+                                <div className="avatar flex-shrink-0">
+                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                        <i className="bx bx-check-circle text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div className="ms-3">
+                                    <span className="d-block mb-1">Utilization Rate</span>
+                                    <h3 className="mb-0">{summary.utilization_rate || 0}%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-sm-6 col-lg-3 mb-3">
+                    <div className="card h-100 bg-info text-white">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center">
+                                <div className="avatar flex-shrink-0">
+                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                        <i className="bx bx-download text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div className="ms-3">
+                                    <span className="d-block mb-1">Installations</span>
+                                    <h3 className="mb-0">{summary.total_installations || 0}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-sm-6 col-lg-3 mb-3">
+                    <div className="card h-100 bg-warning text-white">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center">
+                                <div className="avatar flex-shrink-0">
+                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                        <i className="bx bx-dollar text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <div className="ms-3">
+                                    <span className="d-block mb-1">Total Cost</span>
+                                    <h3 className="mb-0">
+                                        TSH{" "}
+                                        {summary.total_cost
+                                            ? parseFloat(summary.total_cost).toLocaleString()
+                                            : "0"}
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Charts Row */}
+            <div className="row">
+                <div className="col-lg-6 mb-4">
+                    <div className="card h-100">
+                        <div className="card-header">
+                            <h5 className="card-title mb-0">License Distribution by Type</h5>
+                        </div>
+                        <div className="card-body">
+                            {distribution.length > 0 ? (
+                                <LicenseDistributionChart data={distribution} />
+                            ) : (
+                                <EmptyState message="No license distribution data available" />
+                            )}
+                        </div>
+                    </div>
+                </div>
+                <div className="col-lg-6 mb-4">
+                    <div className="card h-100">
+                        <div className="card-header">
+                            <h5 className="card-title mb-0">Utilization by Category</h5>
+                        </div>
+                        <div className="card-body">
+                            {utilizationByCategory.length > 0 ? (
+                                <UtilizationChart data={utilizationByCategory} />
+                            ) : (
+                                <EmptyState message="No utilization data available" />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Compliance Summary */}
+            <div className="row">
+                <div className="col-12">
+                    <div className="card">
+                        <div className="card-header">
+                            <h5 className="card-title mb-0">Compliance Overview</h5>
+                        </div>
+                        <div className="card-body">
+                            <div className="row text-center">
+                                <div className="col-md-4 mb-3">
+                                    <div className="border rounded p-3">
+                                        <div className="display-6 text-success fw-bold">
+                                            {summary.compliant_count || 0}
+                                        </div>
+                                        <span className="text-muted">Compliant</span>
+                                    </div>
+                                </div>
+                                <div className="col-md-4 mb-3">
+                                    <div className="border rounded p-3">
+                                        <div className="display-6 text-warning fw-bold">
+                                            {summary.warning_count || 0}
+                                        </div>
+                                        <span className="text-muted">Warning</span>
+                                    </div>
+                                </div>
+                                <div className="col-md-4 mb-3">
+                                    <div className="border rounded p-3">
+                                        <div className="display-6 text-danger fw-bold">
+                                            {summary.non_compliant_count || 0}
+                                        </div>
+                                        <span className="text-muted">Non-Compliant</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+};
+
+const LicenseReport = ({ data }) => {
+    const licenses = data?.licenses || [];
+
+    return (
+        <div className="card">
+            <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">License Details</h5>
+                <span className="badge bg-primary">{licenses.length} Licenses</span>
+            </div>
+            <div className="card-body">
+                {licenses.length > 0 ? (
+                    <div className="table-responsive">
+                        <table className="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Software</th>
+                                    <th>License Key</th>
+                                    <th>Type</th>
+                                    <th>Total Seats</th>
+                                    <th>Used</th>
+                                    <th>Available</th>
+                                    <th>Utilization</th>
+                                    <th>Expiry</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {licenses.map((license, index) => (
+                                    <tr key={index}>
+                                        <td className="fw-medium">{license.software_name}</td>
+                                        <td>
+                                            <code>{license.license_key || "N/A"}</code>
+                                        </td>
+                                        <td>
+                                            <span className="badge bg-label-info">
+                                                {license.license_type}
+                                            </span>
+                                        </td>
+                                        <td>{license.total_seats}</td>
+                                        <td>{license.used_seats}</td>
+                                        <td>{license.available_seats}</td>
+                                        <td>
+                                            <div className="d-flex align-items-center">
+                                                <div
+                                                    className="progress flex-grow-1 me-2"
+                                                    style={{ height: "6px", width: "60px" }}
+                                                >
+                                                    <div
+                                                        className={`progress-bar ${getUtilizationColor(
+                                                            license.utilization_percentage
+                                                        )}`}
+                                                        style={{
+                                                            width: `${license.utilization_percentage}%`,
+                                                        }}
+                                                    ></div>
+                                                </div>
+                                                <small>{license.utilization_percentage}%</small>
+                                            </div>
+                                        </td>
+                                        <td>{license.expiry_date || "N/A"}</td>
+                                        <td>{getStatusBadge(license.status)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <EmptyState message="No license data available" />
+                )}
+            </div>
+        </div>
+    );
+};
+
+const InstallationReport = ({ data }) => {
+    const installations = data?.installations || [];
+
+    return (
+        <div className="card">
+            <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">Installation Statistics</h5>
+                <span className="badge bg-info">{installations.length} Software</span>
+            </div>
+            <div className="card-body">
+                {installations.length > 0 ? (
+                    <div className="table-responsive">
+                        <table className="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Software</th>
+                                    <th>Category</th>
+                                    <th>Total Installations</th>
+                                    <th>Active</th>
+                                    <th>Last Installed</th>
+                                    <th>Distribution</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {installations.map((item, index) => (
+                                    <tr key={index}>
+                                        <td className="fw-medium">{item.software_name}</td>
+                                        <td>
+                                            <span className="badge bg-label-secondary">
+                                                {item.category}
+                                            </span>
+                                        </td>
+                                        <td>{item.install_count}</td>
+                                        <td>
+                                            <span className="text-success fw-medium">
+                                                {item.active_count}
+                                            </span>
+                                        </td>
+                                        <td>{item.last_installed || "N/A"}</td>
+                                        <td>
+                                            <div
+                                                className="progress"
+                                                style={{ height: "20px", width: "100px" }}
+                                            >
+                                                <div
+                                                    className="progress-bar bg-primary"
+                                                    style={{
+                                                        width: `${
+                                                            (item.active_count / item.install_count) * 100
+                                                        }%`,
+                                                    }}
+                                                >
+                                                    {Math.round(
+                                                        (item.active_count / item.install_count) * 100
+                                                    )}
+                                                    %
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <EmptyState message="No installation data available" />
+                )}
+            </div>
+        </div>
+    );
+};
+
+const ComplianceReport = ({ data }) => {
+    const compliance = data?.compliance || [];
+
+    return (
+        <div className="card">
+            <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">Compliance Status</h5>
+                <span className="badge bg-success">{compliance.length} Items</span>
+            </div>
+            <div className="card-body">
+                {compliance.length > 0 ? (
+                    <div className="table-responsive">
+                        <table className="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Software</th>
+                                    <th>Licensed Seats</th>
+                                    <th>Installed</th>
+                                    <th>Variance</th>
+                                    <th>Compliance Status</th>
+                                    <th>Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {compliance.map((item, index) => (
+                                    <tr key={index}>
+                                        <td className="fw-medium">{item.software_name}</td>
+                                        <td>{item.licensed_seats}</td>
+                                        <td>{item.installed_count}</td>
+                                        <td>
+                                            <span
+                                                className={`fw-medium ${
+                                                    item.variance >= 0 ? "text-success" : "text-danger"
+                                                }`}
+                                            >
+                                                {item.variance >= 0 ? "+" : ""}
+                                                {item.variance}
+                                            </span>
+                                        </td>
+                                        <td>{getComplianceBadge(item.compliance_status)}</td>
+                                        <td>{getRiskBadge(item.risk_level)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <EmptyState message="No compliance data available" />
+                )}
+            </div>
+        </div>
+    );
+};
+
+const ExpiringReport = ({ data }) => {
+    const expiringLicenses = data?.expiring_licenses || [];
+    const expiredCount = expiringLicenses.filter(
+        (l) => l.days_remaining < 0
+    ).length;
+    const soonCount = expiringLicenses.filter(
+        (l) => l.days_remaining >= 0 && l.days_remaining <= 30
+    ).length;
+
+    return (
+        <>
+            {/* Summary Cards */}
+            <div className="row mb-4">
+                <div className="col-md-4 mb-3">
+                    <div className="card bg-danger text-white">
+                        <div className="card-body text-center">
+                            <h2 className="mb-0">{expiredCount}</h2>
+                            <span>Expired Licenses</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-4 mb-3">
+                    <div className="card bg-warning text-white">
+                        <div className="card-body text-center">
+                            <h2 className="mb-0">{soonCount}</h2>
+                            <span>Expiring in 30 Days</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-4 mb-3">
+                    <div className="card bg-info text-white">
+                        <div className="card-body text-center">
+                            <h2 className="mb-0">{expiringLicenses.length}</h2>
+                            <span>Total Requiring Attention</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="card">
+                <div className="card-header">
+                    <h5 className="card-title mb-0">Expiring & Expired Licenses</h5>
+                </div>
+                <div className="card-body">
+                    {expiringLicenses.length > 0 ? (
+                        <div className="table-responsive">
+                            <table className="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Software</th>
+                                        <th>License Key</th>
+                                        <th>Expiry Date</th>
+                                        <th>Days Remaining</th>
+                                        <th>Renewal Cost</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {expiringLicenses.map((item, index) => (
+                                        <tr
+                                            key={index}
+                                            className={
+                                                item.days_remaining < 0 ? "table-danger" : ""
+                                            }
+                                        >
+                                            <td className="fw-medium">{item.software_name}</td>
+                                            <td>
+                                                <code>{item.license_key || "N/A"}</code>
+                                            </td>
+                                            <td>{item.expiry_date}</td>
+                                            <td>
+                                                <span
+                                                    className={`fw-bold ${getExpiryTextColor(
+                                                        item.days_remaining
+                                                    )}`}
+                                                >
+                                                    {item.days_remaining < 0
+                                                        ? `${Math.abs(item.days_remaining)} days ago`
+                                                        : `${item.days_remaining} days`}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                TSH{" "}
+                                                {item.renewal_cost
+                                                    ? parseFloat(item.renewal_cost).toLocaleString()
+                                                    : "N/A"}
+                                            </td>
+                                            <td>{getExpiryBadge(item.days_remaining)}</td>
+                                            <td>
+                                                <button className="btn btn-sm btn-outline-primary">
+                                                    <i className="bx bx-refresh me-1"></i>
+                                                    Renew
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <EmptyState message="No expiring licenses found" />
+                    )}
+                </div>
+            </div>
+        </>
+    );
+};
+
+const LicenseDistributionChart = ({ data }) => {
+    const total = data.reduce((sum, item) => sum + item.count, 0);
+    const colors = [
+        "#696cff",
+        "#71dd37",
+        "#ffab00",
+        "#03c3ec",
+        "#ff3e1d",
+        "#8592a3",
+    ];
+
+    return (
+        <div className="license-distribution-chart">
+            {data.map((item, index) => {
+                const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+                return (
+                    <div key={index} className="mb-3">
+                        <div className="d-flex justify-content-between align-items-center mb-1">
+                            <div className="d-flex align-items-center">
+                                <div
+                                    className="me-2"
+                                    style={{
+                                        width: "12px",
+                                        height: "12px",
+                                        borderRadius: "50%",
+                                        backgroundColor: colors[index % colors.length],
+                                    }}
+                                ></div>
+                                <span>{item.type || item.license_type}</span>
+                            </div>
+                            <div className="text-end">
+                                <span className="fw-bold">{item.count}</span>
+                                <small className="text-muted ms-1">({percentage}%)</small>
+                            </div>
+                        </div>
+                        <div className="progress" style={{ height: "8px" }}>
+                            <div
+                                className="progress-bar"
+                                style={{
+                                    width: `${percentage}%`,
+                                    backgroundColor: colors[index % colors.length],
+                                }}
+                            ></div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+const UtilizationChart = ({ data }) => {
+    return (
+        <div className="utilization-chart">
+            {data.map((item, index) => (
+                <div key={index} className="mb-3">
+                    <div className="d-flex justify-content-between mb-1">
+                        <span className="fw-medium">{item.category}</span>
+                        <span
+                            className={`fw-bold ${getUtilizationTextColor(
+                                item.utilization
+                            )}`}
+                        >
+                            {item.utilization}%
+                        </span>
+                    </div>
+                    <div className="progress" style={{ height: "10px" }}>
+                        <div
+                            className={`progress-bar ${getUtilizationColor(item.utilization)}`}
+                            style={{ width: `${item.utilization}%` }}
+                        ></div>
+                    </div>
+                    <div className="d-flex justify-content-between mt-1">
+                        <small className="text-muted">
+                            {item.used_seats || 0} of {item.total_seats || 0} seats
+                        </small>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const EmptyState = ({ message }) => (
+    <div className="text-center py-5">
+        <i className="bx bx-folder-open text-muted display-1"></i>
+        <p className="text-muted mt-3">{message}</p>
+    </div>
+);
+
+const getUtilizationColor = (percentage) => {
+    if (percentage >= 90) return "bg-danger";
+    if (percentage >= 70) return "bg-warning";
+    return "bg-success";
+};
+
+const getUtilizationTextColor = (percentage) => {
+    if (percentage >= 90) return "text-danger";
+    if (percentage >= 70) return "text-warning";
+    return "text-success";
+};
+
+const getStatusBadge = (status) => {
+    const badges = {
+        active: <span className="badge bg-success">Active</span>,
+        expired: <span className="badge bg-danger">Expired</span>,
+        expiring: <span className="badge bg-warning">Expiring Soon</span>,
+        inactive: <span className="badge bg-secondary">Inactive</span>,
+    };
+    return badges[status?.toLowerCase()] || (
+        <span className="badge bg-secondary">{status}</span>
+    );
+};
+
+const getComplianceBadge = (status) => {
+    const badges = {
+        compliant: <span className="badge bg-success">Compliant</span>,
+        warning: <span className="badge bg-warning">Warning</span>,
+        "non-compliant": <span className="badge bg-danger">Non-Compliant</span>,
+        non_compliant: <span className="badge bg-danger">Non-Compliant</span>,
+    };
+    return badges[status?.toLowerCase()] || (
+        <span className="badge bg-secondary">{status}</span>
+    );
+};
+
+const getRiskBadge = (level) => {
+    const badges = {
+        low: <span className="badge bg-success">Low</span>,
+        medium: <span className="badge bg-warning">Medium</span>,
+        high: <span className="badge bg-danger">High</span>,
+        critical: <span className="badge bg-dark">Critical</span>,
+    };
+    return badges[level?.toLowerCase()] || (
+        <span className="badge bg-secondary">{level}</span>
+    );
+};
+
+const getExpiryTextColor = (days) => {
+    if (days < 0) return "text-danger";
+    if (days <= 7) return "text-danger";
+    if (days <= 30) return "text-warning";
+    return "text-info";
+};
+
+const getExpiryBadge = (days) => {
+    if (days < 0) return <span className="badge bg-danger">Expired</span>;
+    if (days <= 7)
+        return <span className="badge bg-danger">Critical</span>;
+    if (days <= 30)
+        return <span className="badge bg-warning">Expiring Soon</span>;
+    return <span className="badge bg-info">Upcoming</span>;
+};
+
+export default SoftwareReportsPage;
