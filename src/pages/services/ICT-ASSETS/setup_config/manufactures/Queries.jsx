@@ -93,4 +93,3 @@ export const uploadManufacture = async (formData) => {
         throw error;
     }
 };
-

@@ -48,7 +48,7 @@ const PaginatedTable = ({
     updatePage(event.selected + 1);
   };
 
-  const handleFetchData = async () => {
+  const handleFetchData = async (clearFiltersOnEmpty = true) => {
     setLoading(true);
     setError(null);
     try {
@@ -59,6 +59,11 @@ const PaginatedTable = ({
           acc[group] = values.join(",");
           return acc;
         }, {});
+
+      // Check if any filters are applied
+      const hasFilters = Object.keys(formattedFilterGroups).length > 0 || 
+                         selectedFilters.length > 0 || 
+                         searchQuery.trim().length > 0;
 
       const result = await fetchData({
         url: fetchPath,
@@ -74,12 +79,46 @@ const PaginatedTable = ({
       });
 
       if (result.status === 200 || result.status === 8000) {
-        setRowRecords(result.data);
-        if (result.pagination) {
-          updatePagination(result.pagination);
-          updateTotalCount(result.pagination.total || 0);
+        // Check if result is empty and filters are applied
+        if ((!result.data || result.data.length === 0) && hasFilters && clearFiltersOnEmpty) {
+          // Show message and fetch without filters
+          showToast("No records match your filter. Showing all records.", "info", "Filter Result");
+          
+          // Clear filters and fetch all data
+          const cleared = {};
+          filterGroups.forEach((g) => (cleared[g.group] = []));
+          setSelectedFilterGroups(cleared);
+          setSelectedFilters([]);
+          
+          // Fetch without filters
+          const allResult = await fetchData({
+            url: fetchPath,
+            isFullPath: isFullPath,
+            filter: {
+              page: 1,
+              page_size: pageSize,
+              paginated: true,
+              search: "",
+            },
+          });
+          
+          if (allResult.status === 200 || allResult.status === 8000) {
+            setRowRecords(allResult.data);
+            if (allResult.pagination) {
+              updatePagination(allResult.pagination);
+              updateTotalCount(allResult.pagination.total || 0);
+            } else {
+              updatePagination({});
+            }
+          }
         } else {
-          updatePagination({});
+          setRowRecords(result.data);
+          if (result.pagination) {
+            updatePagination(result.pagination);
+            updateTotalCount(result.pagination.total || 0);
+          } else {
+            updatePagination({});
+          }
         }
       } else {
         showToast("No Records Found", "warning", "Fetch Completed");
