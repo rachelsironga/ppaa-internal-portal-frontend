@@ -120,5 +120,15 @@
       "admin",
       "facility"
     ]
+  },
+  {
+    "text": "MNH Maoni",
+    "icon": "bx bx-message-dots",
+    "link": "/mnh-maoni",
+    "permission": [],
+    "role": [
+      "admin",
+      "staff"
+    ]
   }
 ]

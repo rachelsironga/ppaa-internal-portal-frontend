@@ -1,6 +1,6 @@
 [
-  {
-    "header": "ANALYTICS",
+    {
+    "header": "",
     "items": [
       {
         "text": "Services",
@@ -8,23 +8,21 @@
         "available": true,
         "link": "/",
         "permission": [],
-        "role": [
-          "staff",
-          "admin"
-        ]
+        "role": ["staff","admin"]
       },
       {
-        "text": "Analytics Dashboard",
-        "icon": "bx bx-bar-chart-alt",
+        "text": "Dashboard",
+        "icon": "bx bx-home",
         "available": true,
         "link": "/analytics/dashboard",
         "permission": [],
-        "role": [
-          "admin",
-          "analyst",
-          "management"
-        ]
-      },
+        "role": ["admin", "analyst", "management"]
+      }
+    ]
+  },
+  {
+    "header": "ANALYTICS",
+    "items": [
       {
         "text": "Dep Management",
         "icon": "bx bx-store-alt",

@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+      - /app/node_modules
     networks:
       - mnh-network
     ports:

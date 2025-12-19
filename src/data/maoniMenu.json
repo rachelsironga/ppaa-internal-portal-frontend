@@ -1,0 +1,32 @@
+[
+  {
+    "header": "",
+    "items": [
+      {
+        "text": "Services",
+        "icon": "bx bxl-microsoft",
+        "available": true,
+        "link": "/",
+        "permission": [],
+        "role": ["staff","admin"]
+      },
+      {
+        "text": "Maoni",
+        "icon": "bx bx-message-square-dots",
+        "available": true,
+        "link": "/mnh-maoni",
+        "permission": [],
+        "role": ["admin", "staff", "maoni_admin"]
+      },
+      {
+        "text": "Dashboard",
+        "icon": "bx bx-home",
+        "available": true,
+        "link": "/mnh-maoni/dashboard",
+        "permission": [],
+        "role": ["admin", "maoni_admin"]
+      }
+    ]
+  }
+
+]
