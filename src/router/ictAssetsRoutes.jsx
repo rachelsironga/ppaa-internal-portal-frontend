@@ -16,7 +16,7 @@ import { SoftwareAssetListPage } from "../pages/services/ICT-ASSETS/softwares/Vi
 import { SoftwareAssetViewPage } from "../pages/services/ICT-ASSETS/softwares/Open.jsx";
 import { SowareInstallationListPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationList.jsx";
 import { SoftwareInstallationViewPage } from "../pages/services/ICT-ASSETS/softwares/SoftwareInstallationView.jsx";
-import { SoftwareCategoriesListPage } from "../pages/services/ICT-ASSETS/softwares/categories/SoftwareCategoriesListPage.jsx";
+import { WarrantiesListPage } from "../pages/services/ICT-ASSETS/operations/warranties/WarrantiesListPage.jsx";
 import { AssetCategoriesListPage } from "../pages/services/ICT-ASSETS/setup_config/asset_categories/AssetCategoriesListPage.jsx";
 import { AssetTypesListPage } from "../pages/services/ICT-ASSETS/setup_config/asset_types/AssetTypesListPage.jsx";
 import { ManufacturesListPage } from "../pages/services/ICT-ASSETS/setup_config/manufactures/ManufacturesListPage.jsx";
@@ -193,13 +193,13 @@ export const ictAssetsRoutes = (
       }
     />
     <Route
-      path="/ict-assets/software-categories"
+      path="/ict-assets/warranties"
       element={
         <ProtectedRoute
           requiredPermissions={["view_dashboard"]}
           requiredRoles={["admin", "ReadOnly_User"]}
         >
-          <SoftwareCategoriesListPage />
+          <WarrantiesListPage />
         </ProtectedRoute>
       }
     />
