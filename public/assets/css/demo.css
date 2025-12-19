@@ -122,3 +122,29 @@
   text-align: center;
   margin-top: 1rem;
 }
+
+
+.spec-scroll {
+    max-height: 300px;
+    overflow-y: scroll !important; /* scrollbar always shown */
+    overflow-x: hidden;
+    padding-right: 6px;
+
+    /* Firefox scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(111, 109, 109, 0.5) transparent;
+}
+
+/* Chrome, Edge, Safari scrollbar */
+.spec-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.spec-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.spec-scroll::-webkit-scrollbar-thumb {
+    background-color:aliceblue;
+    border-radius: 10px;
+}

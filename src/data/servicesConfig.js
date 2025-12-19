@@ -5,6 +5,7 @@ import defaultMenu from "./defaultMenu.json";
 import analyticsMenu from "./analyticsMenu.json";
 import maoniMenu from "./maoniMenu.json";
 
+import trainingMenu from "./trainingMenu.json";
 
 // Add new services here without touching Sidebar.js
 const servicesConfig = [
@@ -37,6 +38,12 @@ const servicesConfig = [
         name: "MNH Maoni",
         link: "/mnh-maoni",
         menu: maoniMenu
+    },
+    {
+        id: "training",
+        name: "Training Management",
+        link: "/training",
+        menu: trainingMenu
     },
     {
         id: "default-menu",

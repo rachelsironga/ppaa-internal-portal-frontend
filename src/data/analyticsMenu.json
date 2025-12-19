@@ -29,7 +29,12 @@
         "available": true,
         "link": "/analytics/departments",
         "permission": [],
-        "role": ["admin", "analyst", "management", "medical"]
+        "role": [
+          "admin",
+          "analyst",
+          "management",
+          "medical"
+        ]
       },
       {
         "text": "Blocks Management",
@@ -37,7 +42,11 @@
         "available": true,
         "link": "/analytics/blocks",
         "permission": [],
-        "role": ["admin", "analyst", "management"]
+        "role": [
+          "admin",
+          "analyst",
+          "management"
+        ]
       },
       {
         "text": "Clinics Management",
@@ -45,7 +54,12 @@
         "available": true,
         "link": "/analytics/clinics",
         "permission": [],
-        "role": ["admin", "analyst", "management", "medical"]
+        "role": [
+          "admin",
+          "analyst",
+          "management",
+          "medical"
+        ]
       },
       {
         "text": "Payment Modes",
@@ -53,7 +67,12 @@
         "available": true,
         "link": "/analytics/payment-modes",
         "permission": [],
-        "role": ["admin", "analyst", "finance", "management"]
+        "role": [
+          "admin",
+          "analyst",
+          "finance",
+          "management"
+        ]
       },
       {
         "text": "Attendance Tracking",
@@ -61,7 +80,12 @@
         "available": true,
         "link": "/analytics/attendances",
         "permission": [],
-        "role": ["admin", "analyst", "hr", "management"]
+        "role": [
+          "admin",
+          "analyst",
+          "hr",
+          "management"
+        ]
       },
       {
         "text": "Patient Trends",
@@ -69,7 +93,12 @@
         "available": true,
         "link": "/analytics/patient-trends",
         "permission": [],
-        "role": ["admin", "analyst", "medical", "management"]
+        "role": [
+          "admin",
+          "analyst",
+          "medical",
+          "management"
+        ]
       }
     ]
   }

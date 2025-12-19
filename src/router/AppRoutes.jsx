@@ -12,6 +12,7 @@ import { oxygenRoutes } from "./oxygenRoutes";
 import { analyticsRoutes } from "./analyticsRoutes";
 import { MaintenancePage } from "../pages/misc/MaintenancePage";
 import { maoniRoutes } from "./maoniRoutes";
+import { trainingRoutes } from "./trainingRoutes";
 
 const AppRoutes = () => {
   return (
@@ -39,6 +40,9 @@ const AppRoutes = () => {
 
       {/* MAONI Routes */}
       {maoniRoutes}
+
+      {/* Training Management Routes */}
+      {trainingRoutes}
 
       {/* Catch-all 404 */}
       <Route path="*" element={<MaintenancePage />} />
