@@ -1,15 +1,28 @@
 [
-  {
-    "header": "ANALYTICS",
+    {
+    "header": "",
     "items": [
       {
-        "text": "Analytics Dashboard",
-        "icon": "bx bx-bar-chart-alt",
+        "text": "Services",
+        "icon": "bx bxl-microsoft",
+        "available": true,
+        "link": "/",
+        "permission": [],
+        "role": ["staff","admin"]
+      },
+      {
+        "text": "Dashboard",
+        "icon": "bx bx-home",
         "available": true,
         "link": "/analytics/dashboard",
         "permission": [],
         "role": ["admin", "analyst", "management"]
-      },
+      }
+    ]
+  },
+  {
+    "header": "ANALYTICS",
+    "items": [
       {
         "text": "Dep Management",
         "icon": "bx bx-store-alt",

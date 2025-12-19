@@ -10,6 +10,8 @@ import { managementRoutes } from "./managementRoutes";
 import { ictAssetsRoutes } from "./ictAssetsRoutes";
 import { oxygenRoutes } from "./oxygenRoutes";
 import { analyticsRoutes } from "./analyticsRoutes";
+import { MaintenancePage } from "../pages/misc/MaintenancePage";
+import { maoniRoutes } from "./maoniRoutes";
 
 const AppRoutes = () => {
   return (
@@ -35,8 +37,12 @@ const AppRoutes = () => {
       {/* Hospital Analitics Routes */}
       {analyticsRoutes}
 
+      {/* MAONI Routes */}
+      {maoniRoutes}
+
       {/* Catch-all 404 */}
-      <Route path="*" element={<ErrorPage />} />
+      <Route path="*" element={<MaintenancePage />} />
+      {/* <Route path="*" element={<ErrorPage />} /> */}
     </Routes>
   );
 };
