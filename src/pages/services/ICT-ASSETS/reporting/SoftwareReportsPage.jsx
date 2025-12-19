@@ -115,32 +115,66 @@ export const SoftwareReportsPage = () => {
 
             switch (reportType) {
                 case "summary":
+                    const summary = reportData.summary || {};
+                    const parseCostForExport = (cost) => {
+                        if (typeof cost === "object" && cost !== null) {
+                            return cost.parsedValue || parseFloat(cost.source) || 0;
+                        }
+                        return parseFloat(cost) || 0;
+                    };
+
                     exportData = [
                         {
+                            Metric: "Total Software",
+                            Value: summary.total_software || 0,
+                        },
+                        {
                             Metric: "Total Licenses",
-                            Value: reportData.summary?.total_licenses || 0,
+                            Value: summary.total_licenses || 0,
                         },
                         {
-                            Metric: "Total Installations",
-                            Value: reportData.summary?.total_installations || 0,
+                            Metric: "Used Licenses",
+                            Value: summary.used_licenses || 0,
                         },
                         {
-                            Metric: "License Utilization",
-                            Value: `${reportData.summary?.utilization_rate || 0}%`,
+                            Metric: "Available Licenses",
+                            Value: summary.available_licenses || 0,
                         },
                         {
-                            Metric: "Total License Cost",
-                            Value: reportData.summary?.total_cost || 0,
+                            Metric: "License Utilization (%)",
+                            Value: parseFloat(summary.license_utilization || 0).toFixed(2),
                         },
                         {
-                            Metric: "Compliant Licenses",
-                            Value: reportData.summary?.compliant_count || 0,
+                            Metric: "Total License Cost (TSH)",
+                            Value: parseCostForExport(summary.total_cost),
                         },
                         {
-                            Metric: "Non-Compliant Licenses",
-                            Value: reportData.summary?.non_compliant_count || 0,
+                            Metric: "Expiring in 30 Days",
+                            Value: summary.expiring_30_days || 0,
                         },
                     ];
+
+                    if (reportData.license_breakdown && reportData.license_breakdown.length > 0) {
+                        exportData.push({ Metric: "", Value: "" });
+                        exportData.push({ Metric: "--- License Breakdown ---", Value: "" });
+                        reportData.license_breakdown.forEach((item) => {
+                            exportData.push({
+                                Metric: item.license_type?.replace(/_/g, " ").toUpperCase(),
+                                Value: `Count: ${item.count}, Total Licenses: ${item.total_licenses}, Used: ${item.used_licenses}`,
+                            });
+                        });
+                    }
+
+                    if (reportData.type_breakdown && reportData.type_breakdown.length > 0) {
+                        exportData.push({ Metric: "", Value: "" });
+                        exportData.push({ Metric: "--- Type Breakdown ---", Value: "" });
+                        reportData.type_breakdown.forEach((item) => {
+                            exportData.push({
+                                Metric: item.software_type?.replace(/_/g, " ").toUpperCase(),
+                                Value: `Count: ${item.count}, Cost: ${parseCostForExport(item.total_cost)}`,
+                            });
+                        });
+                    }
                     break;
                 case "license":
                     exportData = (reportData.licenses || []).map((license) => ({
@@ -407,11 +441,10 @@ export const SoftwareReportsPage = () => {
                         {REPORT_TYPES.map((type) => (
                             <button
                                 key={type.value}
-                                className={`btn ${
-                                    filters.report_type === type.value
-                                        ? "btn-primary"
-                                        : "btn-outline-primary"
-                                }`}
+                                className={`btn ${filters.report_type === type.value
+                                    ? "btn-primary"
+                                    : "btn-outline-primary"
+                                    }`}
                                 onClick={() =>
                                     setFilters((prev) => ({ ...prev, report_type: type.value }))
                                 }
@@ -432,8 +465,15 @@ export const SoftwareReportsPage = () => {
 
 const SummaryReport = ({ data }) => {
     const summary = data?.summary || {};
-    const distribution = data?.license_distribution || [];
-    const utilizationByCategory = data?.utilization_by_category || [];
+    const distribution = data?.license_breakdown || [];
+    const typeBreakdown = data?.type_breakdown || [];
+
+    const parseCost = (cost) => {
+        if (typeof cost === "object" && cost !== null) {
+            return cost.parsedValue || parseFloat(cost.source) || 0;
+        }
+        return parseFloat(cost) || 0;
+    };
 
     return (
         <>
@@ -513,7 +553,6 @@ const SummaryReport = ({ data }) => {
                     </div>
                 </div>
             </div>
-
             {/* Charts Row */}
             <div className="row">
                 <div className="col-lg-6 mb-4">
@@ -533,13 +572,13 @@ const SummaryReport = ({ data }) => {
                 <div className="col-lg-6 mb-4">
                     <div className="card h-100">
                         <div className="card-header">
-                            <h5 className="card-title mb-0">Utilization by Category</h5>
+                            <h5 className="card-title mb-0">Cost by Software Type</h5>
                         </div>
                         <div className="card-body">
-                            {utilizationByCategory.length > 0 ? (
-                                <UtilizationChart data={utilizationByCategory} />
+                            {typeBreakdown.length > 0 ? (
+                                <TypeBreakdownChart data={typeBreakdown} />
                             ) : (
-                                <EmptyState message="No utilization data available" />
+                                <EmptyState message="No cost data available" />
                             )}
                         </div>
                     </div>
@@ -709,9 +748,8 @@ const InstallationReport = ({ data }) => {
                                                 <div
                                                     className="progress-bar bg-primary"
                                                     style={{
-                                                        width: `${
-                                                            (item.active_count / item.install_count) * 100
-                                                        }%`,
+                                                        width: `${(item.active_count / item.install_count) * 100
+                                                            }%`,
                                                     }}
                                                 >
                                                     {Math.round(
@@ -765,9 +803,8 @@ const ComplianceReport = ({ data }) => {
                                         <td>{item.installed_count}</td>
                                         <td>
                                             <span
-                                                className={`fw-medium ${
-                                                    item.variance >= 0 ? "text-success" : "text-danger"
-                                                }`}
+                                                className={`fw-medium ${item.variance >= 0 ? "text-success" : "text-danger"
+                                                    }`}
                                             >
                                                 {item.variance >= 0 ? "+" : ""}
                                                 {item.variance}
@@ -941,6 +978,48 @@ const LicenseDistributionChart = ({ data }) => {
                                     backgroundColor: colors[index % colors.length],
                                 }}
                             ></div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+const TypeBreakdownChart = ({ data }) => {
+    const parseCost = (cost) => {
+        if (typeof cost === "object" && cost !== null) {
+            return cost.parsedValue || parseFloat(cost.source) || 0;
+        }
+        return parseFloat(cost) || 0;
+    };
+
+    const maxCost = Math.max(...data.map((item) => parseCost(item.total_cost)), 1);
+
+    return (
+        <div className="type-breakdown-chart">
+            {data.map((item, index) => {
+                const cost = parseCost(item.total_cost);
+                const label = item.software_type?.replace(/_/g, " ").toUpperCase() || `Type ${index + 1}`;
+
+                return (
+                    <div key={index} className="mb-3">
+                        <div className="d-flex justify-content-between mb-1">
+                            <span className="fw-medium">{label}</span>
+                            <span className="fw-bold text-success">
+                                TSH {cost.toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="progress" style={{ height: "8px" }}>
+                            <div
+                                className="progress-bar bg-info"
+                                style={{ width: `${maxCost > 0 ? (cost / maxCost) * 100 : 0}%` }}
+                            ></div>
+                        </div>
+                        <div className="d-flex justify-content-between mt-1">
+                            <small className="text-muted">
+                                {item.count || 0} software items
+                            </small>
                         </div>
                     </div>
                 );
