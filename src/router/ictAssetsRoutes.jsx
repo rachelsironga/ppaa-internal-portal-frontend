@@ -149,7 +149,7 @@ export const ictAssetsRoutes = (
       }
     />
     <Route
-      path="/ict-assets/asset-software"
+      path="/ict-assets/software"
       element={
         <ProtectedRoute
           requiredPermissions={["view_dashboard"]}
@@ -160,7 +160,7 @@ export const ictAssetsRoutes = (
       }
     />
     <Route
-      path="/ict-assets/asset-software/:uid"
+      path="/ict-assets/software/:uid"
       element={
         <ProtectedRoute
           requiredPermissions={["view_dashboard"]}
@@ -171,7 +171,7 @@ export const ictAssetsRoutes = (
       }
     />
     <Route
-      path="/ict-assets/asset-software-installations"
+      path="/ict-assets/software-installations"
       element={
         <ProtectedRoute
           requiredPermissions={["view_dashboard"]}
@@ -182,7 +182,7 @@ export const ictAssetsRoutes = (
       }
     />
     <Route
-      path="/ict-assets/asset-software-installations/:uid"
+      path="/ict-assets/software-installations/:uid"
       element={
         <ProtectedRoute
           requiredPermissions={["view_dashboard"]}
@@ -193,7 +193,7 @@ export const ictAssetsRoutes = (
       }
     />
     <Route
-      path="/ict-assets/asset-software-categories"
+      path="/ict-assets/software-categories"
       element={
         <ProtectedRoute
           requiredPermissions={["view_dashboard"]}
@@ -277,7 +277,7 @@ export const ictAssetsRoutes = (
         </ProtectedRoute>
       }
     />
-        <Route
+    <Route
       path="/ict-assets/view-disposal-record/:uid"
       element={
         <ProtectedRoute
