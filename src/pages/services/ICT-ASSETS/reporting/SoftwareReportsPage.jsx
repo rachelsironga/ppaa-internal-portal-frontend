@@ -192,32 +192,41 @@ export const SoftwareReportsPage = () => {
                     }));
                     break;
                 case "installation":
-                    exportData = (reportData.installations || []).map((item) => ({
+                    exportData = (reportData.data || []).map((item) => ({
                         "Software Name": item.software_name,
-                        Category: item.category,
-                        "Install Count": item.install_count,
-                        "Active Installations": item.active_count,
-                        "Last Installed": item.last_installed,
+                        "Version": item.software_version,
+                        "Total Installations": item.installation_count,
+                        "Active": item.active_count,
+                        "Inactive": item.inactive_count,
                     }));
                     break;
                 case "compliance":
-                    exportData = (reportData.compliance || []).map((item) => ({
+                    exportData = (reportData.data || []).map((item) => ({
                         "Software Name": item.software_name,
-                        "Licensed Seats": item.licensed_seats,
-                        "Installed Count": item.installed_count,
-                        Variance: item.variance,
+                        "Version": item.version,
+                        "License Type": item.license_type,
+                        "Total Licenses": item.total_licenses,
+                        "Used Licenses": item.used_licenses,
+                        "Available Licenses": item.total_licenses - item.used_licenses,
+                        "Utilization %": ((item.used_licenses / item.total_licenses) * 100).toFixed(2),
                         Status: item.compliance_status,
-                        Risk: item.risk_level,
                     }));
                     break;
                 case "expiring":
-                    exportData = (reportData.expiring_licenses || []).map((item) => ({
+                    const expiringData = reportData.data || {};
+                    const allExpiringItems = [
+                        ...(expiringData.expired || []),
+                        ...(expiringData.expiring_30_days || []),
+                        ...(expiringData.expiring_90_days || []),
+                    ];
+                    exportData = allExpiringItems.map((item) => ({
                         "Software Name": item.software_name,
-                        "License Key": item.license_key,
-                        "Expiry Date": item.expiry_date,
-                        "Days Remaining": item.days_remaining,
-                        "Renewal Cost": item.renewal_cost,
-                        Status: item.status,
+                        "Version": item.version,
+                        "License Type": item.license_type,
+                        "Total Licenses": item.total_licenses,
+                        "Used Licenses": item.used_licenses,
+                        "License Expiry": item.license_expiry || "N/A",
+                        "Days Until Expiry": item.days_until_expiry || 0,
                     }));
                     break;
                 default:
@@ -709,7 +718,7 @@ const LicenseReport = ({ data }) => {
 };
 
 const InstallationReport = ({ data }) => {
-    const installations = data?.installations || [];
+    const installations = data?.data || [];
 
     return (
         <div className="card">
@@ -724,50 +733,51 @@ const InstallationReport = ({ data }) => {
                             <thead>
                                 <tr>
                                     <th>Software</th>
-                                    <th>Category</th>
+                                    <th>Version</th>
                                     <th>Total Installations</th>
                                     <th>Active</th>
-                                    <th>Last Installed</th>
-                                    <th>Distribution</th>
+                                    <th>Inactive</th>
+                                    <th>Active Distribution</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {installations.map((item, index) => (
-                                    <tr key={index}>
-                                        <td className="fw-medium">{item.software_name}</td>
-                                        <td>
-                                            <span className="badge bg-label-secondary">
-                                                {item.category}
-                                            </span>
-                                        </td>
-                                        <td>{item.install_count}</td>
-                                        <td>
-                                            <span className="text-success fw-medium">
-                                                {item.active_count}
-                                            </span>
-                                        </td>
-                                        <td>{item.last_installed || "N/A"}</td>
-                                        <td>
-                                            <div
-                                                className="progress"
-                                                style={{ height: "20px", width: "100px" }}
-                                            >
+                                {installations.map((item, index) => {
+                                    const activePercentage = item.installation_count > 0 
+                                        ? (item.active_count / item.installation_count) * 100 
+                                        : 0;
+                                    return (
+                                        <tr key={index}>
+                                            <td className="fw-medium">{item.software_name}</td>
+                                            <td>{item.software_version || "N/A"}</td>
+                                            <td>{item.installation_count}</td>
+                                            <td>
+                                                <span className="text-success fw-medium">
+                                                    {item.active_count}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="text-warning fw-medium">
+                                                    {item.inactive_count}
+                                                </span>
+                                            </td>
+                                            <td>
                                                 <div
-                                                    className="progress-bar bg-primary"
-                                                    style={{
-                                                        width: `${(item.active_count / item.install_count) * 100
-                                                            }%`,
-                                                    }}
+                                                    className="progress"
+                                                    style={{ height: "20px", width: "100px" }}
                                                 >
-                                                    {Math.round(
-                                                        (item.active_count / item.install_count) * 100
-                                                    )}
-                                                    %
+                                                    <div
+                                                        className="progress-bar bg-success"
+                                                        style={{
+                                                            width: `${activePercentage}%`,
+                                                        }}
+                                                    >
+                                                        {Math.round(activePercentage)}%
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -780,66 +790,117 @@ const InstallationReport = ({ data }) => {
 };
 
 const ComplianceReport = ({ data }) => {
-    const compliance = data?.compliance || [];
+    const compliance = data?.data || [];
+    const summary = data?.summary || {};
 
     return (
-        <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center">
-                <h5 className="card-title mb-0">Compliance Status</h5>
-                <span className="badge bg-success">{compliance.length} Items</span>
-            </div>
-            <div className="card-body">
-                {compliance.length > 0 ? (
-                    <div className="table-responsive">
-                        <table className="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Software</th>
-                                    <th>Licensed Seats</th>
-                                    <th>Installed</th>
-                                    <th>Variance</th>
-                                    <th>Compliance Status</th>
-                                    <th>Risk Level</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {compliance.map((item, index) => (
-                                    <tr key={index}>
-                                        <td className="fw-medium">{item.software_name}</td>
-                                        <td>{item.licensed_seats}</td>
-                                        <td>{item.installed_count}</td>
-                                        <td>
-                                            <span
-                                                className={`fw-medium ${item.variance >= 0 ? "text-success" : "text-danger"
-                                                    }`}
-                                            >
-                                                {item.variance >= 0 ? "+" : ""}
-                                                {item.variance}
-                                            </span>
-                                        </td>
-                                        <td>{getComplianceBadge(item.compliance_status)}</td>
-                                        <td>{getRiskBadge(item.risk_level)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+        <>
+            {/* Summary Cards */}
+            <div className="row mb-4">
+                <div className="col-md-4 mb-3">
+                    <div className="card bg-success text-white">
+                        <div className="card-body text-center">
+                            <h2 className="mb-0">{summary.compliant || 0}</h2>
+                            <span>Compliant Software</span>
+                        </div>
                     </div>
-                ) : (
-                    <EmptyState message="No compliance data available" />
-                )}
+                </div>
+                <div className="col-md-4 mb-3">
+                    <div className="card bg-warning text-white">
+                        <div className="card-body text-center">
+                            <h2 className="mb-0">{summary.over_licensed || 0}</h2>
+                            <span>Over Licensed</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-4 mb-3">
+                    <div className="card bg-info text-white">
+                        <div className="card-body text-center">
+                            <h2 className="mb-0">{summary.compliance_rate?.parsedValue || summary.compliance_rate || 0}%</h2>
+                            <span>Compliance Rate</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            {/* Compliance Table */}
+            <div className="card">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                    <h5 className="card-title mb-0">Compliance Status</h5>
+                    <span className="badge bg-primary">{compliance.length} Items</span>
+                </div>
+                <div className="card-body">
+                    {compliance.length > 0 ? (
+                        <div className="table-responsive">
+                            <table className="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Software</th>
+                                        <th>Version</th>
+                                        <th>License Type</th>
+                                        <th>Total Licenses</th>
+                                        <th>Used</th>
+                                        <th>Available</th>
+                                        <th>Utilization</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {compliance.map((item, index) => {
+                                        const utilization = (item.used_licenses / item.total_licenses) * 100;
+                                        return (
+                                            <tr key={index}>
+                                                <td className="fw-medium">{item.software_name}</td>
+                                                <td>{item.version || "N/A"}</td>
+                                                <td>
+                                                    <span className="badge bg-label-info">
+                                                        {item.license_type?.replace(/_/g, " ")}
+                                                    </span>
+                                                </td>
+                                                <td>{item.total_licenses}</td>
+                                                <td>{item.used_licenses}</td>
+                                                <td>{item.total_licenses - item.used_licenses}</td>
+                                                <td>
+                                                    <div className="d-flex align-items-center">
+                                                        <div
+                                                            className="progress flex-grow-1 me-2"
+                                                            style={{ height: "6px", width: "60px" }}
+                                                        >
+                                                            <div
+                                                                className={`progress-bar ${getUtilizationColor(
+                                                                    utilization
+                                                                )}`}
+                                                                style={{
+                                                                    width: `${utilization}%`,
+                                                                }}
+                                                            ></div>
+                                                        </div>
+                                                        <small>{utilization.toFixed(1)}%</small>
+                                                    </div>
+                                                </td>
+                                                <td>{getComplianceBadge(item.compliance_status)}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <EmptyState message="No compliance data available" />
+                    )}
+                </div>
+            </div>
+        </>
     );
 };
 
 const ExpiringReport = ({ data }) => {
-    const expiringLicenses = data?.expiring_licenses || [];
-    const expiredCount = expiringLicenses.filter(
-        (l) => l.days_remaining < 0
-    ).length;
-    const soonCount = expiringLicenses.filter(
-        (l) => l.days_remaining >= 0 && l.days_remaining <= 30
-    ).length;
+    const reportData = data?.data || {};
+    const summary = data?.summary || {};
+    const expired = reportData.expired || [];
+    const expiring30 = reportData.expiring_30_days || [];
+    const expiring90 = reportData.expiring_90_days || [];
+    const allExpiring = [...expired, ...expiring30, ...expiring90];
 
     return (
         <>
@@ -848,7 +909,7 @@ const ExpiringReport = ({ data }) => {
                 <div className="col-md-4 mb-3">
                     <div className="card bg-danger text-white">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{expiredCount}</h2>
+                            <h2 className="mb-0">{summary.expired_count || 0}</h2>
                             <span>Expired Licenses</span>
                         </div>
                     </div>
@@ -856,7 +917,7 @@ const ExpiringReport = ({ data }) => {
                 <div className="col-md-4 mb-3">
                     <div className="card bg-warning text-white">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{soonCount}</h2>
+                            <h2 className="mb-0">{summary.expiring_30_days_count || 0}</h2>
                             <span>Expiring in 30 Days</span>
                         </div>
                     </div>
@@ -864,8 +925,8 @@ const ExpiringReport = ({ data }) => {
                 <div className="col-md-4 mb-3">
                     <div className="card bg-info text-white">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{expiringLicenses.length}</h2>
-                            <span>Total Requiring Attention</span>
+                            <h2 className="mb-0">{summary.expiring_90_days_count || 0}</h2>
+                            <span>Expiring in 90 Days</span>
                         </div>
                     </div>
                 </div>
@@ -877,59 +938,55 @@ const ExpiringReport = ({ data }) => {
                     <h5 className="card-title mb-0">Expiring & Expired Licenses</h5>
                 </div>
                 <div className="card-body">
-                    {expiringLicenses.length > 0 ? (
+                    {allExpiring.length > 0 ? (
                         <div className="table-responsive">
                             <table className="table table-hover">
                                 <thead>
                                     <tr>
                                         <th>Software</th>
-                                        <th>License Key</th>
+                                        <th>Version</th>
+                                        <th>License Type</th>
+                                        <th>Total Licenses</th>
+                                        <th>Used</th>
                                         <th>Expiry Date</th>
-                                        <th>Days Remaining</th>
-                                        <th>Renewal Cost</th>
+                                        <th>Days Until Expiry</th>
                                         <th>Status</th>
-                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {expiringLicenses.map((item, index) => (
-                                        <tr
-                                            key={index}
-                                            className={
-                                                item.days_remaining < 0 ? "table-danger" : ""
-                                            }
-                                        >
-                                            <td className="fw-medium">{item.software_name}</td>
-                                            <td>
-                                                <code>{item.license_key || "N/A"}</code>
-                                            </td>
-                                            <td>{item.expiry_date}</td>
-                                            <td>
-                                                <span
-                                                    className={`fw-bold ${getExpiryTextColor(
-                                                        item.days_remaining
-                                                    )}`}
-                                                >
-                                                    {item.days_remaining < 0
-                                                        ? `${Math.abs(item.days_remaining)} days ago`
-                                                        : `${item.days_remaining} days`}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                TSH{" "}
-                                                {item.renewal_cost
-                                                    ? parseFloat(item.renewal_cost).toLocaleString()
-                                                    : "N/A"}
-                                            </td>
-                                            <td>{getExpiryBadge(item.days_remaining)}</td>
-                                            <td>
-                                                <button className="btn btn-sm btn-outline-primary">
-                                                    <i className="bx bx-refresh me-1"></i>
-                                                    Renew
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {allExpiring.map((item, index) => {
+                                        const daysUntilExpiry = item.days_until_expiry || 0;
+                                        const isExpired = daysUntilExpiry < 0;
+                                        return (
+                                            <tr
+                                                key={index}
+                                                className={isExpired ? "table-danger" : ""}
+                                            >
+                                                <td className="fw-medium">{item.software_name}</td>
+                                                <td>{item.version || "N/A"}</td>
+                                                <td>
+                                                    <span className="badge bg-label-info">
+                                                        {item.license_type?.replace(/_/g, " ")}
+                                                    </span>
+                                                </td>
+                                                <td>{item.total_licenses}</td>
+                                                <td>{item.used_licenses}</td>
+                                                <td>{item.license_expiry || "N/A"}</td>
+                                                <td>
+                                                    <span
+                                                        className={`fw-bold ${getExpiryTextColor(
+                                                            daysUntilExpiry
+                                                        )}`}
+                                                    >
+                                                        {isExpired
+                                                            ? `${Math.abs(daysUntilExpiry)} days ago`
+                                                            : `${daysUntilExpiry} days`}
+                                                    </span>
+                                                </td>
+                                                <td>{getExpiryBadge(daysUntilExpiry)}</td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
