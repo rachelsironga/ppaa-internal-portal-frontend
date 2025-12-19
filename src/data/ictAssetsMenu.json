@@ -102,9 +102,26 @@
         "text": "Software Catalog",
         "icon": "bx bx-list-ul",
         "available": true,
-        "link": "/ict-assets/asset-software",
+        "link": "/ict-assets/software",
         "permission": [
           "view_software"
+        ],
+        "role": [
+          "ICT_Superuser",
+          "ICT_Admin",
+          "ICT_Manager",
+          "ICT_Technician",
+          "ICT_Auditor",
+          "ReadOnly_User"
+        ]
+      },
+      {
+        "text": "Software Installations",
+        "icon": "bx bx-download",
+        "available": true,
+        "link": "/ict-assets/software-installations",
+        "permission": [
+          "view_softwareinstallation"
         ],
         "role": [
           "ICT_Superuser",
@@ -119,7 +136,7 @@
         "text": "Software Categories",
         "icon": "bx bx-category",
         "available": true,
-        "link": "/ict-assets/asset-software-categories",
+        "link": "/ict-assets/software-categories",
         "permission": [
           "view_softwarecategory"
         ],

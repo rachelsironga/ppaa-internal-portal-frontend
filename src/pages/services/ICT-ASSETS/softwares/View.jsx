@@ -288,7 +288,7 @@ export const SoftwareAssetListPage = () => {
                                     aria-label="View"
                                     type="button"
                                     className="btn btn-sm btn-outline-info border-0"
-                                    onClick={() => navigate(`/ict-assets/asset-software/${row.uid}`)}
+                                    onClick={() => navigate(`/ict-assets/software/${row.uid}`)}
                                     title="View Software"
                                 >
                                     <i className="bx bx-show"></i>
