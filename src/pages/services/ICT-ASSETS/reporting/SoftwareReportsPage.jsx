@@ -4,8 +4,10 @@ import React from "react";
 import "animate.css";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
+import { Formik, Form } from "formik";
 import { fetchData } from "../../../../utils/GlobalQueries.jsx";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
 const LICENSE_TYPES = [
     { value: "", label: "All License Types" },
@@ -30,10 +32,9 @@ const REPORT_TYPES = [
     { value: "expiring", label: "Expiring Licenses", icon: "bx-calendar-exclamation" },
 ];
 
-export const SoftwareReportsPage = () => {
+const SoftwareReportsPage = () => {
     const user = useSelector((state) => state.userReducer?.data);
     const [reportData, setReportData] = useState(null);
-    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [exporting, setExporting] = useState(false);
@@ -43,15 +44,6 @@ export const SoftwareReportsPage = () => {
         category: "",
         license_type: "",
     });
-
-    const fetchCategories = useCallback(async () => {
-        try {
-            const data = await fetchData({ url: "/asset-software-categories" });
-            setCategories(Array.isArray(data) ? data : (data?.results || []));
-        } catch (err) {
-            console.error("Failed to fetch categories:", err);
-        }
-    }, []);
 
     const fetchReportData = useCallback(async () => {
         try {
@@ -93,17 +85,8 @@ export const SoftwareReportsPage = () => {
     }, [filters]);
 
     useEffect(() => {
-        fetchCategories();
-    }, [fetchCategories]);
-
-    useEffect(() => {
         fetchReportData();
     }, [fetchReportData]);
-
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilters((prev) => ({ ...prev, [name]: value }));
-    };
 
     const handleExport = async (format) => {
         if (!reportData) return;
@@ -382,68 +365,84 @@ export const SoftwareReportsPage = () => {
             </BreadCumb>
 
             {/* Filters Card */}
-            <div className="row mb-4">
-                <div className="col-12">
-                    <div className="card">
-                        <div className="card-header">
-                            <h5 className="card-title mb-0">
-                                <i className="bx bx-filter-alt me-2"></i>
-                                Report Filters
-                            </h5>
-                        </div>
-                        <div className="card-body">
-                            <div className="row g-3">
-                                <div className="col-md-4">
-                                    <label className="form-label">Report Type</label>
-                                    <select
-                                        className="form-select"
-                                        name="report_type"
-                                        value={filters.report_type}
-                                        onChange={handleFilterChange}
-                                    >
-                                        {REPORT_TYPES.map((type) => (
-                                            <option key={type.value} value={type.value}>
-                                                {type.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="col-md-4">
-                                    <label className="form-label">Category</label>
-                                    <select
-                                        className="form-select"
-                                        name="category"
-                                        value={filters.category}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="">All Categories</option>
-                                        {categories.map((cat) => (
-                                            <option key={cat.id} value={cat.id}>
-                                                {cat.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="col-md-4">
-                                    <label className="form-label">License Type</label>
-                                    <select
-                                        className="form-select"
-                                        name="license_type"
-                                        value={filters.license_type}
-                                        onChange={handleFilterChange}
-                                    >
-                                        {LICENSE_TYPES.map((type) => (
-                                            <option key={type.value} value={type.value}>
-                                                {type.label}
-                                            </option>
-                                        ))}
-                                    </select>
+            <Formik
+                initialValues={filters}
+                enableReinitialize
+                onSubmit={(values) => setFilters(values)}
+            >
+                {({ values, setFieldValue }) => (
+                    <Form>
+                        <div className="row mb-4">
+                            <div className="col-12">
+                                <div className="card">
+                                    <div className="card-header">
+                                        <h5 className="card-title mb-0">
+                                            <i className="bx bx-filter-alt me-2"></i>
+                                            Report Filters
+                                        </h5>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="row g-3">
+                                            <div className="col-md-4">
+                                                <label className="form-label">Report Type</label>
+                                                <select
+                                                    className="form-select"
+                                                    name="report_type"
+                                                    value={values.report_type}
+                                                    onChange={(e) => {
+                                                        setFieldValue("report_type", e.target.value);
+                                                        setFilters((prev) => ({ ...prev, report_type: e.target.value }));
+                                                    }}
+                                                >
+                                                    {REPORT_TYPES.map((type) => (
+                                                        <option key={type.value} value={type.value}>
+                                                            {type.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="col-md-4">
+                                                <FormikSelect
+                                                    name="category"
+                                                    label="Category"
+                                                    url="/asset-software-categories"
+                                                    containerClass="mb-0"
+                                                    filters={{ page: 1, page_size: 100, paginated: true }}
+                                                    mapOption={(item) => ({ value: item.id, label: item.name })}
+                                                    placeholder="All Categories"
+                                                    isClearable={true}
+                                                    onChange={(option) => {
+                                                        setFieldValue("category", option?.value || "");
+                                                        setFilters((prev) => ({ ...prev, category: option?.value || "" }));
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label">License Type</label>
+                                                <select
+                                                    className="form-select"
+                                                    name="license_type"
+                                                    value={values.license_type}
+                                                    onChange={(e) => {
+                                                        setFieldValue("license_type", e.target.value);
+                                                        setFilters((prev) => ({ ...prev, license_type: e.target.value }));
+                                                    }}
+                                                >
+                                                    {LICENSE_TYPES.map((type) => (
+                                                        <option key={type.value} value={type.value}>
+                                                            {type.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </Form>
+                )}
+            </Formik>
 
             {/* Report Type Tabs */}
             <div className="row mb-4">
@@ -491,16 +490,16 @@ const SummaryReport = ({ data }) => {
             {/* Summary Cards */}
             <div className="row mb-4">
                 <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 bg-primary text-white">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
-                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                    <div className="bg-primary rounded p-2">
                                         <i className="bx bx-key text-white fs-4"></i>
                                     </div>
                                 </div>
                                 <div className="ms-3">
-                                    <span className="d-block mb-1">Total Licenses</span>
+                                    <span className="d-block mb-1 text-muted">Total Licenses</span>
                                     <h3 className="mb-0">{summary.total_licenses || 0}</h3>
                                 </div>
                             </div>
@@ -508,16 +507,16 @@ const SummaryReport = ({ data }) => {
                     </div>
                 </div>
                 <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 bg-success text-white">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
-                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                    <div className="bg-success rounded p-2">
                                         <i className="bx bx-check-circle text-white fs-4"></i>
                                     </div>
                                 </div>
                                 <div className="ms-3">
-                                    <span className="d-block mb-1">Utilization Rate</span>
+                                    <span className="d-block mb-1 text-muted">Utilization Rate</span>
                                     <h3 className="mb-0">{summary.utilization_rate || 0}%</h3>
                                 </div>
                             </div>
@@ -525,16 +524,16 @@ const SummaryReport = ({ data }) => {
                     </div>
                 </div>
                 <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 bg-info text-white">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
-                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                    <div className="bg-info rounded p-2">
                                         <i className="bx bx-download text-white fs-4"></i>
                                     </div>
                                 </div>
                                 <div className="ms-3">
-                                    <span className="d-block mb-1">Installations</span>
+                                    <span className="d-block mb-1 text-muted">Installations</span>
                                     <h3 className="mb-0">{summary.total_installations || 0}</h3>
                                 </div>
                             </div>
@@ -542,16 +541,16 @@ const SummaryReport = ({ data }) => {
                     </div>
                 </div>
                 <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 bg-warning text-white">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
-                                    <div className="bg-white bg-opacity-25 rounded p-2">
+                                    <div className="bg-warning rounded p-2">
                                         <i className="bx bx-dollar text-white fs-4"></i>
                                     </div>
                                 </div>
                                 <div className="ms-3">
-                                    <span className="d-block mb-1">Total Cost</span>
+                                    <span className="d-block mb-1 text-muted">Total Cost</span>
                                     <h3 className="mb-0">
                                         TSH{" "}
                                         {summary.total_cost
@@ -798,26 +797,26 @@ const ComplianceReport = ({ data }) => {
             {/* Summary Cards */}
             <div className="row mb-4">
                 <div className="col-md-4 mb-3">
-                    <div className="card bg-success text-white">
+                    <div className="card">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{summary.compliant || 0}</h2>
-                            <span>Compliant Software</span>
+                            <div className="text-success display-4 fw-bold mb-2">{summary.compliant || 0}</div>
+                            <span className="text-muted">Compliant Software</span>
                         </div>
                     </div>
                 </div>
                 <div className="col-md-4 mb-3">
-                    <div className="card bg-warning text-white">
+                    <div className="card">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{summary.over_licensed || 0}</h2>
-                            <span>Over Licensed</span>
+                            <div className="text-warning display-4 fw-bold mb-2">{summary.over_licensed || 0}</div>
+                            <span className="text-muted">Over Licensed</span>
                         </div>
                     </div>
                 </div>
                 <div className="col-md-4 mb-3">
-                    <div className="card bg-info text-white">
+                    <div className="card">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{summary.compliance_rate?.parsedValue || summary.compliance_rate || 0}%</h2>
-                            <span>Compliance Rate</span>
+                            <div className="text-info display-4 fw-bold mb-2">{summary.compliance_rate?.parsedValue || summary.compliance_rate || 0}%</div>
+                            <span className="text-muted">Compliance Rate</span>
                         </div>
                     </div>
                 </div>
@@ -907,26 +906,26 @@ const ExpiringReport = ({ data }) => {
             {/* Summary Cards */}
             <div className="row mb-4">
                 <div className="col-md-4 mb-3">
-                    <div className="card bg-danger text-white">
+                    <div className="card">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{summary.expired_count || 0}</h2>
-                            <span>Expired Licenses</span>
+                            <div className="text-danger display-4 fw-bold mb-2">{summary.expired_count || 0}</div>
+                            <span className="text-muted">Expired Licenses</span>
                         </div>
                     </div>
                 </div>
                 <div className="col-md-4 mb-3">
-                    <div className="card bg-warning text-white">
+                    <div className="card">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{summary.expiring_30_days_count || 0}</h2>
-                            <span>Expiring in 30 Days</span>
+                            <div className="text-warning display-4 fw-bold mb-2">{summary.expiring_30_days_count || 0}</div>
+                            <span className="text-muted">Expiring in 30 Days</span>
                         </div>
                     </div>
                 </div>
                 <div className="col-md-4 mb-3">
-                    <div className="card bg-info text-white">
+                    <div className="card">
                         <div className="card-body text-center">
-                            <h2 className="mb-0">{summary.expiring_90_days_count || 0}</h2>
-                            <span>Expiring in 90 Days</span>
+                            <div className="text-info display-4 fw-bold mb-2">{summary.expiring_90_days_count || 0}</div>
+                            <span className="text-muted">Expiring in 90 Days</span>
                         </div>
                     </div>
                 </div>
@@ -1195,4 +1194,5 @@ const getExpiryBadge = (days) => {
     return <span className="badge bg-info">Upcoming</span>;
 };
 
+export { SoftwareReportsPage };
 export default SoftwareReportsPage;
