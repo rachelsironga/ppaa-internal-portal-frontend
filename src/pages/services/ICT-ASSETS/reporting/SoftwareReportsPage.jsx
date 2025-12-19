@@ -741,8 +741,8 @@ const InstallationReport = ({ data }) => {
                             </thead>
                             <tbody>
                                 {installations.map((item, index) => {
-                                    const activePercentage = item.installation_count > 0 
-                                        ? (item.active_count / item.installation_count) * 100 
+                                    const activePercentage = item.installation_count > 0
+                                        ? (item.active_count / item.installation_count) * 100
                                         : 0;
                                     return (
                                         <tr key={index}>
