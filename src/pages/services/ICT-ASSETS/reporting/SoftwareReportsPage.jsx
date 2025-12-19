@@ -177,16 +177,18 @@ export const SoftwareReportsPage = () => {
                     }
                     break;
                 case "license":
-                    exportData = (reportData.licenses || []).map((license) => ({
+                    exportData = (reportData.data || []).map((license) => ({
                         "Software Name": license.software_name,
-                        "License Key": license.license_key,
+                        "Asset Tag": license.asset_tag,
+                        "Publisher": license.publisher,
+                        "Version": license.version,
                         "License Type": license.license_type,
-                        "Total Seats": license.total_seats,
-                        "Used Seats": license.used_seats,
-                        "Available Seats": license.available_seats,
-                        "Utilization %": license.utilization_percentage,
-                        "Expiry Date": license.expiry_date,
-                        Status: license.status,
+                        "Total Licenses": license.total_licenses,
+                        "Used Licenses": license.used_licenses,
+                        "Available Licenses": license.available_licenses,
+                        "Utilization %": license.utilization?.parsedValue || license.utilization,
+                        "License Expiry": license.license_expiry || "N/A",
+                        "Purchase Cost (TSH)": license.purchase_cost?.parsedValue || license.purchase_cost?.source || 0,
                     }));
                     break;
                 case "installation":
@@ -628,7 +630,7 @@ const SummaryReport = ({ data }) => {
 };
 
 const LicenseReport = ({ data }) => {
-    const licenses = data?.licenses || [];
+    const licenses = data?.data || [];
 
     return (
         <div className="card">
@@ -643,53 +645,58 @@ const LicenseReport = ({ data }) => {
                             <thead>
                                 <tr>
                                     <th>Software</th>
-                                    <th>License Key</th>
-                                    <th>Type</th>
-                                    <th>Total Seats</th>
+                                    <th>Asset Tag</th>
+                                    <th>Publisher</th>
+                                    <th>Version</th>
+                                    <th>License Type</th>
+                                    <th>Total</th>
                                     <th>Used</th>
                                     <th>Available</th>
                                     <th>Utilization</th>
                                     <th>Expiry</th>
-                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {licenses.map((license, index) => (
-                                    <tr key={index}>
-                                        <td className="fw-medium">{license.software_name}</td>
-                                        <td>
-                                            <code>{license.license_key || "N/A"}</code>
-                                        </td>
-                                        <td>
-                                            <span className="badge bg-label-info">
-                                                {license.license_type}
-                                            </span>
-                                        </td>
-                                        <td>{license.total_seats}</td>
-                                        <td>{license.used_seats}</td>
-                                        <td>{license.available_seats}</td>
-                                        <td>
-                                            <div className="d-flex align-items-center">
-                                                <div
-                                                    className="progress flex-grow-1 me-2"
-                                                    style={{ height: "6px", width: "60px" }}
-                                                >
+                                {licenses.map((license, index) => {
+                                    const utilization = license.utilization?.parsedValue || license.utilization || 0;
+                                    return (
+                                        <tr key={index}>
+                                            <td className="fw-medium">{license.software_name}</td>
+                                            <td>
+                                                <code>{license.asset_tag || "N/A"}</code>
+                                            </td>
+                                            <td>{license.publisher || "N/A"}</td>
+                                            <td>{license.version || "N/A"}</td>
+                                            <td>
+                                                <span className="badge bg-label-info">
+                                                    {license.license_type?.replace(/_/g, " ")}
+                                                </span>
+                                            </td>
+                                            <td>{license.total_licenses}</td>
+                                            <td>{license.used_licenses}</td>
+                                            <td>{license.available_licenses}</td>
+                                            <td>
+                                                <div className="d-flex align-items-center">
                                                     <div
-                                                        className={`progress-bar ${getUtilizationColor(
-                                                            license.utilization_percentage
-                                                        )}`}
-                                                        style={{
-                                                            width: `${license.utilization_percentage}%`,
-                                                        }}
-                                                    ></div>
+                                                        className="progress flex-grow-1 me-2"
+                                                        style={{ height: "6px", width: "60px" }}
+                                                    >
+                                                        <div
+                                                            className={`progress-bar ${getUtilizationColor(
+                                                                utilization
+                                                            )}`}
+                                                            style={{
+                                                                width: `${utilization}%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    <small>{utilization}%</small>
                                                 </div>
-                                                <small>{license.utilization_percentage}%</small>
-                                            </div>
-                                        </td>
-                                        <td>{license.expiry_date || "N/A"}</td>
-                                        <td>{getStatusBadge(license.status)}</td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td>{license.license_expiry || "N/A"}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

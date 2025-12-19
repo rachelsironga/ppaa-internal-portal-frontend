@@ -5,7 +5,6 @@ import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { fetchData } from "../../../../utils/GlobalQueries";
-
 export const MaintenanceReportsPage = () => {
     const user = useSelector((state) => state.userReducer?.data);
 
@@ -107,13 +106,15 @@ export const MaintenanceReportsPage = () => {
     };
 
     const handleResetFilters = () => {
-        setFilters({
+        const defaultFilters = {
             report_type: "summary",
             start_date: "",
             end_date: "",
             status: "",
             technician: "",
-        });
+        };
+        setFilters(defaultFilters);
+        setReportData(null);
     };
 
     const exportToExcel = () => {
@@ -122,30 +123,54 @@ export const MaintenanceReportsPage = () => {
             return;
         }
 
-        let exportData = [];
         const reportType = filters.report_type;
+        const workbook = XLSX.utils.book_new();
 
         if (reportType === "summary" && reportData.summary) {
-            exportData = [
-                { Metric: "Total Maintenance Tasks", Value: reportData.summary.total_tasks || 0 },
-                { Metric: "Completed Tasks", Value: reportData.summary.completed || 0 },
-                { Metric: "In Progress", Value: reportData.summary.in_progress || 0 },
-                { Metric: "Scheduled", Value: reportData.summary.scheduled || 0 },
-                { Metric: "Cancelled", Value: reportData.summary.cancelled || 0 },
-                { Metric: "Total Cost", Value: reportData.summary.total_cost || 0 },
-                { Metric: "Average Cost", Value: reportData.summary.average_cost || 0 },
+            const summary = reportData.summary;
+            const summaryData = [
+                { Metric: "Total Records", Value: summary.total_records || summary.total_tasks || 0 },
+                { Metric: "Completed Tasks", Value: summary.completed || 0 },
+                { Metric: "In Progress", Value: summary.in_progress || 0 },
+                { Metric: "Scheduled", Value: summary.scheduled || 0 },
+                { Metric: "Overdue", Value: summary.overdue || 0 },
+                { Metric: "Total Cost (TSH)", Value: summary.total_cost?.parsedValue || summary.total_cost || 0 },
+                { Metric: "Average Cost (TSH)", Value: summary.average_cost || 0 },
             ];
-        } else if (reportData.data && Array.isArray(reportData.data)) {
-            exportData = reportData.data;
-        } else if (reportData.results && Array.isArray(reportData.results)) {
-            exportData = reportData.results;
-        } else {
-            exportData = [reportData];
-        }
+            const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
 
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Maintenance Report");
+            if (reportData.status_breakdown?.length > 0) {
+                const statusData = reportData.status_breakdown.map((item) => ({
+                    Status: item.status?.replace(/_/g, " ").toUpperCase(),
+                    Count: item.count,
+                    "Total Cost (TSH)": item.total_cost?.parsedValue || item.total_cost || 0,
+                }));
+                const statusSheet = XLSX.utils.json_to_sheet(statusData);
+                XLSX.utils.book_append_sheet(workbook, statusSheet, "Status Breakdown");
+            }
+
+            if (reportData.type_breakdown?.length > 0) {
+                const typeData = reportData.type_breakdown.map((item) => ({
+                    "Maintenance Type": item.maintenance_type,
+                    Count: item.count,
+                    "Total Cost (TSH)": item.total_cost?.parsedValue || item.total_cost || 0,
+                }));
+                const typeSheet = XLSX.utils.json_to_sheet(typeData);
+                XLSX.utils.book_append_sheet(workbook, typeSheet, "Type Breakdown");
+            }
+        } else {
+            let exportData = [];
+            if (reportData.data && Array.isArray(reportData.data)) {
+                exportData = reportData.data;
+            } else if (reportData.results && Array.isArray(reportData.results)) {
+                exportData = reportData.results;
+            } else {
+                exportData = [reportData];
+            }
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Report Data");
+        }
 
         const fileName = `maintenance_report_${reportType}_${new Date().toISOString().split("T")[0]}.xlsx`;
         XLSX.writeFile(workbook, fileName);
@@ -163,15 +188,38 @@ export const MaintenanceReportsPage = () => {
         const reportType = filters.report_type;
 
         if (reportType === "summary" && reportData.summary) {
+            const summary = reportData.summary;
             exportData = [
-                { Metric: "Total Maintenance Tasks", Value: reportData.summary.total_tasks || 0 },
-                { Metric: "Completed Tasks", Value: reportData.summary.completed || 0 },
-                { Metric: "In Progress", Value: reportData.summary.in_progress || 0 },
-                { Metric: "Scheduled", Value: reportData.summary.scheduled || 0 },
-                { Metric: "Cancelled", Value: reportData.summary.cancelled || 0 },
-                { Metric: "Total Cost", Value: reportData.summary.total_cost || 0 },
-                { Metric: "Average Cost", Value: reportData.summary.average_cost || 0 },
+                { Metric: "Total Records", Value: summary.total_records || summary.total_tasks || 0 },
+                { Metric: "Completed Tasks", Value: summary.completed || 0 },
+                { Metric: "In Progress", Value: summary.in_progress || 0 },
+                { Metric: "Scheduled", Value: summary.scheduled || 0 },
+                { Metric: "Overdue", Value: summary.overdue || 0 },
+                { Metric: "Total Cost (TSH)", Value: summary.total_cost?.parsedValue || summary.total_cost || 0 },
+                { Metric: "Average Cost (TSH)", Value: summary.average_cost || 0 },
             ];
+
+            if (reportData.status_breakdown?.length > 0) {
+                exportData.push({ Metric: "", Value: "" });
+                exportData.push({ Metric: "--- Status Breakdown ---", Value: "" });
+                reportData.status_breakdown.forEach((item) => {
+                    exportData.push({
+                        Metric: item.status?.replace(/_/g, " ").toUpperCase(),
+                        Value: `Count: ${item.count}, Cost: ${item.total_cost?.parsedValue || item.total_cost || 0}`,
+                    });
+                });
+            }
+
+            if (reportData.type_breakdown?.length > 0) {
+                exportData.push({ Metric: "", Value: "" });
+                exportData.push({ Metric: "--- Type Breakdown ---", Value: "" });
+                reportData.type_breakdown.forEach((item) => {
+                    exportData.push({
+                        Metric: item.maintenance_type,
+                        Value: `Count: ${item.count}, Cost: ${item.total_cost?.parsedValue || item.total_cost || 0}`,
+                    });
+                });
+            }
         } else if (reportData.data && Array.isArray(reportData.data)) {
             exportData = reportData.data;
         } else if (reportData.results && Array.isArray(reportData.results)) {
@@ -199,13 +247,25 @@ export const MaintenanceReportsPage = () => {
         Swal.fire("Success", "Report exported to CSV successfully!", "success");
     };
 
+    const parseCost = (cost) => {
+        if (typeof cost === "object" && cost !== null) {
+            return cost.parsedValue || parseFloat(cost.source) || 0;
+        }
+        return parseFloat(cost) || 0;
+    };
+
     const renderSummaryCards = () => {
-        const summary = reportData?.summary || {};
+        if (!reportData?.summary) return null;
+
+        const summary = reportData.summary;
+        const totalRecords = summary.total_records || summary.total_tasks || 0;
+        const totalCost = parseCost(summary.total_cost);
+        const averageCost = summary.average_cost || 0;
 
         return (
-            <div className="row mb-4">
-                <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 border-start border-primary border-4">
+            <div className="row">
+                <div className="col-sm-6 col-lg-3 mb-4">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
@@ -214,16 +274,16 @@ export const MaintenanceReportsPage = () => {
                                     </div>
                                 </div>
                                 <div className="ms-3">
-                                    <span className="fw-medium d-block mb-1">Total Tasks</span>
-                                    <h3 className="card-title mb-0">{summary.total_tasks || 0}</h3>
+                                    <span className="fw-medium d-block mb-1">Total Records</span>
+                                    <h3 className="card-title mb-0">{totalRecords}</h3>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 border-start border-success border-4">
+                <div className="col-sm-6 col-lg-3 mb-4">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
@@ -233,17 +293,15 @@ export const MaintenanceReportsPage = () => {
                                 </div>
                                 <div className="ms-3">
                                     <span className="fw-medium d-block mb-1">Completed</span>
-                                    <h3 className="card-title text-success mb-0">
-                                        {summary.completed || 0}
-                                    </h3>
+                                    <h3 className="card-title mb-0">{summary.completed || 0}</h3>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 border-start border-warning border-4">
+                <div className="col-sm-6 col-lg-3 mb-4">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
@@ -253,17 +311,15 @@ export const MaintenanceReportsPage = () => {
                                 </div>
                                 <div className="ms-3">
                                     <span className="fw-medium d-block mb-1">In Progress</span>
-                                    <h3 className="card-title text-warning mb-0">
-                                        {summary.in_progress || 0}
-                                    </h3>
+                                    <h3 className="card-title mb-0">{summary.in_progress || 0}</h3>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="col-sm-6 col-lg-3 mb-3">
-                    <div className="card h-100 border-start border-info border-4">
+                <div className="col-sm-6 col-lg-3 mb-4">
+                    <div className="card h-100">
                         <div className="card-body">
                             <div className="d-flex align-items-center">
                                 <div className="avatar flex-shrink-0">
@@ -273,9 +329,61 @@ export const MaintenanceReportsPage = () => {
                                 </div>
                                 <div className="ms-3">
                                     <span className="fw-medium d-block mb-1">Scheduled</span>
-                                    <h3 className="card-title text-info mb-0">
-                                        {summary.scheduled || 0}
-                                    </h3>
+                                    <h3 className="card-title mb-0">{summary.scheduled || 0}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-sm-6 col-lg-3 mb-4">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center">
+                                <div className="avatar flex-shrink-0">
+                                    <div className="bg-danger rounded p-2">
+                                        <i className="bx bx-error text-white"></i>
+                                    </div>
+                                </div>
+                                <div className="ms-3">
+                                    <span className="fw-medium d-block mb-1">Overdue</span>
+                                    <h3 className="card-title mb-0">{summary.overdue || 0}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-sm-6 col-lg-3 mb-4">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center">
+                                <div className="avatar flex-shrink-0">
+                                    <div className="bg-secondary rounded p-2">
+                                        <i className="bx bx-dollar text-white"></i>
+                                    </div>
+                                </div>
+                                <div className="ms-3">
+                                    <span className="fw-medium d-block mb-1">Total Cost</span>
+                                    <h3 className="card-title mb-0">TSH {totalCost.toLocaleString()}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-sm-6 col-lg-3 mb-4">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center">
+                                <div className="avatar flex-shrink-0">
+                                    <div className="bg-dark rounded p-2">
+                                        <i className="bx bx-calculator text-white"></i>
+                                    </div>
+                                </div>
+                                <div className="ms-3">
+                                    <span className="fw-medium d-block mb-1">Avg Cost</span>
+                                    <h3 className="card-title mb-0">TSH {parseFloat(averageCost).toLocaleString()}</h3>
                                 </div>
                             </div>
                         </div>
@@ -285,10 +393,10 @@ export const MaintenanceReportsPage = () => {
         );
     };
 
-    const renderCostAnalysisChart = () => {
-        const costData = reportData?.cost_analysis || reportData?.data || [];
+    const renderCostByTypeChart = () => {
+        const typeCost = reportData?.type_cost || [];
 
-        if (!costData.length) {
+        if (!typeCost.length) {
             return (
                 <div className="text-center py-4">
                     <i className="bx bx-chart text-muted display-4"></i>
@@ -297,26 +405,26 @@ export const MaintenanceReportsPage = () => {
             );
         }
 
-        const maxCost = Math.max(...costData.map((item) => item.total_cost || item.cost || 0));
+        const maxCost = Math.max(...typeCost.map((item) => parseCost(item.total_cost)));
 
         return (
             <div className="cost-chart">
-                {costData.slice(0, 10).map((item, index) => {
-                    const cost = item.total_cost || item.cost || 0;
-                    const label = item.month || item.category || item.technician || item.asset || `Item ${index + 1}`;
+                {typeCost.map((item, index) => {
+                    const cost = parseCost(item.total_cost);
+                    const label = item.maintenance_type || `Type ${index + 1}`;
 
                     return (
                         <div key={index} className="mb-3">
                             <div className="d-flex justify-content-between mb-1">
                                 <span className="text-sm">{label}</span>
                                 <span className="fw-bold">
-                                    TSH {parseFloat(cost).toLocaleString()}
+                                    TSH {cost.toLocaleString()}
                                 </span>
                             </div>
                             <div className="progress" style={{ height: "20px" }}>
                                 <div
                                     className="progress-bar bg-success"
-                                    style={{ width: `${(cost / maxCost) * 100}%` }}
+                                    style={{ width: `${maxCost > 0 ? (cost / maxCost) * 100 : 0}%` }}
                                 ></div>
                             </div>
                         </div>
@@ -326,8 +434,57 @@ export const MaintenanceReportsPage = () => {
         );
     };
 
+    const renderMonthlyCostTable = () => {
+        const monthlyCost = reportData?.monthly_cost || [];
+
+        if (!monthlyCost.length) {
+            return (
+                <div className="text-center py-4">
+                    <i className="bx bx-calendar text-muted display-4"></i>
+                    <p className="text-muted mt-2">No monthly data available</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="table-responsive">
+                <table className="table table-hover">
+                    <thead className="table-light">
+                        <tr>
+                            <th>Month</th>
+                            <th className="text-center">Count</th>
+                            <th className="text-end">Total Cost</th>
+                            <th className="text-end">Avg Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {monthlyCost.map((item, index) => {
+                            const monthDate = new Date(item.month);
+                            const monthLabel = monthDate.toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                            });
+                            return (
+                                <tr key={index}>
+                                    <td>{monthLabel}</td>
+                                    <td className="text-center">{item.count}</td>
+                                    <td className="text-end">
+                                        TSH {parseCost(item.total_cost).toLocaleString()}
+                                    </td>
+                                    <td className="text-end">
+                                        TSH {parseCost(item.avg_cost).toLocaleString()}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
     const renderPerformanceMetrics = () => {
-        const performance = reportData?.performance || reportData?.data || {};
+        const metrics = reportData?.metrics || reportData?.performance || reportData?.data || {};
 
         return (
             <div className="row">
@@ -339,16 +496,19 @@ export const MaintenanceReportsPage = () => {
                         <div className="card-body">
                             <div className="text-center">
                                 <div className="display-4 text-success fw-bold">
-                                    {performance.completion_rate || 0}%
+                                    {metrics.completion_rate !== undefined ? parseFloat(metrics.completion_rate).toFixed(1) : 0}%
                                 </div>
-                                <p className="text-muted mb-0">Tasks Completed on Time</p>
+                                <p className="text-muted mb-0">Tasks Completed</p>
                             </div>
                             <div className="progress mt-3" style={{ height: "10px" }}>
                                 <div
                                     className="progress-bar bg-success"
-                                    style={{ width: `${performance.completion_rate || 0}%` }}
+                                    style={{ width: `${metrics.completion_rate || 0}%` }}
                                 ></div>
                             </div>
+                            <small className="text-muted d-block mt-2 text-center">
+                                {metrics.total_completed || 0} of {metrics.total_records || 0} completed
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -356,47 +516,72 @@ export const MaintenanceReportsPage = () => {
                 <div className="col-md-6 mb-4">
                     <div className="card h-100">
                         <div className="card-header">
-                            <h6 className="card-title mb-0">Average Resolution Time</h6>
+                            <h6 className="card-title mb-0">On-Time Completion Rate</h6>
                         </div>
                         <div className="card-body">
                             <div className="text-center">
                                 <div className="display-4 text-primary fw-bold">
-                                    {performance.avg_resolution_time || 0}
+                                    {metrics.on_time_rate !== undefined ? parseFloat(metrics.on_time_rate).toFixed(1) : 0}%
                                 </div>
-                                <p className="text-muted mb-0">Days Average</p>
+                                <p className="text-muted mb-0">Tasks Completed On Time</p>
+                            </div>
+                            <div className="progress mt-3" style={{ height: "10px" }}>
+                                <div
+                                    className="progress-bar bg-primary"
+                                    style={{ width: `${metrics.on_time_rate || 0}%` }}
+                                ></div>
+                            </div>
+                            <small className="text-muted d-block mt-2 text-center">
+                                {metrics.on_time_count || 0} on-time, {metrics.late_count || 0} late
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-md-6 mb-4">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <div className="text-center">
+                                <i className="bx bx-time-five text-info display-5"></i>
+                                <h5 className="mt-2">{metrics.average_completion_days !== undefined ? parseFloat(metrics.average_completion_days).toFixed(2) : 0}</h5>
+                                <small className="text-muted">Average Days to Complete</small>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="col-md-4 mb-4">
+                <div className="col-md-6 mb-4">
                     <div className="card h-100">
-                        <div className="card-body text-center">
-                            <i className="bx bx-trending-up text-success display-5"></i>
-                            <h5 className="mt-2">{performance.tasks_this_month || 0}</h5>
-                            <small className="text-muted">Tasks This Month</small>
+                        <div className="card-body">
+                            <div className="text-center">
+                                <i className="bx bx-check-circle text-success display-5"></i>
+                                <h5 className="mt-2">{metrics.total_completed || 0}</h5>
+                                <small className="text-muted">Total Completed</small>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="col-md-4 mb-4">
+                <div className="col-md-6 mb-4">
                     <div className="card h-100">
-                        <div className="card-body text-center">
-                            <i className="bx bx-dollar-circle text-warning display-5"></i>
-                            <h5 className="mt-2">
-                                TSH {parseFloat(performance.total_cost_this_month || 0).toLocaleString()}
-                            </h5>
-                            <small className="text-muted">Cost This Month</small>
+                        <div className="card-body">
+                            <div className="text-center">
+                                <i className="bx bx-list-check text-warning display-5"></i>
+                                <h5 className="mt-2">{metrics.total_records || 0}</h5>
+                                <small className="text-muted">Total Records</small>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="col-md-4 mb-4">
+                <div className="col-md-6 mb-4">
                     <div className="card h-100">
-                        <div className="card-body text-center">
-                            <i className="bx bx-error-circle text-danger display-5"></i>
-                            <h5 className="mt-2">{performance.overdue_tasks || 0}</h5>
-                            <small className="text-muted">Overdue Tasks</small>
+                        <div className="card-body">
+                            <div className="text-center">
+                                <i className="bx bx-trending-up text-danger display-5"></i>
+                                <h5 className="mt-2">{metrics.late_count || 0}</h5>
+                                <small className="text-muted">Late Completions</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -465,11 +650,99 @@ export const MaintenanceReportsPage = () => {
                 return (
                     <>
                         {renderSummaryCards()}
-                        <div className="card">
-                            <div className="card-header">
-                                <h5 className="card-title mb-0">Summary Details</h5>
+                        <div className="row">
+                            <div className="col-lg-6 mb-4">
+                                <div className="card h-100">
+                                    <div className="card-header">
+                                        <h5 className="card-title mb-0">
+                                            <i className="bx bx-pie-chart-alt-2 me-2"></i>
+                                            Status Breakdown
+                                        </h5>
+                                    </div>
+                                    <div className="card-body">
+                                        {reportData?.status_breakdown?.length > 0 ? (
+                                            <div className="table-responsive">
+                                                <table className="table table-hover">
+                                                    <thead className="table-light">
+                                                        <tr>
+                                                            <th>Status</th>
+                                                            <th className="text-center">Count</th>
+                                                            <th className="text-end">Total Cost</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {reportData.status_breakdown.map((item, index) => (
+                                                            <tr key={index}>
+                                                                <td>
+                                                                    <span className={`badge bg-${item.status === "completed" ? "success" :
+                                                                        item.status === "in_progress" ? "warning" :
+                                                                            item.status === "scheduled" ? "info" :
+                                                                                item.status === "cancelled" ? "secondary" : "primary"
+                                                                        }`}>
+                                                                        {item.status?.replace(/_/g, " ").toUpperCase()}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="text-center">{item.count}</td>
+                                                                <td className="text-end">
+                                                                    TSH {parseCost(item.total_cost).toLocaleString()}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-muted text-center mb-0">No status data available</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="card-body">{renderDataTable()}</div>
+                            <div className="col-lg-6 mb-4">
+                                <div className="card h-100">
+                                    <div className="card-header">
+                                        <h5 className="card-title mb-0">
+                                            <i className="bx bx-category me-2"></i>
+                                            Maintenance Type Breakdown
+                                        </h5>
+                                    </div>
+                                    <div className="card-body">
+                                        {reportData?.type_breakdown?.length > 0 ? (
+                                            <div className="table-responsive">
+                                                <table className="table table-hover">
+                                                    <thead className="table-light">
+                                                        <tr>
+                                                            <th>Type</th>
+                                                            <th className="text-center">Count</th>
+                                                            <th className="text-end">Total Cost</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {reportData.type_breakdown.map((item, index) => (
+                                                            <tr key={index}>
+                                                                <td>
+                                                                    <span className={`badge bg-${item.maintenance_type === "Preventive" ? "primary" :
+                                                                        item.maintenance_type === "Corrective" ? "danger" :
+                                                                            item.maintenance_type === "Emergency" ? "warning" :
+                                                                                item.maintenance_type === "Routine" ? "info" : "secondary"
+                                                                        }`}>
+                                                                        {item.maintenance_type}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="text-center">{item.count}</td>
+                                                                <td className="text-end">
+                                                                    TSH {parseCost(item.total_cost).toLocaleString()}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-muted text-center mb-0">No type data available</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </>
                 );
@@ -477,52 +750,48 @@ export const MaintenanceReportsPage = () => {
             case "cost_analysis":
                 return (
                     <>
-                        {renderSummaryCards()}
                         <div className="row">
                             <div className="col-lg-6 mb-4">
                                 <div className="card h-100">
                                     <div className="card-header">
-                                        <h5 className="card-title mb-0">Cost Breakdown</h5>
+                                        <h5 className="card-title mb-0">
+                                            <i className="bx bx-pie-chart-alt-2 me-2"></i>
+                                            Cost by Maintenance Type
+                                        </h5>
                                     </div>
-                                    <div className="card-body">{renderCostAnalysisChart()}</div>
+                                    <div className="card-body">{renderCostByTypeChart()}</div>
                                 </div>
                             </div>
                             <div className="col-lg-6 mb-4">
                                 <div className="card h-100">
                                     <div className="card-header">
-                                        <h5 className="card-title mb-0">Cost Summary</h5>
+                                        <h5 className="card-title mb-0">
+                                            <i className="bx bx-dollar-circle me-2"></i>
+                                            Cost Summary
+                                        </h5>
                                     </div>
                                     <div className="card-body">
                                         <div className="mb-3 p-3 bg-light rounded">
                                             <div className="d-flex justify-content-between">
                                                 <span>Total Maintenance Cost</span>
                                                 <span className="fw-bold text-success">
-                                                    TSH{" "}
-                                                    {parseFloat(
-                                                        reportData?.summary?.total_cost || 0
-                                                    ).toLocaleString()}
+                                                    TSH {parseCost(reportData?.total_cost).toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="mb-3 p-3 bg-light rounded">
                                             <div className="d-flex justify-content-between">
-                                                <span>Average Cost per Task</span>
+                                                <span>Total Maintenance Types</span>
                                                 <span className="fw-bold text-primary">
-                                                    TSH{" "}
-                                                    {parseFloat(
-                                                        reportData?.summary?.average_cost || 0
-                                                    ).toLocaleString()}
+                                                    {reportData?.type_cost?.length || 0}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="mb-3 p-3 bg-light rounded">
                                             <div className="d-flex justify-content-between">
-                                                <span>Highest Single Cost</span>
-                                                <span className="fw-bold text-warning">
-                                                    TSH{" "}
-                                                    {parseFloat(
-                                                        reportData?.summary?.max_cost || 0
-                                                    ).toLocaleString()}
+                                                <span>Months with Data</span>
+                                                <span className="fw-bold text-info">
+                                                    {reportData?.monthly_cost?.length || 0}
                                                 </span>
                                             </div>
                                         </div>
@@ -532,9 +801,12 @@ export const MaintenanceReportsPage = () => {
                         </div>
                         <div className="card">
                             <div className="card-header">
-                                <h5 className="card-title mb-0">Detailed Cost Data</h5>
+                                <h5 className="card-title mb-0">
+                                    <i className="bx bx-calendar me-2"></i>
+                                    Monthly Cost Breakdown
+                                </h5>
                             </div>
-                            <div className="card-body">{renderDataTable()}</div>
+                            <div className="card-body">{renderMonthlyCostTable()}</div>
                         </div>
                     </>
                 );
@@ -542,7 +814,6 @@ export const MaintenanceReportsPage = () => {
             case "performance":
                 return (
                     <>
-                        {renderSummaryCards()}
                         {renderPerformanceMetrics()}
                         <div className="card">
                             <div className="card-header">
@@ -559,21 +830,18 @@ export const MaintenanceReportsPage = () => {
             case "by_asset":
             default:
                 return (
-                    <>
-                        {renderSummaryCards()}
-                        <div className="card">
-                            <div className="card-header d-flex justify-content-between align-items-center">
-                                <h5 className="card-title mb-0">
-                                    {reportTypes.find((r) => r.value === filters.report_type)?.label ||
-                                        "Report Data"}
-                                </h5>
-                                <span className="badge bg-primary">
-                                    {(reportData?.data || reportData?.results || []).length} Records
-                                </span>
-                            </div>
-                            <div className="card-body">{renderDataTable()}</div>
+                    <div className="card">
+                        <div className="card-header d-flex justify-content-between align-items-center">
+                            <h5 className="card-title mb-0">
+                                {reportTypes.find((r) => r.value === filters.report_type)?.label ||
+                                    "Report Data"}
+                            </h5>
+                            <span className="badge bg-primary">
+                                {(reportData?.data || reportData?.results || []).length} Records
+                            </span>
                         </div>
-                    </>
+                        <div className="card-body">{renderDataTable()}</div>
+                    </div>
                 );
         }
     };
