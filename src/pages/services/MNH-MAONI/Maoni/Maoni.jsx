@@ -422,7 +422,10 @@ export const Maoni = () => {
 
                 <div className="d-grid gap-3">
                   <button
-                    onClick={() => navigate("/mnh-connect/maoni/new")}
+                    aria-label="Click me"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#maoniModal"
                     className="btn btn-outline-primary d-flex align-items-center justify-content-start p-3 border-dashed text-start"
                   >
                     <div className="p-2 bg-primary-subtle rounded-circle me-3">
@@ -559,7 +562,10 @@ export const Maoni = () => {
                 </p>
               </div>
               <button
-                onClick={() => navigate("/mnh-connect/maoni/new")}
+                aria-label="Click me"
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#maoniModal"
                 className="btn btn-success btn-lg px-5"
               >
                 <i className="bx bx-plus me-2"></i>

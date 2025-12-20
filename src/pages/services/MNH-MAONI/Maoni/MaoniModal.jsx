@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import showToast from "../../../../helpers/ToastHelper";
-import { MaoniContext } from "../../../../utils/context"; // You'll need to create this context
+import { MaoniContext } from "../../../../utils/context";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import ReactQuill from "react-quill";
@@ -12,23 +12,18 @@ import { createUpdateData, fetchData } from "../../../../utils/GlobalQueries";
 const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
 
-  // Context for maoni management (you'll need to create this)
+  // Context for maoni management
   const { handleFetchData, selectedMaoni, setSelectedMaoni } =
     useContext(MaoniContext);
 
-  const [errors, setOtherError] = useState({});
   const [categories, setCategories] = useState([]);
   const [directories, setDirectories] = useState([]);
-  const [attachments, setAttachments] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   // Fetch categories and directories on modal open
   useEffect(() => {
-    if (categories.length === 0) {
-      fetchCategories();
-    }
-    if (directories.length === 0) {
-      fetchDirectories();
-    }
+    fetchCategories();
+    fetchDirectories();
   }, []);
 
   const fetchCategories = async () => {
@@ -58,13 +53,6 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
     category_id: "",
     directory_id: "",
     description: "",
-    problem_statement: "",
-    proposed_solution: "",
-    expected_benefits: "",
-    estimated_cost: "",
-    estimated_implementation_time: "",
-    priority: "MEDIUM",
-    visibility: "ANONYMOUS",
     status: "DRAFT",
   };
 
@@ -74,103 +62,13 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
       .min(10, "Title must be at least 10 characters")
       .max(200, "Title cannot exceed 200 characters"),
     category_id: Yup.string().required("Please select a category"),
-    directory_id: Yup.string().required("Please select a directory/department"),
     description: Yup.string()
       .required("Description is required")
       .min(
-        50,
-        "Please provide a detailed description (at least 50 characters)"
+        30,
+        "Please provide a detailed description (at least 30 characters)"
       ),
-    problem_statement: Yup.string()
-      .required("Problem statement is required")
-      .min(30, "Please describe the problem in detail"),
-    proposed_solution: Yup.string()
-      .required("Proposed solution is required")
-      .min(30, "Please describe your solution in detail"),
-    expected_benefits: Yup.string()
-      .required("Expected benefits are required")
-      .min(30, "Please describe the expected benefits"),
   });
-
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files);
-    const validFiles = files.filter((file) => {
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      const allowedTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      ];
-
-      if (file.size > maxSize) {
-        showToast(`File ${file.name} exceeds 10MB limit`, "warning");
-        return false;
-      }
-
-      if (!allowedTypes.includes(file.type)) {
-        showToast(`File ${file.name} has unsupported format`, "warning");
-        return false;
-      }
-
-      return true;
-    });
-
-    setAttachments((prev) => [...prev, ...validFiles]);
-  };
-
-  const removeAttachment = (index) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSaveDraft = async (values) => {
-    try {
-      const formData = new FormData();
-
-      // Append all form values
-      Object.keys(values).forEach((key) => {
-        if (
-          values[key] !== undefined &&
-          values[key] !== null &&
-          values[key] !== ""
-        ) {
-          formData.append(key, values[key]);
-        }
-      });
-
-      // Set status to DRAFT
-      formData.append("status", "DRAFT");
-
-      // Append attachments
-      attachments.forEach((file) => {
-        formData.append("attachments", file);
-      });
-
-      const result = await createUpdateData({
-        url: "/maoni",
-        formData: formData,
-      });
-
-      if (result?.status === 200 || result?.status === 8000) {
-        Swal.fire(
-          "Draft Saved!",
-          "Your suggestion has been saved as draft. You can continue editing later.",
-          "success"
-        );
-        handleClose();
-        if (typeof handleFetchData === "function") handleFetchData();
-      } else {
-        showToast(result?.message || "Failed to save draft", "error");
-      }
-    } catch (error) {
-      console.error("Save draft error:", error);
-      showToast("Unable to save draft. Please try again.", "error");
-    }
-  };
 
   const handleSubmit = async (
     values,
@@ -183,8 +81,8 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
           <div class="text-start">
             <p>Your suggestion will be submitted for review. Please confirm:</p>
             <ul class="text-muted small">
-              <li>All required information is provided</li>
-              <li>Your submission is ${values.visibility.toLowerCase()}</li>
+              <li>Your identity will remain completely confidential</li>
+              <li>Your feedback helps us improve continuously</li>
               <li>You won't be able to edit after submission</li>
             </ul>
           </div>
@@ -215,24 +113,19 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
 
       const formData = new FormData();
 
-      // Append all form values
-      Object.keys(values).forEach((key) => {
-        if (
-          values[key] !== undefined &&
-          values[key] !== null &&
-          values[key] !== ""
-        ) {
-          formData.append(key, values[key]);
-        }
-      });
-
-      // Set status to SUBMITTED
+      // Append essential form values
+      formData.append("title", values.title);
+      formData.append("category_id", values.category_id);
+      formData.append("description", values.description);
       formData.append("status", "SUBMITTED");
 
-      // Append attachments
-      attachments.forEach((file) => {
-        formData.append("attachments", file);
-      });
+      // Auto-set anonymous visibility
+      formData.append("visibility", "ANONYMOUS");
+
+      // Only append directory if it's selected
+      if (values.directory_id) {
+        formData.append("directory_id", values.directory_id);
+      }
 
       setSubmitting(true);
       const result = await createUpdateData({
@@ -242,65 +135,77 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
 
       if (result?.status === 200 || result?.status === 8000) {
         Swal.fire({
-          title: "Submitted Successfully!",
+          title: "Thank You for Your Contribution!",
           html: `
             <div class="text-center">
               <i class="bx bx-check-circle text-success fs-1 mb-3"></i>
-              <p class="mb-2">Your suggestion has been submitted for review.</p>
-              <p class="text-muted small mb-0">Track ID: <strong>${
-                result.data?.uid || "N/A"
-              }</strong></p>
+              <p class="mb-2"><strong>Your suggestion has been submitted successfully.</strong></p>
+              <p class="text-muted small mb-0">
+                <i class="bx bx-shield me-1"></i>
+                Your identity remains confidential and protected
+              </p>
             </div>
           `,
           icon: "success",
-          confirmButtonText: "Continue",
-          showCancelButton: true,
-          cancelButtonText: "Submit Another",
-        }).then((result) => {
+          confirmButtonText: "Done",
+        }).then(() => {
           handleClose();
           resetForm();
-          setAttachments([]);
+          setSelectedCategory("");
           if (typeof handleFetchData === "function") handleFetchData();
-
-          if (
-            result.isDismissed &&
-            result.dismiss === Swal.DismissReason.cancel
-          ) {
-            // User wants to submit another, keep modal open
-            document.getElementById("maoniModal").classList.add("show");
-            document.getElementById("maoniModal").style.display = "block";
-            document.querySelector(".modal-backdrop").classList.add("show");
-          }
         });
       } else if (result?.status === 8001) {
-        // validation errors from backend - keep modal open
+        // validation errors from backend
         setErrors(result.data || {});
-        setOtherError(result.data || {});
         showToast(
-          result.message || "Validation failed",
+          result.message || "Please check your inputs",
           "warning",
           "Validation Failed"
         );
       } else {
-        // other failures - keep modal open so user can retry
-        showToast(result?.message || "Submission failed", "warning", "Failed");
+        showToast(result?.message || "Submission failed", "error");
       }
     } catch (error) {
-      // extract API errors when available
-      const apiErr = error?.response?.data;
-      if (apiErr) {
-        setErrors(apiErr);
-        setOtherError(apiErr);
-      }
       console.error("Submit suggestion error:", error);
-      showToast(
-        "Unable to submit suggestion. Please try again or contact support.",
-        "error",
-        "Failed"
-      );
-      // keep modal open on exception
+      showToast("Unable to submit suggestion. Please try again.", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSaveDraft = async (values) => {
+    try {
+      const formData = new FormData();
+
+      formData.append("title", values.title);
+      formData.append("category_id", values.category_id);
+      formData.append("description", values.description);
+      formData.append("status", "DRAFT");
+      formData.append("visibility", "ANONYMOUS");
+
+      if (values.directory_id) {
+        formData.append("directory_id", values.directory_id);
+      }
+
+      const result = await createUpdateData({
+        url: "/maoni",
+        formData: formData,
+      });
+
+      if (result?.status === 200 || result?.status === 8000) {
+        Swal.fire(
+          "Draft Saved!",
+          "Your suggestion has been saved as draft.",
+          "success"
+        );
+        handleClose();
+        if (typeof handleFetchData === "function") handleFetchData();
+      } else {
+        showToast(result?.message || "Failed to save draft", "error");
+      }
+    } catch (error) {
+      console.error("Save draft error:", error);
+      showToast("Unable to save draft. Please try again.", "error");
     }
   };
 
@@ -315,12 +220,17 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
 
   const quillModules = {
     toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
+      ["bold", "italic", "underline"],
+      [{ list: "bullet" }, { list: "ordered" }],
       ["link"],
       ["clean"],
     ],
+  };
+
+  // Check if selected category requires directory selection
+  const requiresDirectory = (categoryName) => {
+    const lowerName = categoryName?.toLowerCase() || "";
+    return !(lowerName.includes("general") || lowerName.includes("other"));
   };
 
   return (
@@ -339,7 +249,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
               <div className="d-flex align-items-center">
                 <i className="bx bx-message-rounded-add text-primary fs-4 me-2"></i>
                 <h5 className="modal-title mb-0" id="exampleModalLabel3">
-                  New Suggestion / Contribution
+                  Share Your Suggestion
                 </h5>
               </div>
               <button
@@ -352,45 +262,46 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
             </div>
 
             <Formik
-              enableReinitialize
               initialValues={initialValues}
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
             >
-              {({
-                values,
-                resetForm,
-                setErrors,
-                setSubmitting,
-                setFieldValue,
-                isSubmitting,
-              }) => (
+              {({ values, setFieldValue, isSubmitting }) => (
                 <Form>
                   <div className="modal-body">
-                    {/* Submission Guidelines */}
+                    {/* Reassuring Message */}
                     <div className="row mb-4">
                       <div className="col-12">
-                        <div className="card border-0 bg-light">
-                          <div className="card-body p-3">
-                            <div className="d-flex align-items-center mb-2">
-                              <i className="bx bx-info-circle text-primary me-2"></i>
-                              <h6 className="mb-0">Submission Guidelines</h6>
+                        <div
+                          className="alert border-0"
+                          style={{
+                            backgroundColor: "#e8f4fd",
+                            borderLeft: "4px solid #0d6efd",
+                          }}
+                        >
+                          <div className="d-flex align-items-start">
+                            <i className="bx bx-shield-alt text-primary fs-4 me-3"></i>
+                            <div>
+                              <h6 className="mb-2 text-primary">
+                                <i className="bx bx-check-shield me-1"></i>
+                                Share Your Ideas Freely & Safely
+                              </h6>
+                              <p className="mb-1">
+                                <strong>
+                                  Your identity is completely protected.
+                                </strong>{" "}
+                                We never collect or store personal information
+                                with your suggestions.
+                              </p>
+                              <p className="mb-0 text-muted">
+                                <small>
+                                  <i className="bx bx-lock me-1"></i>
+                                  Speak freely without fear of consequences.
+                                  Your honest feedback helps us create a better
+                                  workplace for everyone.
+                                </small>
+                              </p>
                             </div>
-                            <ul className="mb-0 small text-muted">
-                              <li>
-                                All submissions are confidential and can be
-                                anonymous
-                              </li>
-                              <li>
-                                Please provide specific details and practical
-                                solutions
-                              </li>
-                              <li>
-                                Your suggestion will be reviewed within 5-7
-                                working days
-                              </li>
-                              <li>You can save as draft and submit later</li>
-                            </ul>
                           </div>
                         </div>
                       </div>
@@ -401,45 +312,50 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                       <div className="col-12">
                         <label htmlFor="title" className="form-label">
                           <i className="bx bx-edit me-1"></i>
-                          Suggestion Title *
+                          What's your suggestion about? *
                         </label>
                         <Field
                           type="text"
                           id="title"
                           name="title"
-                          className={`form-control ${
-                            errors.title ? "is-invalid" : ""
-                          }`}
-                          placeholder="Brief, descriptive title of your suggestion"
+                          className="form-control"
+                          placeholder="Brief title describing your suggestion"
                           maxLength="200"
                         />
                         <ErrorMessage
                           name="title"
                           component="div"
-                          className="invalid-feedback"
+                          className="text-danger small mt-1"
                         />
-                        <small className="text-muted">
-                          {values.title.length}/200 characters
-                        </small>
                       </div>
                     </div>
 
-                    {/* Category & Directory */}
+                    {/* Category & Directory in same row */}
                     <div className="row mb-3">
                       <div className="col-md-6">
                         <label htmlFor="category_id" className="form-label">
                           <i className="bx bx-category me-1"></i>
-                          Category *
+                          What area does this concern? *
                         </label>
                         <Field
                           as="select"
                           id="category_id"
                           name="category_id"
-                          className={`form-select ${
-                            errors.category_id ? "is-invalid" : ""
-                          }`}
+                          className="form-select"
+                          onChange={(e) => {
+                            const categoryId = e.target.value;
+                            const category = categories.find(
+                              (c) => c.uid === categoryId
+                            );
+                            setSelectedCategory(category?.name || "");
+                            setFieldValue("category_id", categoryId);
+                            // Reset directory if category changes
+                            if (!requiresDirectory(category?.name)) {
+                              setFieldValue("directory_id", "");
+                            }
+                          }}
                         >
-                          <option value="">Select a category</option>
+                          <option value="">Select area of concern</option>
                           {categories.map((category) => (
                             <option key={category.uid} value={category.uid}>
                               {category.name}
@@ -449,289 +365,120 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                         <ErrorMessage
                           name="category_id"
                           component="div"
-                          className="invalid-feedback"
+                          className="text-danger small mt-1"
                         />
                       </div>
 
+                      {/* Directory - Conditional */}
                       <div className="col-md-6">
-                        <label htmlFor="directory_id" className="form-label">
-                          <i className="bx bx-building me-1"></i>
-                          Relevant Department/Directory *
-                        </label>
-                        <Field
-                          as="select"
-                          id="directory_id"
-                          name="directory_id"
-                          className={`form-select ${
-                            errors.directory_id ? "is-invalid" : ""
-                          }`}
-                        >
-                          <option value="">Select department</option>
-                          {directories.map((directory) => (
-                            <option key={directory.uid} value={directory.uid}>
-                              {directory.name}
-                            </option>
-                          ))}
-                        </Field>
-                        <ErrorMessage
-                          name="directory_id"
-                          component="div"
-                          className="invalid-feedback"
-                        />
+                        {requiresDirectory(selectedCategory) ? (
+                          <>
+                            <label
+                              htmlFor="directory_id"
+                              className="form-label"
+                            >
+                              <i className="bx bx-building me-1"></i>
+                              Which department?
+                            </label>
+                            <Field
+                              as="select"
+                              id="directory_id"
+                              name="directory_id"
+                              className="form-select"
+                            >
+                              <option value="">
+                                Select department (Optional)
+                              </option>
+                              {directories.map((directory) => (
+                                <option
+                                  key={directory.uid}
+                                  value={directory.uid}
+                                >
+                                  {directory.name}
+                                </option>
+                              ))}
+                            </Field>
+                            <small className="text-muted">
+                              This helps route your suggestion
+                            </small>
+                          </>
+                        ) : (
+                          <div className="mt-4 pt-3 text-center">
+                            <i className="bx bx-check-circle text-success fs-4 mb-2"></i>
+                            <p className="small text-muted mb-0">
+                              General suggestion -<br />
+                              no department selection needed
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Description */}
-                    <div className="row mb-3">
+                    {/* Suggestion Details with Rich Text Editor */}
+                    <div className="row mb-4">
                       <div className="col-12">
                         <label htmlFor="description" className="form-label">
                           <i className="bx bx-detail me-1"></i>
-                          Detailed Description *
+                          Please describe your suggestion in detail *
                         </label>
                         <ReactQuill
                           id="description"
                           value={values.description}
-                          onChange={(val) => setFieldValue("description", val)}
-                          style={{ height: "150px", marginBottom: "50px" }}
+                          onChange={(value) =>
+                            setFieldValue("description", value)
+                          }
                           theme="snow"
                           modules={quillModules}
-                          placeholder="Provide a detailed description of your suggestion..."
+                          style={{
+                            height: "200px",
+                            marginBottom: "60px",
+                            borderRadius: "6px",
+                            border: "1px solid #ddd",
+                          }}
+                          placeholder="Describe your idea in detail. Be specific about what should change and why it would be beneficial..."
                         />
                         <ErrorMessage
                           name="description"
                           component="div"
                           className="text-danger small mt-1"
                         />
-                        <small className="text-muted">
-                          Minimum 50 characters. Please be as detailed as
-                          possible.
-                        </small>
-                      </div>
-                    </div>
-
-                    {/* Problem Statement */}
-                    <div className="row mb-3">
-                      <div className="col-12">
-                        <label
-                          htmlFor="problem_statement"
-                          className="form-label"
-                        >
-                          <i className="bx bx-error-circle me-1"></i>
-                          Problem Statement *
-                        </label>
-                        <Field
-                          as="textarea"
-                          id="problem_statement"
-                          name="problem_statement"
-                          className={`form-control ${
-                            errors.problem_statement ? "is-invalid" : ""
-                          }`}
-                          rows="3"
-                          placeholder="What problem or issue are you addressing?"
-                        />
-                        <ErrorMessage
-                          name="problem_statement"
-                          component="div"
-                          className="invalid-feedback"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Proposed Solution */}
-                    <div className="row mb-3">
-                      <div className="col-12">
-                        <label
-                          htmlFor="proposed_solution"
-                          className="form-label"
-                        >
-                          <i className="bx bx-bulb me-1"></i>
-                          Proposed Solution *
-                        </label>
-                        <Field
-                          as="textarea"
-                          id="proposed_solution"
-                          name="proposed_solution"
-                          className={`form-control ${
-                            errors.proposed_solution ? "is-invalid" : ""
-                          }`}
-                          rows="3"
-                          placeholder="What is your proposed solution or improvement?"
-                        />
-                        <ErrorMessage
-                          name="proposed_solution"
-                          component="div"
-                          className="invalid-feedback"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Expected Benefits */}
-                    <div className="row mb-3">
-                      <div className="col-12">
-                        <label
-                          htmlFor="expected_benefits"
-                          className="form-label"
-                        >
-                          <i className="bx bx-trending-up me-1"></i>
-                          Expected Benefits *
-                        </label>
-                        <Field
-                          as="textarea"
-                          id="expected_benefits"
-                          name="expected_benefits"
-                          className={`form-control ${
-                            errors.expected_benefits ? "is-invalid" : ""
-                          }`}
-                          rows="3"
-                          placeholder="What benefits will this bring to the organization?"
-                        />
-                        <ErrorMessage
-                          name="expected_benefits"
-                          component="div"
-                          className="invalid-feedback"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Cost & Timeline */}
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <label htmlFor="estimated_cost" className="form-label">
-                          <i className="bx bx-dollar-circle me-1"></i>
-                          Estimated Cost (Optional)
-                        </label>
-                        <div className="input-group">
-                          <span className="input-group-text">TZS</span>
-                          <Field
-                            type="number"
-                            id="estimated_cost"
-                            name="estimated_cost"
-                            className="form-control"
-                            placeholder="0.00"
-                            step="0.01"
-                            min="0"
-                          />
+                        <div className="d-flex justify-content-between mt-2">
+                          <small className="text-muted">
+                            <i className="bx bx-info-circle me-1"></i>
+                            Minimum 30 characters. Be clear and constructive.
+                          </small>
+                          <small className="text-muted">
+                            Your identity is protected
+                          </small>
                         </div>
-                        <small className="text-muted">
-                          If known, provide estimated cost
-                        </small>
-                      </div>
-
-                      <div className="col-md-6">
-                        <label
-                          htmlFor="estimated_implementation_time"
-                          className="form-label"
-                        >
-                          <i className="bx bx-time me-1"></i>
-                          Estimated Implementation Time (Optional)
-                        </label>
-                        <Field
-                          type="text"
-                          id="estimated_implementation_time"
-                          name="estimated_implementation_time"
-                          className="form-control"
-                          placeholder="e.g., 2-4 weeks, 3 months"
-                          maxLength="50"
-                        />
                       </div>
                     </div>
 
-                    {/* Settings */}
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <label htmlFor="priority" className="form-label">
-                          <i className="bx bx-flag me-1"></i>
-                          Priority
-                        </label>
-                        <Field
-                          as="select"
-                          id="priority"
-                          name="priority"
-                          className="form-select"
-                        >
-                          <option value="LOW">Low Priority</option>
-                          <option value="MEDIUM">Medium Priority</option>
-                          <option value="HIGH">High Priority</option>
-                          <option value="URGENT">Urgent</option>
-                        </Field>
-                      </div>
-
-                      <div className="col-md-6">
-                        <label htmlFor="visibility" className="form-label">
-                          <i className="bx bx-shield me-1"></i>
-                          Visibility
-                        </label>
-                        <Field
-                          as="select"
-                          id="visibility"
-                          name="visibility"
-                          className="form-select"
-                        >
-                          <option value="ANONYMOUS">
-                            Anonymous (Recommended)
-                          </option>
-                          <option value="PUBLIC">Public (Show my name)</option>
-                          <option value="CONFIDENTIAL">
-                            Confidential (Admins only)
-                          </option>
-                        </Field>
-                        <small className="text-muted">
-                          {values.visibility === "ANONYMOUS"
-                            ? "Your identity will remain confidential"
-                            : values.visibility === "PUBLIC"
-                            ? "Your name will be visible with the suggestion"
-                            : "Only administrators will see your identity"}
-                        </small>
-                      </div>
-                    </div>
-
-                    {/* Attachments */}
+                    {/* Confidentiality Assurance */}
                     <div className="row mb-4">
                       <div className="col-12">
-                        <label className="form-label">
-                          <i className="bx bx-paperclip me-1"></i>
-                          Attachments (Optional)
-                        </label>
-                        <div className="border rounded p-3">
-                          <input
-                            type="file"
-                            className="form-control"
-                            onChange={handleFileUpload}
-                            multiple
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
-                            disabled={isSubmitting}
-                          />
-                          <small className="text-muted">
-                            Max 10MB per file. Supported: PDF, Word, Excel,
-                            Images
-                          </small>
-
-                          {attachments.length > 0 && (
-                            <div className="mt-3">
-                              <h6 className="small mb-2">Selected files:</h6>
-                              <div className="list-group">
-                                {attachments.map((file, index) => (
-                                  <div
-                                    key={index}
-                                    className="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2"
-                                  >
-                                    <div className="d-flex align-items-center">
-                                      <i className="bx bx-file me-2"></i>
-                                      <span className="small">{file.name}</span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-outline-danger"
-                                      onClick={() => removeAttachment(index)}
-                                      disabled={isSubmitting}
-                                    >
-                                      <i className="bx bx-trash"></i>
-                                    </button>
-                                  </div>
-                                ))}
+                        <div className="card border-info bg-info-subtle">
+                          <div className="card-body p-3">
+                            <div className="d-flex align-items-center">
+                              <div className="me-3">
+                                <i className="bx bx-shield text-info fs-3"></i>
+                              </div>
+                              <div>
+                                <h6 className="mb-1 text-info">
+                                  <i className="bx bx-check-circle me-1"></i>
+                                  Your Privacy is Guaranteed
+                                </h6>
+                                <p className="mb-0 small">
+                                  This system is designed for{" "}
+                                  <strong>100% anonymous feedback</strong>. Your
+                                  suggestions are valuable, and your
+                                  confidentiality is our priority. There are no
+                                  consequences for honest, constructive
+                                  feedback.
+                                </p>
                               </div>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -746,11 +493,12 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                             disabled={
                               isSubmitting ||
                               !values.title ||
-                              !values.description
+                              !values.description ||
+                              !values.category_id
                             }
                           >
                             <i className="bx bx-save me-1"></i>
-                            Save as Draft
+                            Save Draft
                           </button>
                         </div>
 
@@ -780,7 +528,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                             ) : (
                               <>
                                 <i className="bx bx-paper-plane me-1"></i>
-                                Submit for Review
+                                Submit Suggestion
                               </>
                             )}
                           </button>
