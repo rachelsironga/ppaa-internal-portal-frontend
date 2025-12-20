@@ -214,7 +214,7 @@
         "text": "Asset Assignments",
         "icon": "bx bx-user-check",
         "available": true,
-        "link": "/ict-assets/asset-asset-assignments",
+        "link": "/ict-assets/asset-assignments",
         "permission": [
           "view_assetassignment"
         ],
@@ -232,7 +232,7 @@
         "text": "Maintenance Records",
         "icon": "bx bx-wrench",
         "available": true,
-        "link": "/ict-assets/asset-maintenance-records",
+        "link": "/ict-assets/maintenance-records",
         "permission": [
           "view_maintenancerecord"
         ],
@@ -249,7 +249,7 @@
         "text": "Support Tickets",
         "icon": "bx bx-support",
         "available": true,
-        "link": "/ict-assets/asset-support-tickets",
+        "link": "/ict-assets/support-tickets",
         "permission": [
           "view_supportticket"
         ],
@@ -267,7 +267,7 @@
         "text": "Warranties",
         "icon": "bx bx-shield-alt",
         "available": true,
-        "link": "/ict-assets/asset-warranties",
+        "link": "/ict-assets/warranties",
         "permission": [
           "view_warranty"
         ],

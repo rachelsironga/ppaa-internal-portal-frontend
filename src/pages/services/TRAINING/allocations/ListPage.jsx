@@ -1,33 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
 import "animate.css";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
-import { deleteApplication } from "./Queries";
-import { ApplicationModal } from "./Modal";
+import { deleteAllocation } from "./Queries";
+import { AllocationModal } from "./Modal";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
-export const ApplicationsListPage = () => {
-    const [selectedApplication, setSelectedApplication] = useState(null);
+export const AllocationsListPage = () => {
+    const [selectedAllocation, setSelectedAllocation] = useState(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const navigate = useNavigate();
-    const location = useLocation();
     const user = useSelector((state) => state.userReducer?.data);
 
-    const handleDelete = async (application) => {
-        if (!application) {
-            Swal.fire("Error!", "Unable to select this application.", "error");
+    const handleDelete = async (allocation) => {
+        if (!allocation) {
+            Swal.fire("Error!", "Unable to select this allocation.", "error");
             return;
         }
 
         try {
             const confirmation = await Swal.fire({
                 title: "Are you sure?",
-                text: `You're about to delete this application`,
+                text: `You're about to delete this allocation`,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#DD6B55",
@@ -36,34 +35,31 @@ export const ApplicationsListPage = () => {
             });
 
             if (confirmation.isConfirmed) {
-                const result = await deleteApplication(application.uid);
+                const result = await deleteAllocation(allocation.uid);
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Deleted!",
-                        "The application has been deleted successfully.",
+                        "The allocation has been deleted successfully.",
                         "success"
                     );
                     setRefreshKey((prev) => prev + 1);
                 } else {
-                    Swal.fire("Error!", result.message || "Failed to delete application", "error");
+                    Swal.fire("Error!", result.message || "Failed to delete allocation", "error");
                 }
             }
         } catch (error) {
-            console.error("Error deleting application:", error);
+            console.error("Error deleting allocation:", error);
             Swal.fire(
                 "Error!",
-                "Unable to delete application. Please try again or contact support.",
+                "Unable to delete allocation. Please try again or contact support.",
                 "error"
             );
         }
     };
 
-    const isSearchPage = location.pathname === "/training/search-applications";
-    const breadcrumbPages = isSearchPage ? ["Training", "Search Applications"] : ["Training", "Applications"];
-
     return (
         <>
-            <BreadCumb pageList={breadcrumbPages} />
+            <BreadCumb pageList={["Training", "Department Allocations"]} />
 
             {/* Header Card */}
             <div className="card mb-4 shadow-sm animate__animated animate__fadeInDown animate__faster">
@@ -71,22 +67,19 @@ export const ApplicationsListPage = () => {
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <h4 className="mb-1 fw-bold">
-                                <i className={`bx ${isSearchPage ? 'bx-search' : 'bx-file-blank'} me-2`}></i>
-                                {isSearchPage ? "Search Applications" : "Applications Management"}
+                                <i className="bx bx-sitemap me-2"></i>Department Allocations
                             </h4>
-                            <p className="text-muted mb-0">
-                                {isSearchPage ? "Search and filter training applications" : "Manage and monitor training applications"}
-                            </p>
+                            <p className="text-muted mb-0">Manage student allocations to departments</p>
                         </div>
                         <div className="d-flex gap-2">
-                            {hasAccess(user, [["add_application"]]) && (
+                            {hasAccess(user, [["add_departmentallocation"]]) && (
                                 <button
                                     className="btn btn-primary"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#applicationModal"
-                                    onClick={() => setSelectedApplication(null)}
+                                    data-bs-target="#allocationModal"
+                                    onClick={() => setSelectedAllocation(null)}
                                 >
-                                    <i className="bx bx-plus me-2"></i>Add New Application
+                                    <i className="bx bx-plus me-2"></i>Add New Allocation
                                 </button>
                             )}
                         </div>
@@ -96,68 +89,61 @@ export const ApplicationsListPage = () => {
 
             {/* Paginated Table */}
             <PaginatedTable
-                fetchPath="/api/training/applications"
-                title={isSearchPage ? "Search Results" : "Applications List"}
+                fetchPath="/api/training/department-allocations"
+                title="Department Allocations List"
                 isRefresh={refreshKey}
                 isFullPath={true}
                 columns={[
                     {
-                        key: "student_name",
-                        label: "Student",
+                        key: "application",
+                        label: "Application",
                         className: "fw-bold",
-                        style: { width: "200px" },
+                        style: { width: "150px" },
                         render: (row) => (
                             <div>
                                 <h6 className="mb-0">
-                                    {row.student?.first_name} {row.student?.last_name}
+                                    {row.application?.student?.first_name} {row.application?.student?.last_name}
                                 </h6>
                                 <small className="text-muted">
-                                    {row.student?.student_id}
+                                    {row.application?.reference_number}
                                 </small>
                             </div>
                         ),
                     },
                     {
-                        key: "reference_number",
-                        label: "Reference",
+                        key: "department",
+                        label: "Department",
                         className: "text-center",
                         style: { width: "150px" },
                         render: (row) => (
-                            <code className="bg-light px-2 py-1 rounded">{row.reference_number}</code>
+                            <span className="badge bg-light text-dark">{row.department?.name || "-"}</span>
                         ),
                     },
                     {
-                        key: "type",
-                        label: "Type",
+                        key: "supervisor",
+                        label: "Supervisor",
+                        className: "text-center",
+                        style: { width: "150px" },
+                        render: (row) => (
+                            <span>{row.supervisor?.user?.full_name || "-"}</span>
+                        ),
+                    },
+                    {
+                        key: "start_date",
+                        label: "Start Date",
                         className: "text-center",
                         style: { width: "120px" },
                         render: (row) => (
-                            <span className="badge bg-info">{row.type || "-"}</span>
+                            <small>{formatDate(row.start_date, "DD/MM/YYYY")}</small>
                         ),
                     },
                     {
-                        key: "status",
-                        label: "Status",
+                        key: "end_date",
+                        label: "End Date",
                         className: "text-center",
-                        style: { width: "130px" },
-                        render: (row) => {
-                            const statusConfig = {
-                                'pending': { class: 'warning', label: 'Pending' },
-                                'approved': { class: 'success', label: 'Approved' },
-                                'rejected': { class: 'danger', label: 'Rejected' },
-                                'submitted': { class: 'info', label: 'Submitted' },
-                            };
-                            const status = statusConfig[row.status] || { class: 'secondary', label: row.status || 'Unknown' };
-                            return <span className={`badge bg-${status.class}`}>{status.label}</span>;
-                        },
-                    },
-                    {
-                        key: "submission_date",
-                        label: "Submitted",
-                        className: "text-center",
-                        style: { width: "130px" },
+                        style: { width: "120px" },
                         render: (row) => (
-                            <small>{formatDate(row.submission_date || row.created_at, "DD/MM/YYYY")}</small>
+                            <small>{formatDate(row.end_date, "DD/MM/YYYY")}</small>
                         ),
                     },
                     {
@@ -176,22 +162,22 @@ export const ApplicationsListPage = () => {
                         style: { width: "140px" },
                         render: (row) => (
                             <div className="btn-group" role="group">
-                                {hasAccess(user, [["view_application", "add_application", "change_application"]]) && (
+                                {hasAccess(user, [["view_departmentallocation", "add_departmentallocation", "change_departmentallocation"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-primary border-0"
                                         title="View"
-                                        onClick={() => navigate(`/training/applications/${row.uid}`)}
+                                        onClick={() => navigate(`/training/allocation/${row.uid}`)}
                                     >
                                         <i className="bx bx-show"></i>
                                     </button>
                                 )}
-                                {hasAccess(user, [["change_application"]]) && (
+                                {hasAccess(user, [["change_departmentallocation"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-info border-0"
                                         title="Edit"
                                         onClick={() => {
-                                            setSelectedApplication(row);
-                                            const modal = document.getElementById("applicationModal");
+                                            setSelectedAllocation(row);
+                                            const modal = document.getElementById("allocationModal");
                                             if (modal) {
                                                 new (window.bootstrap || {}).Modal(modal).show();
                                             }
@@ -200,7 +186,7 @@ export const ApplicationsListPage = () => {
                                         <i className="bx bx-edit"></i>
                                     </button>
                                 )}
-                                {hasAccess(user, [["delete_application"]]) && (
+                                {hasAccess(user, [["delete_departmentallocation"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-danger border-0"
                                         title="Delete"
@@ -216,13 +202,13 @@ export const ApplicationsListPage = () => {
             />
 
             {/* Modals */}
-            <ApplicationModal
-                application={selectedApplication}
+            <AllocationModal
+                allocation={selectedAllocation}
                 onSuccess={() => {
                     setRefreshKey((prev) => prev + 1);
-                    setSelectedApplication(null);
+                    setSelectedAllocation(null);
                 }}
-                onClose={() => setSelectedApplication(null)}
+                onClose={() => setSelectedAllocation(null)}
             />
         </>
     );
