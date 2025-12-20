@@ -2,325 +2,1063 @@ import { useDispatch, useSelector } from "react-redux";
 import getGreetingMessage from "../utils/greetingHandler";
 import { logout } from "../redux/actions/authentication/logoutAction";
 import { Navigate, useNavigate } from "react-router-dom";
-import React, { useState, useEffect, activeService } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import servicesList from "../data/servicesList.json";
+import {
+  Search,
+  Bell,
+  User,
+  Grid3x3,
+  LogOut,
+  Settings,
+  ChevronRight,
+  ChevronDown,
+  Zap,
+  Clock,
+  Home,
+  Briefcase,
+  Menu,
+  Building,
+  Shield,
+  Activity,
+  Star,
+  Sparkles,
+} from "lucide-react";
+import { use } from "react";
 
-const Navbar = ({ isService = false }) => {
+const Navbar = ({ isService = false, activeService = "" }) => {
   const user = useSelector((state) => state.userReducer?.data);
-
   const [showDropdown, setShowDropdown] = useState(false);
-
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
-  };
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredServices, setFilteredServices] = useState(servicesList);
+  const [hoveredService, setHoveredService] = useState(null);
+  const dropdownRef = useRef(null);
+  const profileRef = useRef(null);
+  const searchRef = useRef(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Generate unique IDs
+  const navbarId = `mnh-navbar-${Date.now()}`;
+  const servicesDropdownId = `services-dropdown-${Date.now()}`;
+  const profileDropdownId = `profile-dropdown-${Date.now()}`;
+
+  // Filter services based on search
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredServices(servicesList.slice(0, 6));
+    } else {
+      const filtered = servicesList
+        .filter(
+          (service) =>
+            service.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (service.description &&
+              service.description
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()))
+        )
+        .slice(0, 6);
+      setFilteredServices(filtered);
+    }
+  }, [searchQuery]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate("/auth/login");
   };
 
+  const handleServiceClick = (service) => {
+    navigate(
+      service.link ||
+        `/dashboard/${service.text.toLowerCase().replace(/\s+/g, "-")}`
+    );
+    setShowDropdown(false);
+  };
+
   return (
-    <nav
-      className="layout-navbar navbar-detached navbar navbar-expand-xl align-items-center bg-navbar-theme container-fluid"
-      id="layout-navbar"
-    >
+    <>
       <style>
         {`
-
-          .service-content{
-              background: #fff;
-              border: 0.2px solid transparent;
-              border-radius: 20px;
-              padding: 10px;
-              background:
-                linear-gradient(#fff, #fff) padding-box,
-                linear-gradient(135deg, #1976d2a6 0%, #e53835c2 60%, #ffd900c4 100%) border-box;
-              transition:
-                background 1s ease,
-                border-color 1s ease,
-                border-image 1s ease,
-                box-shadow 0.4s ease,
-                transform 0.4s ease,
-                opacity 0.4s ease;
-              box-shadow: 0 5px 16px rgba(10, 67, 124, 0.51);
-              animation: fadeInSlideUp 0.5s ease forwards;
+          /* Unique ID-based CSS for complete isolation */
+          #${navbarId} {
+            all: initial;
+            margin: 10px;
+          }
+          
+          #${navbarId} .mnh-navbar-main {
+            background: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            padding: 8px 20px;
+            position: relative;
+            z-index: 1030;
+          }
+          
+          #${navbarId} .mnh-nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 100%;
+            margin: 0;
+          }
+          
+          /* Left Section - Controls */
+          #${navbarId} .mnh-nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+          }
+          
+          #${navbarId} .mnh-mobile-menu-btn {
+            background: none;
+            border: none;
+            color: #5a6a85;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          
+          #${navbarId} .mnh-mobile-menu-btn:hover {
+            background: rgba(25, 118, 210, 0.08);
+            color: #1976d2;
+          }
+          
+          /* Quick Access Button */
+          #${navbarId} .mnh-quick-access-container {
+            position: relative;
+          }
+          
+          #${navbarId} .mnh-quick-access-btn {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1.5px solid rgba(25, 118, 210, 0.3);
+            border-radius: 12px;
+            color: #2d3748;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+          }
+          
+          #${navbarId} .mnh-quick-access-btn:hover {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+            border-color: rgba(25, 118, 210, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.2);
+          }
+          
+          #${navbarId} .mnh-quick-access-btn:active {
+            transform: translateY(0);
+          }
+          
+          /* Services Dropdown */
+          #${servicesDropdownId} {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 8px;
+            width: 380px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 60px rgba(25, 118, 210, 0.15), 0 0 40px rgba(229, 57, 53, 0.1);
+            overflow: hidden;
+            z-index: 1050;
+            animation: mnhSlideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          
+          @keyframes mnhSlideDown {
+            from {
               opacity: 0;
-              transform: translateY(10px);
+              transform: translateY(-12px) scale(0.95);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+          
+          #${servicesDropdownId} .mnh-dropdown-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #1976d2 0%, #e53935 50%, #ffd700 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+          }
+          
+          #${servicesDropdownId} .mnh-dropdown-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            animation: mnhShimmer 3s infinite linear;
+          }
+          
+          @keyframes mnhShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+          
+          #${servicesDropdownId} .mnh-dropdown-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 6px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            position: relative;
+          }
+          
+          #${servicesDropdownId} .mnh-dropdown-subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.95);
+            position: relative;
+          }
+          
+          #${servicesDropdownId} .mnh-search-container {
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%);
+            border-bottom: 1px solid rgba(25, 118, 210, 0.1);
+            position: relative;
+          }
+          
+          #${servicesDropdownId} .mnh-search-input-wrapper {
+            position: relative;
+          }
+          
+          #${servicesDropdownId} .mnh-search-input {
+            width: 100%;
+            padding: 12px 16px 12px 45px;
+            background: white;
+            border: 2px solid rgba(25, 118, 210, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #334155;
+            box-shadow: 0 2px 10px rgba(25, 118, 210, 0.08);
+          }
+          
+          #${servicesDropdownId} .mnh-search-input:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2), 0 4px 20px rgba(25, 118, 210, 0.3);
+            transform: scale(1.02);
+          }
+          
+          #${servicesDropdownId} .mnh-search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #1976d2;
+            font-size: 16px;
+            transition: all 0.3s ease;
+          }
+          
+          #${servicesDropdownId} .mnh-search-input:focus + .mnh-search-icon {
+            color: #e53935;
+            transform: translateY(-50%) scale(1.1);
+          }
+          
+          #${servicesDropdownId} .mnh-services-grid {
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            background: linear-gradient(135deg, #fafcff 0%, #f5f9ff 100%);
+          }
+          
+          #${servicesDropdownId} .mnh-service-item {
+            background: white;
+            border: 2px solid transparent;
+            border-radius: 14px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+          }
+          
+          #${servicesDropdownId} .mnh-service-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(229, 57, 53, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+          
+          #${servicesDropdownId} .mnh-service-item:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-image: linear-gradient(135deg, #1976d2, #e53935, #ffd700) 1;
+            box-shadow: 0 12px 30px rgba(25, 118, 210, 0.2), 0 0 20px rgba(229, 57, 53, 0.15);
+          }
+          
+          #${servicesDropdownId} .mnh-service-item:hover::before {
+            opacity: 1;
+          }
+          
+          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-icon {
+            background: linear-gradient(135deg, #1976d2, #e53935);
+            transform: rotate(12deg) scale(1.15);
+          }
+          
+          #${servicesDropdownId} .mnh-service-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(25, 118, 210, 0.15), rgba(229, 57, 53, 0.15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+          }
+          
+          #${servicesDropdownId} .mnh-service-icon::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+          }
+          
+          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-icon::after {
+            opacity: 1;
+            transform: rotate(45deg) translate(50%, 50%);
+          }
+          
+          #${servicesDropdownId} .mnh-service-icon i {
+            font-size: 18px;
+            background: linear-gradient(135deg, #1976d2, #e53935);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 1;
+          }
+          
+          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-icon i {
+            -webkit-text-fill-color: white;
+            background: none;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+          }
+          
+          #${servicesDropdownId} .mnh-service-content {
+            flex: 1;
+            min-width: 0;
+          }
+          
+          #${servicesDropdownId} .mnh-service-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+            transition: all 0.3s ease;
+            background: linear-gradient(90deg, #1e293b, #334155);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+          
+          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-name {
+            -webkit-text-fill-color: #1976d2;
+            background: none;
+          }
+          
+          #${servicesDropdownId} .mnh-service-category {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+            background: linear-gradient(90deg, #64748b, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+          
+          #${servicesDropdownId} .mnh-service-arrow {
+            opacity: 0;
+            color: #94a3b8;
+            transform: translateX(-8px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          
+          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-arrow {
+            opacity: 1;
+            color: #1976d2;
+            transform: translateX(0);
+          }
+          
+          #${servicesDropdownId} .mnh-dropdown-footer {
+            padding: 20px;
+            background: linear-gradient(135deg, #1976d2 0%, #e53935 100%);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+          }
+          
+          #${servicesDropdownId} .mnh-view-all-btn {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            color: #1976d2;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+          }
+          
+          #${servicesDropdownId} .mnh-view-all-btn:hover {
+            background: white;
+            color: #e53935;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+          }
+          
+          #${servicesDropdownId} .mnh-view-all-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+          }
+          
+          #${servicesDropdownId} .mnh-view-all-btn:hover::before {
+            left: 100%;
+          }
+          
+          /* Right Section - User Info */
+          #${navbarId} .mnh-nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+          }
+          
+          /* User Profile Compact */
+          #${navbarId} .mnh-user-profile-compact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f7ff 100%);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: 1.5px solid rgba(25, 118, 210, 0.15);
+          }
+          
+          #${navbarId} .mnh-user-profile-compact:hover {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: rgba(25, 118, 210, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.15);
+          }
+          
+          #${navbarId} .mnh-user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1976d2, #e53935);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+            transition: all 0.3s ease;
+          }
+          
+          #${navbarId} .mnh-user-profile-compact:hover .mnh-user-avatar {
+            transform: rotate(8deg) scale(1.1);
+            box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4);
+          }
+          
+          #${navbarId} .mnh-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          
+          #${navbarId} .mnh-user-info-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+          
+          #${navbarId} .mnh-user-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            white-space: nowrap;
+            background: linear-gradient(90deg, #1e293b, #334155);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+                        text-transform: uppercase;
+
+          }
+          
+          #${navbarId} .mnh-user-designation {
+            font-size: 11.5px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 600;
+            background: linear-gradient(90deg, #64748b, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+          
+          #${navbarId} .mnh-user-chevron {
+            color: #94a3b8;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          
+          #${navbarId} .mnh-user-profile-compact.active .mnh-user-chevron {
+            transform: rotate(180deg);
+            color: #1976d2;
+          }
+          
+          /* Notification Button */
+          #${navbarId} .mnh-notification-btn {
+            position: relative;
+            background: none;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #5a6a85;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1.5px solid rgba(25, 118, 210, 0.15);
+          }
+          
+          #${navbarId} .mnh-notification-btn:hover {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: rgba(25, 118, 210, 0.4);
+            color: #1976d2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.15);
+          }
+          
+          #${navbarId} .mnh-notification-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 10px;
+            height: 10px;
+            background: linear-gradient(135deg, #e53935, #ff6b6b);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(229, 57, 53, 0.4);
+            animation: mnhPulse 2s infinite;
+          }
+          
+          @keyframes mnhPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+          }
+          
+          /* Active Service Badge */
+          #${navbarId} .mnh-active-service-badge {
+            background: linear-gradient(135deg, #1976d2, #e53935);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+            box-shadow: 0 3px 15px rgba(25, 118, 210, 0.4);
+            animation: mnhGlow 2s infinite alternate;
+          }
+          
+          @keyframes mnhGlow {
+            0% { box-shadow: 0 3px 15px rgba(25, 118, 210, 0.4); }
+            100% { box-shadow: 0 3px 25px rgba(25, 118, 210, 0.7), 0 0 15px rgba(229, 57, 53, 0.4); }
+          }
+          
+          /* Scrollbar Styling */
+          #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar-track {
+            background: rgba(25, 118, 210, 0.05);
+            border-radius: 3px;
+          }
+          
+          #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #1976d2, #e53935);
+            border-radius: 3px;
           }
 
-          .dropdown-services-box {
-              background: #fff;
-              border: 2.5px solid transparent;
-              border-radius: 5px;
-              min-height: 300px;
-              background:
-                linear-gradient(#fff, #fff) padding-box,
-                linear-gradient(135deg, #1976d2ef 0%, #e53835e7 60%, #ffd700 100%) border-box;
-              transition:
-                background 1s ease,
-                border-color 1s ease,
-                border-image 1s ease,
-                box-shadow 0.4s ease,
-                transform 0.4s ease,
-                opacity 0.4s ease;
-              box-shadow: 0 5px 16px rgba(10, 67, 124, 0.51);
-              animation: fadeInSlideUp 0.5s ease forwards;
-              opacity: 0;
-              transform: translateY(10px);
-            }
 
-            .dropdown-services-box.show {
-              opacity: 1;
-              transform: translateY(0);
-            }
 
-            .service-list-item:active,
-            .service-list-item:hover,
-            .service-list-item:focus {
-              box-shadow: 0 6px 24px rgba(10, 67, 124, 0.18), 0 1.5px 8px rgba(25, 118, 210, 0.18);
-              transform: translateX(40px); /* Slide from right */
-              /* No scale, no zoom */
+           #${navbarId} .mnh-sidebar-toggle-btn {
+            background: none;
+            border: none;
+            color: #5a6a85;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          
+          #${navbarId} .mnh-sidebar-toggle-btn:hover {
+            background: rgba(25, 118, 210, 0.08);
+            color: #1976d2;
+          }
+          
+          #${navbarId} .mnh-sidebar-toggle-btn i {
+            font-size: 20px;
+            transition: transform 0.3s ease;
+          }
+          
+          /* When sidebar is collapsed, rotate the icon */
+          body.menu-collapsed #${navbarId} .mnh-sidebar-toggle-btn i {
+            transform: rotate(180deg);
+          }
+          
+          /* Mobile Responsive */
+          @media (max-width: 768px) {
+            #${navbarId} .mnh-navbar-main {
+              padding: 10px 16px;
             }
-            /* Icons inside cards */
-            .dropdown-services-box .bx {
-              font-size: 2rem;
-              background: linear-gradient(90deg, #1976d2 0%, #e53935 60%, #ffd700 100%);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              background-clip: text;
-              text-fill-color: transparent;
+            
+            #${navbarId} .mnh-nav-controls {
+              gap: 12px;
             }
-
-            /* Gradient titles */
-            .dropdown-services-box .service-title {
-              font-weight: bold;
-              background: linear-gradient(90deg, #1976d2 0%, #e53935 60%, #ffd700 100%);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              background-clip: text;
-              text-fill-color: transparent;
+            
+            #${navbarId} .mnh-quick-access-btn {
+              padding: 8px 12px;
+              font-size: 13px;
             }
-
-            /* Animation keyframe */
-            @keyframes fadeInSlideUp {
-              from {
-                opacity: 0;
-                transform: translateX(-50px);
-              }
-              to {
-                opacity: 1;
-                transform: translateX(0);
-              }
-            }`}
+            
+            #${servicesDropdownId} {
+              width: 320px;
+              left: 50%;
+              transform: translateX(-50%);
+            }
+            
+            #${profileDropdownId} {
+              width: 280px;
+            }
+            
+            #${navbarId} .mnh-user-name {
+              display: none;
+            }
+            
+            #${navbarId} .mnh-user-designation {
+              display: none;
+            }
+            
+            #${navbarId} .mnh-user-profile-compact {
+              padding: 6px;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            #${servicesDropdownId} {
+              width: 280px;
+              left: 50%;
+              right: auto;
+              transform: translateX(-50%) !important;
+              position: fixed !important;
+              margin-left: 0;
+              max-width: calc(100vw - 20px);
+            }
+            
+            #${profileDropdownId} {
+              width: 260px;
+            }
+            
+            #${navbarId} .mnh-quick-access-btn span:first-child {
+              display: none;
+            }
+            
+            #${navbarId} .mnh-quick-access-btn {
+              padding: 8px;
+            }
+          }
+        `}
       </style>
 
-      <div className="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
-        <a
-          aria-label="toggle for sidebar"
-          className="nav-item nav-link px-0 me-xl-4"
-          href="#"
-        >
-          <i className="bx bx-menu bx-sm"></i>
-        </a>
-      </div>
+      <div id={navbarId}>
+        <nav className="mnh-navbar-main navbar-detached  container-fluid">
+          <div className="mnh-nav-content">
+            {/* Left Section - Controls */}
+            <div className="mnh-nav-controls">
+              {/* Mobile Menu Button */}
+              <button className="mnh-mobile-menu-btn d-xl-none layout-menu-toggle menu-link text-large ms-auto d-block">
+                <Menu size={20} />
+              </button>
 
-      <div
-        className="navbar-nav-right d-flex align-items-center"
-        id="navbar-collapse"
-      >
-        {isService ? (
-          getGreetingMessage(user ? user.first_name : "")
-        ) : (
-          <div className="position-relative">
-            <button
-              aria-label="Click me"
-              type="button"
-              className="btn btn-sm btn-outline-primary me-2 me-xl-4"
-              onClick={toggleDropdown}
-            >
-              <i className="bx bx-menu me-1"></i> Quick Access to Services
-              {activeService && (
-                <span className="active-service-badge ms-2 text-dark">&nbsp;|&nbsp;&nbsp;&nbsp;
-                  {activeService.split('-').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ')}
-                </span>
-              )}
-            </button>
-            {/* Dropdown */}
-            {showDropdown && (
-              <div
-                className={`dropdown-services-box show`}
-                style={{
-                  position: "absolute",
-                  left: 0, // right below the button
-                  top: 23,
-                  right: 0,
-                  width: "350px",
-                  marginTop: "10px",
-                  zIndex: 1000,
-                  padding: "20px",
-                }}
-              >
-                <div className="row">
-                  <h5 className="text-info"> Choose The Services</h5>
-                  <p className="text-muted">
-                    The below is list of mnh-Connect Service you Included
-                  </p>
-                </div>
-                <div
-                  className="row mb-4"
-                  style={{
-                    overflowY: "auto",
-                    overflowX: "hidden",
-                    maxHeight: "300px",
-                  }}
+              {/* Quick Access Services */}
+              <div className="mnh-quick-access-container" ref={dropdownRef}>
+                <button
+                  className="mnh-quick-access-btn"
+                  onClick={() => setShowDropdown(!showDropdown)}
                 >
-                  {servicesList.map((doc, idx) => ( 
-                    <div
-                      className="d-flex align-items-center service-list-item cursor-pointer me-3 mb-3"
-                      key={"docs_index_" + idx}
-                      onClick={() => {
-                        navigate(doc.link);
-                        setShowDropdown(false);
-                      }}
-                    >
-                      <i className={`${doc.icon} icon-size me-3`}></i>
-                      <div>
-                        <div className="service-title">{doc.text}</div>
+                  <Grid3x3 size={18} />
+                  <span>Services</span>
+                  {activeService && (
+                    <span className="mnh-active-service-badge">
+                      {activeService
+                        .split("-")
+                        .map(
+                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                        )
+                        .join(" ")}
+                    </span>
+                  )}
+                  <ChevronDown size={14} className="mnh-user-chevron" />
+                </button>
+
+                {/* Services Dropdown */}
+                {showDropdown && (
+                  <div id={servicesDropdownId}>
+                    <div className="mnh-dropdown-header">
+                      <div className="mnh-dropdown-title">
+                        Quick Access Services
+                      </div>
+                      <div className="mnh-dropdown-subtitle">
+                        Select a service to navigate instantly
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <span className="text-secondary text-truncate  mt-3">
-              <i className="bx bx-user me-1 mb-1"></i>
-              {user ? `${user.first_name} ${user.last_name}` : ""}
-            </span>
-          </div>
-        )}
 
-
-        <ul className="navbar-nav flex-row align-items-center ms-auto">
-          {user && user.position && (
-            <li className="nav-item">
-              <button
-                aria-label="Click me"
-                type="button"
-                className="btn btn-sm btn-outline-primary me-2 me-xl-4"
-              >
-                <i className="bx bx-user me-1"></i>
-                {user?.position?.level_name}
-              </button>
-            </li>
-          )}
-
-          <li className="nav-item ">
-            <a
-              aria-label="go to notifications"
-              className="nav-link px-0 me-2 me-xl-4"
-              href="#"
-            >
-              <i className="bx bx-bell bx-sm"></i>
-            </a>
-          </li>
-          <li className="nav-item navbar-dropdown dropdown-user dropdown">
-            <a
-              aria-label="dropdown profile avatar"
-              className="nav-link dropdown-toggle hide-arrow"
-              href="#"
-              data-bs-toggle="dropdown"
-            >
-              <div className="avatar avatar-online">
-                <img
-                  src={
-                    user && user.photo && user.photo.trim() !== ""
-                      ? user.photo
-                      : "/assets/img/avatars/1.png"
-                  }
-                  style={{ width: "40px", height: "40px" }}
-                  className="w-px-40 rounded-circle"
-                  alt="avatar-image"
-                  aria-label="Avatar Image"
-                />
-              </div>
-            </a>
-            <ul className="dropdown-menu dropdown-menu-end">
-              <li>
-                <a
-                  aria-label="go to profile"
-                  className="dropdown-item"
-                  href="#"
-                >
-                  <div className="d-flex">
-                    <div className="flex-shrink-0 me-3">
-                      <div className="avatar avatar-online">
-                        <img
-                          src={
-                            user && user.photo && user.photo.trim() !== ""
-                              ? user.photo
-                              : "/assets/img/avatars/1.png"
-                          }
-                          style={{ width: "40px", height: "40px" }}
-                          className="w-px-40  rounded-circle"
-                          alt="avatar-image"
-                          aria-label="Avatar Image"
+                    <div className="mnh-search-container">
+                      <div className="mnh-search-input-wrapper">
+                        <Search className="mnh-search-icon" size={16} />
+                        <input
+                          ref={searchRef}
+                          type="text"
+                          className="mnh-search-input"
+                          placeholder="Search services..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
                         />
                       </div>
                     </div>
-                    <div className="flex-grow-1">
-                      <span className="fw-medium d-block">
-                        {user
-                          ? user.first_name + " " + user.last_name
-                          : "Guest"}
-                      </span>
-                      <small className="text-muted">
-                        {user ? user.is_admin : "Member"}
-                      </small>
+
+                    <div className="mnh-services-grid">
+                      {filteredServices.map((service, idx) => (
+                        <div
+                          key={idx}
+                          className="mnh-service-item"
+                          onClick={() => handleServiceClick(service)}
+                          onMouseEnter={() => setHoveredService(idx)}
+                          onMouseLeave={() => setHoveredService(null)}
+                        >
+                          <div className="mnh-service-icon">
+                            <i className={service.icon}></i>
+                          </div>
+                          <div className="mnh-service-content">
+                            <div className="mnh-service-name">
+                              {service.text}
+                            </div>
+                            {service.category && (
+                              <div className="mnh-service-category">
+                                {service.category}
+                              </div>
+                            )}
+                          </div>
+                          <ChevronRight
+                            className="mnh-service-arrow"
+                            size={16}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mnh-dropdown-footer">
+                      <button
+                        className="mnh-view-all-btn"
+                        onClick={() => {
+                          navigate("/");
+                          setShowDropdown(false);
+                        }}
+                      >
+                        <Grid3x3 size={16} />
+                        View All Services
+                      </button>
                     </div>
                   </div>
-                </a>
-              </li>
-              <li>
-                <div className="dropdown-divider"></div>
-              </li>
-              <li>
-                <span
-                  aria-label="go to profile"
-                  className="dropdown-item cursor-pointer"
-                  href="#"
-                  onClick={() => {
-                    navigate("/account/settings");
-                  }}
+                )}
+              </div>
+            </div>
+
+            {/* Right Section - User Info */}
+            <div className="mnh-nav-right">
+              {/* Notifications */}
+              <button className="mnh-notification-btn">
+                <Bell size={20} />
+                <span className="mnh-notification-badge"></span>
+              </button>
+
+              {/* User Profile */}
+              <div className="profile-dropdown-container" ref={profileRef}>
+                <div
+                  className={`mnh-user-profile-compact ${
+                    showProfileDropdown ? "active" : ""
+                  }`}
+                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                 >
-                  <i className="bx bx-user me-2"></i>
-                  <span className="align-middle">My Profile</span>
-                </span>
-              </li>
-              <li>
-                <a
-                  aria-label="go to setting"
-                  className="dropdown-item"
-                  href="#"
-                  onClick={handleLogout}
-                >
-                  <i className="bx bx-lock me-2"></i>
-                  <span className="align-middle">Log Out</span>
-                </a>
-              </li>
-              <li>
-                <div className="dropdown-divider"></div>
-              </li>
-            </ul>
-          </li>
-        </ul>
+                  <div className="mnh-user-avatar">
+                    {user && user.photo && user.photo.trim() !== "" ? (
+                      <img src={user.photo} alt={user.first_name || "User"} />
+                    ) : (
+                      <User size={20} />
+                    )}
+                  </div>
+                  <div className="mnh-user-info-compact">
+                    <div className="mnh-user-name">
+                      {user ? `${user.first_name} ${user.last_name}` : "Guest"}
+                    </div>
+                    <div className="mnh-user-designation">
+                      {user?.position?.level_name
+                        ? user.position.level_name.length > 35
+                          ? `${user.position.level_name.substring(0, 32)}...`
+                          : user.position.level_name
+                        : "MNH Staff"}
+                    </div>
+                  </div>
+                  <ChevronDown size={14} className="mnh-user-chevron" />
+                </div>
+
+                {/* Profile Dropdown (Kept minimal to avoid CSS conflicts) */}
+                {showProfileDropdown && (
+                  <div
+                    id={profileDropdownId}
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      right: 0,
+                      marginTop: "8px",
+                      width: "280px",
+                      background: "white",
+                      borderRadius: "16px",
+                      border: "1px solid rgba(0, 0, 0, 0.1)",
+                      boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15)",
+                      overflow: "hidden",
+                      zIndex: 1050,
+                      animation:
+                        "mnhSlideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    }}
+                  >
+                    {/* Simple profile dropdown content */}
+                    <div
+                      style={{
+                        padding: "20px",
+                        background: "linear-gradient(135deg, #1976d2, #e53935)",
+                        color: "white",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "80px",
+                            height: "50px",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            background: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {user && user.photo && user.photo.trim() !== "" ? (
+                            <img
+                              src={user.photo}
+                              alt={user.first_name || "User"}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <User size={24} color="#1976d2" />
+                          )}
+                        </div>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: "16px",
+                              fontWeight: "700",
+                              marginBottom: "4px",
+                            }}
+                          >
+                            {user
+                              ? `${user.first_name} ${user.last_name}`
+                              : "Guest"}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              opacity: 0.9,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {user?.position?.level_name || "MNH Staff"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: "16px" }}>
+                      <button
+                        style={{
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "12px 16px",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          borderRadius: "10px",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#f1f5f9")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "none")
+                        }
+                        onClick={() => {
+                          navigate("/mnh-connect/account/settings");
+                          setShowProfileDropdown(false);
+                        }}
+                      >
+                        <User size={16} color="#64748b" />
+                        <span
+                          style={{
+                            flex: 1,
+                            textAlign: "left",
+                            fontSize: "14px",
+                          }}
+                        >
+                          My Profile
+                        </span>
+                      </button>
+
+                      <button
+                        style={{
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "12px 16px",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          borderRadius: "10px",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#f1f5f9")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "none")
+                        }
+                        onClick={handleLogout}
+                      >
+                        <LogOut size={16} color="#e53935" />
+                        <span
+                          style={{
+                            flex: 1,
+                            textAlign: "left",
+                            fontSize: "14px",
+                            color: "#e53935",
+                          }}
+                        >
+                          Log Out
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </nav>
       </div>
-    </nav>
+    </>
   );
 };
-export default Navbar;
 
+export default Navbar;
