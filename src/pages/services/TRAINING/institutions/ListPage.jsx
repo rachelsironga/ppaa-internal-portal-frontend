@@ -1,33 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
 import "animate.css";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
-import { deleteApplication } from "./Queries";
-import { ApplicationModal } from "./Modal";
+import { deleteInstitution } from "./Queries";
+import { InstitutionModal } from "./Modal";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
-export const ApplicationsListPage = () => {
-    const [selectedApplication, setSelectedApplication] = useState(null);
+export const InstitutionsListPage = () => {
+    const [selectedInstitution, setSelectedInstitution] = useState(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const navigate = useNavigate();
-    const location = useLocation();
     const user = useSelector((state) => state.userReducer?.data);
 
-    const handleDelete = async (application) => {
-        if (!application) {
-            Swal.fire("Error!", "Unable to select this application.", "error");
+    const handleDelete = async (institution) => {
+        if (!institution) {
+            Swal.fire("Error!", "Unable to select this institution.", "error");
             return;
         }
 
         try {
             const confirmation = await Swal.fire({
                 title: "Are you sure?",
-                text: `You're about to delete this application`,
+                text: `You're about to delete ${institution.name}`,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#DD6B55",
@@ -36,34 +35,31 @@ export const ApplicationsListPage = () => {
             });
 
             if (confirmation.isConfirmed) {
-                const result = await deleteApplication(application.uid);
+                const result = await deleteInstitution(institution.uid);
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Deleted!",
-                        "The application has been deleted successfully.",
+                        "The institution has been deleted successfully.",
                         "success"
                     );
                     setRefreshKey((prev) => prev + 1);
                 } else {
-                    Swal.fire("Error!", result.message || "Failed to delete application", "error");
+                    Swal.fire("Error!", result.message || "Failed to delete institution", "error");
                 }
             }
         } catch (error) {
-            console.error("Error deleting application:", error);
+            console.error("Error deleting institution:", error);
             Swal.fire(
                 "Error!",
-                "Unable to delete application. Please try again or contact support.",
+                "Unable to delete institution. Please try again or contact support.",
                 "error"
             );
         }
     };
 
-    const isSearchPage = location.pathname === "/training/search-applications";
-    const breadcrumbPages = isSearchPage ? ["Training", "Search Applications"] : ["Training", "Applications"];
-
     return (
         <>
-            <BreadCumb pageList={breadcrumbPages} />
+            <BreadCumb pageList={["Training", "Institutions"]} />
 
             {/* Header Card */}
             <div className="card mb-4 shadow-sm animate__animated animate__fadeInDown animate__faster">
@@ -71,22 +67,19 @@ export const ApplicationsListPage = () => {
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <h4 className="mb-1 fw-bold">
-                                <i className={`bx ${isSearchPage ? 'bx-search' : 'bx-file-blank'} me-2`}></i>
-                                {isSearchPage ? "Search Applications" : "Applications Management"}
+                                <i className="bx bx-building me-2"></i>Institutions
                             </h4>
-                            <p className="text-muted mb-0">
-                                {isSearchPage ? "Search and filter training applications" : "Manage and monitor training applications"}
-                            </p>
+                            <p className="text-muted mb-0">Manage training institutions and partner organizations</p>
                         </div>
                         <div className="d-flex gap-2">
-                            {hasAccess(user, [["add_application"]]) && (
+                            {hasAccess(user, [["add_institution"]]) && (
                                 <button
                                     className="btn btn-primary"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#applicationModal"
-                                    onClick={() => setSelectedApplication(null)}
+                                    data-bs-target="#institutionModal"
+                                    onClick={() => setSelectedInstitution(null)}
                                 >
-                                    <i className="bx bx-plus me-2"></i>Add New Application
+                                    <i className="bx bx-plus me-2"></i>Add New Institution
                                 </button>
                             )}
                         </div>
@@ -96,68 +89,65 @@ export const ApplicationsListPage = () => {
 
             {/* Paginated Table */}
             <PaginatedTable
-                fetchPath="/api/training/applications"
-                title={isSearchPage ? "Search Results" : "Applications List"}
+                fetchPath="/api/training/institutions"
+                title="Institutions List"
                 isRefresh={refreshKey}
                 isFullPath={true}
                 columns={[
                     {
-                        key: "student_name",
-                        label: "Student",
+                        key: "name",
+                        label: "Name",
                         className: "fw-bold",
                         style: { width: "200px" },
                         render: (row) => (
                             <div>
-                                <h6 className="mb-0">
-                                    {row.student?.first_name} {row.student?.last_name}
-                                </h6>
+                                <h6 className="mb-0">{row.name}</h6>
                                 <small className="text-muted">
-                                    {row.student?.student_id}
+                                    {row.institution_code}
                                 </small>
                             </div>
                         ),
                     },
                     {
-                        key: "reference_number",
-                        label: "Reference",
+                        key: "institution_type",
+                        label: "Type",
                         className: "text-center",
-                        style: { width: "150px" },
+                        style: { width: "130px" },
                         render: (row) => (
-                            <code className="bg-light px-2 py-1 rounded">{row.reference_number}</code>
+                            <span className="badge bg-light text-dark">{row.institution_type || "-"}</span>
                         ),
                     },
                     {
-                        key: "type",
-                        label: "Type",
+                        key: "country",
+                        label: "Country",
                         className: "text-center",
                         style: { width: "120px" },
                         render: (row) => (
-                            <span className="badge bg-info">{row.type || "-"}</span>
+                            <small>{row.country?.name || "-"}</small>
                         ),
                     },
                     {
-                        key: "status",
-                        label: "Status",
+                        key: "contact_person",
+                        label: "Contact Person",
                         className: "text-center",
-                        style: { width: "130px" },
-                        render: (row) => {
-                            const statusConfig = {
-                                'pending': { class: 'warning', label: 'Pending' },
-                                'approved': { class: 'success', label: 'Approved' },
-                                'rejected': { class: 'danger', label: 'Rejected' },
-                                'submitted': { class: 'info', label: 'Submitted' },
-                            };
-                            const status = statusConfig[row.status] || { class: 'secondary', label: row.status || 'Unknown' };
-                            return <span className={`badge bg-${status.class}`}>{status.label}</span>;
-                        },
+                        style: { width: "150px" },
+                        render: (row) => (
+                            <small>{row.contact_person || "-"}</small>
+                        ),
                     },
                     {
-                        key: "submission_date",
-                        label: "Submitted",
+                        key: "contact_email",
+                        label: "Email",
                         className: "text-center",
-                        style: { width: "130px" },
+                        style: { width: "180px" },
                         render: (row) => (
-                            <small>{formatDate(row.submission_date || row.created_at, "DD/MM/YYYY")}</small>
+                            <small>
+                                {row.contact_email ? (
+                                    <a href={`mailto:${row.contact_email}`}>{row.contact_email}</a>
+                                ) : (
+                                    "-"
+                                )}
+                            </small>
                         ),
                     },
                     {
@@ -176,22 +166,22 @@ export const ApplicationsListPage = () => {
                         style: { width: "140px" },
                         render: (row) => (
                             <div className="btn-group" role="group">
-                                {hasAccess(user, [["view_application", "add_application", "change_application"]]) && (
+                                {hasAccess(user, [["view_institution", "add_institution", "change_institution"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-primary border-0"
                                         title="View"
-                                        onClick={() => navigate(`/training/applications/${row.uid}`)}
+                                        onClick={() => navigate(`/training/institutions/${row.uid}`)}
                                     >
                                         <i className="bx bx-show"></i>
                                     </button>
                                 )}
-                                {hasAccess(user, [["change_application"]]) && (
+                                {hasAccess(user, [["change_institution"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-info border-0"
                                         title="Edit"
                                         onClick={() => {
-                                            setSelectedApplication(row);
-                                            const modal = document.getElementById("applicationModal");
+                                            setSelectedInstitution(row);
+                                            const modal = document.getElementById("institutionModal");
                                             if (modal) {
                                                 new (window.bootstrap || {}).Modal(modal).show();
                                             }
@@ -200,7 +190,7 @@ export const ApplicationsListPage = () => {
                                         <i className="bx bx-edit"></i>
                                     </button>
                                 )}
-                                {hasAccess(user, [["delete_application"]]) && (
+                                {hasAccess(user, [["delete_institution"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-danger border-0"
                                         title="Delete"
@@ -216,13 +206,13 @@ export const ApplicationsListPage = () => {
             />
 
             {/* Modals */}
-            <ApplicationModal
-                application={selectedApplication}
+            <InstitutionModal
+                institution={selectedInstitution}
                 onSuccess={() => {
                     setRefreshKey((prev) => prev + 1);
-                    setSelectedApplication(null);
+                    setSelectedInstitution(null);
                 }}
-                onClose={() => setSelectedApplication(null)}
+                onClose={() => setSelectedInstitution(null)}
             />
         </>
     );

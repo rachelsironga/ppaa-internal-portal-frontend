@@ -11,8 +11,8 @@ import {
     BarChart,
     ActivityFeed,
     ProgressChart,
-    WarrantyTimeline
-} from "../components/DashboardCharts";
+    StatCard
+} from "../../../../components/DashboardCharts";
 
 export const AssetDashboardPage = () => {
     const user = useSelector((state) => state.userReducer?.data);
@@ -627,29 +627,3 @@ export const AssetDashboardPage = () => {
     );
 };
 
-// Metric Card Component
-const MetricCard = ({ title, value, icon, color, percentage, subtitle }) => (
-    <div className="card h-100">
-        <div className="card-body">
-            <div className="d-flex align-items-center">
-                <div className="avatar flex-shrink-0">
-                    <div className={`bg-${color} rounded p-2`}>
-                        <i className={`bx ${icon} text-white`}></i>
-                    </div>
-                </div>
-                <div className="ms-3">
-                    <span className="fw-medium d-block mb-1">{title}</span>
-                    <h3 className={`card-title mb-0 ${color ? `text-${color}` : ''}`}>{value}</h3>
-                    {percentage !== undefined && (
-                        <small className="text-success fw-medium">
-                            <i className="bx bx-up-arrow-alt"></i> {percentage}%
-                        </small>
-                    )}
-                    {subtitle && (
-                        <small className="text-muted d-block">{subtitle}</small>
-                    )}
-                </div>
-            </div>
-        </div>
-    </div>
-);

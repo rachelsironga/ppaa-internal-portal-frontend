@@ -1,33 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
 import "animate.css";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
-import { deleteApplication } from "./Queries";
-import { ApplicationModal } from "./Modal";
+import { deleteMOU } from "./Queries";
+import { MOUModal } from "./Modal";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
-export const ApplicationsListPage = () => {
-    const [selectedApplication, setSelectedApplication] = useState(null);
+export const MOUsListPage = () => {
+    const [selectedMOU, setSelectedMOU] = useState(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const navigate = useNavigate();
-    const location = useLocation();
     const user = useSelector((state) => state.userReducer?.data);
 
-    const handleDelete = async (application) => {
-        if (!application) {
-            Swal.fire("Error!", "Unable to select this application.", "error");
+    const handleDelete = async (mou) => {
+        if (!mou) {
+            Swal.fire("Error!", "Unable to select this MOU.", "error");
             return;
         }
 
         try {
             const confirmation = await Swal.fire({
                 title: "Are you sure?",
-                text: `You're about to delete this application`,
+                text: `You're about to delete MOU ${mou.mou_number}`,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#DD6B55",
@@ -36,34 +35,52 @@ export const ApplicationsListPage = () => {
             });
 
             if (confirmation.isConfirmed) {
-                const result = await deleteApplication(application.uid);
+                const result = await deleteMOU(mou.uid);
                 if (result.status === 200 || result.status === 8000) {
                     Swal.fire(
                         "Deleted!",
-                        "The application has been deleted successfully.",
+                        "The MOU has been deleted successfully.",
                         "success"
                     );
                     setRefreshKey((prev) => prev + 1);
                 } else {
-                    Swal.fire("Error!", result.message || "Failed to delete application", "error");
+                    Swal.fire("Error!", result.message || "Failed to delete MOU", "error");
                 }
             }
         } catch (error) {
-            console.error("Error deleting application:", error);
+            console.error("Error deleting MOU:", error);
             Swal.fire(
                 "Error!",
-                "Unable to delete application. Please try again or contact support.",
+                "Unable to delete MOU. Please try again or contact support.",
                 "error"
             );
         }
     };
 
-    const isSearchPage = location.pathname === "/training/search-applications";
-    const breadcrumbPages = isSearchPage ? ["Training", "Search Applications"] : ["Training", "Applications"];
+    const getStatusBadge = (row) => {
+        // Note: expiration_status is calculated on backend
+        // We'll check dates on frontend as fallback
+        const today = new Date();
+        const endDate = new Date(row.end_date);
+        const daysRemaining = Math.floor((endDate - today) / (1000 * 60 * 60 * 24));
+
+        let statusClass = "bg-success";
+        let statusLabel = "Active";
+
+        if (daysRemaining < 0) {
+            statusClass = "bg-danger";
+            statusLabel = "Expired";
+        } else if (daysRemaining <= 30) {
+            statusClass = "bg-warning";
+            statusLabel = "Expiring Soon";
+        }
+
+        return <span className={`badge ${statusClass}`}>{statusLabel}</span>;
+    };
 
     return (
         <>
-            <BreadCumb pageList={breadcrumbPages} />
+            <BreadCumb pageList={["Training", "MOU Management"]} />
 
             {/* Header Card */}
             <div className="card mb-4 shadow-sm animate__animated animate__fadeInDown animate__faster">
@@ -71,22 +88,19 @@ export const ApplicationsListPage = () => {
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <h4 className="mb-1 fw-bold">
-                                <i className={`bx ${isSearchPage ? 'bx-search' : 'bx-file-blank'} me-2`}></i>
-                                {isSearchPage ? "Search Applications" : "Applications Management"}
+                                <i className="bx bx-file-doc me-2"></i>MOU Management
                             </h4>
-                            <p className="text-muted mb-0">
-                                {isSearchPage ? "Search and filter training applications" : "Manage and monitor training applications"}
-                            </p>
+                            <p className="text-muted mb-0">Manage Memorandum of Understanding with institutions</p>
                         </div>
                         <div className="d-flex gap-2">
-                            {hasAccess(user, [["add_application"]]) && (
+                            {hasAccess(user, [["add_mou"]]) && (
                                 <button
                                     className="btn btn-primary"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#applicationModal"
-                                    onClick={() => setSelectedApplication(null)}
+                                    data-bs-target="#mouModal"
+                                    onClick={() => setSelectedMOU(null)}
                                 >
-                                    <i className="bx bx-plus me-2"></i>Add New Application
+                                    <i className="bx bx-plus me-2"></i>Add New MOU
                                 </button>
                             )}
                         </div>
@@ -96,43 +110,48 @@ export const ApplicationsListPage = () => {
 
             {/* Paginated Table */}
             <PaginatedTable
-                fetchPath="/api/training/applications"
-                title={isSearchPage ? "Search Results" : "Applications List"}
+                fetchPath="/api/training/mous"
+                title="MOUs List"
                 isRefresh={refreshKey}
                 isFullPath={true}
                 columns={[
                     {
-                        key: "student_name",
-                        label: "Student",
+                        key: "mou_number",
+                        label: "MOU Number",
                         className: "fw-bold",
+                        style: { width: "150px" },
+                        render: (row) => (
+                            <code className="bg-light px-2 py-1 rounded">{row.mou_number}</code>
+                        ),
+                    },
+                    {
+                        key: "institution",
+                        label: "Institution",
+                        className: "text-start",
                         style: { width: "200px" },
                         render: (row) => (
                             <div>
-                                <h6 className="mb-0">
-                                    {row.student?.first_name} {row.student?.last_name}
-                                </h6>
-                                <small className="text-muted">
-                                    {row.student?.student_id}
-                                </small>
+                                <h6 className="mb-0">{row.institution?.name || "-"}</h6>
+                                <small className="text-muted">{row.institution?.location || "-"}</small>
                             </div>
                         ),
                     },
                     {
-                        key: "reference_number",
-                        label: "Reference",
+                        key: "start_date",
+                        label: "Start Date",
                         className: "text-center",
-                        style: { width: "150px" },
+                        style: { width: "130px" },
                         render: (row) => (
-                            <code className="bg-light px-2 py-1 rounded">{row.reference_number}</code>
+                            <small>{formatDate(row.start_date, "DD/MM/YYYY")}</small>
                         ),
                     },
                     {
-                        key: "type",
-                        label: "Type",
+                        key: "end_date",
+                        label: "End Date",
                         className: "text-center",
-                        style: { width: "120px" },
+                        style: { width: "130px" },
                         render: (row) => (
-                            <span className="badge bg-info">{row.type || "-"}</span>
+                            <small>{formatDate(row.end_date, "DD/MM/YYYY")}</small>
                         ),
                     },
                     {
@@ -140,33 +159,15 @@ export const ApplicationsListPage = () => {
                         label: "Status",
                         className: "text-center",
                         style: { width: "130px" },
-                        render: (row) => {
-                            const statusConfig = {
-                                'pending': { class: 'warning', label: 'Pending' },
-                                'approved': { class: 'success', label: 'Approved' },
-                                'rejected': { class: 'danger', label: 'Rejected' },
-                                'submitted': { class: 'info', label: 'Submitted' },
-                            };
-                            const status = statusConfig[row.status] || { class: 'secondary', label: row.status || 'Unknown' };
-                            return <span className={`badge bg-${status.class}`}>{status.label}</span>;
-                        },
+                        render: (row) => getStatusBadge(row),
                     },
                     {
-                        key: "submission_date",
-                        label: "Submitted",
+                        key: "signed_date",
+                        label: "Signed",
                         className: "text-center",
                         style: { width: "130px" },
                         render: (row) => (
-                            <small>{formatDate(row.submission_date || row.created_at, "DD/MM/YYYY")}</small>
-                        ),
-                    },
-                    {
-                        key: "created_at",
-                        label: "Created",
-                        className: "text-center",
-                        style: { width: "130px" },
-                        render: (row) => (
-                            <small>{formatDate(row.created_at, "DD/MM/YYYY")}</small>
+                            <small>{formatDate(row.signed_date, "DD/MM/YYYY")}</small>
                         ),
                     },
                     {
@@ -176,22 +177,22 @@ export const ApplicationsListPage = () => {
                         style: { width: "140px" },
                         render: (row) => (
                             <div className="btn-group" role="group">
-                                {hasAccess(user, [["view_application", "add_application", "change_application"]]) && (
+                                {hasAccess(user, [["view_mou", "add_mou", "change_mou"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-primary border-0"
                                         title="View"
-                                        onClick={() => navigate(`/training/applications/${row.uid}`)}
+                                        onClick={() => navigate(`/training/mous/${row.uid}`)}
                                     >
                                         <i className="bx bx-show"></i>
                                     </button>
                                 )}
-                                {hasAccess(user, [["change_application"]]) && (
+                                {hasAccess(user, [["change_mou"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-info border-0"
                                         title="Edit"
                                         onClick={() => {
-                                            setSelectedApplication(row);
-                                            const modal = document.getElementById("applicationModal");
+                                            setSelectedMOU(row);
+                                            const modal = document.getElementById("mouModal");
                                             if (modal) {
                                                 new (window.bootstrap || {}).Modal(modal).show();
                                             }
@@ -200,7 +201,7 @@ export const ApplicationsListPage = () => {
                                         <i className="bx bx-edit"></i>
                                     </button>
                                 )}
-                                {hasAccess(user, [["delete_application"]]) && (
+                                {hasAccess(user, [["delete_mou"]]) && (
                                     <button
                                         className="btn btn-sm btn-outline-danger border-0"
                                         title="Delete"
@@ -216,13 +217,13 @@ export const ApplicationsListPage = () => {
             />
 
             {/* Modals */}
-            <ApplicationModal
-                application={selectedApplication}
+            <MOUModal
+                mou={selectedMOU}
                 onSuccess={() => {
                     setRefreshKey((prev) => prev + 1);
-                    setSelectedApplication(null);
+                    setSelectedMOU(null);
                 }}
-                onClose={() => setSelectedApplication(null)}
+                onClose={() => setSelectedMOU(null)}
             />
         </>
     );
