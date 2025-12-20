@@ -8,6 +8,7 @@ import { approveRejectRequest } from "./Queries";
 import Swal from "sweetalert2";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+
 import { createUpdateData } from "../../../../utils/GlobalQueries";
 
 const HandlerActionModal = ({ loadOnlyModal = false }) => {
