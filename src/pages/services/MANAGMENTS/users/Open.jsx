@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
-import ReactLoading from "react-loading";
-import "animate.css";
 import { UsersContext } from "../../../../utils/context";
 import { useParams } from "react-router-dom";
 import { getPositions, getUsers, photoUpload } from "./Queries";
@@ -15,6 +13,35 @@ import { useSelector } from "react-redux";
 import UserPermissionModal from "./UserPermissionModal";
 import { createUpdateData } from "../../../../utils/GlobalQueries";
 import { UserModal } from "./Modal";
+import {
+  User,
+  Camera,
+  Shield,
+  Lock,
+  Mail,
+  Phone,
+  Calendar,
+  Briefcase,
+  MapPin,
+  Award,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Edit,
+  RefreshCw,
+  Upload,
+  X,
+  Key,
+  FileSignature,
+  UserPlus,
+  UserMinus,
+  ChevronDown,
+  ClipboardList,
+  Building,
+  KeyRound,
+  AlertCircle,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const UserOpenPage = () => {
   const { uid } = useParams();
@@ -25,9 +52,7 @@ export const UserOpenPage = () => {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingPositions, setLoadingPositions] = useState(true);
-  const [errorPositions, setErrorPositions] = useState(null);
   const [positions, setPositions] = useState(null);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const filteredPermissions = selectedObj?.user_permissions?.filter((perm) =>
@@ -38,90 +63,37 @@ export const UserOpenPage = () => {
     group.toLowerCase().includes(searchGroupTerm.toLowerCase())
   );
 
-  const {
-    currentPage,
-    totalCount,
-    pageSize,
-    updatePage,
-    updatePageSize,
-    updatePagination,
-    updateTotalCount,
-  } = usePagination(10, 1, true);
+  const { currentPage, pageSize, updatePagination } = usePagination(
+    10,
+    1,
+    true
+  );
 
-  const [selectedLeft, setSelectedLeft] = useState([]);
-  const [selectedRight, setSelectedRight] = useState([]);
-  const [leftOptions, setLeftOptions] = useState([]);
-  const [rightOptions, setRightOptions] = useState([
-    { label: "Roles", options: [] },
-    { label: "Permissions", options: [] },
-  ]);
+  const [activeTab, setActiveTab] = useState("positions");
+  const [expandedSections, setExpandedSections] = useState({
+    personal: true,
+    contact: false,
+    currentPosition: true,
+    previousPositions: false,
+  });
 
-  // Helpers
-  const removeFromGrouped = (grouped, items) =>
-    grouped.map((group) => ({
-      ...group,
-      options: group.options.filter(
-        (opt) => !items.some((sel) => sel.value === opt.value)
-      ),
-    }));
-
-  const addToGrouped = (grouped, items) =>
-    grouped.map((group) => ({
-      ...group,
-      options: [
-        ...group.options,
-        ...items.filter(
-          (item) =>
-            item.group === group.label &&
-            !group.options.some((opt) => opt.value === item.value)
-        ),
-      ],
-    }));
-
-  // Assign: left -> right
-  const handleAssign = () => {
-    // Get selected with group info
-    const selectedWithGroup = [];
-    leftOptions.forEach((group) => {
-      group.options.forEach((opt) => {
-        if (selectedLeft.some((sel) => sel.value === opt.value)) {
-          selectedWithGroup.push({ ...opt, group: group.label });
-        }
-      });
-    });
-    setLeftOptions(removeFromGrouped(leftOptions, selectedLeft));
-    setSelectedLeft([]);
-    setRightOptions(addToGrouped(rightOptions, selectedWithGroup));
-  };
-
-  // Remove: right -> left
-  const handleRemove = () => {
-    const selectedWithGroup = [];
-    rightOptions.forEach((group) => {
-      group.options.forEach((opt) => {
-        if (selectedRight.some((sel) => sel.value === opt.value)) {
-          selectedWithGroup.push({ ...opt, group: group.label });
-        }
-      });
-    });
-    setRightOptions(removeFromGrouped(rightOptions, selectedRight));
-    setSelectedRight([]);
-    setLeftOptions(addToGrouped(leftOptions, selectedWithGroup));
-  };
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isFileSelected, setIsFileSelected] = useState(false);
+  const [previewImage, setPreviewImage] = useState("/assets/img/avatars/1.png");
+  const fileInputRef = useRef(null);
 
   const uploadValues = {
     uid: selectedObj?.guid,
     based64_file: "",
   };
 
-  const [isUploadVisible, setIsUploadVisible] = useState(false);
-  const [previewImage, setPreviewImage] = useState(
-    selectedObj?.photo && selectedObj.photo.trim() !== ""
-      ? selectedObj.photo
-      : "/assets/img/avatars/1.png"
-  );
-  const [isFileSelected, setIsFileSelected] = useState(false);
-  const fileInputRef = useRef(null);
+  const badgeColors = [
+    "badge-primary",
+    "badge-success",
+    "badge-warning",
+    "badge-info",
+    "badge-secondary",
+  ];
 
   const handleFetchData = async () => {
     setLoading(true);
@@ -138,19 +110,6 @@ export const UserOpenPage = () => {
             : "/assets/img/avatars/1.png"
         );
         setIsFileSelected(false);
-        setRightOptions([
-          {
-            label: "Roles",
-            options: result.data.groups.map((g) => ({ label: g, value: g })),
-          },
-          {
-            label: "Permissions",
-            options: result.data.user_permissions.map((p) => ({
-              label: p,
-              value: p,
-            })),
-          },
-        ]);
         uploadValues.uid = result.data.guid;
         fetchPositions(result.data.guid);
       } else {
@@ -167,7 +126,6 @@ export const UserOpenPage = () => {
 
   const fetchPositions = async (guid = "") => {
     setLoadingPositions(true);
-    setErrorPositions(null);
     try {
       const result = await getPositions({
         search: searchQuery,
@@ -181,18 +139,12 @@ export const UserOpenPage = () => {
       });
       if (result.status === 200 || result.status === 8000) {
         setPositions(result.data);
-
         if (result.pagination) {
           updatePagination(result.pagination);
-          updateTotalCount(result.pagination.total || 0);
-        } else {
-          updatePagination({});
         }
-      } else {
-        setErrorPositions(true);
       }
     } catch (err) {
-      setErrorPositions(true);
+      console.error(err);
     } finally {
       setLoadingPositions(false);
     }
@@ -203,16 +155,92 @@ export const UserOpenPage = () => {
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
-      setIsFileSelected(true); // Enable buttons when a file is selected
+      setIsFileSelected(true);
     } else {
-      setIsFileSelected(false); // Disable buttons if no file is selected
+      setIsFileSelected(false);
+    }
+  };
+
+  const handleResetImage = () => {
+    setPreviewImage(
+      selectedObj?.photo && selectedObj.photo.trim() !== ""
+        ? selectedObj.photo
+        : "/assets/img/avatars/1.png"
+    );
+    setIsFileSelected(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedObj) {
+      Swal.fire("Error!", "Sorry Reopen this user to Fix this error.", "error");
+      return;
+    }
+
+    if (!fileInputRef.current || !fileInputRef.current.files[0]) {
+      Swal.fire(
+        "Error!",
+        "No file selected. Please choose a file to upload.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const confirmation = await Swal.fire({
+        text: "You're about to save the new Profile Photo",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#696cff",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Confirm Save",
+      });
+
+      if (confirmation.isConfirmed) {
+        setIsUploadingPhoto(true);
+        const file = fileInputRef.current.files[0];
+        const toBase64 = (file) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+          });
+
+        const base64File = await toBase64(file);
+        uploadValues.based64_file = base64File;
+
+        const result = await photoUpload(uploadValues);
+        if (result.status === 200 || result.status === 8000) {
+          Swal.fire(
+            "Process Completed!",
+            "Successfully Uploaded the Photo.",
+            "success"
+          );
+          setSelectedObj(result.data);
+          setIsFileSelected(false);
+        } else {
+          Swal.fire("Opps!", `${result.message}`, "error");
+        }
+      }
+    } catch (error) {
+      console.error("Error Uploading Photo:", error);
+      Swal.fire(
+        "Unsuccessful",
+        `Unable to Perform Upload. Please Try Again or Contact Support Team`,
+        "error"
+      );
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
   const handleResetPassword = async () => {
     if (!selectedObj) {
       Swal.fire(
-        "Attension!",
+        "Attention!",
         "Refresh Page or Reopen User to Correct the Issue.",
         "info"
       );
@@ -221,18 +249,12 @@ export const UserOpenPage = () => {
 
     try {
       const confirmation = await Swal.fire({
-        // title: "Save New Profile Photo",
         text: "Once confirmed, the user's password will be reset and a temporary password will be sent to their registered email address.",
         icon: "info",
         showCancelButton: true,
         confirmButtonColor: "#696cff",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Reset",
-        customClass: {
-          confirmButton: "btn btn-sm btn-outline-primary",
-          cancelButton: "btn btn-sm",
-          popup: "custom-swal-popup",
-        },
       });
 
       if (confirmation.isConfirmed) {
@@ -260,109 +282,120 @@ export const UserOpenPage = () => {
     }
   };
 
-  const handleResetImage = () => {
-    setPreviewImage(
-      selectedObj?.photo && selectedObj.photo.trim() !== ""
-        ? selectedObj.photo
-        : "/assets/img/avatars/1.png"
-    );
-    setIsFileSelected(false); // Disable buttons after reset
-
-    // Clear the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const toggleUploadVisibility = () => {
-    setIsUploadVisible((prev) => !prev);
-  };
-
-  const handleUpload = async (selectedObj = null) => {
+  const handleChangePassword = async () => {
     if (!selectedObj) {
-      Swal.fire("Error!", "Sorry Reopen this user to Fix this error.", "error");
-      return;
-    }
-
-    if (!fileInputRef.current || !fileInputRef.current.files[0]) {
       Swal.fire(
-        "Error!",
-        "No file selected. Please choose a file to upload.",
-        "error"
+        "Attention!",
+        "Refresh Page or Reopen User to Correct the Issue.",
+        "info"
       );
       return;
     }
 
     try {
-      const confirmation = await Swal.fire({
-        // title: "Save New Profile Photo",
-        text: "Your About to Save the new Profile Photo",
-        icon: "info",
+      const { value: formValues } = await Swal.fire({
+        title: "Change User Password",
+        html: `
+          <input id="newPassword" type="password" placeholder="New Password" class="swal2-input" required>
+          <input id="confirmPassword" type="password" placeholder="Confirm Password" class="swal2-input" required>
+          <p class="text-muted small mt-2">Password must be at least 8 characters with uppercase, lowercase, and special characters.</p>
+        `,
+        focusConfirm: false,
         showCancelButton: true,
         confirmButtonColor: "#696cff",
         cancelButtonColor: "#aaa",
-        confirmButtonText: "Confirm Save",
-        customClass: {
-          confirmButton: "btn btn-sm btn-outline-primary",
-          cancelButton: "btn btn-sm",
-          popup: "custom-swal-popup",
+        confirmButtonText: "Change Password",
+        preConfirm: () => {
+          const newPassword = document.getElementById("newPassword").value;
+          const confirmPassword =
+            document.getElementById("confirmPassword").value;
+
+          if (!newPassword || !confirmPassword) {
+            Swal.showValidationMessage("Please fill in both fields");
+            return false;
+          }
+
+          if (newPassword.length < 8) {
+            Swal.showValidationMessage(
+              "Password must be at least 8 characters"
+            );
+            return false;
+          }
+
+          if (newPassword !== confirmPassword) {
+            Swal.showValidationMessage("Passwords do not match");
+            return false;
+          }
+
+          // Check password complexity
+          const hasUpperCase = /[A-Z]/.test(newPassword);
+          const hasLowerCase = /[a-z]/.test(newPassword);
+          const hasNumbers = /\d/.test(newPassword);
+          const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+          if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
+            Swal.showValidationMessage(
+              "Password must include uppercase, lowercase, numbers, and special characters"
+            );
+            return false;
+          }
+
+          return { newPassword, confirmPassword };
         },
       });
 
-      if (confirmation.isConfirmed) {
-        const file = fileInputRef.current.files[0];
-
-        // Convert file to Base64
-        const toBase64 = (file) =>
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-          });
-
-        const base64File = await toBase64(file);
-
-        // Update uploadValues with Base64 string
-        uploadValues.based64_file = base64File;
-
-        console.log("Upload Values:", uploadValues);
-
-        const result = await photoUpload(uploadValues);
+      if (formValues) {
+        const result = await createUpdateData({
+          url: `/user/change-password`,
+          isFullPath: true,
+          formData: {
+            uid: selectedObj?.guid,
+            password: formValues.newPassword,
+            confirm_password: formValues.confirmPassword,
+          },
+        });
         if (result.status === 200 || result.status === 8000) {
           Swal.fire(
-            "Process Completed!",
-            "Successfully Uploaded the Photo.",
+            "Completed",
+            "Password has been successfully changed.",
             "success"
           );
-          setSelectedObj(result.data);
-          setIsFileSelected(false);
-          toggleUploadVisibility();
         } else {
-          console.error("Error deleting Directory:", result);
-          Swal.fire("Opps!", `${result.message}`, "error");
+          Swal.fire("Failed!", `${result.message}`, "error");
         }
       }
     } catch (error) {
-      console.error("Error Uploading Photo:", error);
       Swal.fire(
         "Unsuccessful",
-        `Unable to Perform Upload. Please Try Again or Contact Support Team`,
+        `Unable to Change Password. Please Try Again or Contact Support Team`,
         "error"
       );
     }
   };
 
   useEffect(() => {
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    const timeout = setTimeout(() => {
-      handleFetchData();
-    }, 1000);
+    handleFetchData();
+  }, [uid, tableRefresh]);
 
-    setDebounceTimeout(timeout);
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
-    return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage, tableRefresh]);
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "ACTIVE":
+        return "text-success";
+      case "NEW":
+        return "text-info";
+      case "RETIRED":
+        return "text-danger";
+      default:
+        return "text-muted";
+    }
+  };
 
   return (
     <UsersContext.Provider
@@ -371,800 +404,1547 @@ export const UserOpenPage = () => {
         setSelectedObj,
         tableRefresh,
         setTableRefresh,
-        debounceTimeout,
-        setDebounceTimeout,
         handleFetchData,
         isModalOpen,
         setIsModalOpen,
       }}
     >
-      <BreadCumb pageList={["Users", "View"]}>
-        <button
-          aria-label="Click me"
-          type="button"
-          className="btn btn-sm btn-outline-primary  dropdown-toggle   animate__animated animate__fadeInRight animate__slow"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
-          <i className="bx bx-menu me-1"></i> Options
-        </button>
-        <ul className="dropdown-menu">
-          <li>
-            <button
-              aria-label="dropdown action link"
-              className="dropdown-item d-flex align-items-center"
-              aria-expanded="false"
-              data-bs-toggle="modal"
-              type="button"
-              data-bs-target="#viewCreateUserModal"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <i className="bx bx-pencil mx-2"></i>Edit User
-            </button>
-          </li>
-          <li>
-            <button
-              aria-label="dropdown action link"
-              className="dropdown-item d-flex align-items-center"
-              data-bs-toggle="modal"
-              aria-expanded="false"
-              type="button"
-              data-bs-target="#viewCreateUserPossitionModal"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <i className="bx bxs-user-detail mx-2"></i>Change User Position
-            </button>
-          </li>
-          {/* <li>
-            <button
-              aria-label="dropdown action link"
-              className="dropdown-item d-flex align-items-center"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="bx bx-transfer mx-2"></i>Change User Status
-            </button>
-          </li>
-          <li>
-            <hr className="dropdown-divider" />
-          </li> */}
-          {/* <li className="pl-3 text-center">
-            <button
-              aria-label="dropdown action link"
-              className="btn btn-sm btn-danger btn-block "
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="bx bxs-trash mx-2"></i>Delete This User
-            </button>
-          </li> */}
-        </ul>
-      </BreadCumb>
-      <div className="content-wrapper">
-        <div className="animate__animated animate__fadeInUp animate__faster">
-          {loading ? (
-            <div className="d-flex justify-content-between align-items-center">
-              <div className="col-md-12 col-lg-12 col-sm-12 p-2">
-                <center>
-                  <ReactLoading
-                    type={"cylon"}
-                    color={"#696cff"}
-                    height={"30px"}
-                    width={"50px"}
-                  />
-                </center>
-                <center className="mt-1">
-                  <h6 className="text-muted">Fetching Users</h6>
-                </center>
-              </div>
-            </div>
-          ) : error || selectedObj === null ? (
-            // error || directory.length === 0
-            <div className="alert alert-info" role="alert">
-              <div className="alert-body text-center">
-                <p className="mb-0">
-                  Sorry! Unable to get Users Details Please Contanct System
-                  Administrator{" "}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex-grow-1 container-p-y container-fluid">
-              <div className="row">
-                <div className="col-xl-4 col-lg-4 order-1 order-md-0">
-                  <div className="card mb-6 animate__animated animate__fadeInLeft animate__faster">
-                    <div className="card-body pt-12">
-                      <div className="user-avatar-section">
-                        <div className=" d-flex align-items-center flex-column">
-                          <img
-                            src={previewImage}
-                            alt="Avatar"
-                            id="uploadedAvatar"
-                            className="img-fluid rounded mb-2 shadow  account-image-reset"
-                            height="120px"
-                            width="150px"
-                            onClick={toggleUploadVisibility} // Toggle input visibility on click
-                            style={{ height: "120px", width: "120px" }}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "/assets/img/avatars/1.png";
-                            }}
-                            ref={fileInputRef}
-                          />
+      <style>
+        {`
+  /* Profile Container */
+.profile-container {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 20px;
+}
 
-                          <div className="user-info text-center mb-2">
-                            <h5>
-                              {selectedObj.first_name} {selectedObj.middle_name}{" "}
-                              {selectedObj.last_name}
-                              <div
-                                className="button-wrapper"
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "center",
-                                }}
-                              >
-                                {isUploadVisible && (
-                                  <div className="m-3" id="card-image-div">
-                                    <div className="input-group">
-                                      <label
-                                        htmlFor="inputGroupFile04"
-                                        className="btn btn-sm btn-outline-success"
-                                      >
-                                        Choose File
-                                      </label>
-                                      <input
-                                        type="file"
-                                        name="account-file-input"
-                                        className="form-control form-control-sm account-file-input visually-hidden"
-                                        id="inputGroupFile04"
-                                        aria-describedby="inputGroupFileAddon04"
-                                        onChange={handlePhotoChange}
-                                        accept=".jpg,.jpeg,.png,.gif,.ico"
-                                        aria-label="Upload"
-                                        ref={fileInputRef}
-                                      />
-                                      <button
-                                        aria-label="Click me"
-                                        className="btn btn-sm btn-outline-danger account-file-input"
-                                        type="button"
-                                        onClick={handleResetImage}
-                                        disabled={!isFileSelected}
-                                      >
-                                        <strong>X</strong>
-                                      </button>
-                                      <button
-                                        aria-label="Click me"
-                                        className="btn btn-sm btn-outline-primary account-file-input"
-                                        type="button"
-                                        onClick={handleUpload}
-                                        disabled={!isFileSelected}
-                                      >
-                                        SAVE
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </h5>
-                          </div>
+/* Header */
+.profile-header {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.profile-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #1976d2, #e53935);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+/* Profile Card */
+.profile-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+/* Avatar */
+.profile-avatar-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+}
+
+.camera-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  background: #1976d2;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 3px solid white;
+  transition: all 0.3s ease;
+}
+
+.camera-btn:hover {
+  background: #1565c0;
+  transform: scale(1.1);
+}
+
+.uploading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 16px 0 8px;
+}
+
+.user-status {
+  margin-bottom: 20px;
+}
+
+.text-success { color: #2e7d32; }
+.text-info { color: #0288d1; }
+.text-danger { color: #c62828; }
+.text-muted { color: #64748b; }
+
+/* Upload Controls */
+.upload-controls {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+/* Info Items */
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.info-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e3f2fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1976d2;
+}
+
+.info-item-content {
+  flex: 1;
+}
+
+.info-item-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.info-item-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chevron-icon {
+  transition: transform 0.3s ease;
+}
+
+.chevron-icon.rotated {
+  transform: rotate(180deg);
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.tab-button.active {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.alert-badge {
+  background: #dc3545;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.count-badge {
+  background: #6c757d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Position Cards */
+.position-card {
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: #f8fafc;
+  margin-bottom: 12px;
+}
+
+.position-card.current {
+  border-left-color: #1976d2;
+}
+
+.position-card.delegated {
+  border-left-color: #ff9800;
+  background: #fff8e1;
+}
+
+.position-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.position-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.position-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.position-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.delegate-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.delegate-btn:hover {
+  background: #1565c0;
+}
+
+.remove-delegate-btn {
+  background: white;
+  color: #ff9800;
+  border: 1px solid #ff9800;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.remove-delegate-btn:hover {
+  background: #ff9800;
+  color: white;
+}
+
+.position-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Table */
+.table-container {
+  overflow-x: auto;
+}
+
+.faded-table {
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border-collapse: collapse;
+  opacity: 0.8;
+}
+
+.faded-table thead {
+  background: #f1f1f1;
+}
+
+.faded-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.faded-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #666;
+  font-size: 14px;
+}
+
+.faded-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Signature Preview */
+.signature-preview {
+  width: 100%;
+  height: 140px;
+  background: white;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.signature-preview:hover {
+  border-color: #1976d2;
+  background: #f8fafc;
+}
+
+.signature-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Roles */
+.roles-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #e3f2fd;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1976d2;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+/* Buttons */
+.btn-primary {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: #1565c0;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: white;
+  color: #1976d2;
+  border: 2px solid #1976d2;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  background: #f0f7ff;
+}
+
+/* Loading & Error States */
+.loading-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.error-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+}
+
+.error-badge {
+  background: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background: #1565c0;
+}
+
+.loading-positions,
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.empty-state svg {
+  margin-bottom: 16px;
+  color: #a0aec0;
+}
+
+/* Badges */
+.badge-primary {
+  background: #1976d2;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: #2e7d32;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-warning {
+  background: #ff9800;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-info {
+  background: #0288d1;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-secondary {
+  background: #6c757d;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.active-badge {
+  background: #2e7d32;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 12px;
+  }
+  
+  .profile-header {
+    padding: 16px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .profile-card {
+    padding: 16px;
+  }
+  
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .position-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .tab-navigation {
+    flex-direction: column;
+  }
+  
+  .tab-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+`}
+      </style>
+
+      <style>
+        {`
+        /* Password Options */
+.password-option-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.option-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.option-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.option-description {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+/* Permissions Grid */
+.permissions-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+.permission-item:hover {
+  background: #f0f7ff;
+  border-color: #1976d2;
+}
+
+.permission-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Empty State */
+.empty-state.small {
+  padding: 20px;
+}
+
+.empty-state.small svg {
+  margin-bottom: 12px;
+}
+
+.empty-state.small p {
+  font-size: 14px;
+  margin: 0;
+}
+        `}
+      </style>
+
+      <BreadCumb pageList={["Users", "View"]}>
+        <div className="header-actions">
+          <button
+            className="btn-primary me-2"
+            data-bs-toggle="modal"
+            data-bs-target="#viewCreateUserModal"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Edit size={16} />
+            Edit User
+          </button>
+          <button
+            className="btn-outline"
+            data-bs-toggle="modal"
+            data-bs-target="#viewCreateUserPossitionModal"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Briefcase size={16} />
+            Change Position
+          </button>
+        </div>
+      </BreadCumb>
+
+      <div className="profile-container">
+        <div className="profile-header">
+          <div className="header-content">
+            <div>
+              <h2 className="profile-title">User Management</h2>
+              <p className="profile-subtitle">
+                View and manage user account details and permissions
+              </p>
+            </div>
+            <button className="refresh-btn" onClick={handleFetchData}>
+              <RefreshCw size={18} />
+              Refresh User
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="loading-container">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <h4 className="text-primary mt-3">Loading User Details...</h4>
+          </div>
+        ) : error || selectedObj === null ? (
+          <div className="error-container">
+            <div className="error-badge">
+              <XCircle size={24} />
+              Error Loading User
+            </div>
+            <p className="text-muted mt-3">
+              Unable to retrieve user details. Please contact system
+              administrator.
+            </p>
+            <button className="retry-btn mt-3" onClick={handleFetchData}>
+              <RefreshCw size={18} />
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <div className="row animate-fade-in">
+            {/* Left Column - Profile Info */}
+            <div className="col-xl-4 col-lg-4 col-md-12 mb-4">
+              <div className="profile-card">
+                <div className="profile-avatar-container">
+                  <div className="avatar-wrapper">
+                    <img
+                      src={previewImage}
+                      alt="Profile"
+                      className="profile-avatar"
+                    />
+                    {isUploadingPhoto && (
+                      <div className="uploading-overlay">
+                        <div className="spinner-border" role="status">
+                          <span className="visually-hidden">Uploading...</span>
                         </div>
                       </div>
-                      <div className="info-container border-top mt-1 ">
-                        <div
-                          className="button-wrapper mt-1"
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "10px",
-                            width: "100%",
-                          }}
+                    )}
+                    {hasAccess(user, ["can_upload_profile_photo"]) && (
+                      <>
+                        <input
+                          type="file"
+                          className="d-none"
+                          onChange={handlePhotoChange}
+                          accept=".jpg,.jpeg,.png,.gif"
+                          ref={fileInputRef}
+                          id="photo-upload"
+                        />
+                        <label htmlFor="photo-upload" className="camera-btn">
+                          <Camera size={18} />
+                        </label>
+                      </>
+                    )}
+                  </div>
+
+                  <h5 className="user-name mt-4">
+                    {selectedObj.first_name} {selectedObj.middle_name}{" "}
+                    {selectedObj.last_name}
+                  </h5>
+
+                  <div className="user-status">
+                    <span className={getStatusColor(selectedObj.status)}>
+                      <CheckCircle size={14} className="me-1" />
+                      {selectedObj.status}
+                    </span>
+                  </div>
+
+                  {/* Groups Badges */}
+                  <div className="d-flex flex-wrap gap-2 justify-content-center mb-4">
+                    {selectedObj?.groups?.slice(0, 3).map((group, index) => {
+                      const colorClass =
+                        badgeColors[index % badgeColors.length];
+                      return (
+                        <span
+                          key={index}
+                          className={`${colorClass} d-flex align-items-center gap-1`}
                         >
-                          <small className="text-muted">Account Status</small>
-                          {selectedObj.status === "NEW" ? (
-                            <span className="ms-1 badge bg-label-info">
-                              {selectedObj.status}
-                            </span>
-                          ) : selectedObj.status === "ACTIVE" ? (
-                            <span className="ms-1 badge bg-label-success">
-                              {selectedObj.status}
-                            </span>
-                          ) : selectedObj.status === "RETIRED" ? (
-                            <span className="ms-1 badge bg-label-secondary">
-                              {selectedObj.status}
-                            </span>
-                          ) : (
-                            <span className="ms-1 badge bg-label-danger">
-                              {selectedObj.status}
-                            </span>
-                          )}
-                        </div>
-                        <div className="demo-inline-spacing mt-3 ">
-                          <h5 className="text-muted">Personal Details</h5>
-                          <ul className="list-group">
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-user me-2"></i>
-                                <strong>Username </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.username}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-box me-2"></i>
-                                <strong>PF Number </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.pf_number}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bxs-detail me-2"></i>
-                                <strong>Check Number </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.check_number}</span>
-                            </li>
-                            {/* <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-female-sign"></i>
-                                <i className="bx bx-male-sign me-2"></i>
-                                <strong>Gender </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.sex}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-calendar me-2"></i>
-                                <strong>Age </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.check_number}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-calendar me-2"></i>
-                                <strong>Date Of Birth </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedObj.dob}</span>
-                            </li> */}
-                          </ul>
-                          <h6 className="text-muted">CONTACT</h6>
-                          <ul className="list-group overflow-auto">
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-envelope me-2"></i>
-                                <strong>Email </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span className="text-primary">
-                                {selectedObj.email}
-                              </span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bxs-contact me-2"></i>
-                                <strong>Contact </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span className="text-primary">
-                                {selectedObj.phone_number
-                                  ? selectedObj.phone_number
-                                  : "XXXX-XXXXXX"}
-                              </span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
+                          <Shield size={12} />
+                          {group}
+                        </span>
+                      );
+                    })}
+                    {selectedObj?.groups?.length > 3 && (
+                      <span className="badge-secondary d-flex align-items-center gap-1">
+                        +{selectedObj.groups.length - 3} more
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="col-xl-8 col-lg-8 order-0 order-md-0">
-                  <div className="nav-align-top mb-4">
-                    <ul className="nav nav-pills mb-3" role="tablist">
-                      <li className="nav-item">
+                {/* Photo Upload Controls */}
+                {isFileSelected &&
+                  hasAccess(user, ["can_upload_profile_photo"]) && (
+                    <div className="upload-controls mt-3">
+                      <div className="d-flex gap-2">
                         <button
-                          aria-label="Click me"
-                          type="button"
-                          className="nav-link active shadow-sm"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-position"
-                          aria-controls="navs-pills-top-position"
-                          aria-selected="true"
+                          className="btn-outline w-100"
+                          onClick={handleResetImage}
                         >
-                          <i className="icon-base bx bx-user icon-sm me-1_5"></i>
-                          Positions
+                          <X size={16} />
+                          Cancel
                         </button>
-                      </li>
-                      <li className="nav-item">
                         <button
-                          aria-label="Click me"
-                          type="button"
-                          className="nav-link shadow-sm"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-security"
-                          aria-controls="navs-pills-top-security"
-                          aria-selected="false"
+                          className="btn-primary w-100"
+                          onClick={handleUpload}
+                          disabled={isUploadingPhoto}
                         >
-                          <i className="icon-base bx bx-lock icon-sm me-1_5"></i>
-                          Security
+                          {isUploadingPhoto ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2"></span>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={16} />
+                              Save Photo
+                            </>
+                          )}
                         </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          aria-label="Click me"
-                          type="button"
-                          className="nav-link shadow-sm me-3"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-role-permissions"
-                          aria-controls="navs-pills-top-role-permissions"
-                          aria-selected="false"
-                        >
-                          <i className="icon-base bx bx-group icon-sm me-1_5"></i>
-                          Roles & Permistions
-                        </button>
-                      </li>
-                    </ul>
-                    <div className="tab-content">
-                      <div
-                        className="tab-pane fade show active"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-position"
-                        role="tabpanel"
+                      </div>
+                    </div>
+                  )}
+
+                {/* Personal Information */}
+                <div
+                  className="section-header"
+                  onClick={() => toggleSection("personal")}
+                >
+                  <div className="section-title">
+                    <User size={18} />
+                    Personal Information
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`chevron-icon ${
+                      expandedSections.personal ? "rotated" : ""
+                    }`}
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {expandedSections.personal && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <User size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Username</div>
+                          <div className="info-item-value">
+                            {selectedObj.username}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Briefcase size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">PF Number</div>
+                          <div className="info-item-value">
+                            {selectedObj.pf_number}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Award size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Check Number</div>
+                          <div className="info-item-value">
+                            {selectedObj.check_number}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Contact Information */}
+                <div
+                  className="section-header mt-3"
+                  onClick={() => toggleSection("contact")}
+                >
+                  <div className="section-title">
+                    <Phone size={18} />
+                    Contact Information
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`chevron-icon ${
+                      expandedSections.contact ? "rotated" : ""
+                    }`}
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {expandedSections.contact && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Mail size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Email</div>
+                          <div className="info-item-value text-primary">
+                            {selectedObj.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Phone size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Primary Contact</div>
+                          <div className="info-item-value">
+                            {selectedObj.phone_number}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Phone size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">
+                            Alternative Contact
+                          </div>
+                          <div className="info-item-value">
+                            {selectedObj.alternative_contact || "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Right Column - Positions, Security & Roles */}
+            <div className="col-xl-8 col-lg-8 col-md-12">
+              {/* Tab Navigation */}
+              <div className="tab-navigation">
+                <button
+                  className={`tab-button ${
+                    activeTab === "positions" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("positions")}
+                >
+                  <Briefcase size={16} />
+                  Positions
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "security" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("security")}
+                >
+                  <Shield size={16} />
+                  Security
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "roles" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("roles")}
+                >
+                  <ClipboardList size={16} />
+                  Roles & Permissions
+                  <span className="count-badge">
+                    {selectedObj?.groups?.length}
+                  </span>
+                </button>
+              </div>
+
+              {activeTab === "positions" ? (
+                <div className="profile-card">
+                  {/* Current Position */}
+                  <div
+                    className="section-header"
+                    onClick={() => toggleSection("currentPosition")}
+                  >
+                    <div className="section-title">
+                      <Briefcase size={18} />
+                      Current Position
+                      {selectedObj.position && (
+                        <span className="active-badge ms-2">Active</span>
+                      )}
+                    </div>
+                    <ChevronDown
+                      size={18}
+                      className={`chevron-icon ${
+                        expandedSections.currentPosition ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {expandedSections.currentPosition && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <div className="card">
-                          <div className="card-body invoice-preview-header rounded shadow mb-4">
-                            {selectedObj.position ? (
-                              <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
-                                <div className="mb-xl-2 mb-6 text-heading">
-                                  <div className="d-flex svg-illustration mb-6 gap-2 align-items-center">
-                                    <h3 className=" demo fw-bold ms-50 lh-1">
-                                      Current Position
-                                    </h3>
-                                  </div>
-                                  <p className="mb-2">
-                                    {" "}
-                                    <strong>Position : </strong>{" "}
-                                    <span className="text-primary">
-                                      {selectedObj?.position?.level_name}
-                                    </span>
-                                  </p>
-                                  <p className="mb-2">
-                                    {" "}
-                                    <strong>Directory : </strong>{" "}
-                                    {selectedObj?.position?.directory_name}
-                                  </p>
-                                  <p className="mb-2">
-                                    {" "}
-                                    <strong>Department/Unit : </strong>{" "}
-                                    {selectedObj?.position?.department_name}
-                                  </p>
-                                </div>
+                        {selectedObj.position ? (
+                          <>
+                            {/* Current Position Card */}
+                            <div className="position-card current">
+                              <div className="position-header">
                                 <div>
-                                  <h5 className="mb-6">Date & References</h5>
-                                  <div className="mb-1 text-heading">
-                                    <strong>Assigned At : </strong>
-                                    <span className="fw-medium badge bg-label-success px-3">
+                                  <h6 className="position-title">
+                                    {selectedObj.position.level_name}
+                                  </h6>
+                                  <div className="position-meta">
+                                    <span className="meta-item">
+                                      <MapPin size={12} />
+                                      {selectedObj.position.directory_name}
+                                    </span>
+                                    <span className="meta-item">
+                                      <Building size={12} />
+                                      {selectedObj.position.department_name}
+                                    </span>
+                                  </div>
+                                </div>
+                                {hasAccess(
+                                  user,
+                                  ["can_assign_delegate"],
+                                  ["Delegators", "Delegator"]
+                                ) &&
+                                  selectedObj.position?.acting_user ===
+                                    null && (
+                                    <button
+                                      className="delegate-btn"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#delegatedUserModal"
+                                    >
+                                      <UserPlus size={14} />
+                                      Add Delegate
+                                    </button>
+                                  )}
+                              </div>
+
+                              <div className="position-details">
+                                <div className="detail-item">
+                                  <span className="detail-label">
+                                    Assigned Date
+                                  </span>
+                                  <span className="detail-value">
+                                    {formatDate(
+                                      selectedObj.position.start_date
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="detail-item">
+                                  <span className="detail-label">End Date</span>
+                                  <span className="detail-value">
+                                    {selectedObj.position.last_date
+                                      ? formatDate(
+                                          selectedObj.position.last_date
+                                        )
+                                      : "Ongoing"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Delegated Responsibility */}
+                            {selectedObj.position?.acting_user && (
+                              <div className="position-card delegated mt-3">
+                                <div className="position-header">
+                                  <div>
+                                    <h6 className="position-title">
+                                      Delegated Responsibility
+                                    </h6>
+                                    <p className="position-subtitle">
+                                      Currently assigned to acting user
+                                    </p>
+                                  </div>
+                                  {hasAccess(user, ["can_assign_delegate"]) && (
+                                    <button className="remove-delegate-btn">
+                                      <UserMinus size={14} />
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="position-details">
+                                  <div className="detail-item">
+                                    <span className="detail-label">
+                                      Acting User
+                                    </span>
+                                    <span className="detail-value">
+                                      {selectedObj.position.acting_user.name}
+                                    </span>
+                                  </div>
+                                  <div className="detail-item">
+                                    <span className="detail-label">
+                                      Delegated Since
+                                    </span>
+                                    <span className="detail-value">
                                       {formatDate(
-                                        selectedObj?.position?.start_date
+                                        selectedObj.position.acting_user
+                                          ?.created_at
                                       )}
                                     </span>
                                   </div>
-                                  <div className="mb-1 text-heading">
-                                    <strong>Due At : </strong>
-                                    <span className="fw-medium badge bg-label-danger px-3">
-                                      {selectedObj?.position?.last_date
-                                        ? formatDate(
-                                            selectedObj?.position?.last_date
-                                          )
-                                        : " - "}
-                                    </span>
-                                  </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="text-center m-3">
-                                <h3 className=" demo text-center text-muted ms-50 lh-1">
-                                  Currently User Dont Have Assigned Position
-                                </h3>
                               </div>
                             )}
+                          </>
+                        ) : (
+                          <div className="empty-state">
+                            <Briefcase size={32} />
+                            <p>No current position assigned</p>
                           </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-                          <div className="card-body animate__animated animate__fadeInUp animate__faster">
-                            <div>
-                              <div className="d-flex justify-content-between align-items-center card-header">
-                                <h5 className="mb-0">
-                                  All Previously Assined Position
-                                </h5>
-                              </div>
-                            </div>
-                            <div className="table-responsive mb-4">
-                              <table className="table table-hover table-align-middle mb-0 table-bordered">
-                                <thead style={{ backgroundColor: "#f1f1f1" }}>
-                                  <tr>
-                                    <th style={{ width: "50px" }}>S/N</th>
-                                    <th>Position</th>
-                                    <th>Location</th>
-                                    <th>From</th>
-                                    <th>To</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="table-border-bottom-0">
-                                  {loadingPositions ? (
-                                    <tr>
-                                      <td colSpan="100%">
-                                        <div className="col-md-12 col-lg-12 col-sm-12 p-2">
-                                          <center>
-                                            <ReactLoading
-                                              type={"cylon"}
-                                              color={"#696cff"}
-                                              height={"30px"}
-                                              width={"50px"}
-                                            />
-                                          </center>
-                                          <center className="mt-1">
-                                            <h6 className="text-muted">
-                                              Fetching Previously Positions
-                                            </h6>
-                                          </center>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ) : errorPositions ||
-                                    positions.length === 0 ? (
-                                    <tr>
-                                      <td colSpan="100%">
-                                        <div
-                                          className="alert alert-info"
-                                          role="alert"
-                                        >
-                                          <div className="alert-body text-center">
-                                            <p className="mb-0">
-                                              No Previous Position
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ) : (
-                                    positions.map((dataRows, index) => (
-                                      <tr key={dataRows.uid}>
-                                        <td>
-                                          {(currentPage - 1) * pageSize +
-                                            index +
-                                            1}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows.level.name}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows.department !== null ? (
-                                            <div className="d-flex flex-column text-start">
-                                              <span className="fw-bold text-muted">
-                                                {dataRows.directory.name}
-                                              </span>
-                                              <span className="small">
-                                                Department:{" "}
-                                                <span className="text-muted">
-                                                  {dataRows.department?.name}
-                                                </span>
-                                              </span>
-                                            </div>
-                                          ) : (
-                                            <span>
-                                              {dataRows.department.name}
-                                            </span>
-                                          )}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows?.created_at}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows.created_at !== null
-                                            ? dataRows.end_date
-                                            : dataRows.end_date}
-                                        </td>
-                                      </tr>
-                                    ))
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                  {/* Previous Positions */}
+                  <div
+                    className="section-header mt-4"
+                    onClick={() => toggleSection("previousPositions")}
+                  >
+                    <div className="section-title">
+                      <Clock size={18} />
+                      Previously Assigned Positions
+                      <span className="count-badge ms-2">
+                        {positions?.length || 0}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      size={18}
+                      className={`chevron-icon ${
+                        expandedSections.previousPositions ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
 
-                      <div
-                        className="tab-pane fade"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-security"
-                        role="tabpanel"
+                  <AnimatePresence>
+                    {expandedSections.previousPositions && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <div className="row">
-                          <div className="col-md-6">
-                            <div className="card mb-6">
-                              <h5 className="card-header">
-                                Change User Password
-                              </h5>
-                              <div className="card-body">
-                                <form
-                                  id="formChangePassword"
-                                  className="fv-plugins-bootstrap5 fv-plugins-framework"
-                                >
-                                  <div
-                                    className="alert alert-info alert-sm alert-dismissible"
-                                    role="alert"
-                                  >
-                                    <h5 className="alert-heading mb-1">
-                                      Reset Password
-                                    </h5>
-                                    <span>
-                                      A password reset email will be sent
-                                      directly to User. This email will contain
-                                      a secure link to initiate the password
-                                      change process for your account.
-                                    </span>
-                                  </div>
-                                  <div className="row gx-6">
-                                    <div className="text-center">
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-outline-primary me-3"
-                                        onClick={() => {
-                                          handleResetPassword();
-                                        }}
-                                      >
-                                        Reset User Password
-                                      </button>
+                        <div className="table-container">
+                          <table className="faded-table">
+                            <thead>
+                              <tr>
+                                <th>S/N</th>
+                                <th>Position</th>
+                                <th>Location</th>
+                                <th>From</th>
+                                <th>To</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {loadingPositions ? (
+                                <tr>
+                                  <td colSpan="5">
+                                    <div className="loading-positions">
+                                      Loading previous positions...
                                     </div>
-                                  </div>
-                                </form>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="card mb-6">
-                              <div className="card-header">
-                                <h5 className="mb-3">User Signature</h5>
-                                <span className="card-subtitle mt-0">
-                                  The Signature used to verify documents in
-                                  Approval
-                                </span>
-                              </div>
-                              <div className="card-body pt-0">
-                                <div className="text-center">
-                                  <img
-                                    src={
-                                      selectedObj?.signature &&
-                                      selectedObj.signature.trim() !== ""
-                                        ? selectedObj.signature
-                                        : "/assets/img/avatars/signature.png"
-                                    }
-                                    alt="Avatar"
-                                    className="img-fluid rounded mb-4 shadow"
-                                    height="100px"
-                                    width="85%"
-                                    style={{ height: "100px", width: "85%" }}
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src =
-                                        "/assets/img/avatars/signature.png";
-                                    }}
-                                    ref={fileInputRef}
-                                  />
-                                </div>
-                                <p className="mb-0 text-center">
-                                  Only User will be able to change this
-                                  signature. <br />
-                                  <span className="text-primary">
-                                    Note: This will be used to verify documents
-                                    in Approval
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
+                                  </td>
+                                </tr>
+                              ) : positions?.length === 0 ? (
+                                <tr>
+                                  <td colSpan="5">
+                                    <div className="no-data">
+                                      No previous positions found
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : (
+                                positions.map((dataRows, index) => (
+                                  <tr key={dataRows.uid}>
+                                    <td>
+                                      {(currentPage - 1) * pageSize + index + 1}
+                                    </td>
+                                    <td>{dataRows.level.name}</td>
+                                    <td>
+                                      <div>
+                                        <div className="fw-bold">
+                                          {dataRows.directory.name}
+                                        </div>
+                                        {dataRows.department?.name && (
+                                          <small className="text-muted">
+                                            {dataRows.department.name}
+                                          </small>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td>{dataRows?.created_at}</td>
+                                    <td>{dataRows.end_date || "Present"}</td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : activeTab === "security" ? (
+                <div className="profile-card">
+                  <div className="row">
+                    {/* Password Management */}
+                    <div className="col-md-6 mb-4">
+                      <h6 className="section-title mb-3">
+                        <Key size={18} />
+                        Password Management
+                      </h6>
+
+                      <div className="info-item mb-3">
+                        <div className="info-item-icon">
+                          <Lock size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Password Status</div>
+                          <div className="info-item-value">
+                            Active - Last changed: Recently
                           </div>
                         </div>
                       </div>
 
-                      <div
-                        className="tab-pane fade"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-role-permissions"
-                        role="tabpanel"
-                      >
-                        <div className="ibox-content">
-                          <div className="ibox-content-body">
-                            <div className="row mb-4">
-                              <div className="d-flex svg-illustration  justify-content-between mb-6 gap-2 align-items-center">
-                                <h5 className=" demo fw-bold ms-50 lh-1">
-                                  User Role and Permissions
-                                </h5>
-                                {hasAccess(
-                                  user,
-                                  ["assign_user_permission"],
-                                  ["admin"]
-                                ) && (
-                                  <button
-                                    className="btn btn-sm btn-info btn-outline-info"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#viewCreateAssignUserRoleModal"
-                                    onClick={() => {}}
-                                  >
-                                    <i className="bx bx-user-plus"></i>
-                                    &nbsp;Change Role/Permissions{" "}
-                                  </button>
-                                )}
-                              </div>
-                              <p className="mb-0 text-muted">
-                                The bellow is List of All System Roles and
-                                Permissions Assignet to This User. Direct or by
-                                Role
-                              </p>
-                            </div>
-                            <div className="row">
-                              <div className="col-md-6 col-lg-6 col-sm-12 p-2  animate__animated animate__fadeInUp animate__fast">
-                                <div className="me-3 mb-3">
-                                  <h6 className="mb-0">
-                                    Assigned Roles/Groups
-                                  </h6>
-                                  <input
-                                    type="text"
-                                    placeholder="Search permission..."
-                                    className="form-control mb-2 my-3"
-                                    value={searchGroupTerm}
-                                    onChange={(e) =>
-                                      setSearchGroupTerm(e.target.value)
-                                    }
-                                  />
-                                </div>
-
-                                <div
-                                  style={{
-                                    flex: 1,
-                                    minHeight: "390px",
-                                    maxHeight: "400px",
-                                    overflowY: "auto",
-                                    border: "1px solid #f0f0f0",
-                                    borderRadius: "6px",
-                                    background: "#fafbfc",
-                                    padding: "0.5rem",
-                                    textAlign: "left",
-                                    fontSize: "1.5em",
-                                  }}
-                                >
-                                  {filteredGroups?.map((group) => (
-                                    <button
-                                      type="text"
-                                      key={group}
-                                      className="btn btn-outline-info me-3 m-1"
-                                    >
-                                      <i
-                                        className="bx bx-check-shield me-2"
-                                        style={{
-                                          fontSize: "1.5em",
-                                        }}
-                                      ></i>
-                                      {group}
-                                    </button>
-                                  ))}
-
-                                  {selectedObj?.groups?.length === 0 && (
-                                    <li className="list-group-item justify-context-center text-center text-muted mt-4 py-3 px-2">
-                                      User has no assigned roles
-                                    </li>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="col-md-6 col-lg-6 col-sm-12 p-2  animate__animated animate__fadeInUp animate__fast">
-                                <div className="me-3 mb-3">
-                                  <h6 className="mb-0">Assigned Permissions</h6>
-                                </div>
-                                <input
-                                  type="text"
-                                  placeholder="Search permission..."
-                                  className="form-control mb-2 my-3"
-                                  value={searchTerm}
-                                  onChange={(e) =>
-                                    setSearchTerm(e.target.value)
-                                  }
-                                />
-                                <div
-                                  style={{
-                                    flex: 1,
-                                    minHeight: "390px",
-                                    maxHeight: "400px",
-                                    overflowY: "auto",
-                                    border: "1px solid #f0f0f0",
-                                    borderRadius: "6px",
-                                    background: "#fafbfc",
-                                    padding: "0.5rem",
-                                    textAlign: "left",
-                                  }}
-                                >
-                                  <ul className="list-group list-group-flush small">
-                                    {filteredPermissions?.map((perm) => (
-                                      <li
-                                        key={perm}
-                                        className="list-group-item py-3 px-2 p-3 me-3"
-                                      >
-                                        <i
-                                          className="bx bx-check-shield me-2"
-                                          style={{
-                                            color: "#696cff",
-                                            fontSize: "1.1em",
-                                          }}
-                                        ></i>
-                                        {perm}
-                                      </li>
-                                    ))}
-
-                                    {filteredPermissions?.length === 0 && (
-                                      <li className="list-group-item justify-context-center text-center text-muted mt-4 py-3 px-2">
-                                        No permissions found
-                                      </li>
-                                    )}
-                                  </ul>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                      {/* Reset Password Option */}
+                      <div className="password-option-card mb-3">
+                        <div className="option-header">
+                          <AlertCircle size={18} className="text-info" />
+                          <h6 className="option-title">Reset Password</h6>
                         </div>
+                        <p className="option-description">
+                          Send password reset email to user's registered email
+                          address. User will receive a temporary password.
+                        </p>
+                        <button
+                          className="btn-outline w-100"
+                          onClick={handleResetPassword}
+                        >
+                          <KeyRound size={16} />
+                          Send Reset Email
+                        </button>
                       </div>
+
+                      {/* Change Password Option */}
+                      <div className="password-option-card">
+                        <div className="option-header">
+                          <Edit size={18} className="text-primary" />
+                          <h6 className="option-title">Direct Change</h6>
+                        </div>
+                        <p className="option-description">
+                          Set a new password directly. User will need to use
+                          this password on next login.
+                        </p>
+                        <button
+                          className="btn-primary w-100"
+                          onClick={handleChangePassword}
+                        >
+                          <Lock size={16} />
+                          Change Password
+                        </button>
+                      </div>
+
+                      <p className="text-muted small mt-3">
+                        Password requirements: Minimum 8 characters with
+                        uppercase, lowercase, numbers, and special characters.
+                      </p>
+                    </div>
+
+                    {/* Signature Management */}
+                    <div className="col-md-6">
+                      <h6 className="section-title mb-3">
+                        <FileSignature size={18} />
+                        Digital Signature
+                      </h6>
+
+                      <div className="signature-preview">
+                        <img
+                          src={
+                            selectedObj?.signature &&
+                            selectedObj.signature.trim() !== ""
+                              ? selectedObj.signature
+                              : "/assets/img/avatars/signature.png"
+                          }
+                          alt="Signature"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/assets/img/avatars/signature.png";
+                          }}
+                        />
+                      </div>
+
+                      <p className="text-muted small mt-3">
+                        User signature used for document verification and
+                        approvals. Only the user can update their signature.
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="profile-card">
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h6 className="section-title mb-0">
+                      <ClipboardList size={18} />
+                      Assigned Roles & Permissions
+                    </h6>
+                    {hasAccess(user, ["assign_user_permission"], ["admin"]) && (
+                      <button
+                        className="btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#viewCreateAssignUserRoleModal"
+                      >
+                        <Edit size={16} />
+                        Edit Permissions
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Roles Section */}
+                  <div className="mb-4">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="mb-0">Assigned Roles/Groups</h6>
+                      <input
+                        type="text"
+                        placeholder="Search roles..."
+                        className="form-control form-control-sm w-auto"
+                        value={searchGroupTerm}
+                        onChange={(e) => setSearchGroupTerm(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="roles-container">
+                      {filteredGroups?.length > 0 ? (
+                        filteredGroups.map((group, index) => (
+                          <div key={index} className="role-badge">
+                            <Shield size={14} />
+                            {group}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="empty-state small">
+                          <ClipboardList size={24} />
+                          <p>No roles assigned to this user</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Permissions Section */}
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="mb-0">Assigned Permissions</h6>
+                      <input
+                        type="text"
+                        placeholder="Search permissions..."
+                        className="form-control form-control-sm w-auto"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="permissions-container">
+                      {filteredPermissions?.length > 0 ? (
+                        <div className="permissions-grid">
+                          {filteredPermissions.map((perm, index) => (
+                            <div key={index} className="permission-item">
+                              <Shield size={12} className="text-primary" />
+                              <span className="permission-text">{perm}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-state small">
+                          <KeyRound size={24} />
+                          <p>No permissions found</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} />
