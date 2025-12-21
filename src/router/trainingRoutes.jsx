@@ -29,6 +29,9 @@ import { MOUDetailsPage } from "../pages/services/TRAINING/mous/Details";
 import { BatchTrainingsListPage } from "../pages/services/TRAINING/batches/ListPage";
 import { BatchTrainingsDetailsPage } from "../pages/services/TRAINING/batches/Details";
 
+// TRAINING MANAGEMENT - SETUPS
+import { TrainingSetupsListPage } from "../pages/services/TRAINING/setups/ListPage";
+
 const requiredRoles = [
     "Training_Head",
     "Head_of_Training_Secretary",
@@ -369,6 +372,19 @@ export const trainingRoutes = (
                     requiredRoles={requiredRoles}
                 >
                     <BatchTrainingsListPage />
+                </ProtectedRoute>
+            }
+        />
+
+        {/* TRAINING SETUPS ROUTES */}
+        <Route
+            path="/training/setups"
+            element={
+                <ProtectedRoute
+                    requiredPermissions={["view_trainingsetting"]}
+                    requiredRoles={requiredRoles}
+                >
+                    <TrainingSetupsListPage />
                 </ProtectedRoute>
             }
         />
