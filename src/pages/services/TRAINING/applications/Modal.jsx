@@ -28,6 +28,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
     const [isValidTab, setIsValidTab] = useState([false, false, false, false, false]);
     const [isFirstTabChange, setIsFirstTabChange] = useState(true);
     const [tabIndex, setTabIndex] = useState(0);
+    const [selectedDepartments, setSelectedDepartments] = useState([]);
 
     useEffect(() => {
         setTabIndex(0);
@@ -35,10 +36,21 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
         setIsValidTab([false, false, false, false, false]);
         setIsFirstTabChange(true);
         setBackendErrors({});
+        // Initialize selectedDepartments from existing application data
+        if (application?.department_details?.length > 0) {
+            setSelectedDepartments(
+                application.department_details.map(dept => ({
+                    value: dept.uid,
+                    label: dept.name
+                }))
+            );
+        } else {
+            setSelectedDepartments([]);
+        }
     }, [application]);
 
     const initialValues = {
-        student_uid: application?.student_uid || "",
+        student_uid: application?.student?.uid || application?.student_uid || "",
         application_number: application?.application_number || "",
         placement_type: application?.placement_type || "",
         category: application?.category || "",
@@ -46,11 +58,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
         to_date: application?.to_date || "",
         duration: application?.duration || "",
         campus: application?.campus || "",
-        departments: application?.departments 
-            ? (Array.isArray(application.departments) 
-                ? application.departments.map(d => d.uid || d.id) 
-                : [application.departments])
-            : [],
+        departments: application?.department_uids || [],
         expected_amount: application?.expected_amount || "",
         currency: application?.currency_uid || application?.currency?.uid || "",
         supporting_letter: null,
@@ -72,6 +80,8 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
         { value: 'ML', label: 'Mloganzila' },
         { value: 'BO', label: 'Both' },
     ];
+
+    const defaultFilters = { page: 1, page_size: 100, paginated: true };
 
     const validateTab = useCallback(async (values, setFieldError, setTouched) => {
         try {
@@ -166,38 +176,54 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
 
         try {
             // Ensure departments is always an array
-            const departments = Array.isArray(values.departments) 
-                ? values.departments 
+            const departments = Array.isArray(values.departments)
+                ? values.departments
                 : (values.departments ? [values.departments] : []);
 
-            const formData = new FormData();
-            formData.append('student_uid', values.student_uid);
-            formData.append('application_number', values.application_number || '');
-            formData.append('placement_type', values.placement_type);
-            formData.append('category', values.category);
-            formData.append('from_date', values.from_date);
-            formData.append('to_date', values.to_date);
-            formData.append('duration', values.duration || '');
-            formData.append('campus', values.campus);
-            formData.append('expected_amount', values.expected_amount);
-            formData.append('currency', values.currency);
+            // Check if we have a file to upload
+            const hasFile = values.supporting_letter instanceof File;
 
-            if (departments && departments.length > 0) {
-                departments.forEach((dept, index) => {
-                    formData.append(`departments[${index}]`, dept);
+            let payload;
+            if (hasFile) {
+                // Use FormData for file uploads
+                payload = new FormData();
+                payload.append('student_uid', values.student_uid);
+                if (values.application_number) payload.append('application_number', values.application_number);
+                payload.append('placement_type', values.placement_type);
+                payload.append('category', values.category);
+                payload.append('from_date', values.from_date);
+                payload.append('to_date', values.to_date);
+                if (values.duration) payload.append('duration', values.duration);
+                payload.append('campus', values.campus);
+                payload.append('expected_amount', values.expected_amount);
+                payload.append('currency_uid', values.currency);
+                departments.forEach((dept) => {
+                    payload.append('departments', dept);
                 });
-            }
-
-            if (values.supporting_letter instanceof File) {
-                formData.append('supporting_letter', values.supporting_letter);
+                payload.append('supporting_letter', values.supporting_letter);
+            } else {
+                // Use JSON for regular data
+                payload = {
+                    student_uid: values.student_uid,
+                    placement_type: values.placement_type,
+                    category: values.category,
+                    from_date: values.from_date,
+                    to_date: values.to_date,
+                    campus: values.campus,
+                    expected_amount: values.expected_amount,
+                    currency_uid: values.currency,
+                    departments: departments,
+                };
+                if (values.application_number) payload.application_number = values.application_number;
+                if (values.duration) payload.duration = values.duration;
             }
 
             let result;
             if (application?.uid) {
-                result = await updateApplication(application.uid, formData);
+                result = await updateApplication(application.uid, payload);
                 showToast("Application updated successfully", "success", "Complete");
             } else {
-                result = await createApplication(formData);
+                result = await createApplication(payload);
                 showToast("Application created successfully", "success", "Complete");
             }
 
@@ -223,6 +249,11 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
 
     const handleClose = () => {
         setIsFirstTabChange(true);
+        setTabIndex(0);
+        setTabsError([false, false, false, false, false]);
+        setIsValidTab([false, false, false, false, false]);
+        setBackendErrors({});
+        setSelectedDepartments([]);
         const modalElement = document.getElementById("applicationModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
@@ -362,7 +393,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                     {/* Step 1: Student Information */}
                                     <FormWizard.TabContent
                                         title="Student"
-                                        icon="bx-user"
+                                        icon="bx bx-user"
                                         showErrorOnTab={tabsError[0]}
                                     >
                                         <div className="row text-start">
@@ -371,7 +402,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                                 label="Student *"
                                                 url="/api/training/students"
                                                 isFullPath={true}
-                                                filters={{ page: 1, page_size: 50, paginated: true }}
+                                                filters={defaultFilters}
                                                 mapOption={(item) => ({
                                                     value: item?.uid,
                                                     label: `${item?.first_name} ${item?.last_name} (${item?.student_id})`,
@@ -395,7 +426,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                     {/* Step 2: Placement Details */}
                                     <FormWizard.TabContent
                                         title="Placement"
-                                        icon="bx-briefcase"
+                                        icon="bx bx-briefcase"
                                         isValid={isValidTab[0]}
                                         showErrorOnTab={tabsError[1]}
                                     >
@@ -478,7 +509,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                     {/* Step 3: Location & Department */}
                                     <FormWizard.TabContent
                                         title="Location"
-                                        icon="bx-map"
+                                        icon="bx bx-map"
                                         isValid={isValidTab[1]}
                                         showErrorOnTab={tabsError[2]}
                                     >
@@ -498,15 +529,17 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                                 label="Departments *"
                                                 url="/user/departments"
                                                 isFullPath={true}
-                                                filters={{ page: 1, page_size: 50, paginated: true }}
+                                                filters={defaultFilters}
                                                 mapOption={(item) => ({
-                                                    value: item?.uid,
+                                                    value: item?.uid || item?.id,
                                                     label: item?.name,
                                                 })}
                                                 placeholder="Select Departments..."
                                                 containerClass="col-md-6 mb-3"
-                                                isMultiple={true}
-                                                isRequired={true}
+                                                isMulti={true}
+                                                onSelectObject={(selected) => {
+                                                    setSelectedDepartments(Array.isArray(selected) ? selected : []);
+                                                }}
                                             />
                                         </div>
                                     </FormWizard.TabContent>
@@ -514,7 +547,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                     {/* Step 4: Financial Information */}
                                     <FormWizard.TabContent
                                         title="Financial"
-                                        icon="bx-money"
+                                        icon="bx bx-money"
                                         isValid={isValidTab[2]}
                                         showErrorOnTab={tabsError[3]}
                                     >
@@ -534,9 +567,9 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                             <FormikSelect
                                                 name="currency"
                                                 label="Currency *"
-                                                url="/user/currencies"
-                                                isFullPath={true}
-                                                filters={{ page: 1, page_size: 50, paginated: true }}
+                                                url="/currencies"
+                                                isFullPath={false}
+                                                filters={defaultFilters}
                                                 mapOption={(item) => ({
                                                     value: item?.uid,
                                                     label: `${item?.code} - ${item?.name}`,
@@ -551,7 +584,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                     {/* Step 5: Review & Summary */}
                                     <FormWizard.TabContent
                                         title="Review"
-                                        icon="bx-check"
+                                        icon="bx bx-check"
                                         isValid={isValidTab[3]}
                                         showErrorOnTab={tabsError[4]}
                                     >
@@ -588,6 +621,12 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                                             <small><strong>Expected Amount:</strong></small>
                                                             <p>{values.expected_amount ? `${values.expected_amount}` : '0.00'}</p>
                                                         </div>
+                                                        <div className="col-md-12">
+                                                            <small><strong>Departments:</strong></small>
+                                                            <p>{selectedDepartments && selectedDepartments.length > 0 
+                                                                ? selectedDepartments.map(d => d.label).join(', ') 
+                                                                : 'No departments selected'}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -605,7 +644,8 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                                     </div>
                                 )}
 
-                                <style dangerouslySetInnerHTML={{__html: `
+                                <style dangerouslySetInnerHTML={{
+                                    __html: `
                                     .form-control, .form-select {
                                         height: 36px;
                                         padding: 0.375rem 0.75rem;

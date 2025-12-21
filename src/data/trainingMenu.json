@@ -110,6 +110,17 @@
                     "management",
                     "staff"
                 ]
+            },
+            {
+                "text": "Training Setups",
+                "icon": "bx bx-cog",
+                "available": true,
+                "link": "/training/setups/",
+                "permission": [],
+                "role": [
+                    "admin",
+                    "management"
+                ]
             }
         ]
     },

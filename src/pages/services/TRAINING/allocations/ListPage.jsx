@@ -113,11 +113,27 @@ export const AllocationsListPage = () => {
                     {
                         key: "department",
                         label: "Department",
-                        className: "text-center",
-                        style: { width: "150px" },
-                        render: (row) => (
-                            <span className="badge bg-light text-dark">{row.department?.name || "-"}</span>
-                        ),
+                        className: "fw-bold",
+                        style: { width: "250px" },
+                        render: (row) => {
+                            const departments = row.department_details || [];
+                            if (departments.length === 0) {
+                                return <span>-</span>;
+                            }
+                            return (
+                                <div>
+                                    {departments.map((dept, index) => (
+                                        <div key={dept.uid}>
+                                            <span>{dept.name}</span>
+                                            {dept.code && (
+                                                <small className="d-block text-muted">{dept.code}</small>
+                                            )}
+                                            {index < departments.length - 1 && <hr className="my-1" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        },
                     },
                     {
                         key: "supervisor",

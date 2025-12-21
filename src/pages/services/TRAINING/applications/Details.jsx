@@ -257,6 +257,42 @@ export const ApplicationDetailsPage = () => {
                                                 <td className="fw-medium">Submission Date:</td>
                                                 <td>{applicationData.submission_date ? formatDate(applicationData.submission_date, "DD/MM/YYYY") : "-"}</td>
                                             </tr>
+                                            <tr>
+                                                <td className="fw-medium">Departments:</td>
+                                                <td>
+                                                    {applicationData.department_details?.length > 0 ? (
+                                                        <div className="d-flex flex-wrap gap-1">
+                                                            {applicationData.department_details.map((dept, idx) => (
+                                                                <span key={dept.uid || idx} className="badge bg-light text-dark border">
+                                                                    {dept.name}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        "-"
+                                                    )}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td className="fw-medium">Category:</td>
+                                                <td>{applicationData.category_display || applicationData.category || "-"}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="fw-medium">Campus:</td>
+                                                <td>{applicationData.campus_display || applicationData.campus || "-"}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="fw-medium">Duration:</td>
+                                                <td>{applicationData.duration ? `${applicationData.duration} weeks` : "-"}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="fw-medium">Period:</td>
+                                                <td>
+                                                    {applicationData.from_date && applicationData.to_date
+                                                        ? `${formatDate(applicationData.from_date, "DD/MM/YYYY")} - ${formatDate(applicationData.to_date, "DD/MM/YYYY")}`
+                                                        : "-"}
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
