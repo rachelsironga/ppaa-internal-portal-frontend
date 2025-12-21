@@ -103,7 +103,7 @@ export const Services = () => {
       <style>
         {`
           .services-container {
-            min-height: 100vh;
+            min-height: 70vh;
             background: 
               linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)),
               url('/assets/img/hospital-mohimbili-inner.jpg');
@@ -111,6 +111,7 @@ export const Services = () => {
             background-position: center;
             background-attachment: fixed;
             padding: 15px;
+            border-radius: 15px;
           }
 
           .hero-section {
@@ -123,7 +124,7 @@ export const Services = () => {
           .title-wrapper {
             display: inline-block;
             position: relative;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
           }
 
           .main-title {
@@ -174,7 +175,7 @@ export const Services = () => {
             font-size: 1.2rem;
             font-weight: 300;
             max-width: 800px;
-            margin: 10px auto;
+            margin: 5px auto;
             line-height: 1.5;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
             padding: 15px 25px;
@@ -185,7 +186,7 @@ export const Services = () => {
           }
 
           .controls-container {
-            max-width: 800px;
+            max-width: 800px; 
             margin: 0 auto 30px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.1);
@@ -824,11 +825,11 @@ export const Services = () => {
           <div className="hero-section">
             <div className="title-wrapper">
               <div className="title-border"></div>
-              <h1 className="main-title">
+              <h2 className="main-title">
                 <Sparkles className="title-sparkle" size={28} />
                 MNH-CONNECT SERVICES
                 <Sparkles className="title-sparkle" size={28} />
-              </h1>
+              </h2>
             </div>
 
             <p className="subtitle">

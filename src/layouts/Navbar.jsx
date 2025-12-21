@@ -709,7 +709,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             }
             
             #${profileDropdownId} {
-              width: 280px;
+              width: 380px;
             }
             
             #${navbarId} .mnh-user-name {
@@ -737,7 +737,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             }
             
             #${profileDropdownId} {
-              width: 260px;
+              width: 280px;
             }
             
             #${navbarId} .mnh-quick-access-btn span:first-child {
@@ -930,7 +930,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                       >
                         <div
                           style={{
-                            width: "80px",
+                            width: "60px",
                             height: "50px",
                             borderRadius: "12px",
                             overflow: "hidden",
@@ -957,7 +957,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                         <div>
                           <div
                             style={{
-                              fontSize: "16px",
+                              fontSize: "14px",
                               fontWeight: "700",
                               marginBottom: "4px",
                             }}
