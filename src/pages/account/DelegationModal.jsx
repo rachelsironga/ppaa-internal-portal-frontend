@@ -87,6 +87,7 @@ const DelegationModal = () => {
 
         handleClose();
         resetForm();
+        window.location.reload();
       } else if (result.status === 8002) {
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);

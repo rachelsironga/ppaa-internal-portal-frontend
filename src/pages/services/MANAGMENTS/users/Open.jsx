@@ -42,6 +42,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import AdminChangePasswordModal from "./AdminChangePassword";
 
 export const UserOpenPage = () => {
   const { uid } = useParams();
@@ -1725,7 +1726,8 @@ export const UserOpenPage = () => {
                                     </div>
                                   </td>
                                 </tr>
-                              ) : positions?.length === 0 ? (
+                              ) : positions === null ||
+                                positions?.length === 0 ? (
                                 <tr>
                                   <td colSpan="5">
                                     <div className="no-data">
@@ -1817,7 +1819,9 @@ export const UserOpenPage = () => {
                         </p>
                         <button
                           className="btn-primary w-100"
-                          onClick={handleChangePassword}
+                          data-bs-toggle="modal"
+                          data-bs-target="#AdminChangePasswordModal"
+                          onClick={() => setIsModalOpen(true)}
                         >
                           <Lock size={16} />
                           Change Password
@@ -1950,6 +1954,7 @@ export const UserOpenPage = () => {
       <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} />
       <PositionsModal />
       <UserPermissionModal />
+      <AdminChangePasswordModal />
     </UsersContext.Provider>
   );
 };

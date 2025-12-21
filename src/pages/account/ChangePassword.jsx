@@ -26,8 +26,6 @@ const ChangePasswordPage = ({ isLoading, success, msg, state, signup, user }) =>
         e.preventDefault();
         console.log(formData)
         signup(formData, navigation);
-        console.log('--------------------------------');
-        console.log(msg)
     };
 
     return (

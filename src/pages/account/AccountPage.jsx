@@ -43,7 +43,6 @@ import {
   Building,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-// import "../../css/AccountPage.css";
 
 export const AccountPage = () => {
   const dispatch = useDispatch();
@@ -1430,6 +1429,15 @@ export const AccountPage = () => {
                   My Roles
                   <span className="count-badge">{user?.groups?.length}</span>
                 </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "deligations" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("deligations")}
+                >
+                  <ClipboardList size={16} />
+                  Deligations
+                </button>
               </div>
 
               {activeTab === "positions" ? (
@@ -1632,7 +1640,8 @@ export const AccountPage = () => {
                                     </div>
                                   </td>
                                 </tr>
-                              ) : positions?.length === 0 ? (
+                              ) : positions === null ||
+                                positions?.length === 0 ? (
                                 <tr>
                                   <td colSpan="5">
                                     <div className="no-data">
@@ -1765,6 +1774,68 @@ export const AccountPage = () => {
                         Click on the signature to upload a new one.
                       </p>
                     </div>
+                  </div>
+                </div>
+              ) : activeTab === "deligations" ? (
+                <div className="profile-card">
+                  {/* Deligation History */}
+                  <h4 className="text-bold section-title">
+                    <Briefcase size={18} /> My Deligation History
+                  </h4>
+                  <div className="table-container">
+                    <table className="faded-table">
+                      <thead>
+                        <tr>
+                          <th>S/N</th>
+                          <th>Position</th>
+                          <th>Location</th>
+                          <th>From</th>
+                          <th>To</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loadingPositions ? (
+                          <tr>
+                            <td colSpan="5">
+                              <div className="loading-positions">
+                                Loading previous positions...
+                              </div>
+                            </td>
+                          </tr>
+                        ) : true ? (
+                          <tr>
+                            <td colSpan="5">
+                              <div className="no-data">
+                                No previous positions found
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          positions.map((dataRows, index) => (
+                            <tr key={dataRows.uid}>
+                              <td>
+                                {(currentPage - 1) * pageSize + index + 1}
+                              </td>
+                              <td>{dataRows.level.name}</td>
+                              <td>
+                                <div>
+                                  <div className="fw-bold">
+                                    {dataRows.directory.name}
+                                  </div>
+                                  {dataRows.department?.name && (
+                                    <small className="text-muted">
+                                      {dataRows.department.name}
+                                    </small>
+                                  )}
+                                </div>
+                              </td>
+                              <td>{dataRows?.created_at}</td>
+                              <td>{dataRows.end_date || "Present"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               ) : (
