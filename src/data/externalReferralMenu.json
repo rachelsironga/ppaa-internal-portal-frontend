@@ -8,15 +8,7 @@
         "available": true,
         "link": "/",
         "permission": [],
-        "role": ["staff","maoni_admin"]
-      },
-      {
-        "text": "Referrals",
-        "icon": "bx bx-message-square-dots",
-        "available": true,
-        "link": "/external-referral",
-        "permission": [],
-        "role": ["admin",  "maoni_admin"]
+        "role": ["staff", "admin", "referral_admin"]
       },
       {
         "text": "Dashboard",
@@ -24,9 +16,16 @@
         "available": true,
         "link": "/external-referral/dashboard",
         "permission": [],
-        "role": ["admin", "maoni_admin"]
+        "role": ["admin", "referral_admin"]
+      },
+      {
+        "text": "Referrals",
+        "icon": "bx bx-transfer",
+        "available": true,
+        "link": "/external-referral/referrals",
+        "permission": ["view_externalreferral"],
+        "role": ["admin", "referral_admin", "staff"]
       }
     ]
   }
-
 ]
