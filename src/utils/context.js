@@ -49,6 +49,12 @@ export const MaoniPriorityContext = createContext();
 export const MaoniHandlerActionContext = createContext();
 export const MaoniContext = createContext();
 
+
+// EXTERNAL REFERRAL MANAGEMENT
+export const ReferralFacilityContext = createContext();
+export const ReferralReasonContext = createContext();
+export const ReferralContext = createContext();
+
 export {
     PageContext,
     ApprovalActionContext,

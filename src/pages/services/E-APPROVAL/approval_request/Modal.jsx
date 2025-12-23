@@ -292,6 +292,7 @@ const ApprovalRequestModal = () => {
   };
 
   const groupedOptions = [];
+  console.log("user:", user);
 
   //for Wizard tab validation & Control
   const validateTab = async (
@@ -621,26 +622,27 @@ const ApprovalRequestModal = () => {
                       showErrorOnTab={tabsError[0]}
                     >
                       <div className="row text-start">
-                        {/* <FormikSelect
-                          name="department_uid"
-                          label="Departments"
-                          url="/departments"
-                          filters={{
-                            page: 1,
-                            page_size: 10,
-                            paginated: true,
-                          }}
-                          mapOption={(item) => ({
-                            value: item.uid,
-                            label: `${item.name}`,
-                            name: `${item.name}`,
-                            code: `${item.code}`,
-                          })}
-                          placeholder="Search Departments..."
-                          debounceMs={500}
-                          minChars={3}
-                          isReadOnly={true}
-                        /> */}
+                        <div className="col-md-6 mb-3">
+                          <label htmlFor="titleLarge" className="form-label">
+                            Department
+                          </label>
+
+                          <Field
+                            type="text"
+                            name="department_name"
+                            className="form-control"
+                            placeholder="Department Name"
+                            value={user?.position?.department_name || ""}
+                            readOnly
+                            disabled
+                          />
+                          <ErrorMessage
+                            name="department_uid"
+                            component="div"
+                            className="text-danger"
+                          />
+                        </div>
+
                         <FormikSelect
                           name="module_uid"
                           label="Request For"

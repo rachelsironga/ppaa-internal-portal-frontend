@@ -130,5 +130,15 @@
       "admin",
       "staff"
     ]
+  },
+  {
+    "text": "External Referral",
+    "icon": "bx bx-braille",
+    "link": "/external-referral",
+    "permission": [],
+    "role": [
+      "admin",
+      "staff"
+    ]
   }
 ]

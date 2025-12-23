@@ -13,6 +13,7 @@ import { analyticsRoutes } from "./analyticsRoutes";
 import { MaintenancePage } from "../pages/misc/MaintenancePage";
 import { maoniRoutes } from "./maoniRoutes";
 import { trainingRoutes } from "./trainingRoutes";
+import { externalReferralRoutes } from "./externalReferralRoutes";
 
 const AppRoutes = () => {
   return (
@@ -43,6 +44,9 @@ const AppRoutes = () => {
 
       {/* Training Management Routes */}
       {trainingRoutes}
+
+      {/* External Referral Routes */}
+      {externalReferralRoutes}
 
       {/* Catch-all 404 */}
       <Route path="*" element={<MaintenancePage />} />
