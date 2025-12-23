@@ -621,7 +621,7 @@ const ApprovalRequestModal = () => {
                       showErrorOnTab={tabsError[0]}
                     >
                       <div className="row text-start">
-                        <FormikSelect
+                        {/* <FormikSelect
                           name="department_uid"
                           label="Departments"
                           url="/departments"
@@ -640,7 +640,7 @@ const ApprovalRequestModal = () => {
                           debounceMs={500}
                           minChars={3}
                           isReadOnly={true}
-                        />
+                        /> */}
                         <FormikSelect
                           name="module_uid"
                           label="Request For"
