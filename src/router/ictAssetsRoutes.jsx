@@ -23,6 +23,7 @@ import { ManufacturesListPage } from "../pages/services/ICT-ASSETS/setup_config/
 import { SuppliersListPage } from "../pages/services/ICT-ASSETS/setup_config/suppliers/SuppliersListPage.jsx";
 import { DisposalRecordsListPage } from "../pages/services/ICT-ASSETS/setup_config/disposal_records/DisposalRecordListPage.tsx"
 import { DisposalRecordsView } from "../pages/services/ICT-ASSETS/setup_config/disposal_records/DisposalRecordsView.jsx";
+
 import { ViewAssetType } from "../pages/services/ICT-ASSETS/setup_config/asset_types/ViewAssetType.tsx";
 import { AccountPage } from "../pages/account/AccountPage.jsx";
 
