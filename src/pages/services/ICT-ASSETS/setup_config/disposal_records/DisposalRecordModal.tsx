@@ -15,11 +15,11 @@ export const DisposalRecordModal = ({ loadOnlyModal = false }) => {
     }, [selectedObj]);
 
     const initialValues = {
-        asset_uid: selectedObj?.asset?.uid || selectedObj?.asset || "",
-        disposal_date: selectedObj?.disposal_date || "", 
-        disposal_method: selectedObj?.disposal_method || "", 
-        disposal_value: selectedObj?.disposal_value || "", 
-        disposal_reason: selectedObj?.disposal_reason || "",
+        asset_tag: selectedObj?.asset_tag || "",
+        category_uid: selectedObj?.category?.uid || "",  // <-- use category.uid
+        specifications_template: selectedObj?.specifications_template?.length
+            ? selectedObj.specifications_template
+            : [{ key: "", value: "" }],
         is_active: selectedObj?.is_active ?? true,
     };
 
@@ -145,7 +145,8 @@ export const DisposalRecordModal = ({ loadOnlyModal = false }) => {
                                                 }}
                                                 mapOption={(item) => ({
                                                     value: item.uid,
-                                                    label: item.asset_tag,
+                                                    label: `${item.asset_tag}`,
+                                                    name: `${item.asset_tag}`,
                                                 })}
                                                 placeholder="Search Asset ..."
                                                 debounceMs={500}

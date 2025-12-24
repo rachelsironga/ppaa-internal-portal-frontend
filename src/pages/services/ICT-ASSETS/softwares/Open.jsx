@@ -83,22 +83,22 @@ export const SoftwareAssetViewPage = () => {
 
 
     const fetchSupportTickets = async () => {
-            if (!uid) {
-                console.warn("Asset UID not available for fetching support tickets");
-                return;
+        if (!uid) {
+            console.warn("Asset UID not available for fetching support tickets");
+            return;
+        }
+        setLoadingTickets(true);
+        try {
+            const result = await getSupportTickets(uid);
+            if (result.status === 200 || result.status === 8000) {
+                setSupportTickets(result.data || []);
             }
-            setLoadingTickets(true);
-            try {
-                const result = await getSupportTickets(uid);
-                if (result.status === 200 || result.status === 8000) {
-                    setSupportTickets(result.data || []);
-                }
-            } catch (err) {
-                console.error("Error fetching support tickets:", err);
-            } finally {
-                setLoadingTickets(false);
-            }
-        };
+        } catch (err) {
+            console.error("Error fetching support tickets:", err);
+        } finally {
+            setLoadingTickets(false);
+        }
+    };
 
     const fetchInstallations = async () => {
         if (!uid) return;
@@ -114,7 +114,7 @@ export const SoftwareAssetViewPage = () => {
             setLoadingInstallations(false);
         }
     };
-    
+
 
 
     const handleDelete = async () => {
@@ -724,8 +724,8 @@ export const SoftwareAssetViewPage = () => {
                                                 <tr>
                                                     <td className="fw-medium">Available Licenses:</td>
                                                     <td className="text-success fw-bold fs-5">
-                                                        {assetData.available_licenses || 
-                                                         ((assetData.total_licenses || 0) - (assetData.used_licenses || 0)) || "-"}
+                                                        {assetData.available_licenses ||
+                                                            ((assetData.total_licenses || 0) - (assetData.used_licenses || 0)) || "-"}
                                                     </td>
                                                 </tr>
                                                 <tr>

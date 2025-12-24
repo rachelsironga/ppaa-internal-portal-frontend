@@ -112,16 +112,6 @@
     ]
   },
   {
-    "text": "Training",
-    "icon": "bx bx-book-open",
-    "link": "/training",
-    "permission": [],
-    "role": [
-      "admin",
-      "hr"
-    ]
-  },
-  {
     "text": "Facility Management",
     "icon": "bx bx-building-house",
     "link": "/facility",
@@ -129,6 +119,26 @@
     "role": [
       "admin",
       "facility"
+    ]
+  },
+  {
+    "text": "MNH Maoni",
+    "icon": "bx bx-message-dots",
+    "link": "/mnh-maoni",
+    "permission": [],
+    "role": [
+      "admin",
+      "staff"
+    ]
+  },
+  {
+    "text": "External Referral",
+    "icon": "bx bx-braille",
+    "link": "/external-referral",
+    "permission": [],
+    "role": [
+      "admin",
+      "staff"
     ]
   }
 ]

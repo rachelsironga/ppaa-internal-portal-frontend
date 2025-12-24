@@ -1,6 +1,6 @@
 [
     {
-        "header": "STUDENT MANAGEMENT",
+        "header": "",
         "items": [
             {
                 "text": "Services",
@@ -18,13 +18,35 @@
                 "icon": "bx bx-home",
                 "available": true,
                 "link": "/training/dashboard",
+                "permission": [
+                    "view_dashboard"
+                ],
+                "role": [
+                    "ICT_Superuser",
+                    "ICT_Admin",
+                    "ICT_Manager",
+                    "ICT_Technician",
+                    "ICT_Auditor",
+                    "Department_User",
+                    "ReadOnly_User"
+                ]
+            },
+            {
+                "text": "Profile",
+                "icon": "bx bx-user",
+                "available": true,
+                "link": "/training/account/settings",
                 "permission": [],
                 "role": [
                     "admin",
-                    "staff",
-                    "management"
+                    "staff"
                 ]
-            },
+            }
+        ]
+    },
+    {
+        "header": "STUDENT & APPLICATION",
+        "items": [
             {
                 "text": "Students",
                 "icon": "bx bx-user-circle",
@@ -36,40 +58,23 @@
                     "staff",
                     "management"
                 ]
-            }
-        ]
-    },
-    {
-        "header": "APPLICATIONS",
-        "items": [
+            },
+            {
+                "text": "Student Application",
+                "icon": "bx bx-plus-medical",
+                "available": true,
+                "link": "/training/student/application/add",
+                "permission": [],
+                "role": [
+                    "admin",
+                    "management"
+                ]
+            },
             {
                 "text": "All Applications",
                 "icon": "bx bx-list-ul",
                 "available": true,
                 "link": "/training/applications/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "staff",
-                    "management"
-                ]
-            },
-            {
-                "text": "Add Application",
-                "icon": "bx bx-plus-circle",
-                "available": true,
-                "link": "/training/application/add/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "staff"
-                ]
-            },
-            {
-                "text": "Search Applications",
-                "icon": "bx bx-search",
-                "available": true,
-                "link": "/training/search-applications/",
                 "permission": [],
                 "role": [
                     "admin",
@@ -83,18 +88,6 @@
         "header": "TRAINING MANAGEMENT",
         "items": [
             {
-                "text": "Training Form",
-                "icon": "bx bx-clipboard",
-                "available": true,
-                "link": "/training/form/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "student",
-                    "staff"
-                ]
-            },
-            {
                 "text": "Department Allocation",
                 "icon": "bx bx-building-house",
                 "available": true,
@@ -107,15 +100,26 @@
                 ]
             },
             {
-                "text": "Affiliation Form",
-                "icon": "bx bx-handshake",
+                "text": "All Supervisors",
+                "icon": "bx bx-user",
                 "available": true,
-                "link": "/training/affiliation/add/",
+                "link": "/training/supervisors/",
                 "permission": [],
                 "role": [
                     "admin",
-                    "student",
+                    "management",
                     "staff"
+                ]
+            },
+            {
+                "text": "Training Setups",
+                "icon": "bx bx-cog",
+                "available": true,
+                "link": "/training/setups/",
+                "permission": [],
+                "role": [
+                    "admin",
+                    "management"
                 ]
             }
         ]
@@ -136,33 +140,10 @@
                 ]
             },
             {
-                "text": "Add Institution",
-                "icon": "bx bx-building-house",
-                "available": true,
-                "link": "/training/institution/create/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "management"
-                ]
-            },
-            {
                 "text": "MOU Management",
-                "icon": "bx bx-file-doc",
+                "icon": "bx bx-file",
                 "available": true,
                 "link": "/training/mous/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "management",
-                    "legal"
-                ]
-            },
-            {
-                "text": "Add MOU",
-                "icon": "bx bx-file-plus",
-                "available": true,
-                "link": "/training/mou/add/",
                 "permission": [],
                 "role": [
                     "admin",
@@ -180,29 +161,6 @@
                 "icon": "bx bx-group",
                 "available": true,
                 "link": "/training/batch-trainings/",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "management",
-                    "staff"
-                ]
-            },
-            {
-                "text": "Add Batch Training",
-                "icon": "bx bx-plus-medical",
-                "available": true,
-                "link": "/training/batch/training/add",
-                "permission": [],
-                "role": [
-                    "admin",
-                    "management"
-                ]
-            },
-            {
-                "text": "Search MOU/Batch",
-                "icon": "bx bx-search-alt",
-                "available": true,
-                "link": "/training/search-mou-batch-training/",
                 "permission": [],
                 "role": [
                     "admin",

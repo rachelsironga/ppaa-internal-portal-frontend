@@ -155,7 +155,12 @@ export const getApplicationDetail = async (uid) => {
 
 export const createApplication = async (applicationData) => {
     try {
-        const response = await api.post(`${API_BASE}/applications/create`, applicationData, multipartConfig);
+        const isFormData = applicationData instanceof FormData;
+        const response = await api.post(
+            `${API_BASE}/applications/create`, 
+            applicationData, 
+            isFormData ? multipartConfig : config
+        );
         return response.data;
     } catch (error) {
         console.error("Error creating application:", error);
@@ -165,7 +170,12 @@ export const createApplication = async (applicationData) => {
 
 export const updateApplication = async (uid, applicationData) => {
     try {
-        const response = await api.put(`${API_BASE}/applications/${uid}/update`, applicationData, multipartConfig);
+        const isFormData = applicationData instanceof FormData;
+        const response = await api.put(
+            `${API_BASE}/applications/${uid}/update`, 
+            applicationData, 
+            isFormData ? multipartConfig : config
+        );
         return response.data;
     } catch (error) {
         console.error("Error updating application:", error);

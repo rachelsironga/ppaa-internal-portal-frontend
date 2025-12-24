@@ -42,6 +42,19 @@ export const OxygenUsageContext = createContext();
 export const OxygenRecievingContext = createContext();
 export const OxygenAllocationContext = createContext();
 
+// MAONI MANAGEMENT
+export const MaoniCategoryContext = createContext();
+export const MaoniStatusContext = createContext();
+export const MaoniPriorityContext = createContext();
+export const MaoniHandlerActionContext = createContext();
+export const MaoniContext = createContext();
+
+
+// EXTERNAL REFERRAL MANAGEMENT
+export const ReferralFacilityContext = createContext();
+export const ReferralReasonContext = createContext();
+export const ReferralContext = createContext();
+
 export {
     PageContext,
     ApprovalActionContext,

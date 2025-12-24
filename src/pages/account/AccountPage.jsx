@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
-import ReactLoading from "react-loading";
-import "animate.css";
 import { AccountContext } from "../../utils/context";
-import { useParams } from "react-router-dom";
 import {
   getPositions,
   photoUpload,
@@ -12,79 +9,90 @@ import {
   signatureUpload,
 } from "./Queries";
 import usePagination from "../../hooks/usePagination";
-import ReactPaginate from "react-paginate";
 import { formatDate } from "../../helpers/DateFormater";
 import { useSelector } from "react-redux";
-import BreadCumb from "../../layouts/BreadCumb";
 import DelegationModal from "./DelegationModal";
 import { hasAccess } from "../../hooks/AccessHandler";
 import { useDispatch } from "react-redux";
 import { userTypes } from "../../redux/types/authentication";
 import ResetPasswordModal from "./ResetPasswordModal";
+import {
+  User,
+  Camera,
+  Shield,
+  Lock,
+  Mail,
+  Phone,
+  Calendar,
+  Briefcase,
+  MapPin,
+  Award,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Edit,
+  RefreshCw,
+  Upload,
+  X,
+  Key,
+  FileSignature,
+  UserPlus,
+  UserMinus,
+  ChevronDown,
+  ClipboardList,
+  Building,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const AccountPage = () => {
-  const pageSizeData = [5, 10, 20, 50, 70, 100];
   const dispatch = useDispatch();
 
-  // Place this above your component or inside the component before the return
   const badgeColors = [
-    "bg-label-primary",
-    "bg-label-success",
-    "bg-label-danger",
-    "bg-label-warning",
-    "bg-label-info",
-    "bg-label-secondary",
-    "bg-label-dark",
+    "badge-primary",
+    "badge-success",
+    "badge-warning",
+    "badge-info",
+    "badge-secondary",
   ];
 
   const user = useSelector((state) => state.userReducer?.data);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isActingChange, setIsActingChange] = useState(false);
+  const [activeTab, setActiveTab] = useState("positions");
+  const [expandedSections, setExpandedSections] = useState({
+    personal: true,
+    contact: false,
+    currentPosition: true,
+    previousPositions: false,
+  });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadDelagationModal, setLoadDelagationModal] = useState(false);
 
   const [loadingPositions, setLoadingPositions] = useState(true);
-  const [errorPositions, setErrorPositions] = useState(null);
   const [positions, setPositions] = useState(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const {
     currentPage,
-    totalCount,
     pageSize,
     updatePage,
-    updatePageSize,
     updatePagination,
     updateTotalCount,
   } = usePagination(10, 1, true);
-
-  const handlePageClick = (event) => {
-    updatePage(event.selected + 1);
-  };
 
   const uploadValues = {
     uid: selectedUser?.guid,
     based64_file: "",
   };
 
-  const [isUploadVisible, setIsUploadVisible] = useState(false);
-  const [isUploadSignVisible, setIsUploadSignVisible] = useState(false);
   const [isSignSelected, setIsSignSelected] = useState(false);
 
-  const [previewImage, setPreviewImage] = useState(
-    selectedUser?.photo && selectedUser.photo.trim() !== ""
-      ? selectedUser.photo
-      : "/assets/img/avatars/1.png"
-  );
+  const [previewImage, setPreviewImage] = useState("/assets/img/avatars/1.png");
   const [previewSign, setPreviewSign] = useState(
-    selectedUser?.signature && selectedUser.signature.trim() !== ""
-      ? selectedUser.signature
-      : "/assets/img/avatars/signature.png"
+    "/assets/img/avatars/signature.png"
   );
   const [isFileSelected, setIsFileSelected] = useState(false);
   const fileInputRef = useRef(null);
@@ -125,7 +133,6 @@ export const AccountPage = () => {
 
   const fetchPositions = async (guid = "") => {
     setLoadingPositions(true);
-    setErrorPositions(null);
     try {
       const result = await getPositions({
         search: searchQuery,
@@ -139,18 +146,13 @@ export const AccountPage = () => {
       });
       if (result.status === 200 || result.status === 8000) {
         setPositions(result.data);
-
         if (result.pagination) {
           updatePagination(result.pagination);
           updateTotalCount(result.pagination.total || 0);
-        } else {
-          updatePagination({});
         }
-      } else {
-        setErrorPositions(true);
       }
     } catch (err) {
-      setErrorPositions(true);
+      console.error(err);
     } finally {
       setLoadingPositions(false);
     }
@@ -173,9 +175,7 @@ export const AccountPage = () => {
         ? selectedUser.photo
         : "/assets/img/avatars/1.png"
     );
-    setIsFileSelected(false); // Disable buttons after reset
-
-    // Clear the file input
+    setIsFileSelected(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -186,9 +186,9 @@ export const AccountPage = () => {
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setPreviewSign(previewUrl);
-      setIsSignSelected(true); // Enable buttons when a file is selected
+      setIsSignSelected(true);
     } else {
-      setIsSignSelected(false); // Disable buttons if no file is selected
+      setIsSignSelected(false);
     }
   };
 
@@ -198,23 +198,17 @@ export const AccountPage = () => {
         ? selectedUser.signature
         : "/assets/img/avatars/signature.png"
     );
-    setIsSignSelected(false); // Disable buttons after reset
-    setIsUploadSignVisible(false); // Hide the upload UI
-    // Clear the file input for signature
+    setIsSignSelected(false);
     if (fileSignInputRef.current) {
       fileSignInputRef.current.value = "";
     }
   };
 
-  const toggleUploadVisibility = () => {
-    setIsUploadVisible((prev) => !prev);
-  };
-
-  const handleUpload = async (selectedUser = null) => {
+  const handleUpload = async () => {
     if (hasAccess(user, ["can_upload_profile_photo"]) === false) {
       Swal.fire(
         "Error!",
-        "Sorry Youdont have permission to change Profile",
+        "Sorry You don't have permission to change Profile",
         "error"
       );
       return;
@@ -236,24 +230,17 @@ export const AccountPage = () => {
 
     try {
       const confirmation = await Swal.fire({
-        // title: "Save New Profile Photo",
-        text: "Your About to Save the new Profile Photo",
+        text: "You're about to save the new Profile Photo",
         icon: "info",
         showCancelButton: true,
         confirmButtonColor: "#696cff",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Save",
-        customClass: {
-          confirmButton: "btn btn-sm btn-outline-primary",
-          cancelButton: "btn btn-sm",
-          popup: "custom-swal-popup",
-        },
       });
 
       if (confirmation.isConfirmed) {
+        setIsUploadingPhoto(true);
         const file = fileInputRef.current.files[0];
-
-        // Convert file to Base64
         const toBase64 = (file) =>
           new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -263,41 +250,32 @@ export const AccountPage = () => {
           });
 
         const base64File = await toBase64(file);
-
-        // Update uploadValues with Base64 string
         uploadValues.based64_file = base64File;
-
-        console.log("Upload Values:", uploadValues);
 
         const result = await photoUpload(uploadValues);
         if (result.status === 200 || result.status === 8000) {
           Swal.fire(
-            "Process Completed!",
-            "Successfully Uploaded the Photo.",
+            "Success!",
+            "Profile photo updated successfully.",
             "success"
           );
           dispatch({
             type: userTypes.USER_UPDATE,
             payload: {
-              user: result.data, // ✅ wrap in `user`
+              user: result.data,
             },
           });
           window.location.reload();
           setSelectedUser(result.data);
           setIsFileSelected(false);
-          toggleUploadVisibility();
         } else {
-          console.error("Error deleting Directory:", result);
-          Swal.fire("Opps!", `${result.message}`, "error");
+          Swal.fire("Error!", `${result.message}`, "error");
         }
       }
     } catch (error) {
-      console.error("Error Uploading Photo:", error);
-      Swal.fire(
-        "Unsuccessful",
-        `Unable to Perform Upload. Please Try Again or Contact Support Team`,
-        "error"
-      );
+      Swal.fire("Error", "Unable to upload photo. Please try again.", "error");
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -305,18 +283,16 @@ export const AccountPage = () => {
     handleFetchData();
   }, []);
 
-  // Signature upload handler
-  const handleUploadSign = async (selectedUserParam = null) => {
+  const handleUploadSign = async () => {
     if (hasAccess(user, ["can_upload_profile_signature"]) === false) {
       Swal.fire(
         "Error!",
-        "Sorry Youdont have permission to change Signature",
+        "Sorry You don't have permission to change Signature",
         "error"
       );
       return;
     }
-    const userToUse = selectedUserParam || selectedUser;
-    if (!userToUse) {
+    if (!selectedUser) {
       Swal.fire(
         "Error!",
         "Sorry, reopen this user to fix this error.",
@@ -341,11 +317,6 @@ export const AccountPage = () => {
         confirmButtonColor: "#696cff",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Save",
-        customClass: {
-          confirmButton: "btn btn-sm btn-outline-primary",
-          cancelButton: "btn btn-sm",
-          popup: "custom-swal-popup",
-        },
       });
 
       if (confirmation.isConfirmed) {
@@ -360,17 +331,13 @@ export const AccountPage = () => {
         const base64File = await toBase64(file);
 
         const uploadSignValues = {
-          uid: userToUse?.guid,
+          uid: selectedUser?.guid,
           based64_file: base64File,
         };
 
         const result = await signatureUpload(uploadSignValues);
         if (result.status === 200 || result.status === 8000) {
-          Swal.fire(
-            "Process Completed!",
-            "Successfully Uploaded the Signature.",
-            "success"
-          );
+          Swal.fire("Success!", "Signature updated successfully.", "success");
           dispatch({
             type: userTypes.USER_UPDATE,
             payload: {
@@ -384,16 +351,15 @@ export const AccountPage = () => {
           }));
           setPreviewSign(result.data.signature);
           setIsSignSelected(false);
-          setIsUploadSignVisible(false);
           if (fileSignInputRef.current) fileSignInputRef.current.value = "";
         } else {
-          Swal.fire("Oops!", `${result.message}`, "error");
+          Swal.fire("Error!", `${result.message}`, "error");
         }
       }
     } catch (error) {
       Swal.fire(
-        "Unsuccessful",
-        `Unable to perform upload. Please try again or contact support team.`,
+        "Error",
+        "Unable to upload signature. Please try again.",
         "error"
       );
     } finally {
@@ -401,28 +367,13 @@ export const AccountPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    const timeout = setTimeout(() => {
-      handleFetchData();
-    }, 1000);
-
-    setDebounceTimeout(timeout);
-
-    return () => clearTimeout(timeout);
-  }, [pageSize, currentPage]);
-
-  useEffect(() => {
-    handleFetchData();
-  }, [isActingChange]);
-
   const handleRemoveDelegation = async () => {
     if (
       hasAccess(user, ["can_assign_delegate", "can_remove_delegate"]) === false
     ) {
       Swal.fire(
         "Error!",
-        "Sorry Youdont have permission to Remove Delegation",
+        "Sorry You don't have permission to Remove Delegation",
         "error"
       );
       return;
@@ -430,850 +381,1492 @@ export const AccountPage = () => {
     try {
       const confirmation = await Swal.fire({
         title: "Are you sure?",
-        text: "Your About to Remove Delegated User",
+        text: "You're about to remove delegated user",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#DD6B55",
-        cancelButtonColor: "#aaa",
+        confirmButtonColor: "#DC3545",
+        cancelButtonColor: "#6c757d",
         confirmButtonText: "Yes, Remove",
+        cancelButtonText: "Cancel",
       });
 
       if (confirmation.isConfirmed) {
         const result = await removeDelegatedUser();
         if (result.status === 200 || result.status === 8000) {
-          Swal.fire(
-            "Process Completed!",
-            "The Delegation Removed Successfully.",
-            "success"
-          );
+          Swal.fire("Success!", "Delegation removed successfully.", "success");
           dispatch({
             type: userTypes.USER_UPDATE,
             payload: {
-              user: result.data, // ✅ wrap in `user`
+              user: result.data,
             },
           });
           window.location.reload();
         } else {
-          Swal.fire("Failed", `${result.message}`, "error");
+          Swal.fire("Error!", `${result.message}`, "error");
         }
       }
     } catch (error) {
       Swal.fire(
-        "Unsuccessful",
-        `Unable to Perform Remove. Please Try Again or Contact Support Team`,
+        "Error",
+        "Unable to remove delegation. Please try again.",
         "error"
       );
     }
+  };
 
-    setSelectedApprovalRequest(null); // Reset selected ApprovalRequest after deletion
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "ACTIVE":
+        return "text-success";
+      case "NEW":
+        return "text-info";
+      case "RETIRED":
+        return "text-danger";
+      default:
+        return "text-muted";
+    }
   };
 
   return (
     <AccountContext.Provider
       value={{
-        debounceTimeout,
-        setDebounceTimeout,
         handleFetchData,
         selectedUser,
-        setSelectedUser,
-        isModalOpen,
-        setIsModalOpen,
         loadDelagationModal,
         setLoadDelagationModal,
-        isActingChange,
-        setIsActingChange,
       }}
     >
-      <BreadCumb pageList={["Profile"]}>
-        <button className="btn btn-primary btn-sm">
-          <i className={`bx bx-refresh me-1 ${loading ? "bx-spin" : ""}`}></i>
-          <span className="text-bold">Update My Status</span>
-        </button>
-      </BreadCumb>
+      <style>
+        {`
+  /* Profile Container */
+.profile-container {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 20px;
+}
 
-      <div className="content-wrapper">
-        <div className="animate__animated animate__fadeInUp animate__faster">
-          {loading ? (
-            <div className="d-flex justify-content-between align-items-center">
-              <div className="col-md-12 col-lg-12 col-sm-12 p-2">
-                <center>
-                  <ReactLoading
-                    type={"cylon"}
-                    color={"#696cff"}
-                    height={"30px"}
-                    width={"50px"}
-                  />
-                </center>
-                <center className="mt-1">
-                  <h6 className="text-muted">Fetching Users</h6>
-                </center>
-              </div>
+/* Header */
+.profile-header {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.profile-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #1976d2, #e53935);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+/* Profile Card */
+.profile-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+/* Avatar */
+.profile-avatar-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+}
+
+.camera-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  background: #1976d2;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 3px solid white;
+  transition: all 0.3s ease;
+}
+
+.camera-btn:hover {
+  background: #1565c0;
+  transform: scale(1.1);
+}
+
+.uploading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 16px 0 8px;
+}
+
+.user-status {
+  margin-bottom: 20px;
+}
+
+.text-success { color: #2e7d32; }
+.text-info { color: #0288d1; }
+.text-danger { color: #c62828; }
+.text-muted { color: #64748b; }
+
+/* Upload Controls */
+.upload-controls {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+/* Info Items */
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.info-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e3f2fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1976d2;
+}
+
+.info-item-content {
+  flex: 1;
+}
+
+.info-item-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.info-item-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chevron-icon {
+  transition: transform 0.3s ease;
+}
+
+.chevron-icon.rotated {
+  transform: rotate(180deg);
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.tab-button.active {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.alert-badge {
+  background: #dc3545;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.count-badge {
+  background: #6c757d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Position Cards */
+.position-card {
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: #f8fafc;
+  margin-bottom: 12px;
+}
+
+.position-card.current {
+  border-left-color: #1976d2;
+}
+
+.position-card.delegated {
+  border-left-color: #ff9800;
+  background: #fff8e1;
+}
+
+.position-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.position-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.position-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.position-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.delegate-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.delegate-btn:hover {
+  background: #1565c0;
+}
+
+.remove-delegate-btn {
+  background: white;
+  color: #ff9800;
+  border: 1px solid #ff9800;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.remove-delegate-btn:hover {
+  background: #ff9800;
+  color: white;
+}
+
+.position-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Table */
+.table-container {
+  overflow-x: auto;
+}
+
+.faded-table {
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border-collapse: collapse;
+  opacity: 0.8;
+}
+
+.faded-table thead {
+  background: #f1f1f1;
+}
+
+.faded-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.faded-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #666;
+  font-size: 14px;
+}
+
+.faded-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Signature Preview */
+.signature-preview {
+  width: 100%;
+  height: 140px;
+  background: white;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.signature-preview:hover {
+  border-color: #1976d2;
+  background: #f8fafc;
+}
+
+.signature-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Roles */
+.roles-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #e3f2fd;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1976d2;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+/* Buttons */
+.btn-primary {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: #1565c0;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: white;
+  color: #1976d2;
+  border: 2px solid #1976d2;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  background: #f0f7ff;
+}
+
+/* Loading & Error States */
+.loading-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.error-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+}
+
+.error-badge {
+  background: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background: #1565c0;
+}
+
+.loading-positions,
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.empty-state svg {
+  margin-bottom: 16px;
+  color: #a0aec0;
+}
+
+/* Badges */
+.badge-primary {
+  background: #1976d2;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: #2e7d32;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-warning {
+  background: #ff9800;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-info {
+  background: #0288d1;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-secondary {
+  background: #6c757d;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.active-badge {
+  background: #2e7d32;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 12px;
+  }
+  
+  .profile-header {
+    padding: 16px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .profile-card {
+    padding: 16px;
+  }
+  
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .position-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .tab-navigation {
+    flex-direction: column;
+  }
+  
+  .tab-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+`}
+      </style>
+
+      <div className="profile-container">
+        {/* Header */}
+        <div className="profile-header">
+          <div className="header-content">
+            <div>
+              <h2 className="profile-title">User Profile</h2>
+              <p className="profile-subtitle">
+                Manage your account settings and preferences
+              </p>
             </div>
-          ) : error || selectedUser === null ? (
-            // error || directory.length === 0
-            <div className="alert alert-info" role="alert">
-              <div className="alert-body text-center">
-                <p className="mb-0">
-                  Sorry! Unable to get Users Details Please Contanct System
-                  Administrator{" "}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex-grow-1 container-p-y container-fluid">
-              <div className="row">
-                <div className="col-xl-4 col-lg-5 col-md-5  order-1 order-md-0">
-                  <div className="card mb-6 animate__animated animate__fadeInLeft animate__faster">
-                    <div className="card-body pt-12">
-                      <div className="user-avatar-section">
-                        <div className=" d-flex align-items-center flex-column">
-                          <div id="profileImgeDiv">
-                            <img
-                              src={previewImage}
-                              alt="Avatar"
-                              id="uploadedAvatar"
-                              className="img-fluid rounded mb-4 shadow  account-image-reset cursor-pointer"
-                              height="120px"
-                              width="150px"
-                              onClick={
-                                hasAccess(user, ["can_upload_profile_photo"])
-                                  ? toggleUploadVisibility
-                                  : null
-                              } // Toggle input visibility on click
-                              style={{ height: "120px", width: "120px" }}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/assets/img/avatars/1.png";
-                              }}
-                              ref={fileInputRef}
-                            />
-                            {hasAccess(user, ["can_upload_profile_photo"]) && (
-                              <span
-                                className="ms-1 badge bg-label-primary cursor-pointer"
-                                onClick={toggleUploadVisibility}
-                                style={{
-                                  position: "absolute",
-                                  top: "120px",
-                                  left: "36.5%",
-                                }}
-                              >
-                                change photo
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="user-info text-center mb-4">
-                            <h5>
-                              {selectedUser.first_name}{" "}
-                              {selectedUser.middle_name}{" "}
-                              {selectedUser.last_name}
-                              <div
-                                className="button-wrapper"
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "center",
-                                }}
-                              >
-                                {isUploadVisible &&
-                                  hasAccess(user, [
-                                    "can_upload_profile_photo",
-                                  ]) && (
-                                    <div className="m-3" id="card-image-div">
-                                      <div className="input-group">
-                                        <label
-                                          htmlFor="inputGroupFile04"
-                                          className="btn btn-sm btn-outline-success"
-                                        >
-                                          Choose File
-                                        </label>
-                                        <input
-                                          type="file"
-                                          name="account-file-input"
-                                          className="form-control form-control-sm account-file-input visually-hidden"
-                                          id="inputGroupFile04"
-                                          aria-describedby="inputGroupFileAddon04"
-                                          onChange={handlePhotoChange}
-                                          accept=".jpg,.jpeg,.png,.gif,.ico"
-                                          aria-label="Upload"
-                                          ref={fileInputRef}
-                                        />
-                                        <button
-                                          aria-label="Click me"
-                                          className="btn btn-sm btn-outline-danger account-file-input"
-                                          type="button"
-                                          onClick={handleResetImage}
-                                          disabled={!isFileSelected}
-                                        >
-                                          <strong>X</strong>
-                                        </button>
-                                        <button
-                                          aria-label="Click me"
-                                          className="btn btn-sm btn-outline-primary account-file-input"
-                                          type="button"
-                                          onClick={handleUpload}
-                                          disabled={!isFileSelected}
-                                        >
-                                          SAVE
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
-                              </div>
-                            </h5>
-
-                            <div
-                              style={{
-                                maxHeight: "80px",
-                                overflowY: "auto",
-                              }}
-                            >
-                              {user &&
-                                user.groups.map((group, index) => {
-                                  // Pick a random color for each badge
-                                  const colorClass =
-                                    badgeColors[
-                                      Math.floor(
-                                        Math.random() * badgeColors.length
-                                      )
-                                    ];
-                                  return (
-                                    <span
-                                      key={`groups_${index}`}
-                                      className={`badge ${colorClass} me-3`}
-                                    >
-                                      {group}
-                                    </span>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="info-container border-top mt-3 ">
-                        <div
-                          className="button-wrapper mt-1"
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "10px",
-                            width: "100%",
-                          }}
-                        >
-                          <small className="text-muted">Account Status</small>
-                          {selectedUser.status === "NEW" ? (
-                            <span className="ms-1 badge bg-label-info">
-                              {selectedUser.status}
-                            </span>
-                          ) : selectedUser.status === "ACTIVE" ? (
-                            <span className="ms-1 badge bg-label-success">
-                              {selectedUser.status}
-                            </span>
-                          ) : selectedUser.status === "RETIRED" ? (
-                            <span className="ms-1 badge bg-label-secondary">
-                              {selectedUser.status}
-                            </span>
-                          ) : (
-                            <span className="ms-1 badge bg-label-danger">
-                              {selectedUser.status}
-                            </span>
-                          )}
-                        </div>
-                        <div className="demo-inline-spacing mt-3 ">
-                          <h5 className="text-muted">Personal Details</h5>
-                          <ul className="list-group">
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-user me-2"></i>
-                                <strong>Username </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedUser.username}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-box me-2"></i>
-                                <strong>PF Number </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedUser.pf_number}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bxs-detail me-2"></i>
-                                <strong>Check Number </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedUser.check_number}</span>
-                            </li>
-                            {/* <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-female-sign"></i>
-                                <i className="bx bx-male-sign me-2"></i>
-                                <strong>Gender </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedUser.sex}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-calendar me-2"></i>
-                                <strong>Age </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedUser.check_number}</span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-calendar me-2"></i>
-                                <strong>Date Of Birth </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedUser.dob}</span>
-                            </li> */}
-                          </ul>
-                          <h6 className="text-muted">CONTACT</h6>
-                          <ul className="list-group overflow-auto">
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-envelope me-2"></i>
-                                <strong>Email </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span className="text-primary">
-                                {selectedUser.email}
-                              </span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bxs-contact me-2"></i>
-                                <strong>Contact </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span className="text-primary">
-                                {selectedUser.phone_number}
-                              </span>
-                            </li>
-                            <li
-                              className="list-group-item d-flex align-items-center"
-                              style={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              <span style={{ minWidth: "90px" }}>
-                                <i className="bx bx-phone me-2"></i>
-                                <strong>Alt Contact </strong>&nbsp;:&nbsp;
-                              </span>
-                              <span>{selectedUser.alternative_contact}</span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-xl-8 col-lg-7  col-md-7 order-0 order-md-0">
-                  <div className="nav-align-top mb-4">
-                    <ul className="nav nav-pills mb-3" role="tablist">
-                      <li className="nav-item">
-                        <button
-                          aria-label="Click me"
-                          type="button"
-                          className="nav-link active shadow-sm"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-position"
-                          aria-controls="navs-pills-top-position"
-                          aria-selected="true"
-                        >
-                          <i className="icon-base bx bx-user icon-sm me-1_5"></i>
-                          Positions
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          aria-label="Click me"
-                          type="button"
-                          className="nav-link shadow-sm"
-                          role="tab"
-                          data-bs-toggle="tab"
-                          data-bs-target="#navs-pills-top-security"
-                          aria-controls="navs-pills-top-security"
-                          aria-selected="false"
-                        >
-                          <i className="icon-base bx bx-lock icon-sm me-1_5"></i>
-                          Security{""}
-                          {selectedUser.signature &&
-                            selectedUser.signature.trim() === "" && (
-                              <span className="fw-medium badge bg-label-danger ms-3 px-2">
-                                <i className="icon-base bx bx-info-circle icon-sm me-1_5"></i>
-                              </span>
-                            )}
-                        </button>
-                      </li>
-                    </ul>
-                    <div className="tab-content">
-                      <div
-                        className="tab-pane fade show active"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-position"
-                        role="tabpanel"
-                      >
-                        <div className="card">
-                          <div className="card-body invoice-preview-header rounded shadow mb-4">
-                            {selectedUser.position ? (
-                              <div>
-                                <div className="d-flex svg-illustration  justify-content-between mb-6 gap-2 align-items-center">
-                                  <h4 className=" demo fw-bold ms-50 lh-1">
-                                    Current Position
-                                  </h4>
-                                  {hasAccess(
-                                    user,
-                                    [
-                                      "can_assign_delegate",
-                                      "can_assign_delegate",
-                                    ],
-                                    ["Delegators", "Delegator"]
-                                  ) &&
-                                    selectedUser.position?.acting_user ===
-                                      null && (
-                                      <button
-                                        className="btn btn-sm btn-info btn-outline-info"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#delegatedUserModal"
-                                        onClick={() =>
-                                          setLoadDelagationModal(true)
-                                        }
-                                      >
-                                        <i className="bx bx-user-plus"></i>
-                                        &nbsp;Add Delegate{" "}
-                                      </button>
-                                    )}
-                                </div>
-                                <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
-                                  <div className="mb-xl-2 mb-6 text-heading">
-                                    <p className="mb-2">
-                                      {" "}
-                                      <strong>Position : </strong>{" "}
-                                      <span className="text-primary">
-                                        {selectedUser?.position?.level_name}
-                                      </span>
-                                    </p>
-                                    <p className="mb-2">
-                                      {" "}
-                                      <strong>Directory : </strong>{" "}
-                                      {selectedUser?.position?.directory_name} -
-                                      ({selectedUser?.position?.directory_code})
-                                    </p>
-                                    <p className="mb-2">
-                                      {" "}
-                                      <strong>Department/Unit : </strong>{" "}
-                                      {selectedUser?.position?.department_name}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <h5 className="mb-6">Date & References</h5>
-                                    <div className="mb-1 text-heading">
-                                      <strong>Assigned At : </strong>
-                                      <span className="fw-medium badge bg-label-success px-3">
-                                        {formatDate(
-                                          selectedUser?.position?.start_date
-                                        )}
-                                      </span>
-                                    </div>
-                                    <div className="mb-1 text-heading">
-                                      <strong>Due At : </strong>
-                                      <span className="fw-medium badge bg-label-danger px-3">
-                                        {selectedUser?.position?.last_date
-                                          ? formatDate(
-                                              selectedUser?.position?.last_date
-                                            )
-                                          : " - "}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-center m-3">
-                                <h3 className=" demo text-center text-muted ms-50 lh-1">
-                                  Currently User Dont Have Assigned Position
-                                </h3>
-                              </div>
-                            )}
-                          </div>
-
-                          {selectedUser.position?.acting_user && (
-                            <div className="card-body invoice-preview-header rounded shadow mb-4">
-                              <div>
-                                <div className="d-flex svg-illustration  justify-content-between mb-6 gap-2 align-items-center">
-                                  <h5 className=" demo fw-bold ms-50 lh-1">
-                                    Delegated Responsibility
-                                  </h5>
-
-                                  {hasAccess(
-                                    user,
-                                    ["can_assign_delegate"],
-                                    ["can_assign_delegate"]
-                                  ) && (
-                                    <button
-                                      className="btn btn-sm btn-danger btn-outline-danger"
-                                      onClick={() => handleRemoveDelegation()}
-                                    >
-                                      <i className="bx bx-user-minus"></i>
-                                      &nbsp;Remove Delegation
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="d-flex justify-content-between flex-xl-row flex-md-column flex-sm-row flex-column align-items-xl-center align-items-md-start align-items-sm-center align-items-start">
-                                  <div className="mb-xl-2 mb-4 text-heading">
-                                    <p className="mb-2">
-                                      {" "}
-                                      <strong>Name : </strong>{" "}
-                                      <span className="text-primary">
-                                        {
-                                          selectedUser?.position?.acting_user
-                                            .name
-                                        }
-                                      </span>
-                                    </p>
-                                    <p className="mb-2">
-                                      {" "}
-                                      <strong>Email Address : </strong>{" "}
-                                      {
-                                        selectedUser?.position?.acting_user
-                                          ?.email
-                                      }{" "}
-                                    </p>
-                                    <p className="mb-2">
-                                      {" "}
-                                      <strong>PF-Number : </strong>{" "}
-                                      {
-                                        selectedUser?.position?.acting_user
-                                          ?.pf_number
-                                      }
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <h5 className="mb-6">References</h5>
-                                    <div className="mb-1 text-heading">
-                                      <strong>Assigned At : </strong>
-                                      <span className="fw-medium badge bg-label-success px-3">
-                                        {formatDate(
-                                          selectedUser?.position?.acting_user
-                                            ?.created_at
-                                        )}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          <div className="card-body animate__animated animate__fadeInUp animate__faster">
-                            <div>
-                              <div className="d-flex justify-content-between align-items-center card-header">
-                                <h5 className="mb-0">
-                                  All Previously Assined Position
-                                </h5>
-                              </div>
-                            </div>
-                            <div className="table-responsive mb-4">
-                              <table className="table table-hover table-align-middle mb-0 table-bordered">
-                                <thead style={{ backgroundColor: "#f1f1f1" }}>
-                                  <tr>
-                                    <th style={{ width: "50px" }}>
-                                      S&nbsp;/&nbsp;N
-                                    </th>
-                                    <th>Position</th>
-                                    <th>Location</th>
-                                    <th>From</th>
-                                    <th>To</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="table-border-bottom-0">
-                                  {loadingPositions ? (
-                                    <tr>
-                                      <td colSpan="100%">
-                                        <div className="col-md-12 col-lg-12 col-sm-12 p-2">
-                                          <center>
-                                            <ReactLoading
-                                              type={"cylon"}
-                                              color={"#696cff"}
-                                              height={"30px"}
-                                              width={"50px"}
-                                            />
-                                          </center>
-                                          <center className="mt-1">
-                                            <h6 className="text-muted">
-                                              Fetching Previously Positions
-                                            </h6>
-                                          </center>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ) : errorPositions ||
-                                    positions.length === 0 ? (
-                                    <tr>
-                                      <td colSpan="100%">
-                                        <div
-                                          className="alert alert-info"
-                                          role="alert"
-                                        >
-                                          <div className="alert-body text-center">
-                                            <p className="mb-0">
-                                              No Previous Position
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ) : (
-                                    positions.map((dataRows, index) => (
-                                      <tr key={dataRows.uid}>
-                                        <td style={{ width: "50px" }}>
-                                          {(currentPage - 1) * pageSize +
-                                            index +
-                                            1}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows.level.name}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows.department !== null ? (
-                                            <div className="d-flex flex-column text-start">
-                                              <span className="fw-bold text-muted">
-                                                {dataRows.directory.name}
-                                              </span>
-                                              <span className="small">
-                                                Department:{" "}
-                                                <span className="text-muted">
-                                                  {dataRows.department?.name}
-                                                </span>
-                                              </span>
-                                            </div>
-                                          ) : (
-                                            <span>
-                                              {dataRows.department.name}
-                                            </span>
-                                          )}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows?.created_at}
-                                        </td>
-                                        <td className="fw-medium">
-                                          {dataRows.created_at !== null
-                                            ? dataRows.end_date
-                                            : dataRows.end_date}
-                                        </td>
-                                      </tr>
-                                    ))
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        className="tab-pane fade"
-                        style={{ minHeight: "60vh" }}
-                        id="navs-pills-top-security"
-                        role="tabpanel"
-                      >
-                        <div className="row">
-                          <div className="col-md-6">
-                            <div className="card mb-6">
-                              <h5 className="card-header">
-                                Change User Password
-                              </h5>
-                              <div className="card-body">
-                                <form
-                                  id="formChangePassword"
-                                  className="fv-plugins-bootstrap5 fv-plugins-framework"
-                                >
-                                  <div
-                                    className="alert alert-info alert-sm alert-dismissible"
-                                    role="alert"
-                                  >
-                                    <h5 className="alert-heading mb-1">
-                                      Ensure that these requirements are met
-                                    </h5>
-                                    <span>
-                                      Minimum 8 characters long, uppercase &amp;
-                                      symbol
-                                    </span>
-                                  </div>
-                                  <button
-                                    aria-label="Click me"
-                                    type="button"
-                                    className="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#resetPasswordModal"
-                                  >
-                                    Change Password
-                                  </button>
-                                </form>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="card mb-6">
-                              <div className="card-header">
-                                <h5 className="mb-3">User Signature</h5>
-                                <span className="card-subtitle mt-0">
-                                  The Signature used to verify documents in
-                                  Approval
-                                </span>
-                              </div>
-                              <div className="card-body pt-0">
-                                <div className="text-center mb-1">
-                                  <img
-                                    src={previewSign}
-                                    alt="Signature"
-                                    className="img-fluid rounded mb-4 shadow"
-                                    height="100px"
-                                    width="85%"
-                                    onClick={() =>
-                                      setIsUploadSignVisible((prev) => !prev)
-                                    }
-                                    style={{ height: "100px", width: "85%" }}
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src =
-                                        "/assets/img/avatars/signature.png";
-                                    }}
-                                  />
-                                  {!isUploadSignVisible && (
-                                    <button
-                                      type="button"
-                                      className="ms-1 btn btn-outline-primary btn-sm cursor-pointer"
-                                      onClick={() =>
-                                        setIsUploadSignVisible((prev) => !prev)
-                                      }
-                                    >
-                                      change Signature
-                                    </button>
-                                  )}
-                                </div>
-                                <div
-                                  className="button-wrapper"
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  {isUploadSignVisible && (
-                                    <div className="m-3" id="card-sign-div">
-                                      <div className="input-group">
-                                        <label
-                                          htmlFor="inputGroupFile05"
-                                          className="btn btn-sm btn-outline-success"
-                                        >
-                                          Choose File
-                                        </label>
-                                        <input
-                                          type="file"
-                                          name="account-sign-input"
-                                          className="form-control form-control-sm account-file-input-sign visually-hidden"
-                                          id="inputGroupFile05"
-                                          aria-describedby="inputGroupFileAddon05"
-                                          onChange={handleChangeSign}
-                                          accept=".jpg,.jpeg,.png,.svg,.ico"
-                                          aria-label="Upload"
-                                          ref={fileSignInputRef}
-                                        />
-                                        <button
-                                          aria-label="Click me"
-                                          className="btn btn-sm btn-outline-danger account-file-input-sign"
-                                          type="button"
-                                          onClick={handleResetImageSign}
-                                          disabled={!isSignSelected}
-                                        >
-                                          <strong>X</strong>
-                                        </button>
-                                        <button
-                                          aria-label="Click me"
-                                          className="btn btn-sm btn-outline-primary account-file-input-sign"
-                                          type="button"
-                                          onClick={() => handleUploadSign()}
-                                          disabled={
-                                            !isSignSelected || isSignUploading
-                                          }
-                                        >
-                                          {isSignUploading
-                                            ? "Saving..."
-                                            : "SAVE"}
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                                <p className="mb-0 text-center">
-                                  Only User will be able to change this
-                                  signature. <br />
-                                  <span className="text-primary">
-                                    Note: This will be used to verify documents
-                                    in Approval
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            <button className="refresh-btn" onClick={handleFetchData}>
+              <RefreshCw size={18} />
+              Refresh Profile
+            </button>
+          </div>
         </div>
+
+        {loading ? (
+          <div className="loading-container">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <h4 className="text-primary mt-3">Loading Profile...</h4>
+          </div>
+        ) : error || selectedUser === null ? (
+          <div className="error-container">
+            <div className="error-badge">
+              <XCircle size={24} />
+              Error Loading Profile
+            </div>
+            <p className="text-muted mt-3">
+              Unable to retrieve user details. Please contact system
+              administrator.
+            </p>
+            <button className="retry-btn mt-3" onClick={handleFetchData}>
+              <RefreshCw size={18} />
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <div className="row animate-fade-in">
+            {/* Left Column - Profile Info */}
+            <div className="col-xl-4 col-lg-4 col-md-12 mb-4">
+              {/* Profile Card */}
+              <div className="profile-card">
+                <div className="profile-avatar-container">
+                  <div className="avatar-wrapper">
+                    <img
+                      src={previewImage}
+                      alt="Profile"
+                      className="profile-avatar"
+                    />
+                    {isUploadingPhoto && (
+                      <div className="uploading-overlay">
+                        <div className="spinner-border" role="status">
+                          <span className="visually-hidden">Uploading...</span>
+                        </div>
+                      </div>
+                    )}
+                    {hasAccess(user, ["can_upload_profile_photo"]) && (
+                      <>
+                        <input
+                          type="file"
+                          className="d-none"
+                          onChange={handlePhotoChange}
+                          accept=".jpg,.jpeg,.png,.gif"
+                          ref={fileInputRef}
+                          id="photo-upload"
+                        />
+                        <label htmlFor="photo-upload" className="camera-btn">
+                          <Camera size={18} />
+                        </label>
+                      </>
+                    )}
+                  </div>
+
+                  <h5 className="user-name mt-4">
+                    {selectedUser.first_name} {selectedUser.middle_name}{" "}
+                    {selectedUser.last_name}
+                  </h5>
+
+                  <div className="user-status">
+                    <span className={getStatusColor(selectedUser.status)}>
+                      <CheckCircle size={14} className="me-1" />
+                      {selectedUser.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Photo Upload Controls - Only show when file is selected */}
+                {isFileSelected &&
+                  hasAccess(user, ["can_upload_profile_photo"]) && (
+                    <div className="upload-controls mt-3">
+                      <div className="d-flex gap-2">
+                        <button
+                          className="btn-outline w-100"
+                          onClick={handleResetImage}
+                        >
+                          <X size={16} />
+                          Cancel
+                        </button>
+                        <button
+                          className="btn-primary w-100"
+                          onClick={handleUpload}
+                          disabled={isUploadingPhoto}
+                        >
+                          {isUploadingPhoto ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2"></span>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={16} />
+                              Save Photo
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Personal Information */}
+                <div
+                  className="section-header"
+                  onClick={() => toggleSection("personal")}
+                >
+                  <div className="section-title">
+                    <User size={18} />
+                    Personal Information
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`chevron-icon ${
+                      expandedSections.personal ? "rotated" : ""
+                    }`}
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {expandedSections.personal && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <User size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Username</div>
+                          <div className="info-item-value">
+                            {selectedUser.username}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Briefcase size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">PF Number</div>
+                          <div className="info-item-value">
+                            {selectedUser.pf_number}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Award size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Check Number</div>
+                          <div className="info-item-value">
+                            {selectedUser.check_number}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Contact Information */}
+                <div
+                  className="section-header mt-3"
+                  onClick={() => toggleSection("contact")}
+                >
+                  <div className="section-title">
+                    <Phone size={18} />
+                    Contact Information
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`chevron-icon ${
+                      expandedSections.contact ? "rotated" : ""
+                    }`}
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {expandedSections.contact && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Mail size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Email</div>
+                          <div className="info-item-value text-primary">
+                            {selectedUser.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Phone size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Primary Contact</div>
+                          <div className="info-item-value">
+                            {selectedUser.phone_number}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Phone size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">
+                            Alternative Contact
+                          </div>
+                          <div className="info-item-value">
+                            {selectedUser.alternative_contact || "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Right Column - Positions, Security & Roles */}
+            <div className="col-xl-8 col-lg-8 col-md-12">
+              {/* Tab Navigation */}
+              <div className="tab-navigation">
+                <button
+                  className={`tab-button ${
+                    activeTab === "positions" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("positions")}
+                >
+                  <Briefcase size={16} />
+                  Positions
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "security" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("security")}
+                >
+                  <Shield size={16} />
+                  Security
+                  {selectedUser.signature?.trim() === "" && (
+                    <span className="alert-badge">!</span>
+                  )}
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "roles" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("roles")}
+                >
+                  <ClipboardList size={16} />
+                  My Roles
+                  <span className="count-badge">{user?.groups?.length}</span>
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "deligations" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("deligations")}
+                >
+                  <ClipboardList size={16} />
+                  Deligations
+                </button>
+              </div>
+
+              {activeTab === "positions" ? (
+                <div className="profile-card">
+                  {/* Current Position */}
+                  <div
+                    className="section-header"
+                    onClick={() => toggleSection("currentPosition")}
+                  >
+                    <div className="section-title">
+                      <Briefcase size={18} />
+                      Current Position
+                      {selectedUser.position && (
+                        <span className="active-badge ms-2">Active</span>
+                      )}
+                    </div>
+                    <ChevronDown
+                      size={18}
+                      className={`chevron-icon ${
+                        expandedSections.currentPosition ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {expandedSections.currentPosition && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {selectedUser.position ? (
+                          <>
+                            {/* Current Position Card */}
+                            <div className="position-card current">
+                              <div className="position-header">
+                                <div>
+                                  <h6 className="position-title">
+                                    {selectedUser.position.level_name}
+                                  </h6>
+                                  <div className="position-meta">
+                                    <span className="meta-item">
+                                      <MapPin size={12} />
+                                      {selectedUser.position.directory_name}
+                                    </span>
+                                    <span className="meta-item">
+                                      <Building size={12} />
+                                      {selectedUser.position.department_name}
+                                    </span>
+                                  </div>
+                                </div>
+                                {hasAccess(
+                                  user,
+                                  ["can_assign_delegate"],
+                                  ["Delegators", "Delegator"]
+                                ) &&
+                                  selectedUser.position?.acting_user ===
+                                    null && (
+                                    <button
+                                      className="delegate-btn"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#delegatedUserModal"
+                                      onClick={() =>
+                                        setLoadDelagationModal(true)
+                                      }
+                                    >
+                                      <UserPlus size={14} />
+                                      Add Delegate
+                                    </button>
+                                  )}
+                              </div>
+
+                              <div className="position-details">
+                                <div className="detail-item">
+                                  <span className="detail-label">
+                                    Assigned Date
+                                  </span>
+                                  <span className="detail-value">
+                                    {formatDate(
+                                      selectedUser.position.start_date
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="detail-item">
+                                  <span className="detail-label">End Date</span>
+                                  <span className="detail-value">
+                                    {selectedUser.position.last_date
+                                      ? formatDate(
+                                          selectedUser.position.last_date
+                                        )
+                                      : "Ongoing"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Delegated Responsibility */}
+                            {selectedUser.position?.acting_user && (
+                              <div className="position-card delegated mt-3">
+                                <div className="position-header">
+                                  <div>
+                                    <h6 className="position-title">
+                                      Delegated Responsibility
+                                    </h6>
+                                    <p className="position-subtitle">
+                                      Currently assigned to acting user
+                                    </p>
+                                  </div>
+                                  {hasAccess(user, ["can_assign_delegate"]) && (
+                                    <button
+                                      className="remove-delegate-btn"
+                                      onClick={handleRemoveDelegation}
+                                    >
+                                      <UserMinus size={14} />
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="position-details">
+                                  <div className="detail-item">
+                                    <span className="detail-label">
+                                      Acting User
+                                    </span>
+                                    <span className="detail-value">
+                                      {selectedUser.position.acting_user.name}
+                                    </span>
+                                  </div>
+                                  <div className="detail-item">
+                                    <span className="detail-label">
+                                      Delegated Since
+                                    </span>
+                                    <span className="detail-value">
+                                      {formatDate(
+                                        selectedUser.position.acting_user
+                                          ?.created_at
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="empty-state">
+                            <Briefcase size={32} />
+                            <p>No current position assigned</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Previous Positions */}
+                  <div
+                    className="section-header mt-4"
+                    onClick={() => toggleSection("previousPositions")}
+                  >
+                    <div className="section-title">
+                      <Clock size={18} />
+                      Previously Assigned Positions
+                      <span className="count-badge ms-2">
+                        {positions?.length || 0}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      size={18}
+                      className={`chevron-icon ${
+                        expandedSections.previousPositions ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {expandedSections.previousPositions && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="table-container">
+                          <table className="faded-table">
+                            <thead>
+                              <tr>
+                                <th>S/N</th>
+                                <th>Position</th>
+                                <th>Location</th>
+                                <th>From</th>
+                                <th>To</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {loadingPositions ? (
+                                <tr>
+                                  <td colSpan="5">
+                                    <div className="loading-positions">
+                                      Loading previous positions...
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : positions === null ||
+                                positions?.length === 0 ? (
+                                <tr>
+                                  <td colSpan="5">
+                                    <div className="no-data">
+                                      No previous positions found
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : (
+                                positions.map((dataRows, index) => (
+                                  <tr key={dataRows.uid}>
+                                    <td>
+                                      {(currentPage - 1) * pageSize + index + 1}
+                                    </td>
+                                    <td>{dataRows.level.name}</td>
+                                    <td>
+                                      <div>
+                                        <div className="fw-bold">
+                                          {dataRows.directory.name}
+                                        </div>
+                                        {dataRows.department?.name && (
+                                          <small className="text-muted">
+                                            {dataRows.department.name}
+                                          </small>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td>{dataRows?.created_at}</td>
+                                    <td>{dataRows.end_date || "Present"}</td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : activeTab === "security" ? (
+                <div className="profile-card">
+                  <div className="row">
+                    {/* Change Password */}
+                    <div className="col-md-6 mb-4">
+                      <h6 className="section-title mb-3">
+                        <Key size={18} />
+                        Password Security
+                      </h6>
+                      <div className="info-item">
+                        <div className="info-item-icon">
+                          <Lock size={16} />
+                        </div>
+                        <div className="info-item-content">
+                          <div className="info-item-label">Password Status</div>
+                          <div className="info-item-value">
+                            Last changed: Recently
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <button
+                          className="btn-primary w-100"
+                          data-bs-toggle="modal"
+                          data-bs-target="#resetPasswordModal"
+                        >
+                          <Key size={16} />
+                          Change Password
+                        </button>
+                        <p className="text-muted small mt-2">
+                          Minimum 8 characters with uppercase, lowercase, and
+                          special characters.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Signature Management */}
+                    <div className="col-md-6">
+                      <h6 className="section-title mb-3">
+                        <FileSignature size={18} />
+                        Digital Signature
+                      </h6>
+
+                      <input
+                        type="file"
+                        className="d-none"
+                        onChange={handleChangeSign}
+                        accept=".jpg,.jpeg,.png,.svg"
+                        ref={fileSignInputRef}
+                        id="signature-upload"
+                      />
+
+                      <label
+                        htmlFor="signature-upload"
+                        className="signature-preview"
+                      >
+                        <img src={previewSign} alt="Signature" />
+                      </label>
+
+                      {isSignSelected && (
+                        <div className="upload-controls mt-3">
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn-outline w-100"
+                              onClick={handleResetImageSign}
+                            >
+                              <X size={16} />
+                              Cancel
+                            </button>
+                            <button
+                              className="btn-primary w-100"
+                              onClick={handleUploadSign}
+                              disabled={isSignUploading}
+                            >
+                              {isSignUploading ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2"></span>
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload size={16} />
+                                  Save Signature
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-muted small mt-3">
+                        Click on the signature to upload a new one.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : activeTab === "deligations" ? (
+                <div className="profile-card">
+                  {/* Deligation History */}
+                  <h4 className="text-bold section-title">
+                    <Briefcase size={18} /> My Deligation History
+                  </h4>
+                  <div className="table-container">
+                    <table className="faded-table">
+                      <thead>
+                        <tr>
+                          <th>S/N</th>
+                          <th>Position</th>
+                          <th>Location</th>
+                          <th>From</th>
+                          <th>To</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loadingPositions ? (
+                          <tr>
+                            <td colSpan="5">
+                              <div className="loading-positions">
+                                Loading previous positions...
+                              </div>
+                            </td>
+                          </tr>
+                        ) : true ? (
+                          <tr>
+                            <td colSpan="5">
+                              <div className="no-data">
+                                No previous positions found
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          positions.map((dataRows, index) => (
+                            <tr key={dataRows.uid}>
+                              <td>
+                                {(currentPage - 1) * pageSize + index + 1}
+                              </td>
+                              <td>{dataRows.level.name}</td>
+                              <td>
+                                <div>
+                                  <div className="fw-bold">
+                                    {dataRows.directory.name}
+                                  </div>
+                                  {dataRows.department?.name && (
+                                    <small className="text-muted">
+                                      {dataRows.department.name}
+                                    </small>
+                                  )}
+                                </div>
+                              </td>
+                              <td>{dataRows?.created_at}</td>
+                              <td>{dataRows.end_date || "Present"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="profile-card">
+                  <h6 className="section-title mb-4">
+                    <ClipboardList size={18} />
+                    Assigned Roles
+                  </h6>
+
+                  {user?.groups?.length === 0 ? (
+                    <div className="empty-state">
+                      <ClipboardList size={32} />
+                      <p>No roles assigned</p>
+                    </div>
+                  ) : (
+                    <div className="roles-container">
+                      {user?.groups?.map((group, index) => (
+                        <div key={index} className="role-badge">
+                          <Shield size={14} />
+                          {group}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* <UserModal loadOnlyModal={true} onClose={() => setSelectedUser(null)} /> */}
       <DelegationModal />
       <ResetPasswordModal />
     </AccountContext.Provider>

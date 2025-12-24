@@ -6,13 +6,13 @@ import { dashboardService } from "./DashboardQueries.jsx";
 import Swal from "sweetalert2";
 
 // Chart components
-import { 
-  DoughnutChart, 
-  BarChart, 
-  ActivityFeed,
-  ProgressChart,
-  WarrantyTimeline 
-} from "../components/DashboardCharts";
+import {
+    DoughnutChart,
+    BarChart,
+    ActivityFeed,
+    ProgressChart,
+    StatCard
+} from "../../../../components/DashboardCharts";
 
 export const AssetDashboardPage = () => {
     const user = useSelector((state) => state.userReducer?.data);
@@ -26,14 +26,16 @@ export const AssetDashboardPage = () => {
             try {
                 setLoading(true);
                 setError(null);
-                
+
                 const data = await dashboardService.getAllDashboardData();
                 setDashboardData(data);
-                
+
             } catch (err) {
                 console.error('Dashboard fetch error:', err);
-                setError(err.message || 'Failed to load dashboard data');
-                
+                // setError(err.message || 'Failed to load dashboard data');
+                const errorMessage = err?.response?.data?.message || err?.message || 'Failed to load dashboard data';
+                setError(errorMessage);
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Dashboard Error',
@@ -79,7 +81,7 @@ export const AssetDashboardPage = () => {
                         <p className="mb-0">{error}</p>
                     </div>
                 </div>
-                <button 
+                <button
                     className="btn btn-sm btn-outline-danger mt-2"
                     onClick={() => window.location.reload()}
                 >
@@ -90,18 +92,18 @@ export const AssetDashboardPage = () => {
         );
     }
 
-    const { 
-        summary, 
-        status_distribution = [], 
+    const {
+        summary,
+        status_distribution = [],
         category_distribution = [],
         maintenance_metrics = {},
         warranty_alerts = {},
         asset_type_breakdown = {},
-        recent_activities = [] 
+        recent_activities = []
     } = dashboardData || {};
 
     // Calculate additional metrics
-    const operationalRate = summary?.total_assets ? 
+    const operationalRate = summary?.total_assets ?
         ((summary.operational_assets / summary.total_assets) * 100).toFixed(1) : 0;
 
     return (
@@ -120,21 +122,21 @@ export const AssetDashboardPage = () => {
                                         Please note that every action you perform in <span className="fw-medium">ICT Assets</span> is crucial to the success of the organization.
                                     </p>
                                     <div className="d-flex gap-2 flex-wrap">
-                                        <a 
+                                        <a
                                             href="#my-assets"
                                             className="btn btn-sm btn-outline-primary"
                                         >
                                             <i className="bx bx-laptop me-1"></i>
                                             View My Assets
                                         </a>
-                                        <a 
+                                        <a
                                             href="/ict-assets"
                                             className="btn btn-sm btn-primary"
                                         >
                                             <i className="bx bx-cog me-1"></i>
                                             Manage Assets
                                         </a>
-                                        <button 
+                                        <button
                                             className="btn btn-sm btn-outline-secondary"
                                             onClick={() => window.location.reload()}
                                         >
@@ -146,7 +148,7 @@ export const AssetDashboardPage = () => {
                             </div>
                             <div className="col-md-4 text-center text-md-left d-none d-md-block">
                                 <div className="card-body pb-0 px-0 px-md-4">
-                                    <img 
+                                    <img
                                         src="/assets/img/illustrations/man-with-laptop-light.png"
                                         height="140"
                                         alt="ICT Assets Dashboard"
@@ -295,7 +297,7 @@ export const AssetDashboardPage = () => {
                                     <span className="badge bg-primary">{summary?.total_computers || 0}</span>
                                     <br />
                                     <small className="text-muted">
-                                        {asset_type_breakdown?.hardware_types ? 
+                                        {asset_type_breakdown?.hardware_types ?
                                             Math.round((summary?.total_computers / asset_type_breakdown.hardware_types.total_hardware) * 100) : 0
                                         }% of hardware
                                     </small>
@@ -310,7 +312,7 @@ export const AssetDashboardPage = () => {
                                     <span className="badge bg-info">{summary?.total_network_devices || 0}</span>
                                     <br />
                                     <small className="text-muted">
-                                        {asset_type_breakdown?.hardware_types ? 
+                                        {asset_type_breakdown?.hardware_types ?
                                             Math.round((summary?.total_network_devices / asset_type_breakdown.hardware_types.total_hardware) * 100) : 0
                                         }% of hardware
                                     </small>
@@ -325,19 +327,19 @@ export const AssetDashboardPage = () => {
                                     <span className="badge bg-success">{summary?.total_peripherals || 0}</span>
                                     <br />
                                     <small className="text-muted">
-                                        {asset_type_breakdown?.hardware_types ? 
+                                        {asset_type_breakdown?.hardware_types ?
                                             Math.round((summary?.total_peripherals / asset_type_breakdown.hardware_types.total_hardware) * 100) : 0
                                         }% of hardware
                                     </small>
                                 </div>
                             </div>
-                            
+
                             {/* Total Value */}
                             <div className="mt-3 p-3 bg-primary text-white rounded">
                                 <div className="d-flex justify-content-between align-items-center">
                                     <span className="fw-medium">Total Asset Value</span>
                                     <span className="fw-bold">
-                                        TSH{summary?.total_asset_value ? 
+                                        TSH{summary?.total_asset_value ?
                                             parseFloat(summary.total_asset_value).toLocaleString() : '0'
                                         }
                                     </span>
@@ -363,16 +365,16 @@ export const AssetDashboardPage = () => {
                                     <br />
                                     <span className="fs-6">{summary?.pending_maintenance || 0} tasks</span>
                                     {maintenance_metrics.critical_maintenance > 0 && (
-                                    <>
-                                    <br />
-                                        <small className="text-danger">
-                                            <i className="bx bx-error"></i> {maintenance_metrics.critical_maintenance} overdue
-                                        </small>
-                                    </>
+                                        <>
+                                            <br />
+                                            <small className="text-danger">
+                                                <i className="bx bx-error"></i> {maintenance_metrics.critical_maintenance} overdue
+                                            </small>
+                                        </>
                                     )}
                                 </div>
                             </div>
-                            
+
                             {/* Warranty Alerts */}
                             <div className="alert alert-danger d-flex align-items-center mb-3">
                                 <i className="bx bx-calendar-exclamation me-2 fs-5"></i>
@@ -382,10 +384,10 @@ export const AssetDashboardPage = () => {
                                     <span className="fs-6">{summary?.expiring_warranties || 0} assets</span>
                                     {warranty_alerts.alerts_summary?.expired > 0 && (
                                         <>
-                                        <br />
-                                        <small>
-                                            <i className="bx bx-error"></i> {warranty_alerts.alerts_summary.expired} expired
-                                        </small>
+                                            <br />
+                                            <small>
+                                                <i className="bx bx-error"></i> {warranty_alerts.alerts_summary.expired} expired
+                                            </small>
                                         </>
                                     )}
                                 </div>
@@ -516,16 +518,16 @@ export const AssetDashboardPage = () => {
                                 <div className="d-flex justify-content-between align-items-center mb-2">
                                     <span className="text-muted">Maintenance Cost (YTD)</span>
                                     <span className="fw-bold text-success">
-                                        TSH{maintenance_metrics?.maintenance_cost_ytd ? 
+                                        TSH{maintenance_metrics?.maintenance_cost_ytd ?
                                             parseFloat(maintenance_metrics.maintenance_cost_ytd).toLocaleString() : '0'
                                         }
                                     </span>
                                 </div>
                                 <div className="progress" style={{ height: '8px' }}>
-                                    <div 
-                                        className="progress-bar bg-success" 
-                                        style={{ 
-                                            width: `${Math.min((maintenance_metrics?.maintenance_cost_ytd / (summary?.total_asset_value || 1)) * 100, 100)}%` 
+                                    <div
+                                        className="progress-bar bg-success"
+                                        style={{
+                                            width: `${Math.min((maintenance_metrics?.maintenance_cost_ytd / (summary?.total_asset_value || 1)) * 100, 100)}%`
                                         }}
                                     ></div>
                                 </div>
@@ -575,10 +577,10 @@ export const AssetDashboardPage = () => {
                                                 <span className="badge bg-primary">{type.count}</span>
                                             </div>
                                             <div className="progress" style={{ height: '8px' }}>
-                                                <div 
-                                                    className="progress-bar bg-success" 
-                                                    style={{ 
-                                                        width: `${type.operational_percentage}%` 
+                                                <div
+                                                    className="progress-bar bg-success"
+                                                    style={{
+                                                        width: `${type.operational_percentage}%`
                                                     }}
                                                     title={`${type.operational_percentage}% Operational`}
                                                 ></div>
@@ -625,29 +627,3 @@ export const AssetDashboardPage = () => {
     );
 };
 
-// Metric Card Component
-const MetricCard = ({ title, value, icon, color, percentage, subtitle }) => (
-    <div className="card h-100">
-        <div className="card-body">
-            <div className="d-flex align-items-center">
-                <div className="avatar flex-shrink-0">
-                    <div className={`bg-${color} rounded p-2`}>
-                        <i className={`bx ${icon} text-white`}></i>
-                    </div>
-                </div>
-                <div className="ms-3">
-                    <span className="fw-medium d-block mb-1">{title}</span>
-                    <h3 className={`card-title mb-0 ${color ? `text-${color}` : ''}`}>{value}</h3>
-                    {percentage !== undefined && (
-                        <small className="text-success fw-medium">
-                            <i className="bx bx-up-arrow-alt"></i> {percentage}%
-                        </small>
-                    )}
-                    {subtitle && (
-                        <small className="text-muted d-block">{subtitle}</small>
-                    )}
-                </div>
-            </div>
-        </div>
-    </div>
-);

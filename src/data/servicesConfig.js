@@ -3,6 +3,9 @@ import ictAssetsMenu from "./ictAssetsMenu.json";
 import oxygenMenu from "./oxygeServiceMenu.json";
 import defaultMenu from "./defaultMenu.json";
 import analyticsMenu from "./analyticsMenu.json";
+import maoniMenu from "./maoniMenu.json";
+import externalReferralMenu from "./externalReferralMenu.json";
+
 import trainingMenu from "./trainingMenu.json";
 
 // Add new services here without touching Sidebar.js
@@ -30,6 +33,18 @@ const servicesConfig = [
         name: "Hospital Analytics",
         link: "/analytics",
         menu: analyticsMenu
+    },
+    {
+        id: "mnh-maoni",
+        name: "MNH Maoni",
+        link: "/mnh-maoni",
+        menu: maoniMenu
+    },
+    {
+        id: "external-referral",
+        name: "External Referral",
+        link: "/external-referral",
+        menu: externalReferralMenu
     },
     {
         id: "training",

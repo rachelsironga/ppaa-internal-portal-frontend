@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
 import "animate.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { useSelector } from "react-redux";
 import { formatDate } from "../../../../helpers/DateFormater";
@@ -15,6 +15,7 @@ export const ApplicationsListPage = () => {
     const [selectedApplication, setSelectedApplication] = useState(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
     const user = useSelector((state) => state.userReducer?.data);
 
     const handleDelete = async (application) => {
@@ -57,9 +58,12 @@ export const ApplicationsListPage = () => {
         }
     };
 
+    const isSearchPage = location.pathname === "/training/search-applications";
+    const breadcrumbPages = isSearchPage ? ["Training", "Search Applications"] : ["Training", "Applications"];
+
     return (
         <>
-            <BreadCumb pageList={["Training", "Applications"]} />
+            <BreadCumb pageList={breadcrumbPages} />
 
             {/* Header Card */}
             <div className="card mb-4 shadow-sm animate__animated animate__fadeInDown animate__faster">
@@ -67,9 +71,12 @@ export const ApplicationsListPage = () => {
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <h4 className="mb-1 fw-bold">
-                                <i className="bx bx-file-blank me-2"></i>Applications Management
+                                <i className={`bx ${isSearchPage ? 'bx-search' : 'bx-file-blank'} me-2`}></i>
+                                {isSearchPage ? "Search Applications" : "Applications Management"}
                             </h4>
-                            <p className="text-muted mb-0">Manage and monitor training applications</p>
+                            <p className="text-muted mb-0">
+                                {isSearchPage ? "Search and filter training applications" : "Manage and monitor training applications"}
+                            </p>
                         </div>
                         <div className="d-flex gap-2">
                             {hasAccess(user, [["add_application"]]) && (
@@ -90,7 +97,7 @@ export const ApplicationsListPage = () => {
             {/* Paginated Table */}
             <PaginatedTable
                 fetchPath="/api/training/applications"
-                title="Applications List"
+                title={isSearchPage ? "Search Results" : "Applications List"}
                 isRefresh={refreshKey}
                 isFullPath={true}
                 columns={[
@@ -120,13 +127,42 @@ export const ApplicationsListPage = () => {
                         ),
                     },
                     {
+                        key: "departments",
+                        label: "Departments",
+                        className: "text-start",
+                        style: { width: "200px" },
+                        render: (row) => {
+                            const departments = row.department_details || [];
+                            if (departments.length === 0) {
+                                return <span className="text-muted">-</span>;
+                            }
+                            return (
+                                <div className="d-flex flex-wrap gap-1">
+                                    {departments.map((dept, idx) => (
+                                        <span key={dept.uid || idx} className="badge bg-light text-dark border" title={dept.name}>
+                                            {dept.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            );
+                        },
+                    },
+                    {
                         key: "type",
                         label: "Type",
                         className: "text-center",
                         style: { width: "120px" },
-                        render: (row) => (
-                            <span className="badge bg-info">{row.type || "-"}</span>
-                        ),
+                        render: (row) => {
+                            const typeConfig = {
+                                'internship': { class: 'primary', label: 'Internship' },
+                                'attachment': { class: 'info', label: 'Attachment' },
+                                'practicum': { class: 'success', label: 'Practicum' },
+                                'fieldwork': { class: 'warning', label: 'Fieldwork' },
+                                'elective': { class: 'secondary', label: 'Elective' },
+                            };
+                            const type = typeConfig[row.type?.toLowerCase()] || { class: 'dark', label: row.type || '-' };
+                            return <span className={`badge bg-${type.class}`}>{type.label}</span>;
+                        },
                     },
                     {
                         key: "status",

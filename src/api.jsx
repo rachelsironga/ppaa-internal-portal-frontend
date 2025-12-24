@@ -8,6 +8,12 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+let isRefreshing = false;
+let refreshPromise = null;
+
+let isLoginDialogOpen = false;
+let loginPromise = null;
+
 // REQUEST INTERCEPTOR
 api.interceptors.request.use(
   (config) => {
@@ -27,68 +33,179 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const originalRequest = error.config;
+
+    // Ignore auth endpoints
     if (
-      (error.config.url && error.config.url.includes("/user/login")) ||
-      error.config.url.includes("/user/register") ||
-      error.config.url.includes("/user/refresh") ||
-      error.config.url.includes("/user/logout") ||
-      error.config.url.includes("/token/")
+      originalRequest?.url?.includes("/user/login") ||
+      originalRequest?.url?.includes("/user/register") ||
+      originalRequest?.url?.includes("/user/refresh") ||
+      originalRequest?.url?.includes("/user/logout") ||
+      originalRequest?.url?.includes("/token/")
     ) {
       return Promise.reject(error);
     }
 
+    // Handle 401 / token expired
     if (
       error.response &&
       (error.response.status === 401 || error.response.data?.status === 8001)
     ) {
+      // Prevent infinite retry loop
+      if (originalRequest._retry) {
+        return Promise.reject(error);
+      }
+      originalRequest._retry = true;
+
       try {
-        const didRefresh = await checkAuthStatus();
-        if (didRefresh) {
-          const newAccessToken = localStorage.getItem(ACCESS_TOKEN);
-          error.config.headers.Authorization = `Bearer ${newAccessToken}`;
-          return api.request(error.config); // retry original request
-        } else {
-          const didLogin = await showLoginDialog();
-          if (didLogin) {
-            const newAccessToken = localStorage.getItem(ACCESS_TOKEN);
-            error.config.headers.Authorization = `Bearer ${newAccessToken}`;
-            return api.request(error.config);
-          } else {
-            window.location.href = "/auth/login"; // Redirect to login page if login fails
-          }
+        /** ============================
+         *  TOKEN REFRESH (SINGLE RUN)
+         *  ============================
+         */
+        console.log("----------->Starting token refresh process...");
+        if (!isRefreshing) {
+          console.log("----------->Token refresh initiated.");
+          isRefreshing = true;
+          refreshPromise = checkAuthStatus()
+            .then((ok) => ok)
+            .finally(() => {
+              isRefreshing = false;
+              console.log("----------->Token refresh process completed.");
+            });
         }
-      } catch (e) {
-        showLoginDialog();
+
+        const refreshed = await refreshPromise;
+
+        if (refreshed) {
+          const newToken = localStorage.getItem(ACCESS_TOKEN);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        }
+
+        /** ============================
+         *  LOGIN DIALOG (SINGLE RUN)
+         *  ============================
+         */
+        if (!isLoginDialogOpen) {
+          isLoginDialogOpen = true;
+          loginPromise = showLoginDialog()
+            .then((success) => success)
+            .finally(() => {
+              isLoginDialogOpen = false;
+            });
+        }
+
+        const didLogin = await loginPromise;
+
+        if (didLogin) {
+          const newToken = localStorage.getItem(ACCESS_TOKEN);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        }
+
+        // Login canceled or failed
+        logout();
         window.location.href = "/auth/login";
+        return Promise.reject(error);
+      } catch (e) {
+        logout();
+        window.location.href = "/auth/login";
+        return Promise.reject(e);
       }
     }
+
+    /** ============================
+     *  403 ACCESS DENIED
+     *  ============================
+     */
     if (
-      (error.response && error.status === 403) ||
-      error.response.data?.status === 8006
+      error.response &&
+      (error.response.status === 403 || error.response.data?.status === 8006)
     ) {
       Swal.fire({
         title: "Access Denied!",
-        text: "You don’t have permission to  proceed with the Action",
+        text: "You don’t have permission to proceed with this action",
         icon: "warning",
-        allowOutsideClick: false, // User can't click outside to close
-        allowEscapeKey: false, // User can't press ESC to close
-        allowEnterKey: false, // User can't press ENTER to close
-        showCancelButton: false, // Only one button
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showCancelButton: false,
         confirmButtonText: "Go to Dashboard",
-        customClass: {
-          confirmButton: "swal2-confirm btn btn-primary", // You can adjust styling here
-        },
-      }).then((result) => {
-        // Redirect when the user clicks the button
-        if (result.isConfirmed) {
-          window.location.href = "/"; // Change to your dashboard URL
-        }
+      }).then(() => {
+        window.location.href = "/";
       });
     }
 
     return Promise.reject(error);
   }
 );
+
+
+
+// api.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     if (
+//       (error.config.url && error.config.url.includes("/user/login")) ||
+//       error.config.url.includes("/user/register") ||
+//       error.config.url.includes("/user/refresh") ||
+//       error.config.url.includes("/user/logout") ||
+//       error.config.url.includes("/token/")
+//     ) {
+//       return Promise.reject(error);
+//     }
+
+//     if (
+//       error.response &&
+//       (error.response.status === 401 || error.response.data?.status === 8001)
+//     ) {
+//       try {
+//         const didRefresh = await checkAuthStatus();
+//         if (didRefresh) {
+//           const newAccessToken = localStorage.getItem(ACCESS_TOKEN);
+//           error.config.headers.Authorization = `Bearer ${newAccessToken}`;
+//           return api.request(error.config); // retry original request
+//         } else {
+//           const didLogin = await showLoginDialog();
+//           if (didLogin) {
+//             const newAccessToken = localStorage.getItem(ACCESS_TOKEN);
+//             error.config.headers.Authorization = `Bearer ${newAccessToken}`;
+//             return api.request(error.config);
+//           } else {
+//             window.location.href = "/auth/login"; // Redirect to login page if login fails
+//           }
+//         }
+//       } catch (e) {
+//         showLoginDialog();
+//         window.location.href = "/auth/login";
+//       }
+//     }
+//     if (
+//       (error.response && error.status === 403) ||
+//       error.response.data?.status === 8006
+//     ) {
+//       Swal.fire({
+//         title: "Access Denied!",
+//         text: "You don’t have permission to  proceed with the Action",
+//         icon: "warning",
+//         allowOutsideClick: false, // User can't click outside to close
+//         allowEscapeKey: false, // User can't press ESC to close
+//         allowEnterKey: false, // User can't press ENTER to close
+//         showCancelButton: false, // Only one button
+//         confirmButtonText: "Go to Dashboard",
+//         customClass: {
+//           confirmButton: "swal2-confirm btn btn-primary", // You can adjust styling here
+//         },
+//       }).then((result) => {
+//         // Redirect when the user clicks the button
+//         if (result.isConfirmed) {
+//           window.location.href = "/"; // Change to your dashboard URL
+//         }
+//       });
+//     }
+
+//     return Promise.reject(error);
+//   }
+// );
 
 
 
