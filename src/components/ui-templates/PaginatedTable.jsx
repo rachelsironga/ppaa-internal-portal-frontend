@@ -126,7 +126,23 @@ const PaginatedTable = ({
     } catch (err) {
       console.error("Error fetching data:", err);
       setError(true);
-      showToast("Unable to Fetch Records", "warning", "Failed");
+
+      // Try to surface a more helpful backend message if available
+      let message = "Unable to Fetch Records. Please try again later.";
+      try {
+        if (err?.response?.data) {
+          const data = err.response.data;
+          if (typeof data === "string") {
+            message = data;
+          } else if (data.message) {
+            message = data.message;
+          }
+        }
+      } catch (parseError) {
+        // Fallback to default message if anything goes wrong while parsing
+      }
+
+      showToast(message, "warning", "Failed");
     } finally {
       setLoading(false);
     }

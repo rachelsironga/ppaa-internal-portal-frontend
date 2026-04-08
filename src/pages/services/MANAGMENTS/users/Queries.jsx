@@ -97,3 +97,20 @@ export const createUpdatePositions = async (positionData) => {
     }
 };
 
+export const getUserStatistics = async () => {
+    try {
+        // Fetch all users with a large page size to get counts
+        const response = await api.get(
+            `${API_BASE_URL}/user/setup`,
+            {
+                headers: { "Content-Type": "application/json" },
+                params: { page: 1, page_size: 10000 } // Large page size to get all users
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching user statistics:", error);
+        throw error;
+    }
+};
+

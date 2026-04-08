@@ -7,7 +7,7 @@ import DualListSelect from "../../../../components/ui-templates/DualListSelect";
 import { createUpdateData, fetchData } from "../../../../utils/GlobalQueries";
 
 const UserPermissionModal = () => {
-  const { selectedObj, setSelectedObj, setTableRefresh } =
+  const { selectedObj, setSelectedObj, setTableRefresh, tableRefresh } =
     useContext(UsersContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errors, setOtherError] = useState({});
@@ -88,10 +88,15 @@ const UserPermissionModal = () => {
 
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
+        // Update selectedObj with the response data which contains updated groups
         setSelectedObj(result.data);
+        // Trigger refresh in Open.jsx to fetch latest user data
         setTableRefresh((prev) => prev + 1);
-        handleClose();
-        resetForm();
+        // Small delay to ensure context updates before closing
+        setTimeout(() => {
+          handleClose();
+          resetForm();
+        }, 100);
       } else if (result.status === 8002) {
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);
@@ -132,12 +137,24 @@ const UserPermissionModal = () => {
         },
       });
       if (result.status === 200 || result.status === 8000) {
-        const formattedOptions = (result.data || []).map((perm) => ({
-          value: perm.id,
-          label: `${perm.name}`,
+        const formattedOptions = (result.data || []).map((group) => ({
+          value: group.id,
+          label: `${group.name}`,
         }));
 
-        setLeftOptions(formattedOptions);
+        // Filter out groups that are already assigned
+        // We need to check both rightOptions and selectedObj.groups
+        const assignedGroupNames = selectedObj?.groups || [];
+        const assignedFromRightOptions = rightOptions.map((g) => g.value);
+        const unassignedGroups = formattedOptions.filter((group) => {
+          // Exclude if it's in rightOptions
+          if (assignedFromRightOptions.includes(group.value)) return false;
+          // Exclude if it's in selectedObj.groups (user's current groups)
+          if (assignedGroupNames.includes(group.label)) return false;
+          return true;
+        });
+        
+        setLeftOptions(unassignedGroups);
       } else {
         setLeftOptions([]);
       }
@@ -165,21 +182,56 @@ const UserPermissionModal = () => {
   }, []);
 
   useEffect(() => {
-    handleFetchGroups();
-    if (
-      selectedObj !== null &&
-      selectedObj?.permissions &&
-      selectedObj?.permissions.length > 0
-    ) {
-      const formattedRightOptions = selectedObj?.permissions.map((perm) => ({
-        value: perm.id,
-        label: `${perm.name}`,
-      }));
-      setRightOptions(formattedRightOptions);
+    // When modal opens or selectedObj/tableRefresh changes, populate rightOptions with user's current groups
+    if (isModalOpen && selectedObj !== null) {
+      // First fetch all groups, then match with user's groups
+      const fetchAndSetGroups = async () => {
+        try {
+          const result = await fetchData({
+            url: "/system/system-groups",
+            filter: {
+              page: 1,
+              page_size: 50,
+              paginated: true,
+              search: "",
+            },
+          });
+          if (result.status === 200 || result.status === 8000) {
+            const allGroups = (result.data || []).map((group) => ({
+              value: group.id,
+              label: `${group.name}`,
+            }));
+
+            // Match user's groups (which are strings) with all groups to get the full objects
+            // Use the latest selectedObj.groups to ensure we have the most recent data
+            // This will reflect any changes made after saving
+            const userGroupNames = selectedObj?.groups || [];
+            const matchedGroups = allGroups.filter((group) =>
+              userGroupNames.includes(group.label)
+            );
+            
+            // Update rightOptions with matched groups - this ensures removed roles are not shown
+            setRightOptions(matchedGroups);
+            // Set left options to groups not assigned to user
+            const assignedGroupIds = matchedGroups.map((g) => g.value);
+            setLeftOptions(allGroups.filter((g) => !assignedGroupIds.includes(g.value)));
+          }
+        } catch (err) {
+          console.error("Error fetching groups:", err);
+          setRightOptions([]);
+          setLeftOptions([]);
+        }
+      };
+      // Add a small delay to ensure selectedObj is fully updated after tableRefresh
+      const timer = setTimeout(() => {
+        fetchAndSetGroups();
+      }, 100);
+      return () => clearTimeout(timer);
     } else {
       setRightOptions([]);
+      setLeftOptions([]);
     }
-  }, [isModalOpen, selectedObj]);
+  }, [isModalOpen, selectedObj, tableRefresh]);
 
   return (
     <>

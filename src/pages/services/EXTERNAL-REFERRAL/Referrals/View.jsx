@@ -246,13 +246,23 @@ export const ReferralView = () => {
                     <p className="text-muted mb-4">
                       Start by sharing your first suggestion
                     </p>
+
                     <button
-                      onClick={() => navigate("/mnh-connect/maoni/new")}
-                      className="btn btn-primary"
-                    >
-                      <i className="bx bx-plus me-2"></i>
-                      Create First Contribution
-                    </button>
+                    aria-label="Click me"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#maoniModal"
+                    className="btn btn-outline-primary d-flex align-items-center justify-content-start p-3 border-dashed text-start"
+                  >
+                    <div className="p-2 bg-primary-subtle rounded-circle me-3">
+                      <i className="bx bx-plus text-primary"></i>
+                    </div>
+                    <div>
+                      <div className="fw-medium">Create First Contribution</div>
+                      <small className="text-muted">Start by sharing your first suggestion</small>
+                    </div>
+                  </button>
+               
                   </div>
                 ) : (
                   <div className="list-group list-group-flush">

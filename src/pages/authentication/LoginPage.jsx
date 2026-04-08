@@ -127,6 +127,18 @@ const LoginPage = ({ isLoading, success, error, status, state, login, authUser }
             </div>
           </form>
 
+          <p className="text-center mt-3">
+            <Link
+              aria-label="Go back to Portal"
+              to="/"
+              className="text-decoration-none"
+              style={{ color: "#667eea", fontWeight: "500" }}
+            >
+              <i className="bx bx-arrow-back me-1"></i>
+              Back to Portal
+            </Link>
+          </p>
+
           {/* <p className="text-center">
                 <span>New on our platform? </span>
                 <Link aria-label="Go to Register Page" to='/auth/register' className="registration-link">

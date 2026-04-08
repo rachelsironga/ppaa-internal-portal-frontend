@@ -118,7 +118,7 @@ export const MaintenancePage = () => {
               </div>
 
               <Link
-                to="/"
+                to="/services"
                 className="home-button"
                 aria-label="Return to home page"
               >
@@ -144,7 +144,7 @@ export const MaintenancePage = () => {
           <div className="footer-content">
             <div className="footer-logo">
               <div className="footer-sparkle">✨</div>
-              <span className="footer-brand">MNH Connect</span>
+              <span className="footer-brand">Internal Portal</span>
             </div>
             <div className="footer-message">
               Micro-Service • Back online soon

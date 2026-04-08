@@ -11,6 +11,7 @@ import "react-form-wizard-component/dist/style.css";
 export const UserModal = ({ loadOnlyModal = false }) => {
   const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } =
     useContext(UsersContext);
+  const editSuccessRef = useRef(false);
 
   //for Wizard tab validation & Control
   const [errors, setOtherError] = useState({});
@@ -26,7 +27,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 
   const initialValues = {
     user_guid: selectedObj?.guid || "",
-    pf_number: selectedObj?.pf_number || "",
     check_number: selectedObj?.check_number || "",
     first_name: selectedObj?.first_name || "",
     middle_name: selectedObj?.middle_name || "",
@@ -41,7 +41,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   };
 
   const validationSchema = Yup.object().shape({
-    pf_number: Yup.string().required("pf number is required"),
     check_number: Yup.string().required("check number is required"),
     first_name: Yup.string().required("first name is required"),
     middle_name: Yup.string().required("middle name is required"),
@@ -64,8 +63,14 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (selectedObj) {
-        values.user_guid = selectedObj.guid;
+      const isEdit = Boolean(selectedObj);
+      const userGuid = selectedObj?.guid ?? selectedObj?.uid ?? values.user_guid;
+      if (isEdit) {
+        if (!userGuid) {
+          showToast("Cannot update: user identifier is missing. Please refresh and try again.", "error", "Error");
+          return;
+        }
+        values.user_guid = userGuid;
       } else {
         delete values.user_guid;
       }
@@ -76,6 +81,9 @@ export const UserModal = ({ loadOnlyModal = false }) => {
         showToast("Data Saved Successfuly", "success", "Complete");
         if (!selectedObj) {
           resetForm();
+        } else {
+          editSuccessRef.current = true;
+          if (result.data) setSelectedObj(result.data);
         }
         handleClose();
         setTableRefresh((prev) => prev + 1);
@@ -99,8 +107,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 
   //for closing modal
   const handleClose = () => {
-    console.log("Modal closed");
-    setSelectedObj(null);
+    if (!editSuccessRef.current) setSelectedObj(null);
+    editSuccessRef.current = false;
     setIsFirstTabChange(true);
     const modalElement = document.getElementById("viewCreateUserModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -111,7 +119,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   const validateTab = async (values, setFieldError, setTouched) => {
     try {
       if (tabIndex === 1) {
-        await validationSchema.validateAt("pf_number", values);
         await validationSchema.validateAt("check_number", values);
         await validationSchema.validateAt("first_name", values);
         await validationSchema.validateAt("middle_name", values);
@@ -305,23 +312,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                     >
                       {/* Tab 1 content */}
                       <div className="row text-start">
-                        <div className="col-md-6 mb-3">
-                          <label htmlFor="pfNumberLarge" className="form-label">
-                            PF-Number
-                          </label>
-                          <Field
-                            type="text"
-                            name="pf_number"
-                            id="pfNumberLarge"
-                            className="form-control"
-                            placeholder="Enter PF-Number"
-                          />
-                          <ErrorMessage
-                            name="pf_number"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
                         <div className="col-md-6 mb-3">
                           <label
                             htmlFor="checkNumberLarge"

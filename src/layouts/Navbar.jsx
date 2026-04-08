@@ -1,9 +1,10 @@
 import { useDispatch, useSelector } from "react-redux";
 import getGreetingMessage from "../utils/greetingHandler";
 import { logout } from "../redux/actions/authentication/logoutAction";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import servicesList from "../data/servicesList.json";
+import { isStaffOnly, isAllowedRouteForStaffOnly } from "../utils/permissions";
 import {
   Search,
   Bell,
@@ -28,6 +29,8 @@ import { use } from "react";
 
 const Navbar = ({ isService = false, activeService = "" }) => {
   const user = useSelector((state) => state.userReducer?.data);
+  const userRoles = user?.groups || [];
+  const staffOnly = isStaffOnly(userRoles);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,18 +42,54 @@ const Navbar = ({ isService = false, activeService = "" }) => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the correct profile path based on current location
+  const getProfilePath = () => {
+    const pathname = location.pathname;
+    if (pathname.startsWith('/ppaa-internal-portal')) {
+      return '/ppaa-internal-portal/account/settings';
+    }
+    if (pathname.startsWith('/performance-dashboard')) {
+      return '/performance-dashboard/profile';
+    }
+    if (pathname.startsWith('/ict-assets')) {
+      return '/ict-assets/account/settings';
+    }
+    if (pathname.startsWith('/training')) {
+      return '/training/account/settings';
+    }
+    // Default to ppaa-internal-portal
+    return '/ppaa-internal-portal/account/settings';
+  };
 
   // Generate unique IDs
-  const navbarId = `mnh-navbar-${Date.now()}`;
+  const navbarId = `ppaa-navbar-${Date.now()}`;
   const servicesDropdownId = `services-dropdown-${Date.now()}`;
   const profileDropdownId = `profile-dropdown-${Date.now()}`;
 
-  // Filter services based on search
+  // Filter services based on search and staff-only restrictions
   useEffect(() => {
+    let services = servicesList;
+    
+    // For staff-only users, only show services they can access
+    if (staffOnly) {
+      services = services.filter((service) => {
+        if (service.link && isAllowedRouteForStaffOnly(service.link)) {
+          return true;
+        }
+        // Allow PPAA Internal Portal service for staff
+        if (service.link === '/ppaa-internal-portal') {
+          return true;
+        }
+        return false;
+      });
+    }
+    
     if (searchQuery.trim() === "") {
-      setFilteredServices(servicesList.slice(0, 6));
+      setFilteredServices(services.slice(0, 6));
     } else {
-      const filtered = servicesList
+      const filtered = services
         .filter(
           (service) =>
             service.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -62,7 +101,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
         .slice(0, 6);
       setFilteredServices(filtered);
     }
-  }, [searchQuery]);
+  }, [searchQuery, staffOnly]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -102,7 +141,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             margin: 10px;
           }
           
-          #${navbarId} .mnh-navbar-main {
+          #${navbarId} .ppaa-navbar-main {
             background: white;
             border-bottom: 1px solid rgba(0, 0, 0, 0.08);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -422,14 +461,14 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             background-clip: text;
           }
           
-          #${servicesDropdownId} .mnh-service-arrow {
+          #${servicesDropdownId} .ppaa-service-arrow {
             opacity: 0;
             color: #94a3b8;
             transform: translateX(-8px);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-arrow {
+          #${servicesDropdownId} .ppaa-service-item:hover .mnh-service-arrow {
             opacity: 1;
             color: #1976d2;
             transform: translateX(0);
@@ -689,7 +728,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           /* Mobile Responsive */
           @media (max-width: 768px) {
-            #${navbarId} .mnh-navbar-main {
+            #${navbarId} .ppaa-navbar-main {
               padding: 10px 16px;
             }
             
@@ -752,7 +791,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
       </style>
 
       <div id={navbarId}>
-        <nav className="mnh-navbar-main navbar-detached  container-fluid">
+        <nav className="ppaa-navbar-main navbar-detached  container-fluid">
           <div className="mnh-nav-content">
             {/* Left Section - Controls */}
             <div className="mnh-nav-controls">
@@ -842,7 +881,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                       <button
                         className="mnh-view-all-btn"
                         onClick={() => {
-                          navigate("/");
+                          navigate("/services");
                           setShowDropdown(false);
                         }}
                       >
@@ -887,7 +926,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                         ? user.position.level_name.length > 35
                           ? `${user.position.level_name.substring(0, 32)}...`
                           : user.position.level_name
-                        : "MNH Staff"}
+                        : "PPAA Staff"}
                     </div>
                   </div>
                   <ChevronDown size={14} className="mnh-user-chevron" />
@@ -973,7 +1012,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                               textTransform: "uppercase",
                             }}
                           >
-                            {user?.position?.level_name || "MNH Staff"}
+                            {user?.position?.level_name || "PPAA Staff"}
                           </div>
                         </div>
                       </div>
@@ -1000,7 +1039,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                           (e.currentTarget.style.background = "none")
                         }
                         onClick={() => {
-                          navigate("/mnh-connect/account/settings");
+                          navigate(getProfilePath());
                           setShowProfileDropdown(false);
                         }}
                       >

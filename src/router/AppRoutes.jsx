@@ -2,10 +2,10 @@ import { Route, Routes } from "react-router-dom";
 import { ErrorPage } from "../pages/misc/ErrorPage";
 import { Services } from "../pages/Services";
 import ProtectedRoute from "../components/wrapper/ProtectedRoute";
+import PortalPage from "../PortalPage";
 
 // Import all service routes
 import { authRoutes } from "./authRoutes";
-import { eApprovalRoutes } from "./eApprovalRoutes";
 import { managementRoutes } from "./managementRoutes";
 import { ictAssetsRoutes } from "./ictAssetsRoutes";
 import { oxygenRoutes } from "./oxygenRoutes";
@@ -14,12 +14,25 @@ import { MaintenancePage } from "../pages/misc/MaintenancePage";
 import { maoniRoutes } from "./maoniRoutes";
 import { trainingRoutes } from "./trainingRoutes";
 import { externalReferralRoutes } from "./externalReferralRoutes";
+import { ppaaInternalPortalRoutes } from "./ppaaInternalPortal";
+import { performanceDashboardRoutes } from "./performanceDashboardRoutes";
+import { reportManagementRoutes } from "./reportManagementRoutes";
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Home & Services */}
-      <Route path="/" element={<Services />} />
+      {/* Public Landing Page - Portal */}
+      <Route path="/" element={<PortalPage />} />
+
+      {/* Services (requires login) */}
+      <Route
+        path="/services"
+        element={
+          <ProtectedRoute>
+            <Services />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Auth Routes */}
       {authRoutes}
@@ -27,26 +40,34 @@ const AppRoutes = () => {
       {/* Management Routes */}
       {managementRoutes}
 
-      {/* E-Approval Routes */}
-      {eApprovalRoutes}
-
-      {/* ICT Assets Routes */}
-      {ictAssetsRoutes}
-
-      {/* Oxygen Management Routes */}
-      {oxygenRoutes}
-
-      {/* Hospital Analitics Routes */}
-      {analyticsRoutes}
+      {/* PPAA Internal Portal Routes */}
+      {ppaaInternalPortalRoutes}
 
       {/* MAONI Routes */}
       {maoniRoutes}
 
+      {/* Performance Dashboard Routes */}
+      {performanceDashboardRoutes}
+
+      {/* PPAA Reports Routes */}
+      {reportManagementRoutes}
+
+      {/* ICT Assets Routes */}
+      {/* {ictAssetsRoutes} */}
+
+      {/* Oxygen Management Routes */}
+      {/* {oxygenRoutes} */}
+
+      {/* Hospital Analitics Routes */}
+      {/* {analyticsRoutes} */}
+
+      
+
       {/* Training Management Routes */}
-      {trainingRoutes}
+      {/* {trainingRoutes} */}
 
       {/* External Referral Routes */}
-      {externalReferralRoutes}
+      {/* {externalReferralRoutes} */}
 
       {/* Catch-all 404 */}
       <Route path="*" element={<MaintenancePage />} />

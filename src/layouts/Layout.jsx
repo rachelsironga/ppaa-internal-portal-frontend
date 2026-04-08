@@ -5,7 +5,14 @@ import Footer from './Footer';
 
 const Layout = ({ children, isService = false, activeService = null }) => {
   useEffect(() => {
-    Main();
+    // Initialize menu - Main() is loaded from /assets/js/main.js
+    // Use setTimeout to ensure DOM is ready
+    const timer = setTimeout(() => {
+      if (typeof Main === 'function') {
+        Main();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

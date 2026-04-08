@@ -109,7 +109,7 @@ const NewUserPage = ({
                   {data?.data?.last_name}&nbsp;
                 </strong>
               )}
-              To <span className="text-primary">MNH-CONNECT</span>. Please
+              To <span className="text-primary">PPA-INTERNAL-PORTAL</span>. Please
               Complete the Form for New Password
             </div>
 

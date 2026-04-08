@@ -41,6 +41,7 @@ api.interceptors.response.use(
       originalRequest?.url?.includes("/user/register") ||
       originalRequest?.url?.includes("/user/refresh") ||
       originalRequest?.url?.includes("/user/logout") ||
+      originalRequest?.url?.includes("/user/forgot-password") ||
       originalRequest?.url?.includes("/token/")
     ) {
       return Promise.reject(error);

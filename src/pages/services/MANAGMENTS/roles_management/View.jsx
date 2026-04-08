@@ -45,7 +45,7 @@ export const RolesManagementPage = () => {
                 className="text-bold"
                 onClick={() => {
                   navigate(
-                    `/mnh-connect/roles-managements/open/` +
+                    `/ppaa-internal-portal/roles-managements/open/` +
                       HashUtil.hashNumber(row.id)
                   );
                 }}
@@ -96,7 +96,7 @@ export const RolesManagementPage = () => {
                 className="btn btn-sm btn-outline-primary text-center"
                 onClick={() => {
                   navigate(
-                    `/mnh-connect/roles-managements/open/` +
+                    `/ppaa-internal-portal/roles-managements/open/` +
                       HashUtil.hashNumber(row.id)
                   );
                 }}

@@ -1,144 +1,61 @@
 [
   {
     "id": "e-approval",
-    "text": "E-Approval",
+    "text": "Internal Portal",
     "icon": "bx bxl-microsoft",
     "available": true,
-    "link": "/mnh-connect",
-    "permission": [],
-    "role": [
-      "admin"
-    ]
-  },
-  {
-    "id": "ict-assets-service",
-    "text": "ICT Assets",
-    "icon": "bx bx-chip",
-    "available": true,
-    "link": "/ict-assets/dashboard",
-    "permission": [],
-    "role": [
-      "admin"
-    ]
-  },
-  {
-    "text": "Oxygen Management",
-    "icon": "bx bxs-cylinder",
-    "link": "/oxygen-management",
+    "link": "/ppaa-internal-portal",
     "permission": [],
     "role": [
       "admin",
-      "store"
+      "staff"
     ]
   },
   {
-    "text": "Hospital Analytics",
-    "icon": "bx bx-bar-chart-alt",
-    "available": true,
-    "link": "/analytics/dashboard",
-    "permission": [],
-    "role": [
-      "admin"
-    ]
-  },
-  {
-    "text": "Training Management",
-    "icon": "bx bx-book-open",
-    "available": true,
-    "link": "/training/dashboard",
-    "permission": [],
-    "role": [
-      "admin"
-    ]
-  },
-  {
-    "text": "Equipment Tracking",
-    "icon": "bx bx-file-find",
-    "link": "/hr",
-    "permission": [],
-    "role": [
-      "admin",
-      "hr"
-    ]
-  },
-  {
-    "text": "E-Jobcards",
-    "icon": "bx bx-wallet",
-    "link": "/finance",
-    "permission": [],
-    "role": [
-      "admin",
-      "finance"
-    ]
-  },
-  {
-    "text": "ICT Support",
-    "icon": "bx bx-headphone",
-    "link": "/it-support",
-    "permission": [],
-    "role": [
-      "admin",
-      "it"
-    ]
-  },
-  {
-    "text": "Procurement",
-    "icon": "bx bx-cart",
-    "link": "/procurement",
-    "permission": [],
-    "role": [
-      "admin",
-      "procurement"
-    ]
-  },
-  {
-    "text": "Transport",
-    "icon": "bx bx-bus",
-    "link": "/transport",
-    "permission": [],
-    "role": [
-      "admin",
-      "transport"
-    ]
-  },
-  {
-    "text": "Payroll",
-    "icon": "bx bx-credit-card",
-    "link": "/payroll",
-    "permission": [],
-    "role": [
-      "admin",
-      "finance"
-    ]
-  },
-  {
-    "text": "Facility Management",
-    "icon": "bx bx-building-house",
-    "link": "/facility",
-    "permission": [],
-    "role": [
-      "admin",
-      "facility"
-    ]
-  },
-  {
-    "text": "MNH Maoni",
+    "text": "PPAA Maoni",
     "icon": "bx bx-message-dots",
-    "link": "/mnh-maoni",
+    "link": "/ppaa-maoni",
     "permission": [],
     "role": [
       "admin",
-      "staff"
+      "staff",
+      "HR"
     ]
   },
   {
-    "text": "External Referral",
-    "icon": "bx bx-braille",
-    "link": "/external-referral",
+    "id": "performance-dashboard",
+    "text": "Strategic Performance Management (SPISM)",
+    "icon": "bx bx-line-chart",
+    "available": true,
+    "link": "/performance-dashboard",
+    "permission": ["can_view_spism_dashboard"],
+    "role": []
+  },
+  {
+    "id": "ppaa-reports",
+    "text": "Reports Management System (RMS)",
+    "icon": "bx bx-file",
+    "available": true,
+    "link": "/report-management",
+    "permission": [],
+    "role": [
+      "staff",
+      "RMS_REPORT_MANAGER",
+      "RMS_SYS_ADMIN",
+      "RMS_DEPT_REPORTER"
+    ]
+  },
+  {
+    "id": "help-desk",
+    "text": "Help Desk",
+    "icon": "bx bx-help-circle",
+    "available": true,
+    "link": "/help-desk",
     "permission": [],
     "role": [
       "admin",
-      "staff"
+      "staff",
+      "ICT"
     ]
   }
 ]

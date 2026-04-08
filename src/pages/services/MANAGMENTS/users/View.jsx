@@ -8,11 +8,65 @@ import { UserImportModal } from "./ImportModal";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import { formatDate } from "../../../../helpers/DateFormater";
 import { UsersContext } from "../../../../utils/context";
+import { getUserStatistics } from "./Queries";
+import ReactLoading from "react-loading";
 
 export const UserListPage = () => {
   const [selectedObj, setSelectedObj] = useState(null);
   const [tableRefresh, setTableRefresh] = useState(0);
   const navigate = useNavigate();
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    active: 0,
+    suspended: 0,
+    retired: 0,
+    activePercentage: 0,
+    suspendedPercentage: 0,
+    retiredPercentage: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // Fetch user statistics
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      setLoadingStats(true);
+      try {
+        const result = await getUserStatistics();
+        if (result.status === 200 || result.status === 8000) {
+          const users = result.data?.results || result.data || [];
+          
+          const total = users.length;
+          const active = users.filter(user => user.status === "ACTIVE").length;
+          const suspended = users.filter(user => 
+            user.status === "SUSPENDED" || 
+            user.status === "CANCELLED" || 
+            user.status === "EXPIRED"
+          ).length;
+          const retired = users.filter(user => user.status === "RETIRED").length;
+          
+          const activePercentage = total > 0 ? Math.round((active / total) * 100) : 0;
+          const suspendedPercentage = total > 0 ? Math.round((suspended / total) * 100) : 0;
+          const retiredPercentage = total > 0 ? Math.round((retired / total) * 100) : 0;
+          
+          setStatistics({
+            total,
+            active,
+            suspended,
+            retired,
+            activePercentage,
+            suspendedPercentage,
+            retiredPercentage,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user statistics:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStatistics();
+  }, [tableRefresh]);
 
   return (
     <UsersContext.Provider
@@ -31,10 +85,16 @@ export const UserListPage = () => {
               <div className="card-body">
                 <div className="d-flex align-items-start justify-content-between">
                   <div className="content-left">
-                    <span className="text-heading">Syatem Users</span>
+                    <span className="text-heading">System Users</span>
                     <div className="d-flex align-items-center my-1">
-                      <h4 className="mb-0 me-2">0</h4>
-                      <p className="text-success mb-0">(100%)</p>
+                      {loadingStats ? (
+                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                      ) : (
+                        <>
+                          <h4 className="mb-0 me-2">{statistics.total}</h4>
+                          <p className="text-success mb-0">(100%)</p>
+                        </>
+                      )}
                     </div>
                     <small className="mb-0">Total Users</small>
                   </div>
@@ -54,10 +114,18 @@ export const UserListPage = () => {
                   <div className="content-left">
                     <span className="text-heading">Active Users</span>
                     <div className="d-flex align-items-center my-1">
-                      <h4 className="mb-0 me-2">0</h4>
-                      <p className="text-danger mb-0">(0%)</p>
+                      {loadingStats ? (
+                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                      ) : (
+                        <>
+                          <h4 className="mb-0 me-2">{statistics.active}</h4>
+                          <p className={statistics.activePercentage > 0 ? "text-success mb-0" : "text-muted mb-0"}>
+                            ({statistics.activePercentage}%)
+                          </p>
+                        </>
+                      )}
                     </div>
-                    <small className="mb-0">Last week analytics</small>
+                    <small className="mb-0">Active status users</small>
                   </div>
                   <div className="avatar">
                     <span className="avatar-initial rounded bg-label-success">
@@ -75,14 +143,22 @@ export const UserListPage = () => {
                   <div className="content-left">
                     <span className="text-heading">Suspend Users</span>
                     <div className="d-flex align-items-center my-1">
-                      <h4 className="mb-0 me-2">0</h4>
-                      <p className="text-success mb-0">(0%)</p>
+                      {loadingStats ? (
+                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                      ) : (
+                        <>
+                          <h4 className="mb-0 me-2">{statistics.suspended}</h4>
+                          <p className={statistics.suspendedPercentage > 0 ? "text-danger mb-0" : "text-muted mb-0"}>
+                            ({statistics.suspendedPercentage}%)
+                          </p>
+                        </>
+                      )}
                     </div>
-                    <small className="mb-0">Last week analytics </small>
+                    <small className="mb-0">Suspended/Cancelled/Expired</small>
                   </div>
                   <div className="avatar">
                     <span className="avatar-initial rounded bg-label-danger">
-                      <i className="icon-base bx bx-user-plus icon-lg"></i>
+                      <i className="icon-base bx bx-user-x icon-lg"></i>
                     </span>
                   </div>
                 </div>
@@ -96,10 +172,18 @@ export const UserListPage = () => {
                   <div className="content-left">
                     <span className="text-heading">Retired Users</span>
                     <div className="d-flex align-items-center my-1">
-                      <h4 className="mb-0 me-2">0</h4>
-                      <p className="text-success mb-0">(0%)</p>
+                      {loadingStats ? (
+                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                      ) : (
+                        <>
+                          <h4 className="mb-0 me-2">{statistics.retired}</h4>
+                          <p className={statistics.retiredPercentage > 0 ? "text-warning mb-0" : "text-muted mb-0"}>
+                            ({statistics.retiredPercentage}%)
+                          </p>
+                        </>
+                      )}
                     </div>
-                    <small className="mb-0">Last week analytics</small>
+                    <small className="mb-0">Retired status users</small>
                   </div>
                   <div className="avatar">
                     <span className="avatar-initial rounded bg-label-warning">
@@ -134,7 +218,7 @@ export const UserListPage = () => {
               <div
                 className="d-flex justify-content-start align-items-center user-name  text-truncate"
                 onClick={() => {
-                  navigate(`/mnh-connect/users/open/${row.guid}`);
+                  navigate(`/ppaa-internal-portal/users/open/${row.guid}`);
                 }}
               >
                 <div className="avatar-wrapper">
@@ -184,14 +268,7 @@ export const UserListPage = () => {
                 <div className="text-muted p-2text-center">Not Assigned</div>
               ),
           },
-          {
-            key: "user_pf_number",
-            label: "PF-Number",
-            className: "fw-medium",
-            style: { width: "120px" },
-
-            render: (row) => <span className="text-bold">{row.pf_number}</span>,
-          },
+      
           {
             key: "user_check_number",
             label: "Check-Number",
@@ -237,7 +314,7 @@ export const UserListPage = () => {
                 type="button"
                 className="btn p-0 dropdown-toggle hide-arrow text-info"
                 data-bs-toggle="dropdown"
-                onClick={() => navigate(`/mnh-connect/users/open/${row.guid}`)}
+                onClick={() => navigate(`/ppaa-internal-portal/users/open/${row.guid}`)}
               >
                 <i className="bx bx-link-external"></i>&nbsp; View
               </button>

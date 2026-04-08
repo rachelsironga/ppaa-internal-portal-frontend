@@ -3,7 +3,7 @@ import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
 import "animate.css";
-import { deleteDepartment, getDepartments } from "../department/Queries";
+import { deleteDepartment, getDepartments } from "../../PPAA-INTERNAL-PORTAL/departments/Queries";
 import { DirectoryContext } from "../../../../utils/context";
 import { useNavigate, useParams } from "react-router-dom";
 import { getDirectories } from "./Queries";

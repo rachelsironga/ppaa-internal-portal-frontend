@@ -15,10 +15,11 @@ function App() {
   const isAuthPath =
     location.pathname.includes("auth") ||
     location.pathname.includes("error") ||
-    location.pathname.includes("under-maintenance") |
-    location.pathname.includes("blank");
+    location.pathname.includes("under-maintenance") ||
+    location.pathname.includes("blank") ||
+    location.pathname === "/"; // Root (PortalPage) is public/auth-like
 
-  const isService = location.pathname === "/";
+  const isService = location.pathname === "/services";
 
   return (
     <>

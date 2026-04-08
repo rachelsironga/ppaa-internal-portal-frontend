@@ -1299,17 +1299,7 @@ export const AccountPage = () => {
                         </div>
                       </div>
 
-                      <div className="info-item">
-                        <div className="info-item-icon">
-                          <Briefcase size={16} />
-                        </div>
-                        <div className="info-item-content">
-                          <div className="info-item-label">PF Number</div>
-                          <div className="info-item-value">
-                            {selectedUser.pf_number}
-                          </div>
-                        </div>
-                      </div>
+                  
 
                       <div className="info-item">
                         <div className="info-item-icon">
@@ -1429,15 +1419,7 @@ export const AccountPage = () => {
                   My Roles
                   <span className="count-badge">{user?.groups?.length}</span>
                 </button>
-                <button
-                  className={`tab-button ${
-                    activeTab === "deligations" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("deligations")}
-                >
-                  <ClipboardList size={16} />
-                  Deligations
-                </button>
+               
               </div>
 
               {activeTab === "positions" ? (
@@ -1490,25 +1472,7 @@ export const AccountPage = () => {
                                     </span>
                                   </div>
                                 </div>
-                                {hasAccess(
-                                  user,
-                                  ["can_assign_delegate"],
-                                  ["Delegators", "Delegator"]
-                                ) &&
-                                  selectedUser.position?.acting_user ===
-                                    null && (
-                                    <button
-                                      className="delegate-btn"
-                                      data-bs-toggle="modal"
-                                      data-bs-target="#delegatedUserModal"
-                                      onClick={() =>
-                                        setLoadDelagationModal(true)
-                                      }
-                                    >
-                                      <UserPlus size={14} />
-                                      Add Delegate
-                                    </button>
-                                  )}
+                           
                               </div>
 
                               <div className="position-details">
@@ -1593,7 +1557,7 @@ export const AccountPage = () => {
                   </AnimatePresence>
 
                   {/* Previous Positions */}
-                  <div
+                  {/* <div
                     className="section-header mt-4"
                     onClick={() => toggleSection("previousPositions")}
                   >
@@ -1610,7 +1574,7 @@ export const AccountPage = () => {
                         expandedSections.previousPositions ? "rotated" : ""
                       }`}
                     />
-                  </div>
+                  </div> */}
 
                   <AnimatePresence>
                     {expandedSections.previousPositions && (
@@ -1717,7 +1681,7 @@ export const AccountPage = () => {
                     </div>
 
                     {/* Signature Management */}
-                    <div className="col-md-6">
+                    {/* <div className="col-md-6">
                       <h6 className="section-title mb-3">
                         <FileSignature size={18} />
                         Digital Signature
@@ -1773,7 +1737,7 @@ export const AccountPage = () => {
                       <p className="text-muted small mt-3">
                         Click on the signature to upload a new one.
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ) : activeTab === "deligations" ? (

@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useSelector } from "react-redux";
 import servicesList from "../data/servicesList.json";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { hasPermission } from "../utils/permissions";
 import {
   Search,
   Grid,
@@ -16,12 +17,28 @@ import {
 export const Services = () => {
   const user = useSelector((state) => state.userReducer?.data);
   const navigate = useNavigate();
+  const userPermissions = user?.user_permissions;
+  const userRoles = user?.groups;
   const [search, setSearch] = useState("");
   const [filteredServices, setFilteredServices] = useState(servicesList);
   const [activeCategory, setActiveCategory] = useState("all");
   const [isGridView, setIsGridView] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
   const searchRef = useRef(null);
+
+  // Base list filtered by permission/role
+  const visibleServices = useMemo(
+    () =>
+      servicesList.filter((service) =>
+        hasPermission(
+          service.permission,
+          service.role,
+          userPermissions,
+          userRoles
+        )
+      ),
+    [userPermissions, userRoles]
+  );
 
   const categories = [
     "all",
@@ -31,7 +48,7 @@ export const Services = () => {
   ];
 
   useEffect(() => {
-    const filtered = servicesList.filter((service) => {
+    const filtered = visibleServices.filter((service) => {
       const matchesSearch =
         service.text.toLowerCase().includes(search.toLowerCase()) ||
         (service.description &&
@@ -43,7 +60,7 @@ export const Services = () => {
       return matchesSearch && matchesCategory;
     });
     setFilteredServices(filtered);
-  }, [search, activeCategory]);
+  }, [search, activeCategory, visibleServices]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -75,6 +92,18 @@ export const Services = () => {
   };
 
   const handleServiceClick = async (service) => {
+    // Safety check: do not navigate if user lacks permission/role
+    const allowed = hasPermission(
+      service.permission,
+      service.role,
+      userPermissions,
+      userRoles
+    );
+    if (!allowed) {
+      // Silently ignore click for now; UI already hides restricted services.
+      return;
+    }
+
     const target =
       service.link ||
       service.path ||
@@ -88,13 +117,21 @@ export const Services = () => {
       return;
     }
 
+    // For internal routes, navigate directly
+    if (target.startsWith('/')) {
+      navigate(target);
+      return;
+    }
+
+    // Fallback: try HEAD request for external/internal API routes
     try {
       const response = await fetch(target, { method: "HEAD" });
       if (response.ok) {
         navigate(target);
       }
     } catch (error) {
-      // Silent fail for now
+      // If HEAD fails, try navigating anyway (might be a React route)
+      navigate(target);
     }
   };
 
@@ -106,7 +143,7 @@ export const Services = () => {
             min-height: 70vh;
             background: 
               linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)),
-              url('/assets/img/hospital-mohimbili-inner.jpg');
+              url('/assets/img/ppaa_bckround image.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -827,13 +864,13 @@ export const Services = () => {
               <div className="title-border"></div>
               <h2 className="main-title">
                 <Sparkles className="title-sparkle" size={28} />
-                MNH-CONNECT SERVICES
+                PPAA-PORTAL SERVICES
                 <Sparkles className="title-sparkle" size={28} />
               </h2>
             </div>
 
             <p className="subtitle">
-              A streamlined portal connecting you to all MNH systems.
+              A streamlined portal connecting you to all PPAA systems.
             </p>
           </div>
 
@@ -846,7 +883,7 @@ export const Services = () => {
                   ref={searchRef}
                   type="text"
                   className="search-input"
-                  placeholder="Search Muhimbili services ..."
+                  placeholder="Search PPAA services ..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -895,7 +932,7 @@ export const Services = () => {
           {/* Results Info */}
           <div className="results-info">
             Showing <strong>{filteredServices.length}</strong> of{" "}
-            <strong>{servicesList.length}</strong> services
+            <strong>{visibleServices.length}</strong> services
             {search && ` • Search: "${search}"`}
           </div>
 

@@ -10,6 +10,11 @@ export const login = (userData, navigation) => async (dispatch) => {
   dispatch({
     type: loginTypes.LOGIN_REQUEST,
   });
+  
+  // Clear any existing tokens before login attempt
+  localStorage.removeItem(ACCESS_TOKEN);
+  localStorage.removeItem(REFRESH_TOKEN);
+  
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -18,7 +23,8 @@ export const login = (userData, navigation) => async (dispatch) => {
 
   const data = JSON.stringify(userData);
   try {
-    const response = await api.post(
+    // Use axios directly for login to avoid token interceptor
+    const response = await axios.post(
       `${API_BASE_URL}/user/login`,
       data,
       config
@@ -36,7 +42,8 @@ export const login = (userData, navigation) => async (dispatch) => {
         type: loginTypes.LOGIN_SUCCESS,
         payload: { user, access_token, refresh_token },
       });
-      navigation("/");
+      // After login, send user to Services list
+      navigation("/services");
     } else if (response.status == 202 && response.data.status === 8002) {
       dispatch({
         type: loginTypes.LOGIN_FAILURE,

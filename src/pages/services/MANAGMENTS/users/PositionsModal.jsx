@@ -1,12 +1,8 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import showToast from "../../../../helpers/ToastHelper";
 import { UsersContext } from "../../../../utils/context";
-import Select from "react-select";
-import { getDepartments } from "../../MANAGMENTS/department/Queries";
-import { getDirectories } from "../../MANAGMENTS/directory/Queries";
-import { getPositionalLevels } from "../../E-APPROVAL/positional_level/Queries";
 import { createUpdatePositions } from "./Queries";
 import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 
@@ -21,21 +17,16 @@ const PositionsModal = () => {
   } = useContext(UsersContext);
   const [errors, setOtherError] = useState({});
 
-  const [loadingDirectories, setLoadingDirectories] = useState(true);
-  const [levels, setLevels] = useState(null);
-
   const initialValues = {
     user_uid: selectedObj?.guid || "",
-    level_uid: selectedObj?.position?.level_uid || "",
     department_uid: selectedObj?.position?.department_uid || "",
-    directory_uid: selectedObj?.position?.directory_uid || "",
+    level_uid: selectedObj?.position?.level_uid || "",
     description: selectedObj?.position?.description || "",
     is_active: true,
   };
 
   const validationSchema = Yup.object().shape({
-    level_uid: Yup.string().required("Position is required"),
-    directory_uid: Yup.string().required("Directory is required"),
+    department_uid: Yup.string().required("Department is required"),
   });
 
   const handleSubmit = async (
@@ -46,6 +37,12 @@ const PositionsModal = () => {
       if (selectedObj) {
         values.user_uid = selectedObj?.guid;
       }
+      
+      // Remove level_uid if empty (only department is required)
+      if (!values.level_uid || values.level_uid === "") {
+        delete values.level_uid;
+      }
+      
       console.log("Submitting form with selectedObj:", selectedObj);
 
       const result = await createUpdatePositions(values);
@@ -57,7 +54,26 @@ const PositionsModal = () => {
         resetForm();
       } else if (result.status === 8002) {
         console.log("Validation error:", result.data);
-        showToast(`${result.message}`, "warning", "Validation Failed");
+        // Extract actual error message from validation errors
+        let errorMessage = result.message || "Validation Failed";
+        if (result.data) {
+          // Check for position error (or any other field error)
+          if (result.data.position && Array.isArray(result.data.position) && result.data.position.length > 0) {
+            errorMessage = result.data.position[0];
+          } else if (result.data.position && typeof result.data.position === 'string') {
+            errorMessage = result.data.position;
+          } else {
+            // Try to get first error from any field
+            const firstErrorKey = Object.keys(result.data)[0];
+            if (firstErrorKey && result.data[firstErrorKey]) {
+              const firstError = Array.isArray(result.data[firstErrorKey]) 
+                ? result.data[firstErrorKey][0] 
+                : result.data[firstErrorKey];
+              errorMessage = firstError;
+            }
+          }
+        }
+        showToast(errorMessage, "error", "Validation Failed");
         setErrors(result.data);
         setOtherError(result.data);
       } else {
@@ -122,58 +138,14 @@ const PositionsModal = () => {
                     <p className="align-justify text-muted">
                       {" "}
                       If you Made Changes here. User will be Asigned by new
-                      Position
+                      Department
                     </p>
                     <div className="row">
                       <FormikSelect
-                        name="level_uid"
-                        label="Positions"
-                        url="/positional-level"
-                        containerClass="col-md-12 mb-3"
-                        filters={{
-                          page: 1,
-                          page_size: 10,
-                          paginated: true,
-                        }}
-                        mapOption={(item) => ({
-                          value: item.uid,
-                          label: `${item.name}`,
-                          name: `${item.name}`,
-                          code: `${item.code}`,
-                        })}
-                        placeholder="Search Levels ..."
-                        debounceMs={500}
-                        minChars={3}
-                        isReadOnly={false}
-                      />
-                    </div>
-
-                    <div className="row">
-                      <FormikSelect
-                        name="directory_uid"
-                        label="Directory"
-                        url="/directory"
-                        containerClass="col-md-6 mb-3"
-                        filters={{
-                          page: 1,
-                          page_size: 10,
-                          paginated: true,
-                        }}
-                        mapOption={(item) => ({
-                          value: item.uid,
-                          label: `${item.name}`,
-                          name: `${item.name}`,
-                          code: `${item.code}`,
-                        })}
-                        placeholder="Search Directory ..."
-                        debounceMs={500}
-                        minChars={3}
-                        isReadOnly={false}
-                      />
-                      <FormikSelect
                         name="department_uid"
-                        label="Departments"
+                        label="Department"
                         url="/departments"
+                        containerClass="col-md-12 mb-3"
                         filters={{
                           page: 1,
                           page_size: 10,
@@ -190,6 +162,35 @@ const PositionsModal = () => {
                         minChars={3}
                         isReadOnly={false}
                       />
+                    </div>
+
+                    <div className="row">
+                      <FormikSelect
+                        name="level_uid"
+                        label="Position/Designation (Optional)"
+                        url="/internal-portal/positional-levels"
+                        containerClass="col-md-12 mb-3"
+                        filters={{
+                          page: 1,
+                          page_size: 10,
+                          paginated: true,
+                          is_active: true,
+                        }}
+                        mapOption={(item) => ({
+                          value: item.uid,
+                          label: `${item.name}${item.code ? ` (${item.code})` : ''}`,
+                          name: `${item.name}`,
+                          code: `${item.code || ''}`,
+                        })}
+                        placeholder="Search Position/Designation... (e.g., Executive Secretary, HEAD OF ICT) - Optional"
+                        debounceMs={500}
+                        minChars={0}
+                        isReadOnly={false}
+                        isRequired={false}
+                      />
+                      <small className="text-muted ms-3">
+                        Select the user's job title or designation. If not selected, a default will be assigned.
+                      </small>
                     </div>
 
                     <div className="row">
@@ -224,6 +225,7 @@ const PositionsModal = () => {
                           ))}
                         </div>
                       )}
+
 
                     <div className="modal-footer">
                       <button

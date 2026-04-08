@@ -301,12 +301,12 @@ export const OpenRolesManagementPage = () => {
                     ),
                   },
                   {
-                    key: "granted_user_pf_number",
-                    label: "PF-Number",
+                    key: "granted_user_check_number",
+                    label: "Check-Number",
                     className: "cursor-pointer",
                     style: { width: "150px" },
                     render: (row) => (
-                      <span className="text-bold">{row.pf_number}</span>
+                      <span className="text-bold">{row.check_number}</span>
                     ),
                   },
                   {

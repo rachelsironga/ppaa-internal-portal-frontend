@@ -6,7 +6,7 @@
         "text": "Services",
         "icon": "bx bxl-microsoft",
         "available": true,
-        "link": "/",
+        "link": "/services",
         "permission": [],
         "role": ["staff","admin"]
       },
@@ -14,17 +14,17 @@
         "text": "Maoni",
         "icon": "bx bx-message-square-dots",
         "available": true,
-        "link": "/mnh-maoni",
+        "link": "/ppaa-maoni",
         "permission": [],
-        "role": ["admin", "staff", "maoni_admin"]
+        "role": ["admin", "staff", "HR"]
       },
       {
         "text": "Dashboard",
         "icon": "bx bx-home",
         "available": true,
-        "link": "/mnh-maoni/dashboard",
+        "link": "/ppaa-maoni/dashboard",
         "permission": [],
-        "role": ["admin", "maoni_admin"]
+        "role": ["admin", "HR"]
       }
     ]
   }
