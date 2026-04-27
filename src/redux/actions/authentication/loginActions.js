@@ -2,9 +2,8 @@ import { GET_ERRORS } from "../../types/error";
 import axios from "axios";
 import { loginTypes } from "../../types/authentication";
 import { API_BASE_URL } from "../../../Costants";
-import api from "../../../api";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../../Costants";
-
+import { refreshCurrentUser } from "./refreshUserAction";
 
 export const login = (userData, navigation) => async (dispatch) => {
   dispatch({
@@ -42,7 +41,8 @@ export const login = (userData, navigation) => async (dispatch) => {
         type: loginTypes.LOGIN_SUCCESS,
         payload: { user, access_token, refresh_token },
       });
-      // After login, send user to Services list
+      dispatch(refreshCurrentUser());
+      // Land on PPAA portal services list (grid of all apps)
       navigation("/services");
     } else if (response.status == 202 && response.data.status === 8002) {
       dispatch({
@@ -60,10 +60,13 @@ export const login = (userData, navigation) => async (dispatch) => {
       navigation("/auth/user-password-UF56HJUIrZafX2riMPDQFgQG2L06IOKHJDD");
     }
     else if (response.status == 202 && response.data.status === 8007) {
-      // Redirect new user for verification password change
+      // Keep first-step secret for activation API (check number typed as login password)
       dispatch({
         type: loginTypes.LOGIN_NEW_USER,
-        payload: response.data,
+        payload: {
+          ...response.data,
+          initial_password: userData.password,
+        },
       });
       navigation("/auth/new-user-0InEm7BVGIrZafX2riM8DQFgQG2L06ImZlP3oJF");
     }

@@ -10,21 +10,22 @@
         "permission": [],
         "role": ["staff","admin"]
       },
-      {
-        "text": "Maoni",
-        "icon": "bx bx-message-square-dots",
-        "available": true,
-        "link": "/ppaa-maoni",
-        "permission": [],
-        "role": ["admin", "staff", "HR"]
-      },
+ 
       {
         "text": "Dashboard",
         "icon": "bx bx-home",
         "available": true,
         "link": "/ppaa-maoni/dashboard",
         "permission": [],
-        "role": ["admin", "HR"]
+        "role": ["admin", "ppaa_maoni_reviewer", "maoni_admin"]
+      },
+      {
+        "text": "Maoni",
+        "icon": "bx bx-message-square-dots",
+        "available": true,
+        "link": "/ppaa-maoni",
+        "permission": [],
+        "role": ["admin", "staff", "ppaa_maoni_reviewer", "maoni_admin"]
       }
     ]
   }

@@ -233,7 +233,7 @@ export const MaoniDashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="container-fluid py-4">
+      <div className="w-100 py-4">
         <div className="card border-0 shadow-sm">
           <div className="card-body p-5 text-center">
             <i className="bx bx-loader-circle bx-spin fs-1 text-primary mb-3"></i>
@@ -246,7 +246,7 @@ export const MaoniDashboardPage = () => {
   }
 
   return (
-    <div className="container-fluid py-4">
+    <div className="w-100 py-4">
       {/* Dashboard Header */}
       <div className="row align-items-center mb-6">
         <div className="col-lg-8 col-md-6 mb-4 mb-md-0">

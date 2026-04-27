@@ -15,11 +15,27 @@ const ACTION_CONFIG = {
   submitted: { color: "primary", icon: "bx-check-double", label: "Submitted" },
   progress_updated: { color: "info", icon: "bx-trending-up", label: "Progress Updated" },
   comment_added: { color: "secondary", icon: "bx-message", label: "Comment Added" },
+  file_downloaded: { color: "primary", icon: "bx-download", label: "File Downloaded" },
+  file_previewed: { color: "info", icon: "bx-show", label: "File Previewed" },
   attachment_uploaded: { color: "dark", icon: "bx-upload", label: "Attachment Uploaded" },
   reminder_sent: { color: "warning", icon: "bx-bell", label: "Reminder Sent" },
   reassigned: { color: "info", icon: "bx-transfer", label: "Reassigned" },
   deleted: { color: "danger", icon: "bx-trash", label: "Deleted" },
 };
+
+/** Tab shortcuts for the activity log (subset of ACTION_CONFIG keys). */
+const AUDIT_TAB_ACTIONS = [
+  "created",
+  "updated",
+  "status_changed",
+  "submitted",
+  "progress_updated",
+  "comment_added",
+  "file_downloaded",
+  "file_previewed",
+  "attachment_uploaded",
+  "deleted",
+];
 
 const DATE_FILTERS = [
   { value: "", label: "All Time" },
@@ -223,7 +239,7 @@ const AuditTrailPage = () => {
   };
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Audit Trail"]} />
 
       {/* Stats Cards */}
@@ -315,7 +331,10 @@ const AuditTrailPage = () => {
               </div>
 
               {/* Action Type Tabs */}
-              <Nav className="nav-tabs card-header-tabs mt-3" style={{ borderBottom: "none" }}>
+              <Nav
+                className="nav-tabs card-header-tabs mt-3 flex-wrap gap-1"
+                style={{ borderBottom: "none" }}
+              >
                 <NavItem>
                   <NavLink
                     className={`cursor-pointer ${activeTab === "all" ? "active" : ""}`}
@@ -325,18 +344,21 @@ const AuditTrailPage = () => {
                     All
                   </NavLink>
                 </NavItem>
-                {Object.entries(ACTION_CONFIG).slice(0, 6).map(([key, config]) => (
-                  <NavItem key={key}>
-                    <NavLink
-                      className={`cursor-pointer ${activeTab === key ? "active" : ""}`}
-                      onClick={() => handleActionFilter(key)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <i className={`bx ${config.icon} me-1`}></i>
-                      {config.label}
-                    </NavLink>
-                  </NavItem>
-                ))}
+                {AUDIT_TAB_ACTIONS.filter((key) => ACTION_CONFIG[key]).map((key) => {
+                  const config = ACTION_CONFIG[key];
+                  return (
+                    <NavItem key={key}>
+                      <NavLink
+                        className={`cursor-pointer ${activeTab === key ? "active" : ""}`}
+                        onClick={() => handleActionFilter(key)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <i className={`bx ${config.icon} me-1`}></i>
+                        {config.label}
+                      </NavLink>
+                    </NavItem>
+                  );
+                })}
               </Nav>
             </div>
 
@@ -431,27 +453,33 @@ const AuditTrailPage = () => {
                 Most Active Users (This Week)
               </h6>
               {stats?.most_active_users?.length > 0 ? (
-                stats.most_active_users.map((user, index) => (
-                  <div key={index} className="d-flex align-items-center justify-content-between py-2 border-bottom">
-                    <div className="d-flex align-items-center">
-                      <div 
-                        className="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2 text-white fw-bold"
-                        style={{ width: "35px", height: "35px", fontSize: "0.8rem" }}
-                      >
-                        {(user.performed_by__first_name?.[0] || user.performed_by__email?.[0] || "?").toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="fw-medium small">
-                          {user.performed_by__first_name} {user.performed_by__last_name}
+                stats.most_active_users.map((u, index) => {
+                  const initial =
+                    (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
+                  const displayName =
+                    `${u.first_name || ""} ${u.last_name || ""}`.trim() ||
+                    u.email ||
+                    "User";
+                  return (
+                    <div key={index} className="d-flex align-items-center justify-content-between py-2 border-bottom">
+                      <div className="d-flex align-items-center">
+                        <div
+                          className="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2 text-white fw-bold"
+                          style={{ width: "35px", height: "35px", fontSize: "0.8rem" }}
+                        >
+                          {initial}
                         </div>
-                        <small className="text-muted">{user.performed_by__email}</small>
+                        <div>
+                          <div className="fw-medium small">{displayName}</div>
+                          <small className="text-muted">{u.email || ""}</small>
+                        </div>
                       </div>
+                      <Badge color="primary" pill>
+                        {u.action_count}
+                      </Badge>
                     </div>
-                    <Badge color="primary" pill>
-                      {user.action_count}
-                    </Badge>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-muted small mb-0">No user activity this week</p>
               )}

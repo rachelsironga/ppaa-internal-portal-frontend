@@ -46,7 +46,7 @@ export const RolesManagementPage = () => {
                 onClick={() => {
                   navigate(
                     `/ppaa-internal-portal/roles-managements/open/` +
-                      HashUtil.hashNumber(row.id)
+                      HashUtil.hashNumber(Number(row.uid))
                   );
                 }}
               >
@@ -59,14 +59,16 @@ export const RolesManagementPage = () => {
             label: "Number of Users",
             style: { width: "150px" },
             className: "text-center",
-            render: (row) => row.users || 0,
+            render: (row) =>
+              Array.isArray(row.users) ? row.users.length : row.users || 0,
           },
           {
             key: "NumberOfModules",
             label: "Number of PRIVILEGE",
             style: { width: "150px" },
             className: "text-center",
-            render: (row) => row.permissions?.length || 0,
+            render: (row) =>
+              Array.isArray(row.permissions) ? row.permissions.length : 0,
           },
           {
             key: "last_updated_at",
@@ -97,7 +99,7 @@ export const RolesManagementPage = () => {
                 onClick={() => {
                   navigate(
                     `/ppaa-internal-portal/roles-managements/open/` +
-                      HashUtil.hashNumber(row.id)
+                      HashUtil.hashNumber(Number(row.uid))
                   );
                 }}
               >

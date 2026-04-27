@@ -135,12 +135,19 @@ const DocumentCategoryModal = ({ selectedObj, setSelectedObj, tableRefresh, setT
 
                   <div className="mb-3">
                     <div className="form-check form-switch">
-                      <Field
-                        type="checkbox"
-                        name="is_active"
-                        className="form-check-input"
-                        id="is_active"
-                      />
+                      <Field name="is_active">
+                        {({ field, form }) => (
+                          <input
+                            type="checkbox"
+                            id="is_active"
+                            className="form-check-input"
+                            checked={Boolean(field.value)}
+                            onChange={(e) =>
+                              form.setFieldValue("is_active", e.target.checked)
+                            }
+                          />
+                        )}
+                      </Field>
                       <label className="form-check-label" htmlFor="is_active">
                         Active
                       </label>

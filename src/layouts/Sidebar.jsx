@@ -138,7 +138,8 @@ const Sidebar = ({ isService = false }) => {
                   hasAnyVisibleItem(
                     filteredItems,
                     userPermissions,
-                    userRoles
+                    userRoles,
+                    user
                   ) && (
                     <li className="menu-header small text-uppercase">
                       <span className="menu-header-text">{section.header}</span>
@@ -151,13 +152,16 @@ const Sidebar = ({ isService = false }) => {
                       item.permission,
                       item.role,
                       userPermissions,
-                      userRoles
+                      userRoles,
+                      user,
+                      item.excludeRoles
                     )
                   )
                   .map((item, itemIndex) => (
                     <MenuItem
                       key={item.id || itemIndex}
                       {...item}
+                      user={user}
                       userPermissions={userPermissions}
                       userRoles={userRoles}
                       staffOnly={staffOnly}
@@ -174,7 +178,7 @@ const Sidebar = ({ isService = false }) => {
 
 // KEEP YOUR ORIGINAL MENU ITEM UI
 const MenuItem = (item) => {
-  const { userPermissions, userRoles, submenu, staffOnly, isMain } = item;
+  const { user, userPermissions, userRoles, submenu, staffOnly, isMain } = item;
   const location = useLocation();
 
   // Filter submenu items - for staff-only, only show allowed routes
@@ -185,7 +189,9 @@ const MenuItem = (item) => {
           subitem.permission,
           subitem.role,
           userPermissions,
-          userRoles
+          userRoles,
+          user,
+          subitem.excludeRoles
         );
         
         if (!hasPerm) return false;
@@ -204,7 +210,9 @@ const MenuItem = (item) => {
     item.permission,
     item.role,
     userPermissions,
-    userRoles
+    userRoles,
+    user,
+    item.excludeRoles
   );
 
   // If parent has submenu but no visible submenu items, still show parent if it's visible
@@ -322,8 +330,10 @@ const MenuItem = (item) => {
             <MenuItem
               key={sub.id || `${item.id}-${i}`}
               {...sub}
+              user={user}
               userPermissions={userPermissions}
               userRoles={userRoles}
+              staffOnly={staffOnly}
             />
           ))}
         </ul>

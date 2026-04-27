@@ -33,7 +33,7 @@ const PaginatedTable = ({
   const [error, setError] = React.useState(false);
   const pageSizeData = [10, 25, 50, 100];
   const [searchQuery, setSearchQuery] = useState("");
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedFilters, setSelectedFilters] = useState(filterSelected);
   const handlePageClick = (event) => {
     updatePage(event.selected + 1);
@@ -50,7 +50,7 @@ const PaginatedTable = ({
           page: currentPage,
           page_size: pageSize,
           paginated: true,
-          search: searchQuery,
+          search: debouncedSearch,
           filters: selectedFilters.join(","),
         },
       });
@@ -82,15 +82,14 @@ const PaginatedTable = ({
     }
   }, [isRefresh]);
 
-  // Fetch ApprovalModules on initial load
   useEffect(() => {
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    const timeout = setTimeout(() => {
-      handleFetchData();
-    }, 1500);
-    setDebounceTimeout(timeout);
-    return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage, selectedFilters]);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    handleFetchData();
+  }, [debouncedSearch, pageSize, currentPage, selectedFilters]);
 
   return (
     <div className="card">
@@ -241,7 +240,7 @@ const PaginatedTable = ({
                         <center>
                           <ReactLoading
                             type={"cylon"}
-                            color={"#696cff"}
+                            color={"#00853f"}
                             height={"30px"}
                             width={"50px"}
                           />

@@ -8,6 +8,18 @@ import showToast from "../../helpers/ToastHelper";
 import Select from "react-select";
 import "animate.css";
 
+const filterGroupKey = (group) => group.group ?? group.key;
+
+/** Maps column `style` to `<col>` so widths stay consistent between header and body (avoids overlap with table-layout: fixed). */
+const colStyleFromColumn = (col) => {
+  const s = col.style || {};
+  const out = {};
+  if (s.width != null && s.width !== "auto") out.width = s.width;
+  if (s.minWidth) out.minWidth = s.minWidth;
+  if (s.maxWidth) out.maxWidth = s.maxWidth;
+  return Object.keys(out).length ? out : undefined;
+};
+
 const PaginatedTable = ({
   fetchPath,
   title,
@@ -18,7 +30,13 @@ const PaginatedTable = ({
   filters = [],
   filterSelected = ["ALL"],
   filterGroups = [],
+  initialFilters = {},
+  clearFiltersOnEmpty = true,
   isFullPath = false,
+  /** When true, table uses fixed layout so column widths and overflow clipping apply reliably. */
+  tableLayoutFixed = false,
+  /** Minimum table width (e.g. `768px`) so columns do not collapse when tbody has only colspan rows. */
+  tableMinWidth,
 }) => {
   const {
     currentPage,
@@ -34,15 +52,23 @@ const PaginatedTable = ({
   const [error, setError] = React.useState(false);
   const pageSizeData = [10, 25, 50, 100];
   const [searchQuery, setSearchQuery] = useState("");
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedFilters, setSelectedFilters] = useState(filterSelected);
-  const [selectedFilterGroups, setSelectedFilterGroups] = useState(
-    () =>
-      filterGroups.reduce((acc, group) => {
-        acc[group.group] = group.selected || [];
-        return acc;
-      }, {})
-  );
+  const [selectedFilterGroups, setSelectedFilterGroups] = useState(() => {
+    const base = filterGroups.reduce((acc, group) => {
+      const gk = filterGroupKey(group);
+      if (gk) acc[gk] = Array.isArray(group.selected) ? [...group.selected] : [];
+      return acc;
+    }, {});
+    if (initialFilters && typeof initialFilters === "object") {
+      Object.entries(initialFilters).forEach(([k, v]) => {
+        if (v === undefined || v === null || v === "") return;
+        const arr = Array.isArray(v) ? v : [v];
+        base[k] = arr.map(String).filter(Boolean);
+      });
+    }
+    return base;
+  });
 
   const handlePageClick = (event) => {
     updatePage(event.selected + 1);
@@ -63,7 +89,7 @@ const PaginatedTable = ({
       // Check if any filters are applied
       const hasFilters = Object.keys(formattedFilterGroups).length > 0 || 
                          selectedFilters.length > 0 || 
-                         searchQuery.trim().length > 0;
+                         debouncedSearch.trim().length > 0;
 
       const result = await fetchData({
         url: fetchPath,
@@ -72,7 +98,7 @@ const PaginatedTable = ({
           page: currentPage,
           page_size: pageSize,
           paginated: true,
-          search: searchQuery,
+          search: debouncedSearch,
           filters: selectedFilters.join(","),
           ...formattedFilterGroups,
         },
@@ -80,13 +106,20 @@ const PaginatedTable = ({
 
       if (result.status === 200 || result.status === 8000) {
         // Check if result is empty and filters are applied
-        if ((!result.data || result.data.length === 0) && hasFilters && clearFiltersOnEmpty) {
+        if (
+          (!result.data || result.data.length === 0) &&
+          hasFilters &&
+          clearFiltersOnEmpty
+        ) {
           // Show message and fetch without filters
           showToast("No records match your filter. Showing all records.", "info", "Filter Result");
           
           // Clear filters and fetch all data
           const cleared = {};
-          filterGroups.forEach((g) => (cleared[g.group] = []));
+          filterGroups.forEach((g) => {
+            const gk = filterGroupKey(g);
+            if (gk) cleared[gk] = [];
+          });
           setSelectedFilterGroups(cleared);
           setSelectedFilters([]);
           
@@ -155,23 +188,24 @@ const PaginatedTable = ({
     }
   }, [isRefresh]);
 
-  // Fetch data on initial load and when dependencies change
+  // Debounce search input only; pagination and filters fetch immediately
   useEffect(() => {
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    const timeout = setTimeout(() => {
-      handleFetchData();
-    }, 1500);
-    setDebounceTimeout(timeout);
-    return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage, selectedFilters, selectedFilterGroups]);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    handleFetchData();
+  }, [debouncedSearch, pageSize, currentPage, selectedFilters, selectedFilterGroups]);
 
   // Handle group filter change
-  const handleGroupFilterChange = (group, selected) => {
+  const handleGroupFilterChange = (groupKey, selected) => {
+    if (!groupKey) return;
     const values = selected ? selected.map((opt) => opt.value) : [];
-    
-    setSelectedFilterGroups(prev => ({
+
+    setSelectedFilterGroups((prev) => ({
       ...prev,
-      [group]: values
+      [groupKey]: values,
     }));
     updatePage(1);
   };
@@ -179,7 +213,10 @@ const PaginatedTable = ({
   // Handle Group filter resert
   const resetAllFilters = () => {
     const cleared = {};
-    filterGroups.forEach((g) => (cleared[g.group] = []));
+    filterGroups.forEach((g) => {
+      const gk = filterGroupKey(g);
+      if (gk) cleared[gk] = [];
+    });
     setSelectedFilterGroups(cleared);
   };
 
@@ -216,8 +253,10 @@ const PaginatedTable = ({
           {/* Multiple Filters */}
           {filterGroups.length > 0 && (
             <div className="row g-2 mb-2">
-              {filterGroups.map((group) => (
-                <div key={group.group} className="col-auto">
+              {filterGroups.map((group) => {
+                const gk = filterGroupKey(group);
+                return (
+                <div key={gk || group.label} className="col-auto">
                   <div className="input-group">
                     <span className="input-group-text text-info">
                       {group.label}
@@ -227,10 +266,10 @@ const PaginatedTable = ({
                       isMulti
                       options={group.options}
                       value={group.options.filter((opt) =>
-                        selectedFilterGroups[group.group]?.includes(opt.value)
+                        gk && selectedFilterGroups[gk]?.includes(opt.value)
                       )}
                       onChange={(selected) =>
-                        handleGroupFilterChange(group.group, selected)
+                        handleGroupFilterChange(gk, selected)
                       }
                       placeholder={group.placeholder || `Select ${group.label}`}
                       classNamePrefix="react-select"
@@ -248,7 +287,8 @@ const PaginatedTable = ({
                     />
                   </div>
                 </div>
-              ))}
+              );
+              })}
               {/*Reset All Button */}
               <div className="col-auto d-flex align-items-center">
                   <button
@@ -357,32 +397,63 @@ const PaginatedTable = ({
           </div>
         </div>
 
-        <div className=" text-nowrap animate__animated animate__fadeInUp animate__faster">
-          <div className="table-responsive text-nowrap">
-            <table className="table table-hover table-align-middle mb-0 table-bordered">
+        <div className="animate__animated animate__fadeInUp animate__faster">
+          <div className="table-responsive">
+            <table
+              className="table table-hover table-align-middle mb-0 table-bordered"
+              style={{
+                width: "100%",
+                ...(tableLayoutFixed ? { tableLayout: "fixed" } : {}),
+                ...(tableMinWidth ? { minWidth: tableMinWidth } : {}),
+              }}
+            >
+              {tableLayoutFixed ? (
+                <colgroup>
+                  {columns.map((col, idx) => (
+                    <col key={col.key ?? idx} style={colStyleFromColumn(col)} />
+                  ))}
+                </colgroup>
+              ) : null}
               <thead style={{ backgroundColor: "#f1f1f1" }}>
                 <tr>
-                  {columns.map((col, idx) => (
-                    <th
-                      key={col.key || col.label || idx}
-                      className={col.className || ""}
-                      style={col.style || {}}
-                    >
-                      {col.label}
-                    </th>
-                  ))}
+                  {columns.map((col, idx) => {
+                    const {
+                      whiteSpace: _cellWhiteSpace,
+                      wordBreak: _cellWordBreak,
+                      overflowWrap: _cellOverflowWrap,
+                      wordWrap: _cellWordWrap,
+                      ...thRestStyle
+                    } = col.style || {};
+                    return (
+                      <th
+                        key={col.key || col.label || idx}
+                        className={col.className || ""}
+                        scope="col"
+                        style={{
+                          verticalAlign: "middle",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          ...thRestStyle,
+                          ...(col.headerStyle || {}),
+                        }}
+                      >
+                        {col.label}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
 
               <tbody className="table-border-bottom-0">
                 {loading ? (
                   <tr>
-                    <td colSpan="100%">
+                    <td colSpan={columns.length || 1}>
                       <div className="col-md-12 col-lg-12 col-sm-12 p-2">
                         <center>
                           <ReactLoading
                             type={"cylon"}
-                            color={"#696cff"}
+                            color={"#00853f"}
                             height={"30px"}
                             width={"50px"}
                           />
@@ -395,7 +466,7 @@ const PaginatedTable = ({
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan="100%">
+                    <td colSpan={columns.length || 1}>
                       <div className="alert alert-danger" role="alert">
                         <div className="alert-body text-center">
                           <p className="mb-0">
@@ -407,7 +478,7 @@ const PaginatedTable = ({
                   </tr>
                 ) : rowRecords.length === 0 ? (
                   <tr>
-                    <td colSpan="100%">
+                    <td colSpan={columns.length || 1}>
                       <div className="alert alert-info" role="alert">
                         <div className="alert-body text-center">
                           <p className="mb-0">No Records Found</p>
@@ -447,8 +518,8 @@ const PaginatedTable = ({
             </table>
           </div>
 
-          <div className="d-flex justify-content-between align-items-center mt-3">
-            <div className="text-muted">
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <div className="text-muted flex-shrink-0">
               {totalCount > 0
                 ? `Showing ${
                     currentPage * pageSize - pageSize + 1
@@ -458,8 +529,6 @@ const PaginatedTable = ({
                   )} of ${totalCount} records`
                 : "No records to show"}
             </div>
-            {/* Your content here */}
-            <div></div>
             <ReactPaginate
               previousLabel={<i className="tf-icons bx bx-chevrons-left"></i>}
               nextLabel={<i className="tf-icons bx bx-chevrons-right"></i>}
@@ -487,7 +556,7 @@ const PaginatedTable = ({
 };
 
 PaginatedTable.propTypes = {
-  title: PropTypes.string.isRequired,
+  title: PropTypes.string,
   fetchPath: PropTypes.string.isRequired,
   columns: PropTypes.arrayOf(
     PropTypes.shape({
@@ -495,6 +564,7 @@ PaginatedTable.propTypes = {
       label: PropTypes.string.isRequired,
       className: PropTypes.string,
       style: PropTypes.object,
+      headerStyle: PropTypes.object,
       render: PropTypes.func,
     })
   ).isRequired,
@@ -509,6 +579,8 @@ PaginatedTable.propTypes = {
   onSelect: PropTypes.func,
   isRefresh: PropTypes.number,
   isFullPath: PropTypes.bool,
+  tableLayoutFixed: PropTypes.bool,
+  tableMinWidth: PropTypes.string,
   filters: PropTypes.arrayOf(
     PropTypes.shape({
       value: PropTypes.string.isRequired,
@@ -516,9 +588,12 @@ PaginatedTable.propTypes = {
     })
   ),
   filterSelected: PropTypes.arrayOf(PropTypes.string.isRequired),
+  initialFilters: PropTypes.object,
+  clearFiltersOnEmpty: PropTypes.bool,
   filterGroups: PropTypes.arrayOf(
     PropTypes.shape({
-      group: PropTypes.string.isRequired,
+      group: PropTypes.string,
+      key: PropTypes.string,
       label: PropTypes.string.isRequired,
       options: PropTypes.arrayOf(
         PropTypes.shape({

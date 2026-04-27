@@ -8,7 +8,7 @@
         "available": true,
         "link": "/services",
         "permission": [],
-        "role": ["staff", "admin","HR"]
+        "role": ["staff", "admin", "content_editor", "ICT", "PR_Gallery_Manager"]
       },
       {
         "text": "Dashboard",
@@ -16,7 +16,7 @@
         "available": true,
         "link": "/ppaa-internal-portal",
         "permission": [],
-        "role": ["admin","staff","HR"]
+        "role": ["admin", "staff", "content_editor", "ICT", "PR_Gallery_Manager"]
       },
       {
         "text": "Profile",
@@ -24,7 +24,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/account/settings",
         "permission": [],
-        "role": ["admin", "staff","HR"]
+        "role": ["admin", "staff", "content_editor", "ICT", "PR_Gallery_Manager"]
       }
     ]
   },
@@ -37,7 +37,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/documents",
         "permission": ["can_view_document"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "content_editor", "ICT"]
       },
       {
         "text": "Events",
@@ -45,7 +45,20 @@
         "available": true,
         "link": "/ppaa-internal-portal/events",
         "permission": ["can_view_event"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "content_editor", "ICT"]
+      },
+      {
+        "text": "Flyers & posters gallery",
+        "icon": "bx bx-image",
+        "available": true,
+        "link": "/ppaa-internal-portal/pr-flyers",
+        "permission": [
+          "can_view_pr_flyer",
+          "can_add_pr_flyer",
+          "can_edit_pr_flyer",
+          "can_delete_pr_flyer"
+        ],
+        "role": ["admin", "content_editor", "ICT", "staff", "PR_Gallery_Manager"]
       },
       {
         "text": "FAQs",
@@ -53,7 +66,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/faqs",
         "permission": ["can_view_faq"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "content_editor", "ICT"]
       },
       {
         "text": "Announcements",
@@ -61,7 +74,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/announcements",
         "permission": ["can_view_announcement"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "ICT", "content_editor"]
       },
       {
         "text": "Todo List",
@@ -69,7 +82,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/todos",
         "permission": ["can_view_todo"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "ICT", "content_editor"]
       },
       {
         "text": "Quick Links",
@@ -77,7 +90,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/quick-links",
         "permission": ["can_view_quick_link"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "ICT", "content_editor"]
       },
       {
         "text": "Popup Card",
@@ -85,7 +98,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/popup-cards",
         "permission": ["can_view_popup_card"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "ICT", "content_editor"]
       }
     ]
   },
@@ -98,7 +111,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/departments",
         "permission": ["can_view_department"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "ICT", "content_editor"]
       },
       {
         "text": "Position/Designation",
@@ -106,7 +119,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/positional-levels",
         "permission": ["can_view_department"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "ICT", "content_editor"]
       },
       {
         "text": "Document Categories",
@@ -114,7 +127,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/document-categories",
         "permission": ["can_view_document"],
-        "role": ["admin", "HR", "ICT"]
+        "role": ["admin", "ICT", "content_editor"]
       }
     ]
   },

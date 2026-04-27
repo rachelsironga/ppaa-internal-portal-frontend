@@ -77,10 +77,10 @@ export const PopupCardPage = () => {
                     width: 40,
                     height: 40,
                     background:
-                      "linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%)",
+                      "linear-gradient(135deg, rgba(0,133,63,0.15) 0%, rgba(61,166,106,0.15) 100%)",
                   }}
                 >
-                  <i className="bx bx-info-circle" style={{ color: "#667eea", fontSize: "1.4rem" }}></i>
+                  <i className="bx bx-info-circle" style={{ color: "#00853f", fontSize: "1.4rem" }}></i>
                 </div>
                 <div>
                   <h6 className="mb-1" style={{ fontWeight: 600 }}>
@@ -100,7 +100,7 @@ export const PopupCardPage = () => {
                 className="card-header border-0"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%)",
+                    "linear-gradient(135deg, rgba(0,133,63,0.08) 0%, rgba(61,166,106,0.08) 100%)",
                 }}
               >
                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
@@ -118,7 +118,7 @@ export const PopupCardPage = () => {
                         style={{
                           width: 28,
                           height: 28,
-                          backgroundColor: activeStep === 1 ? "#667eea" : "#e0e7ff",
+                          backgroundColor: activeStep === 1 ? "#00853f" : "#e8f5e9",
                           color: activeStep === 1 ? "white" : "#4f46e5",
                           fontSize: "0.85rem",
                           fontWeight: 600,
@@ -145,7 +145,7 @@ export const PopupCardPage = () => {
                         style={{
                           width: 28,
                           height: 28,
-                          backgroundColor: activeStep === 2 ? "#667eea" : "#e0e7ff",
+                          backgroundColor: activeStep === 2 ? "#00853f" : "#e8f5e9",
                           color: activeStep === 2 ? "white" : "#4f46e5",
                           fontSize: "0.85rem",
                           fontWeight: 600,
@@ -236,7 +236,7 @@ export const PopupCardPage = () => {
                                 position: "absolute",
                                 inset: 0,
                                 background:
-                                  "radial-gradient(circle at top left, rgba(102,126,234,0.18), transparent 55%), radial-gradient(circle at bottom right, rgba(118,75,162,0.18), transparent 55%)",
+                                  "radial-gradient(circle at top left, rgba(0,133,63,0.18), transparent 55%), radial-gradient(circle at bottom right, rgba(61,166,106,0.18), transparent 55%)",
                                 opacity: 0.6,
                                 pointerEvents: "none",
                               }}
@@ -247,7 +247,7 @@ export const PopupCardPage = () => {
                                 <div className="d-flex align-items-center gap-2">
                                   <i
                                     className="bx bx-bulb"
-                                    style={{ color: "#6366f1", fontSize: "1.4rem" }}
+                                    style={{ color: "#00853f", fontSize: "1.4rem" }}
                                   ></i>
                                   <span
                                     style={{
@@ -387,7 +387,7 @@ export const PopupCardPage = () => {
                                 position: "absolute",
                                 inset: 0,
                                 background:
-                                  "radial-gradient(circle at top left, rgba(102,126,234,0.22), transparent 55%), radial-gradient(circle at bottom right, rgba(118,75,162,0.22), transparent 55%)",
+                                  "radial-gradient(circle at top left, rgba(0,133,63,0.22), transparent 55%), radial-gradient(circle at bottom right, rgba(61,166,106,0.22), transparent 55%)",
                                 opacity: 0.7,
                                 pointerEvents: "none",
                               }}
@@ -398,7 +398,7 @@ export const PopupCardPage = () => {
                                 <div className="d-flex align-items-center gap-2">
                                   <i
                                     className="bx bx-bulb"
-                                    style={{ color: "#6366f1", fontSize: "1.6rem" }}
+                                    style={{ color: "#00853f", fontSize: "1.6rem" }}
                                   ></i>
                                   <span
                                     style={{

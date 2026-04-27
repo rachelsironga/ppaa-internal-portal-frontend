@@ -35,7 +35,7 @@
 }
 
 .refresh-btn {
-  background: linear-gradient(135deg, #1976d2, #e53935);
+  background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -51,7 +51,7 @@
 
 .refresh-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 133, 63, 0.3);
 }
 
 /* Profile Card */
@@ -90,7 +90,7 @@
   right: 0;
   width: 36px;
   height: 36px;
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -102,7 +102,7 @@
 }
 
 .camera-btn:hover {
-  background: #1565c0;
+  background: #006b34;
   transform: scale(1.1);
 }
 
@@ -162,7 +162,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1976d2;
+  color: #00853f;
 }
 
 .info-item-content {
@@ -235,14 +235,14 @@
 }
 
 .tab-button:hover {
-  border-color: #1976d2;
-  color: #1976d2;
+  border-color: #00853f;
+  color: #00853f;
 }
 
 .tab-button.active {
-  background: #1976d2;
+  background: #00853f;
   color: white;
-  border-color: #1976d2;
+  border-color: #00853f;
 }
 
 .alert-badge {
@@ -276,7 +276,7 @@
 }
 
 .position-card.current {
-  border-left-color: #1976d2;
+  border-left-color: #00853f;
 }
 
 .position-card.delegated {
@@ -320,7 +320,7 @@
 }
 
 .delegate-btn {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -335,7 +335,7 @@
 }
 
 .delegate-btn:hover {
-  background: #1565c0;
+  background: #006b34;
 }
 
 .remove-delegate-btn {
@@ -437,7 +437,7 @@
 }
 
 .signature-preview:hover {
-  border-color: #1976d2;
+  border-color: #00853f;
   background: #f8fafc;
 }
 
@@ -463,13 +463,13 @@
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
-  color: #1976d2;
-  border: 1px solid rgba(25, 118, 210, 0.2);
+  color: #00853f;
+  border: 1px solid rgba(0, 133, 63, 0.2);
 }
 
 /* Buttons */
 .btn-primary {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -485,7 +485,7 @@
 }
 
 .btn-primary:hover {
-  background: #1565c0;
+  background: #006b34;
 }
 
 .btn-primary:disabled {
@@ -495,8 +495,8 @@
 
 .btn-outline {
   background: white;
-  color: #1976d2;
-  border: 2px solid #1976d2;
+  color: #00853f;
+  border: 2px solid #00853f;
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
@@ -547,7 +547,7 @@
 }
 
 .retry-btn {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -560,7 +560,7 @@
 }
 
 .retry-btn:hover {
-  background: #1565c0;
+  background: #006b34;
 }
 
 .loading-positions,
@@ -583,7 +583,7 @@
 
 /* Badges */
 .badge-primary {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   padding: 4px 12px;
   border-radius: 12px;

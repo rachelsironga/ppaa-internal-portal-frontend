@@ -75,6 +75,7 @@ export const ActivityPage = () => {
             label: "Activity",
             style: { minWidth: "260px" },
             render: (row) => {
+              const fullTitle = row.title != null ? String(row.title).trim() : "";
               const weight = row.weight != null ? `${row.weight}%` : null;
               const targetTitle = row.target_title || "";
               const fy = row.planned_financial_year || "";
@@ -96,7 +97,9 @@ export const ActivityPage = () => {
                     }
                   }}
                 >
-                  <div className="fw-semibold text-body mb-1">{row.title}</div>
+                  <div className="fw-semibold text-body mb-1 text-break">
+                    {fullTitle || "—"}
+                  </div>
                   <div className="d-flex align-items-center gap-2 flex-wrap small">
                     {targetTitle && (
                       <span className="badge bg-label-primary text-primary px-2 py-1">

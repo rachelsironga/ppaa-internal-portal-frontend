@@ -8,7 +8,9 @@
     "permission": [],
     "role": [
       "admin",
-      "staff"
+      "staff",
+      "content_editor",
+      "ICT"
     ]
   },
   {
@@ -19,26 +21,34 @@
     "role": [
       "admin",
       "staff",
-      "HR"
+      "ppaa_maoni_reviewer",
+      "maoni_admin",
+      "hr"
     ]
   },
   {
     "id": "performance-dashboard",
-    "text": "Strategic Performance Management (SPISM)",
+    "text": "Strategic Performance",
     "icon": "bx bx-line-chart",
     "available": true,
     "link": "/performance-dashboard",
-    "permission": ["can_view_spism_dashboard"],
+    "permission": [
+      "can_view_spism_dashboard",
+      "can_view_spism_reports",
+      "can_view_spism_analytics",
+      "can_view_spism_approval"
+    ],
     "role": []
   },
   {
     "id": "ppaa-reports",
-    "text": "Reports Management System (RMS)",
+    "text": "Reports Management",
     "icon": "bx bx-file",
     "available": true,
     "link": "/report-management",
     "permission": [],
     "role": [
+      "admin",
       "staff",
       "RMS_REPORT_MANAGER",
       "RMS_SYS_ADMIN",

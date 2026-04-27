@@ -419,7 +419,7 @@ export const SoftwareAssetViewPage = () => {
                 <div className="card">
                     <div className="card-body">
                         <center>
-                            <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+                            <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
                             <h6 className="text-muted mt-2">Loading Asset Details...</h6>
                         </center>
                     </div>
@@ -898,7 +898,7 @@ export const SoftwareAssetViewPage = () => {
 
                                 {loadingInstallations ? (
                                     <div className="text-center py-4">
-                                        <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                        <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                         <p className="text-muted mt-2">Loading installations...</p>
                                     </div>
                                 ) : installations.length === 0 ? (
@@ -1075,7 +1075,7 @@ export const SoftwareAssetViewPage = () => {
 
                                 {loadingTickets ? (
                                     <div className="text-center py-4">
-                                        <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                        <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                         <p className="text-muted mt-2">Loading support tickets...</p>
                                     </div>
                                 ) : supportTickets.length === 0 ? (
@@ -1148,7 +1148,7 @@ export const SoftwareAssetViewPage = () => {
                                 <h5 className="mb-3 fw-semibold">Asset Activity History</h5>
                                 {loadingHistory ? (
                                     <div className="text-center py-4">
-                                        <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                        <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                         <p className="text-muted mt-2">Loading history...</p>
                                     </div>
                                 ) : assetHistory.length === 0 ? (

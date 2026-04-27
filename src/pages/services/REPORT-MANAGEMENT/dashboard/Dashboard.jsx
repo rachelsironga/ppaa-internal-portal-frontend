@@ -16,9 +16,13 @@ const Dashboard = () => {
   const [selectedFY, setSelectedFY] = useState("");
 
   useEffect(() => {
-    // If ED / RMS_REPORT_MANAGER, redirect to ED dashboard
     const roles = user?.groups || [];
-    if (roles.includes("RMS_REPORT_MANAGER")) {
+    const normalized = roles.map((r) => String(r).toLowerCase());
+    if (
+      normalized.includes("rms_report_manager") ||
+      normalized.includes("rms_sys_admin") ||
+      normalized.includes("admin")
+    ) {
       navigate("/report-management/dashboard/ed", { replace: true });
       return;
     }
@@ -113,7 +117,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="container-fluid flex-grow-1 container-p-y px-4">
+      <div className="w-100">
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
@@ -124,7 +128,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Dashboard"]} />
 
       <div className="row">

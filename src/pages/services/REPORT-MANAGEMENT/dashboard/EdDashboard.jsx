@@ -92,7 +92,7 @@ const EdDashboard = () => {
 
   if (loading) {
     return (
-      <div className="container-fluid flex-grow-1 container-p-y px-4">
+      <div className="w-100">
         <div
           className="d-flex justify-content-center align-items-center"
           style={{ minHeight: "400px" }}
@@ -112,7 +112,7 @@ const EdDashboard = () => {
   const lateSubmissions = stats?.late_submissions || [];
 
   const analyticsPalette = [
-    "#696cff",
+    "#00853f",
     "#71dd37",
     "#03c3ec",
     "#ffab00",
@@ -266,7 +266,7 @@ const EdDashboard = () => {
   };
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "ED Dashboard"]} />
 
       <div className="row">

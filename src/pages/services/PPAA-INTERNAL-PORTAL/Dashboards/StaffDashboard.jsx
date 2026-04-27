@@ -1,11 +1,40 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import "animate.css";
+import "../../../../css/portalAnnouncementNewBadge.css";
+import "../../../../css/portalFaqTheme.css";
+import "../../../../css/portalHighlightCarousel.css";
+import "../../../../css/portalWelcomeHero.css";
+import "../../../../css/portalSurfaceDark.css";
+import {
+  readPortalThemeIsDark,
+  PORTAL_THEME_STORAGE_KEY,
+} from "../../../../helpers/portalTheme";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { formatDate } from "../../../../helpers/DateFormater";
-import api from "../../../../api";
+import {
+  buildInterleavedPortalHighlightItems,
+  filterDashboardAnnouncements,
+  filterDashboardEvents,
+  filterDashboardTodos,
+  getTodoDashboardAccentColor,
+  isPortalAnnouncementNew,
+  useUtcDateKey,
+} from "../../../../helpers/dashboardActivityVisibility";
+import showToast from "../../../../helpers/ToastHelper";
+import { portalPublicApi } from "../../../../portalPublicApi";
 import { recordQuickLinkClick } from "../quick_links/Queries";
+import { downloadPortalDocument } from "../documents/Queries";
+import { downloadPortalAnnouncement } from "../announcements/Queries";
+import {
+  getEventTypeBadge,
+  getEventTypeCalendarStyle,
+} from "../events/eventDisplay";
+import { getUserFormalFullName } from "../../../../utils/userDisplayName";
+import { refreshCurrentUser } from "../../../../redux/actions/authentication/refreshUserAction";
+import { hasAccess } from "../../../../hooks/AccessHandler";
+import { PrFlyersGallery } from "../../../../components/portal/PrFlyersGallery.jsx";
 
 // Simple Calendar Component
 const SimpleCalendar = ({ events = [], onEventClick }) => {
@@ -122,7 +151,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                               <i 
                                 className="bx bx-circle" 
                                 style={{ 
-                                  fontSize: "6px", 
+                                  fontSize: "0.375rem",
                                   color: "#00f2fe",
                                   marginTop: "2px"
                                 }}
@@ -133,22 +162,18 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                           {dayEvents.length > 0 && (
                             <div className="d-flex flex-column gap-1">
                               {dayEvents.slice(0, 2).map((event, idx) => {
-                                const eventColors = [
-                                  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                                  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                                  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                                ];
+                                const chipStyle = getEventTypeCalendarStyle(
+                                  event.event_type
+                                );
                                 return (
                                   <div
-                                    key={idx}
-                                    className="badge text-white"
-                                    style={{ 
-                                      fontSize: "0.65rem", 
+                                    key={event.uid || idx}
+                                    className="badge border-0"
+                                    style={{
+                                      fontSize: "0.65rem",
                                       cursor: "pointer",
-                                      background: eventColors[idx % eventColors.length],
-                                      border: "none",
-                                      padding: "3px 6px"
+                                      ...chipStyle,
+                                      padding: "3px 6px",
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -181,7 +206,9 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
 };
 
 export const StaffDashboard = () => {
+  const dispatch = useDispatch();
   const user = useSelector((state) => state.userReducer?.data);
+  const welcomeFormalName = useMemo(() => getUserFormalFullName(user), [user]);
   const navigate = useNavigate();
   const DASHBOARD_CACHE_KEY = `internalPortalDashboardCache:${user?.guid || "anonymous"}`;
   const DASHBOARD_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -192,18 +219,26 @@ export const StaffDashboard = () => {
   const [events, setEvents] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [quickLinks, setQuickLinks] = useState([]);
-  const [todos, setTodos] = useState([]);
+  const [prFlyers, setPrFlyers] = useState([]);
+  const [todosRaw, setTodosRaw] = useState([]);
+  const utcDateKey = useUtcDateKey();
+  const todos = useMemo(
+    () => filterDashboardTodos(todosRaw),
+    [todosRaw, utcDateKey]
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [announcementOffset, setAnnouncementOffset] = useState(0);
   const [todoOffset, setTodoOffset] = useState(0);
-  const [faqOffset, setFaqOffset] = useState(0);
-  const [faqSearchQuery, setFaqSearchQuery] = useState("");
   const [selectedFaq, setSelectedFaq] = useState(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   const [selectedTodo, setSelectedTodo] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [documentOffset, setDocumentOffset] = useState(0);
+  /** Documents card: switch between category browser and FAQs (separate search from Events row FAQs). */
+  const [docsLibraryTab, setDocsLibraryTab] = useState("documents");
+  const [libraryFaqSearch, setLibraryFaqSearch] = useState("");
+  const [libraryFaqOffset, setLibraryFaqOffset] = useState(0);
   const [stats, setStats] = useState({
     totalAnnouncements: 0,
     totalDocuments: 0,
@@ -215,9 +250,13 @@ export const StaffDashboard = () => {
     upcomingEvents: 0,
   });
 
+  useEffect(() => {
+    dispatch(refreshCurrentUser());
+  }, [dispatch]);
+
   // Dashboard section order for drag-and-drop
   const defaultSectionOrder = [
-    { id: 'events-faqs', name: 'Events & FAQs' },
+    { id: 'events-faqs', name: 'Events & PR' },
     { id: 'todos-announcements', name: 'Todos & Announcements' },
     { id: 'documents', name: 'Documents' },
     { id: 'quick-links', name: 'Quick Links' },
@@ -228,17 +267,25 @@ export const StaffDashboard = () => {
     return saved ? JSON.parse(saved) : defaultSectionOrder;
   });
 
-  // Combine todos and announcements for alternating display
-  const combinedItems = useMemo(() => {
-    const items = [];
-    todos.slice(0, 5).forEach(todo => {
-      items.push({ type: 'todo', data: todo });
+  const [portalDark, setPortalDark] = useState(() => readPortalThemeIsDark());
+
+  // Welcome highlight: one carousel — announcement, todo, event, then repeat (same animation).
+  const combinedItems = useMemo(
+    () =>
+      buildInterleavedPortalHighlightItems({
+        announcements,
+        todos,
+        events,
+      }),
+    [todos, announcements, events]
+  );
+
+  useEffect(() => {
+    setCurrentIndex((prev) => {
+      if (combinedItems.length === 0) return 0;
+      return prev < combinedItems.length ? prev : 0;
     });
-    announcements.slice(0, 5).forEach(announcement => {
-      items.push({ type: 'announcement', data: announcement });
-    });
-    return items;
-  }, [todos, announcements]);
+  }, [combinedItems]);
 
   // Auto-rotate through items
   useEffect(() => {
@@ -257,6 +304,25 @@ export const StaffDashboard = () => {
   useEffect(() => {
     localStorage.setItem('dashboardSectionOrder', JSON.stringify(sectionOrder));
   }, [sectionOrder]);
+
+  useEffect(() => {
+    const onTheme = (e) => {
+      setPortalDark(
+        typeof e.detail === "boolean" ? e.detail : readPortalThemeIsDark(),
+      );
+    };
+    const onStorage = (e) => {
+      if (!e.key || e.key === PORTAL_THEME_STORAGE_KEY) {
+        setPortalDark(readPortalThemeIsDark());
+      }
+    };
+    window.addEventListener("portal-theme-changed", onTheme);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("portal-theme-changed", onTheme);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   // Handle drag end
   const handleDragEnd = (result) => {
@@ -335,45 +401,46 @@ export const StaffDashboard = () => {
         const raw = sessionStorage.getItem(DASHBOARD_CACHE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
-        if (!parsed?.data || !parsed?.timestamp) return null;
-        return Date.now() - parsed.timestamp < DASHBOARD_CACHE_TTL_MS ? parsed.data : null;
+        if (!parsed?.timestamp) return null;
+        if (Date.now() - parsed.timestamp >= DASHBOARD_CACHE_TTL_MS) return null;
+        return parsed.apiPayload ?? parsed.data ?? null;
       } catch {
         return null;
       }
     };
 
+    const hydrateDashboardPayload = (payload) => {
+      if (!payload) return;
+      setAnnouncements(filterDashboardAnnouncements(payload.announcements || []));
+      setDocuments(payload.documents || []);
+      setEvents(filterDashboardEvents(payload.events || []));
+      setFaqs(payload.faqs || []);
+      setQuickLinks(payload.quick_links || []);
+      setPrFlyers(payload.pr_flyers || []);
+      setTodosRaw(payload.todos || []);
+      setStats(payload.stats || {});
+    };
+
     try {
-      const cached = readCachedDashboard();
-      if (cached) {
-        setAnnouncements(cached.announcements || []);
-        setDocuments(cached.documents || []);
-        setEvents(cached.events || []);
-        setFaqs(cached.faqs || []);
-        setQuickLinks(cached.quick_links || []);
-        setTodos(cached.todos || []);
-        setStats(cached.stats || {});
+      const cachedPayload = readCachedDashboard();
+      if (cachedPayload) {
+        hydrateDashboardPayload(cachedPayload);
         setLoading(false);
-      } else {
-        setLoading(true);
+        return;
       }
 
-      const response = await api.get("/api/internal-portal/dashboard-summary");
-      const dashboardData = response?.data?.data || response?.data || {};
+      setLoading(true);
 
-      setAnnouncements(dashboardData.announcements || []);
-      setDocuments(dashboardData.documents || []);
-      setEvents(dashboardData.events || []);
-      setFaqs(dashboardData.faqs || []);
-      setQuickLinks(dashboardData.quick_links || []);
-      setTodos(dashboardData.todos || []);
-      setStats(dashboardData.stats || {});
+      const response = await portalPublicApi.get("/api/internal-portal/dashboard-summary");
+      const dashboardData = response?.data?.data || response?.data || {};
+      hydrateDashboardPayload(dashboardData);
 
       try {
         sessionStorage.setItem(
           DASHBOARD_CACHE_KEY,
           JSON.stringify({
             timestamp: Date.now(),
-            data: dashboardData,
+            apiPayload: dashboardData,
           })
         );
       } catch {
@@ -457,9 +524,34 @@ export const StaffDashboard = () => {
     }
   };
 
+  const quickLinkPalette = useMemo(() => {
+    if (portalDark) {
+      return [
+        { bg: "rgba(0, 133, 63, 0.22)", border: "#34d399", icon: "#6ee7b7", text: "#e2e8f0" },
+        { bg: "rgba(245, 87, 108, 0.15)", border: "#fb7185", icon: "#fda4af", text: "#e2e8f0" },
+        { bg: "rgba(0, 242, 254, 0.12)", border: "#22d3ee", icon: "#67e8f9", text: "#e2e8f0" },
+        { bg: "rgba(254, 225, 64, 0.14)", border: "#facc15", icon: "#fde047", text: "#e2e8f0" },
+        { bg: "rgba(255, 107, 107, 0.15)", border: "#f87171", icon: "#fca5a5", text: "#e2e8f0" },
+        { bg: "rgba(79, 172, 254, 0.15)", border: "#38bdf8", icon: "#7dd3fc", text: "#e2e8f0" },
+        { bg: "rgba(61, 166, 106, 0.18)", border: "#4ade80", icon: "#86efac", text: "#e2e8f0" },
+        { bg: "rgba(252, 182, 159, 0.14)", border: "#fdba74", icon: "#fed7aa", text: "#e2e8f0" },
+      ];
+    }
+    return [
+      { bg: "#f0f4ff", border: "#00853f", icon: "#00853f", text: "#333" },
+      { bg: "#fff0f5", border: "#f5576c", icon: "#f5576c", text: "#333" },
+      { bg: "#e6f7ff", border: "#00f2fe", icon: "#00f2fe", text: "#333" },
+      { bg: "#fff9e6", border: "#fee140", icon: "#fee140", text: "#333" },
+      { bg: "#ffe6e6", border: "#ff6b6b", icon: "#ff6b6b", text: "#333" },
+      { bg: "#f0f9ff", border: "#4facfe", icon: "#4facfe", text: "#333" },
+      { bg: "#f5f0ff", border: "#3da66a", icon: "#3da66a", text: "#333" },
+      { bg: "#fff5e6", border: "#fcb69f", icon: "#fcb69f", text: "#333" },
+    ];
+  }, [portalDark]);
+
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="portal-surface-scope text-center py-5">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -469,49 +561,50 @@ export const StaffDashboard = () => {
   }
 
   return (
-    <>
-      {/* Welcome Section */}
-      <div className="row mb-4">
-        <div className="col-lg-8 mb-4 order-0">
-          <div className="card border-0" style={{ 
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white"
-          }}>
-            <div className="d-flex align-items-end row">
-              <div className="col-sm-7">
-                <div className="card-body">
-                  <h5 className="card-title text-white mb-3">
-                    <i className="bx bx-smile me-2"></i>
-                    Welcome, {user?.first_name} {user?.last_name}!
+    <div className="portal-surface-scope">
+      {/* Welcome Section — shared styles: portalWelcomeHero.css */}
+      <div className="row g-3 g-lg-4 mb-4 align-items-stretch">
+        <div className="col-12 col-lg-8 order-0">
+          <div className="card border-0 h-100 staff-dashboard-welcome-hero text-white">
+            <div className="card-body px-3 px-sm-4 py-4 py-md-4 staff-dashboard-welcome-inner">
+              <div className="row g-3 g-sm-4 align-items-center">
+                <div className="col-12 col-sm-6 col-lg-7 text-center text-sm-start">
+                  <h5 className="card-title internal-portal-welcome__title mb-2 mb-sm-3 animate__animated animate__fadeInDown">
+                    <i className="bx bx-smile me-2" aria-hidden="true"></i>
+                    {welcomeFormalName ? (
+                      <>Welcome, {welcomeFormalName}!</>
+                    ) : (
+                      <>Welcome to the Internal Portal!</>
+                    )}
                   </h5>
-                  <p className="mb-4 text-white-50" style={{ fontSize: "0.95rem" }}>
-                    Here's an overview of all Internal Portal activities including announcements, documents, events, FAQs, and quick links.
+                  <p className="mb-0 internal-portal-welcome__lead animate__animated animate__fadeIn animate__slow">
+                    Here&apos;s an overview of Internal Portal activities including
+                    announcements, documents, events, FAQs, flyers & posters gallery, and quick links.
                   </p>
                 </div>
-              </div>
-              <div className="col-sm-5 text-center text-sm-left">
-                <div className="card-body pb-0 px-0 px-md-4">
-                  <img
-                    aria-label="dashboard icon image"
-                    src="/assets/img/illustrations/man-with-laptop-light.png"
-                    height="140"
-                    alt="Dashboard"
-                    data-app-dark-img="illustrations/man-with-laptop-dark.png"
-                    data-app-light-img="illustrations/man-with-laptop-light.png"
-                    style={{ filter: "brightness(1.1)" }}
-                  />
+                <div className="col-12 col-sm-5 col-lg-4">
+                  <div className="d-flex justify-content-center justify-content-sm-end align-items-end pt-2 pt-sm-0 welcome-illustration-wrap">
+                    <img
+                      className="img-fluid welcome-illustration animate__animated animate__fadeIn animate__delay-1s"
+                      aria-label="Dashboard illustration"
+                      src="/assets/img/illustrations/man-with-laptop-light.png"
+                      alt=""
+                      data-app-dark-img="illustrations/man-with-laptop-dark.png"
+                      data-app-light-img="illustrations/man-with-laptop-light.png"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-lg-4 col-md-4 order-1">
-          <div 
-            className="card border-0 shadow-lg h-100"
+        <div className="col-12 col-lg-4 d-flex order-1">
+          <div
+            className="card border-0 shadow-lg h-100 flex-grow-1 w-100"
             style={{
               overflow: "hidden",
               position: "relative",
-              minHeight: "200px"
+              minHeight: "clamp(200px, 42vw, 280px)",
             }}
           >
             {combinedItems.length === 0 ? (
@@ -525,43 +618,61 @@ export const StaffDashboard = () => {
               <div style={{ position: "relative", height: "100%", minHeight: "200px" }}>
                 {combinedItems.map((item, index) => {
                   const isActive = index === currentIndex;
-                  const isTodo = item.type === 'todo';
+                  const isTodo = item.type === "todo";
+                  const isEvent = item.type === "event";
                   const data = item.data;
-                  
+
                   return (
                     <div
                       key={`${item.type}-${data.uid}-${index}`}
-                      className="card-body"
+                      className="card-body px-3 px-md-4 py-3 py-md-4"
                       style={{
                         position: isActive ? "relative" : "absolute",
                         width: "100%",
+                        maxWidth: "100%",
+                        left: 0,
+                        top: 0,
+                        minWidth: 0,
+                        boxSizing: "border-box",
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? "translateX(0)" : "translateX(100%)",
                         transition: "all 1.5s ease-in-out",
                         zIndex: isActive ? 10 : 1,
-                        minHeight: "200px",
+                        minHeight: "min(100%, 200px)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "center",
-                        background: isTodo 
-                          ? "linear-gradient(135deg, #a8edea15 0%, #fed6e315 100%)"
-                          : "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
-                        borderTop: `4px solid ${isTodo ? "#a8edea" : "#667eea"}`,
-                        borderRadius: "8px"
+                        overflow: "hidden",
+                        background:
+                          "linear-gradient(135deg, rgba(0, 133, 63, 0.14) 0%, rgba(61, 166, 106, 0.14) 100%)",
+                        borderTop: "4px solid #00853f",
+                        borderRadius: "8px",
+                        paddingBottom: "2.75rem",
+                        cursor: isActive ? "pointer" : "default",
+                      }}
+                      onClick={() => {
+                        if (!isActive || !data?.uid) return;
+                        if (item.type === "todo") {
+                          navigate(`/ppaa-internal-portal/todos/open/${data.uid}`);
+                        } else if (item.type === "announcement") {
+                          navigate(`/ppaa-internal-portal/announcements/open/${data.uid}`);
+                        } else if (item.type === "event") {
+                          navigate(`/ppaa-internal-portal/events/open/${data.uid}`);
+                        }
                       }}
                     >
                       {isTodo ? (
                         <>
                           <div className="d-flex align-items-center gap-2 mb-2">
-                            <i className="bx bx-check-square" style={{ color: "#a8edea", fontSize: "1.5rem" }}></i>
-                            <h6 className="mb-0 fw-bold" style={{ color: "#a8edea" }}>Active Todo</h6>
+                            <i className="bx bx-check-square" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
+                            <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Active Todo</h6>
                           </div>
-                          <h5 className="mb-2 fw-bold" style={{ color: "#333" }}>{data.title}</h5>
-                          {data.description && (
-                            <p className="text-muted mb-2 small" style={{ lineHeight: "1.0" }}>
-                              {truncateWords(data.description, 15)}
-                            </p>
-                          )}
+                          <h5
+                            className="mb-2 fw-bold text-break"
+                            style={{ color: "#333", wordBreak: "break-word", overflowWrap: "anywhere" }}
+                          >
+                            {data.title}
+                          </h5>
                           <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
                             <span className={getTodoStatusBadge(data.status)}>
                               {data.status === 'PENDING' ? 'Pending' : 
@@ -587,25 +698,133 @@ export const StaffDashboard = () => {
                             )}
                           </div>
                         </>
+                      ) : isEvent ? (
+                        <>
+                          <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <i
+                              className="bx bx-calendar-event"
+                              style={{ color: "#4facfe", fontSize: "1.5rem" }}
+                            />
+                            <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
+                              Event
+                            </h6>
+                            {data.event_type && (
+                              <span
+                                className={`badge rounded-pill ${getEventTypeBadge(data.event_type).class}`}
+                              >
+                                {getEventTypeBadge(data.event_type).label}
+                              </span>
+                            )}
+                          </div>
+                          <h5
+                            className="mb-2 fw-bold text-break"
+                            style={{ color: "#333", wordBreak: "break-word", overflowWrap: "anywhere" }}
+                          >
+                            {data.title}
+                          </h5>
+                          {data.description ? (
+                            <p
+                              className="text-muted mb-2 small text-break"
+                              style={{ lineHeight: 1.35, wordBreak: "break-word", overflowWrap: "anywhere" }}
+                            >
+                              {truncateWords(data.description, 15)}
+                            </p>
+                          ) : null}
+                          <div className="d-flex flex-row align-items-center flex-wrap gap-2 gap-sm-3 w-100" style={{ minWidth: 0 }}>
+                            {data.start_date && (
+                              <small className="d-flex align-items-center mb-0" style={{ color: "#198754" }}>
+                                <i className="bx bx-calendar-event me-1" style={{ color: "#198754" }} />
+                                <span className="fw-semibold me-1">Start:</span>
+                                <span>{formatDate(data.start_date)}</span>
+                              </small>
+                            )}
+                            {data.end_date && (
+                              <small className="d-flex align-items-center mb-0" style={{ color: "#c62828" }}>
+                                <i className="bx bx-calendar-check me-1" style={{ color: "#dc3545" }} />
+                                <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
+                                  End:
+                                </span>
+                                <span style={{ color: "#c62828" }}>{formatDate(data.end_date)}</span>
+                              </small>
+                            )}
+                          </div>
+                        </>
                       ) : (
                         <>
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <i className="bx bx-bullhorn" style={{ color: "#667eea", fontSize: "1.5rem" }}></i>
-                            <h6 className="mb-0 fw-bold" style={{ color: "#667eea" }}>Announcement</h6>
+                          <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <i className="bx bx-bullhorn" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
+                            <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Announcement</h6>
                             {data.is_pinned && <i className="bx bx-pin text-warning"></i>}
+                            {isPortalAnnouncementNew(data.created_at) && (
+                              <span className="badge rounded-pill portal-announcement-new-badge">
+                                NEW
+                              </span>
+                            )}
                           </div>
-                          <h5 className="mb-2 fw-bold" style={{ color: "#333" }}>{data.title}</h5>
-                          <p className="text-muted mb-2 small" style={{ lineHeight: "1.0" }}>
+                          <h5
+                            className="mb-2 fw-bold text-break"
+                            style={{ color: "#333", wordBreak: "break-word", overflowWrap: "anywhere" }}
+                          >
+                            {data.title}
+                          </h5>
+                          <p
+                            className="text-muted mb-2 small text-break"
+                            style={{ lineHeight: 1.35, wordBreak: "break-word", overflowWrap: "anywhere" }}
+                          >
                             {truncateWords(data.content, 15)}
                           </p>
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <span className={`badge ${getPriorityColor(data.priority)}`}>
+                          <div
+                            className="d-flex align-items-center gap-2 mb-2 flex-wrap w-100"
+                            style={{ minWidth: 0 }}
+                          >
+                            <span className={`badge ${getPriorityColor(data.priority)} flex-shrink-0`}>
                               {data.priority}
                             </span>
-                            <small className="text-muted">
-                              <i className="bx bx-calendar me-1"></i>
-                              {formatDate(data.created_at, "DD/MM/YYYY")}
-                            </small>
+                            {isPortalAnnouncementNew(data.created_at) ? (
+                              <div
+                                className="d-flex flex-row align-items-center flex-wrap gap-2 gap-sm-3 w-100"
+                                style={{ minWidth: 0 }}
+                              >
+                                <small
+                                  className="d-flex align-items-center mb-0"
+                                  style={{ color: "#198754" }}
+                                >
+                                  <i
+                                    className="bx bx-calendar-event me-1"
+                                    style={{ color: "#198754" }}
+                                  ></i>
+                                  <span className="fw-semibold me-1">Start:</span>
+                                  <span>{formatDate(data.start_date || data.created_at)}</span>
+                                </small>
+                                <span
+                                  className="d-none d-sm-inline text-muted"
+                                  style={{ opacity: 0.45 }}
+                                  aria-hidden
+                                >
+                                  |
+                                </span>
+                                <small
+                                  className="d-flex align-items-center mb-0"
+                                  style={{ color: "#c62828" }}
+                                >
+                                  <i
+                                    className="bx bx-calendar-check me-1"
+                                    style={{ color: "#dc3545" }}
+                                  ></i>
+                                  <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
+                                    End:
+                                  </span>
+                                  <span style={{ color: "#c62828" }}>
+                                    {data.end_date ? formatDate(data.end_date) : "—"}
+                                  </span>
+                                </small>
+                              </div>
+                            ) : (
+                              <small className="text-muted">
+                                <i className="bx bx-calendar me-1"></i>
+                                {formatDate(data.start_date || data.created_at, "DD/MM/YYYY")}
+                              </small>
+                            )}
                           </div>
                         
                         </>
@@ -613,24 +832,29 @@ export const StaffDashboard = () => {
                     </div>
                   );
                 })}
-                {/* Navigation dots */}
+                {/* Navigation dots — same control design as PortalPage */}
                 {combinedItems.length > 1 && (
-                  <div className="position-absolute bottom-0 start-50 translate-middle-x mb-2" style={{ zIndex: 20 }}>
-                    <div className="d-flex gap-1">
+                  <div
+                    className="position-absolute bottom-0 start-50 translate-middle-x portal-highlight-carousel-dots"
+                    style={{ zIndex: 20, paddingBottom: "max(0.35rem, env(safe-area-inset-bottom))" }}
+                  >
+                    <div
+                      className="d-flex gap-0 align-items-center justify-content-center flex-nowrap"
+                      role="tablist"
+                      aria-label="Highlight slides"
+                    >
                       {combinedItems.map((_, index) => (
                         <button
                           key={index}
-                          className="btn btn-sm p-1"
-                          style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            padding: 0,
-                            backgroundColor: index === currentIndex ? "#667eea" : "#ccc",
-                            border: "none"
-                          }}
+                          type="button"
+                          className={`portal-highlight-dot-btn ${index === currentIndex ? "is-active" : ""}`}
+                          aria-label={`Show highlight ${index + 1} of ${combinedItems.length}`}
+                          aria-selected={index === currentIndex}
+                          role="tab"
                           onClick={() => setCurrentIndex(index)}
-                        />
+                        >
+                          <span className="portal-highlight-dot" aria-hidden />
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -647,7 +871,7 @@ export const StaffDashboard = () => {
           {(provided) => (
             <div {...provided.droppableProps} ref={provided.innerRef}>
               {sectionOrder.map((section, index) => {
-                // Render Events & FAQs Section
+                // Render Events & PR flyers section
                 if (section.id === 'events-faqs') {
                   return (
                     <Draggable key={section.id} draggableId={section.id} index={index}>
@@ -663,12 +887,15 @@ export const StaffDashboard = () => {
                             borderRadius: snapshot.isDragging ? '8px' : '0',
                           }}
                         >
-                          {/* Events Calendar and FAQs */}
-                          <div className="row g-4 mb-4">
+                          {/* Events calendar and PR flyers — one row on large screens */}
+                          <div className="row g-3 g-lg-4 mb-4 align-items-stretch">
         {/* Events Calendar */}
-        <div className="col-lg-8 col-md-12">
-          <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #00f2fe" }}>
-            <div className="card-header border-0 d-flex justify-content-between align-items-center" style={{ 
+        <div className="col-12 col-lg-8 d-flex">
+          <div
+            className="card border-0 shadow-lg h-100 w-100 d-flex flex-column"
+            style={{ borderTop: "4px solid #00f2fe" }}
+          >
+            <div className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center" style={{ 
               background: "linear-gradient(135deg, #4facfe15 0%, #00f2fe15 100%)"
             }}>
               <h5 className="mb-0">
@@ -679,7 +906,7 @@ export const StaffDashboard = () => {
                 <i className="bx bx-menu" style={{ color: "#00f2fe", fontSize: "1.5rem" }}></i>
               </div>
             </div>
-                <div className="card-body">
+            <div className="card-body flex-grow-1 d-flex flex-column">
               <SimpleCalendar
                 events={events}
                 onEventClick={(event) => {
@@ -688,257 +915,31 @@ export const StaffDashboard = () => {
                   modal.show();
                 }}
               />
-         
-              {events.length > 0 && (
-                <div className="mt-3">
-                  <h6 className="mb-2">Upcoming Events</h6>
-                  <div className="list-group">
-                    {events
-                      .filter(event => {
-                        if (!event.start_date) return false;
-                        return new Date(event.start_date) >= new Date();
-                      })
-                      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
-                      .slice(0, 3)
-                      .map((event, index) => (
-                        <div
-                          key={event.uid}
-                          className="list-group-item list-group-item-action cursor-pointer"
-                          style={{ 
-                            borderLeft: "4px solid #00f2fe",
-                            transition: "all 0.5s ease-in-out",
-                            opacity: 0,
-                            transform: "translateX(100%)",
-                            animation: `slideInRight 0.5s ease-out ${index * 0.2}s forwards`
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#00f2fe10";
-                            e.currentTarget.style.transform = "translateX(5px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
-                            e.currentTarget.style.transform = "translateX(0)";
-                          }}
-                          onClick={() => {
-                            setSelectedEvent(event);
-                            const modal = new window.bootstrap.Modal(document.getElementById('eventViewModal'));
-                            modal.show();
-                          }}
-                        >
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div>
-                              <h6 className="mb-1 fw-semibold">{event.title}</h6>
-                              <div className="d-flex align-items-center gap-2 mb-1">
-                                <small className="text-muted d-flex align-items-center">
-                                  <i className="bx bx-calendar me-1"></i>
-                                  <strong>Start:</strong> {formatDate(event.start_date, "DD/MM/YYYY HH:mm")}
-                                </small>
-                              </div>
-                              {event.end_date && (
-                                <div className="mb-1">
-                                  <small className="text-muted d-flex align-items-center">
-                                    <i className="bx bx-calendar-check me-1"></i>
-                                    <strong>End:</strong> {formatDate(event.end_date, "DD/MM/YYYY HH:mm")}
-                                  </small>
-                                </div>
-                              )}
-                              {event.location && (
-                                <div className="mt-1">
-                                  <small className="text-muted d-flex align-items-center">
-                                    <i className="bx bx-map me-1"></i>
-                                    {event.location}
-                                  </small>
-                                </div>
-                              )}
-                            </div>
-                            {event.event_type && (
-                              <span className="badge bg-light text-dark">
-                                {event.event_type}
-                              </span>
-                            )}
-                      </div>
-                    </div>
-                      ))}
-                  </div>
-                  <style>{`
-                    @keyframes slideInRight {
-                      from {
-                        opacity: 0;
-                        transform: translateX(100%);
-                      }
-                      to {
-                        opacity: 1;
-                        transform: translateX(0);
-                      }
-                    }
-                  `}</style>
-                </div>
-              )}
-            </div>
-                </div>
-              </div>
-
-        {/* FAQs Section */}
-        <div className="col-lg-4 col-md-12">
-          <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #fee140" }}>
-            <div className="card-header border-0" style={{ 
-              background: "linear-gradient(135deg, #fa709a15 0%, #fee14015 100%)"
-            }}>
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <h5 className="mb-0">
-                  <i className="bx bx-help-circle me-2" style={{ color: "#fee140" }}></i>
-                  <span style={{ color: "#fee140" }}>Recent FAQs</span>
-                </h5>
-              </div>
-              <div className="mt-2">
-                <div className="input-group input-group-sm">
-                  <span className="input-group-text" style={{ backgroundColor: "white", borderColor: "#fee140" }}>
-                    <i className="bx bx-search" style={{ color: "#fee140" }}></i>
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search FAQs..."
-                    value={faqSearchQuery}
-                    onChange={(e) => {
-                      setFaqSearchQuery(e.target.value);
-                      setFaqOffset(0); // Reset offset when searching
-                    }}
-                    style={{ borderColor: "#fee140" }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="card-body p-3">
-              {(() => {
-                const filteredFaqs = faqs.filter(faq => {
-                  if (!faqSearchQuery.trim()) return true;
-                  const query = faqSearchQuery.toLowerCase();
-                  return (
-                    faq.question?.toLowerCase().includes(query) ||
-                    faq.answer?.toLowerCase().includes(query)
-                  );
-                });
-
-                if (filteredFaqs.length === 0) {
-                  return (
-                    <div className="text-center py-4 text-muted">
-                      <i className="bx bx-info-circle fs-1 mb-2"></i>
-                      <p>{faqSearchQuery ? "No FAQs found matching your search" : "No FAQs available"}</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <>
-                    <div 
-                      className="row g-3"
-                      style={{
-                        overflow: "hidden",
-                        position: "relative",
-                        minHeight: "200px"
-                      }}
-                    >
-                      {filteredFaqs.slice(faqOffset, faqOffset + 3).map((faq, index) => (
-                        <div 
-                          key={faq.uid} 
-                          className="col-12"
-                          style={{
-                            animation: `slideInRight 0.5s ease-out ${index * 0.1}s both`
-                          }}
-                        >
-                          <div
-                            className="card border-0 shadow-sm cursor-pointer h-100"
-                            style={{ 
-                              borderLeft: "4px solid #fee140",
-                              transition: "all 0.3s ease",
-                              background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)"
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateY(-5px)";
-                              e.currentTarget.style.boxShadow = "0 8px 16px rgba(254, 225, 64, 0.2)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                            }}
-                            onClick={() => {
-                              setSelectedFaq(faq);
-                              const modal = new window.bootstrap.Modal(document.getElementById('faqViewModal'));
-                              modal.show();
-                            }}
-                          >
-                            <div className="card-body p-3">
-                              <div className="d-flex align-items-start mb-2">
-                                <i className="bx bx-help-circle text-warning me-2 mt-1 fs-5"></i>
-                                <h6 className="mb-0 fw-bold flex-grow-1" style={{ color: "#fee140" }}>
-                                  {faq.question}
-                                </h6>
-                      </div>
-                              <p className="text-muted mb-2 small" style={{ lineHeight: "1.5" }}>
-                                {truncateWords(faq.answer, 20)}
-                              </p>
-                    
-                  </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {filteredFaqs.length > 3 && (
-                      <div className="text-center mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
-                        {faqOffset > 0 && (
-                      <button
-                            className="btn btn-sm"
-                            style={{ 
-                              backgroundColor: "#fee140", 
-                              color: "#333", 
-                              border: "none",
-                              fontWeight: "500"
-                            }}
-                            onClick={() => setFaqOffset(Math.max(0, faqOffset - 3))}
-                          >
-                            <i className="bx bx-chevron-left me-1"></i>
-                            Previous
-                      </button>
-                        )}
-                        {faqOffset === 0 && <div></div>}
-                        {faqOffset + 3 < filteredFaqs.length && (
-                      <button
-                            className="btn btn-sm"
-                            style={{ 
-                              backgroundColor: "#fee140", 
-                              color: "#333", 
-                              border: "none",
-                              fontWeight: "500"
-                            }}
-                            onClick={() => setFaqOffset(Math.min(filteredFaqs.length - 3, faqOffset + 3))}
-                          >
-                            <i className="bx bx-chevron-right me-1"></i>
-                            See More ({filteredFaqs.length - faqOffset - 3} more)
-                          </button>
-                        )}
-                        {faqOffset + 3 >= filteredFaqs.length && faqOffset > 0 && (
-                          <div></div>
-                        )}
-                      </div>
-                    )}
-                    <style>{`
-                      @keyframes slideInRight {
-                        from {
-                          opacity: 0;
-                          transform: translateX(100%);
-                        }
-                        to {
-                          opacity: 1;
-                          transform: translateX(0);
-                        }
-                      }
-                    `}</style>
-                  </>
-                );
-              })()}
             </div>
           </div>
+        </div>
+
+        {/* PR flyers & posters — same row as Events */}
+        <div className="col-12 col-lg-4 d-flex">
+          <PrFlyersGallery
+            flyers={prFlyers}
+            headerRight={
+              hasAccess(user, [
+                "can_add_pr_flyer",
+                "can_edit_pr_flyer",
+                "can_delete_pr_flyer",
+              ]) ? (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => navigate("/ppaa-internal-portal/pr-flyers")}
+                >
+                  <i className="bx bx-edit-alt me-1"></i>
+                  Manage
+                </button>
+              ) : null
+            }
+          />
         </div>
       </div>
                         </div>
@@ -964,19 +965,19 @@ export const StaffDashboard = () => {
                         }}
                       >
                         {/* Active Todos and Announcements - Side by Side */}
-      <div className="row g-4 mb-4">
+      <div className="row g-3 g-lg-4 mb-4">
         {/* Active Todos Section - Left */}
-        <div className="col-lg-6 col-md-12">
-          <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #a8edea" }}>
-            <div className="card-header border-0 d-flex justify-content-between align-items-center" style={{ 
-              background: "linear-gradient(135deg, #a8edea15 0%, #fed6e315 100%)"
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #00853f" }}>
+            <div className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center" style={{ 
+              background: "linear-gradient(135deg, rgba(0, 133, 63, 0.14) 0%, rgba(61, 166, 106, 0.14) 100%)"
             }}>
               <h5 className="mb-0">
-                <i className="bx bx-check-square me-2" style={{ color: "#a8edea" }}></i>
-                <span style={{ color: "#a8edea", fontWeight: "bold"}}>Active Todo List</span>
+                <i className="bx bx-check-square me-2" style={{ color: "#00853f" }}></i>
+                <span style={{ color: "#00853f" }}>Active Todo List</span>
               </h5>
               <div {...provided.dragHandleProps} style={{ cursor: 'grab', padding: '5px' }}>
-                <i className="bx bx-menu" style={{ color: "#a8edea", fontSize: "1.5rem" }}></i>
+                <i className="bx bx-menu" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
               </div>
             </div>
             <div className="card-body p-0">
@@ -997,14 +998,16 @@ export const StaffDashboard = () => {
                     {todos.slice(todoOffset, todoOffset + 3).map((todo, index) => (
                       <div
                         key={todo.uid}
-                        className="list-group-item list-group-item-action cursor-pointer"
-                        style={{ 
-                          borderLeft: "4px solid #a8edea",
+                        className="list-group-item list-group-item-action cursor-pointer py-3 px-3"
+                        style={{
+                          borderLeft: `5px solid ${getTodoDashboardAccentColor(todo)}`,
                           transition: "all 0.2s ease",
-                          animation: `slideInRight 0.5s ease-out ${index * 0.1}s both`
+                          animation: `slideInRight 0.5s ease-out ${index * 0.1}s both`,
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#a8edea10";
+                          e.currentTarget.style.backgroundColor = portalDark
+                            ? "rgba(52, 211, 153, 0.12)"
+                            : "rgba(0, 133, 63, 0.06)";
                           e.currentTarget.style.transform = "translateX(5px)";
                         }}
                         onMouseLeave={(e) => {
@@ -1018,25 +1021,19 @@ export const StaffDashboard = () => {
                         }}
                       >
                         <div className="d-flex justify-content-between align-items-start">
-                          <div className="flex-grow-1">
-                            <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                              <h6 className="mb-0">{todo.title}</h6>
-                              <span className={getTodoStatusBadge(todo.status)}>
+                          <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                            <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                              <h6 className="mb-0 text-break">{todo.title}</h6>
+                              <span className={`${getTodoStatusBadge(todo.status)} flex-shrink-0`}>
                                 {todo.status === 'PENDING' ? 'Pending' : 
                                  todo.status === 'IN_PROGRESS' ? 'In Progress' : 
                                  todo.status}
                               </span>
-                              <span className={getTodoPriorityBadge(todo.priority)}>
+                              <span className={`${getTodoPriorityBadge(todo.priority)} flex-shrink-0`}>
                                 {todo.priority}
                               </span>
-                      </div>
-                            {todo.description && (
-                              <p className="text-muted mb-1 small">
-                                {todo.description.substring(0, 80)}
-                                {todo.description.length > 80 ? "..." : ""}
-                              </p>
-                            )}
-                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                            </div>
+                            <div className="d-flex align-items-center gap-3 flex-wrap mt-1">
                               {todo.department && (
                                 <span className="badge bg-light text-dark">
                                   <i className="bx bx-building me-1"></i>
@@ -1053,7 +1050,7 @@ export const StaffDashboard = () => {
                                 >
                                   <i className="bx bx-time me-1"></i>
                                   Start: {formatTodoDate(todo.start_date)}
-                  </small>
+                                </small>
                               )}
                               {todo.due_date && (
                                 <small 
@@ -1067,10 +1064,10 @@ export const StaffDashboard = () => {
                                   Due: {formatTodoDate(todo.due_date)}
                                 </small>
                               )}
-                    </div>
-                  </div>
-            </div>
-                    </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                   {todos.length > 3 && (
@@ -1079,8 +1076,8 @@ export const StaffDashboard = () => {
                       <button
                           className="btn btn-sm"
                           style={{ 
-                            backgroundColor: "#a8edea", 
-                            color: "#333", 
+                            backgroundColor: "#00853f", 
+                            color: "#fff", 
                             border: "none",
                             fontWeight: "500"
                           }}
@@ -1095,8 +1092,8 @@ export const StaffDashboard = () => {
                         <button
                           className="btn btn-sm"
                           style={{ 
-                            backgroundColor: "#a8edea", 
-                            color: "#333", 
+                            backgroundColor: "#00853f", 
+                            color: "#fff", 
                             border: "none",
                             fontWeight: "500"
                           }}
@@ -1130,17 +1127,17 @@ export const StaffDashboard = () => {
               </div>
 
         {/* Announcements Section - Right */}
-        <div className="col-lg-6 col-md-12">
-          <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #667eea" }}>
-            <div className="card-header border-0 d-flex justify-content-between align-items-center" style={{ 
-              background: "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)"
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #00853f" }}>
+            <div className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center" style={{ 
+              background: "linear-gradient(135deg, rgba(0, 133, 63, 0.14) 0%, rgba(61, 166, 106, 0.14) 100%)"
             }}>
               <h5 className="mb-0">
-                <i className="bx bx-bullhorn me-2" style={{ color: "#667eea" }}></i>
-                <span style={{ color: "#667eea" }}>Recent Announcements</span>
+                <i className="bx bx-bullhorn me-2" style={{ color: "#00853f" }}></i>
+                <span style={{ color: "#00853f" }}>Recent Announcements</span>
               </h5>
               <div {...provided.dragHandleProps} style={{ cursor: 'grab', padding: '5px' }}>
-                <i className="bx bx-menu" style={{ color: "#667eea", fontSize: "1.5rem" }}></i>
+                <i className="bx bx-menu" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
               </div>
             </div>
             <div className="card-body p-3">
@@ -1168,19 +1165,23 @@ export const StaffDashboard = () => {
                         }}
                       >
                         <div
-                          className="card border-0 shadow-sm cursor-pointer h-100"
+                          className="card border-0 shadow-sm cursor-pointer h-100 portal-tile-surface"
                           style={{ 
-                            borderLeft: "4px solid #667eea",
+                            borderLeft: "4px solid #00853f",
                             transition: "all 0.3s ease",
-                            background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)"
+                            background: portalDark
+                              ? "linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.75) 100%)"
+                              : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)"
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.transform = "translateY(-5px)";
-                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(102, 126, 234, 0.2)";
+                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 133, 63, 0.18)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = "translateY(0)";
-                            e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+                            e.currentTarget.style.boxShadow = portalDark
+                              ? "0 2px 4px rgba(0,0,0,0.35)"
+                              : "0 2px 4px rgba(0,0,0,0.1)";
                           }}
                           onClick={() => {
                             setSelectedAnnouncement(announcement);
@@ -1194,9 +1195,14 @@ export const StaffDashboard = () => {
                                 {announcement.is_pinned && (
                                   <i className="bx bx-pin text-warning fs-5"></i>
                                 )}
-                                <h6 className="mb-0 fw-bold" style={{ color: "#667eea" }}>
+                                <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
                                   {announcement.title}
                                 </h6>
+                                {isPortalAnnouncementNew(announcement.created_at) && (
+                                  <span className="badge rounded-pill portal-announcement-new-badge">
+                                    NEW
+                                  </span>
+                                )}
                       </div>
                               <span className={`badge ${getPriorityColor(announcement.priority)}`}>
                                 {announcement.priority}
@@ -1205,19 +1211,63 @@ export const StaffDashboard = () => {
                             <p className="text-muted mb-2 small" style={{ lineHeight: "1.5" }}>
                               {truncateWords(announcement.content, 20)}
                             </p>
-                            <div className="d-flex align-items-center gap-2">
-                              {announcement.start_date ? (
-                                <small className="text-muted d-flex align-items-center">
-                                  <i className="bx bx-calendar me-1"></i>
-                                  {formatDate(announcement.start_date, "DD/MM/YYYY")}
-                  </small>
-                              ) : (
-                                <small className="text-muted d-flex align-items-center">
-                                  <i className="bx bx-calendar me-1"></i>
-                                  {formatDate(announcement.created_at, "DD/MM/YYYY")}
+                            {isPortalAnnouncementNew(announcement.created_at) ? (
+                              <div className="d-flex flex-row align-items-center flex-wrap gap-2 gap-sm-3">
+                                <small
+                                  className="d-flex align-items-center mb-0"
+                                  style={{ color: "#198754" }}
+                                >
+                                  <i
+                                    className="bx bx-calendar-event me-1"
+                                    style={{ color: "#198754" }}
+                                  ></i>
+                                  <span className="fw-semibold me-1">Start:</span>
+                                  <span>
+                                    {formatDate(
+                                      announcement.start_date || announcement.created_at
+                                    )}
+                                  </span>
                                 </small>
-                              )}
-                </div>
+                                <span
+                                  className="d-none d-sm-inline text-muted"
+                                  style={{ opacity: 0.45 }}
+                                  aria-hidden
+                                >
+                                  |
+                                </span>
+                                <small
+                                  className="d-flex align-items-center mb-0"
+                                  style={{ color: "#c62828" }}
+                                >
+                                  <i
+                                    className="bx bx-calendar-check me-1"
+                                    style={{ color: "#dc3545" }}
+                                  ></i>
+                                  <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
+                                    End:
+                                  </span>
+                                  <span style={{ color: "#c62828" }}>
+                                    {announcement.end_date
+                                      ? formatDate(announcement.end_date)
+                                      : "—"}
+                                  </span>
+                                </small>
+                              </div>
+                            ) : (
+                              <div className="d-flex align-items-center gap-2">
+                                {announcement.start_date ? (
+                                  <small className="text-muted d-flex align-items-center">
+                                    <i className="bx bx-calendar me-1"></i>
+                                    {formatDate(announcement.start_date, "DD/MM/YYYY")}
+                                  </small>
+                                ) : (
+                                  <small className="text-muted d-flex align-items-center">
+                                    <i className="bx bx-calendar me-1"></i>
+                                    {formatDate(announcement.created_at, "DD/MM/YYYY")}
+                                  </small>
+                                )}
+                              </div>
+                            )}
               </div>
             </div>
                     </div>
@@ -1229,7 +1279,7 @@ export const StaffDashboard = () => {
                       <button
                           className="btn btn-sm"
                           style={{ 
-                            backgroundColor: "#667eea", 
+                            backgroundColor: "#00853f", 
                             color: "white", 
                             border: "none",
                             fontWeight: "500"
@@ -1245,7 +1295,7 @@ export const StaffDashboard = () => {
                         <button
                           className="btn btn-sm"
                           style={{ 
-                            backgroundColor: "#667eea", 
+                            backgroundColor: "#00853f", 
                             color: "white", 
                             border: "none",
                             fontWeight: "500"
@@ -1306,15 +1356,46 @@ export const StaffDashboard = () => {
                         <div className="row g-4 mb-4">
         <div className="col-12">
           <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #17a2b8" }}>
-            <div className="card-header border-0 d-flex justify-content-between align-items-center" style={{ 
+            <div className="card-header border-0 portal-dashboard-card-header d-flex flex-wrap justify-content-between align-items-center gap-2" style={{ 
               background: "linear-gradient(135deg, #17a2b815 0%, #13849615 100%)"
             }}>
-              <h5 className="mb-0">
-                <i className="bx bx-file me-2" style={{ color: "#17a2b8" }}></i>
-                <span style={{ color: "#17a2b8" }}>Documents by Category</span>
+              <h5 className="mb-0 d-flex align-items-center flex-wrap gap-2">
+                <i className="bx bx-library me-2" style={{ color: "#17a2b8" }}></i>
+                <span style={{ color: "#17a2b8" }}>Documents & FAQs</span>
               </h5>
-              <div className="d-flex align-items-center gap-2">
-                {selectedCategory && (
+              <div className="d-flex align-items-center flex-wrap gap-2 ms-auto">
+                <div className="btn-group btn-group-sm" role="group" aria-label="Documents or FAQs">
+                  <button
+                    type="button"
+                    className={`btn ${docsLibraryTab === "documents" ? "" : "btn-outline-secondary"}`}
+                    style={
+                      docsLibraryTab === "documents"
+                        ? { backgroundColor: "#17a2b8", color: "white", borderColor: "#17a2b8" }
+                        : { borderColor: "#17a2b8", color: "#17a2b8" }
+                    }
+                    onClick={() => setDocsLibraryTab("documents")}
+                  >
+                    <i className="bx bx-folder me-1"></i>
+                    Documents
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${docsLibraryTab === "faqs" ? "" : "btn-outline-secondary"}`}
+                    style={
+                      docsLibraryTab === "faqs"
+                        ? { backgroundColor: "#17a2b8", color: "white", borderColor: "#17a2b8" }
+                        : { borderColor: "#17a2b8", color: "#17a2b8" }
+                    }
+                    onClick={() => {
+                      setDocsLibraryTab("faqs");
+                      setLibraryFaqOffset(0);
+                    }}
+                  >
+                    <i className="bx bx-help-circle me-1"></i>
+                    FAQs
+                  </button>
+                </div>
+                {docsLibraryTab === "documents" && selectedCategory && (
                   <button
                     className="btn btn-sm"
                     style={{ backgroundColor: "#17a2b8", color: "white", border: "none" }}
@@ -1333,7 +1414,123 @@ export const StaffDashboard = () => {
               </div>
             </div>
             <div className="card-body p-0">
-              {(() => {
+              {docsLibraryTab === "faqs" ? (
+                <div className="p-3">
+                  <div className="input-group input-group-sm mb-3">
+                    <span className="input-group-text bg-light">
+                      <i className="bx bx-search text-muted"></i>
+                    </span>
+                    <input
+                      type="search"
+                      className="form-control"
+                      placeholder="Search FAQs in this panel…"
+                      value={libraryFaqSearch}
+                      onChange={(e) => {
+                        setLibraryFaqSearch(e.target.value);
+                        setLibraryFaqOffset(0);
+                      }}
+                      aria-label="Search FAQs"
+                    />
+                  </div>
+                  {(() => {
+                    const filtered = faqs.filter((faq) => {
+                      if (!libraryFaqSearch.trim()) return true;
+                      const q = libraryFaqSearch.toLowerCase();
+                      return (
+                        faq.question?.toLowerCase().includes(q) ||
+                        faq.answer?.toLowerCase().includes(q)
+                      );
+                    });
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="text-center py-4 text-muted">
+                          <i className="bx bx-info-circle fs-1 mb-2"></i>
+                          <p className="mb-0">
+                            {libraryFaqSearch.trim()
+                              ? "No FAQs match your search."
+                              : "No FAQs available."}
+                          </p>
+                        </div>
+                      );
+                    }
+                    const pageSize = 5;
+                    const slice = filtered.slice(libraryFaqOffset, libraryFaqOffset + pageSize);
+                    return (
+                      <>
+                        <div className="row g-3">
+                          {slice.map((faq, index) => (
+                            <div key={faq.uid} className="col-12 col-md-6 col-xl-4">
+                              <div
+                                className="card border-0 shadow-sm h-100 cursor-pointer portal-faq-item-card"
+                                style={{
+                                  borderLeft: "4px solid #17a2b8",
+                                  animation: `slideInRight 0.35s ease-out ${index * 0.06}s both`,
+                                }}
+                                onClick={() => {
+                                  setSelectedFaq(faq);
+                                  const modal = new window.bootstrap.Modal(
+                                    document.getElementById("faqViewModal")
+                                  );
+                                  modal.show();
+                                }}
+                              >
+                                <div className="card-body p-3">
+                                  <div className="d-flex align-items-start mb-2">
+                                    <i className="bx bx-help-circle me-2 mt-1 fs-5" style={{ color: "#17a2b8" }}></i>
+                                    <h6 className="mb-0 flex-grow-1 fw-semibold">{faq.question}</h6>
+                                  </div>
+                                  <p className="mb-0 small text-muted" style={{ lineHeight: 1.5 }}>
+                                    {truncateWords(faq.answer, 22)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {filtered.length > pageSize && (
+                          <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              disabled={libraryFaqOffset <= 0}
+                              onClick={() =>
+                                setLibraryFaqOffset((o) => Math.max(0, o - pageSize))
+                              }
+                            >
+                              <i className="bx bx-chevron-left me-1"></i>
+                              Previous
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              disabled={libraryFaqOffset + pageSize >= filtered.length}
+                              onClick={() =>
+                                setLibraryFaqOffset((o) =>
+                                  Math.min(
+                                    Math.max(0, filtered.length - pageSize),
+                                    o + pageSize
+                                  )
+                                )
+                              }
+                            >
+                              Next
+                              <i className="bx bx-chevron-right ms-1"></i>
+                            </button>
+                          </div>
+                        )}
+                        <style>{`
+                          @keyframes slideInRight {
+                            from { opacity: 0; transform: translateX(12px); }
+                            to { opacity: 1; transform: translateX(0); }
+                          }
+                        `}</style>
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : null}
+              {docsLibraryTab === "documents"
+                ? (() => {
                 // Group documents by category
                 const documentsByCategory = {};
                 documents.forEach(doc => {
@@ -1365,11 +1562,13 @@ export const StaffDashboard = () => {
                           return (
                             <div key={categoryName} className="col-lg-4 col-md-6 col-sm-6">
                               <div
-                                className="card border-0 shadow-sm cursor-pointer h-100"
+                                className="card border-0 shadow-sm cursor-pointer h-100 portal-tile-surface"
                                 style={{ 
                                   borderLeft: "4px solid #17a2b8",
                                   transition: "all 0.3s ease",
-                                  background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)"
+                                  background: portalDark
+                                    ? "linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.75) 100%)"
+                                    : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)"
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.transform = "translateY(-5px)";
@@ -1377,7 +1576,9 @@ export const StaffDashboard = () => {
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.transform = "translateY(0)";
-                                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+                                  e.currentTarget.style.boxShadow = portalDark
+                                    ? "0 2px 4px rgba(0,0,0,0.35)"
+                                    : "0 2px 4px rgba(0,0,0,0.1)";
                                 }}
                                 onClick={() => {
                                   setSelectedCategory(categoryName);
@@ -1406,7 +1607,7 @@ export const StaffDashboard = () => {
                 const categoryDocuments = documentsByCategory[selectedCategory] || [];
                 return (
                   <>
-                    <div className="px-3 pt-3 pb-2 border-bottom bg-light">
+                    <div className="px-3 pt-3 pb-2 border-bottom bg-light portal-docs-category-toolbar">
                       <h6 className="mb-0 fw-bold">
                         <i className="bx bx-folder me-2" style={{ color: "#17a2b8" }}></i>
                         {selectedCategory} ({categoryDocuments.length} {categoryDocuments.length === 1 ? 'document' : 'documents'})
@@ -1437,7 +1638,9 @@ export const StaffDashboard = () => {
                               flexDirection: "column"
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#17a2b810";
+                              e.currentTarget.style.backgroundColor = portalDark
+                                ? "rgba(23, 162, 184, 0.22)"
+                                : "#17a2b810";
                               e.currentTarget.style.transform = "translateX(5px)";
                             }}
                             onMouseLeave={(e) => {
@@ -1458,27 +1661,36 @@ export const StaffDashboard = () => {
                                 </p>
                               )}
                             </div>
-                            {document.file_url ? (
-                              <a
-                                href={document.file_url}
-                                download
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            {document.file_key ? (
+                              <button
+                                type="button"
                                 className="btn btn-sm w-100"
-                                style={{ 
-                                  backgroundColor: "#17a2b8", 
-                                  color: "white", 
+                                style={{
+                                  backgroundColor: "#17a2b8",
+                                  color: "white",
                                   border: "none",
                                   fontWeight: "500",
-                                  marginTop: "auto"
+                                  marginTop: "auto",
                                 }}
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
+                                  try {
+                                    await downloadPortalDocument(
+                                      document.uid,
+                                      document.original_filename || "document"
+                                    );
+                                  } catch {
+                                    showToast(
+                                      "Download failed. Re-upload the file if this is an old document.",
+                                      "danger",
+                                      "Download"
+                                    );
+                                  }
                                 }}
                               >
                                 <i className="bx bx-download me-1"></i>
                                 Download
-                              </a>
+                              </button>
                             ) : (
                               <button
                                 className="btn btn-sm w-100"
@@ -1552,7 +1764,8 @@ export const StaffDashboard = () => {
                     `}</style>
                   </>
                 );
-              })()}
+              })()
+              : null}
               </div>
             </div>
         </div>
@@ -1562,7 +1775,7 @@ export const StaffDashboard = () => {
       <div className="row g-4">
         <div className="col-12">
           <div className="card border-0 shadow-lg h-100" style={{ borderTop: "4px solid #ff6b6b" }}>
-            <div className="card-header border-0 d-flex justify-content-between align-items-center" style={{ 
+            <div className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center" style={{ 
               background: "linear-gradient(135deg, #ff6b6b15 0%, #ee5a6f15 100%)"
             }}>
               <h5 className="mb-0">
@@ -1573,7 +1786,10 @@ export const StaffDashboard = () => {
                 <i className="bx bx-menu" style={{ color: "#ff6b6b", fontSize: "1.5rem" }}></i>
               </div>
             </div>
-            <div className="card-body p-3 p-md-4" style={{ background: "linear-gradient(135deg, #ff6b6b05 0%, #ee5a6f05 100%)" }}>
+            <div
+              className="card-body p-3 p-md-4 portal-quick-links-body"
+              style={{ background: "linear-gradient(135deg, #ff6b6b05 0%, #ee5a6f05 100%)" }}
+            >
               {quickLinks.length === 0 ? (
                 <div className="text-center py-4 text-muted">
                   <i className="bx bx-info-circle fs-1 mb-2"></i>
@@ -1582,17 +1798,8 @@ export const StaffDashboard = () => {
               ) : (
                 <div className="row g-3 justify-content-start">
                   {quickLinks.map((link, index) => {
-                    const colors = [
-                      { bg: "#f0f4ff", border: "#667eea", icon: "#667eea", text: "#333" },
-                      { bg: "#fff0f5", border: "#f5576c", icon: "#f5576c", text: "#333" },
-                      { bg: "#e6f7ff", border: "#00f2fe", icon: "#00f2fe", text: "#333" },
-                      { bg: "#fff9e6", border: "#fee140", icon: "#fee140", text: "#333" },
-                      { bg: "#ffe6e6", border: "#ff6b6b", icon: "#ff6b6b", text: "#333" },
-                      { bg: "#f0f9ff", border: "#4facfe", icon: "#4facfe", text: "#333" },
-                      { bg: "#f5f0ff", border: "#764ba2", icon: "#764ba2", text: "#333" },
-                      { bg: "#fff5e6", border: "#fcb69f", icon: "#fcb69f", text: "#333" },
-                    ];
-                    const colorScheme = colors[index % colors.length];
+                    const colorScheme =
+                      quickLinkPalette[index % quickLinkPalette.length];
                     
                     return (
                       <div key={link.uid} className="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6">
@@ -1634,7 +1841,9 @@ export const StaffDashboard = () => {
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                              e.currentTarget.style.boxShadow = portalDark
+                                ? "0 2px 8px rgba(0,0,0,0.35)"
+                                : "0 2px 8px rgba(0,0,0,0.1)";
                               e.currentTarget.style.borderColor = colorScheme.border;
                             }}
                           >
@@ -1717,38 +1926,31 @@ export const StaffDashboard = () => {
         aria-hidden="true"
       >
         <div className="modal-dialog modal-lg">
-          <div className="modal-content">
-            <div className="modal-header border-bottom" style={{ backgroundColor: "#fee140", color: "#333" }}>
-              <h5 className="modal-title fw-bold text-dark" id="faqViewModalLabel">
-                <i className="bx bx-help-circle me-2"></i>
+          <div className="modal-content portal-faq-modal-content">
+            <div className="modal-header border-bottom portal-faq-modal-header">
+              <h5 className="modal-title fw-bold text-white" id="faqViewModalLabel">
+                <i className="bx bx-help-circle me-2" aria-hidden></i>
                 FAQ
               </h5>
-                      <button
-                        type="button"
-                className="btn-close"
+              <button
+                type="button"
+                className="btn-close portal-faq-modal-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
                 onClick={() => setSelectedFaq(null)}
               ></button>
-          </div>
-            <div className="modal-body">
+            </div>
+            <div className="modal-body portal-faq-modal-body">
               {selectedFaq && (
                 <>
                   {/* Header */}
                   <div className="mb-3">
-                    <h4 className="mb-2 fw-bold text-dark" style={{ lineHeight: "1.2" }}>
+                    <h4 className="mb-2 fw-bold portal-faq-modal-question" style={{ lineHeight: "1.2" }}>
                       {selectedFaq.question}
                     </h4>
 
                     <div className="d-flex flex-wrap align-items-center gap-2">
-                      <span
-                        className="badge"
-                        style={{
-                          backgroundColor: "#fee14025",
-                          color: "#8a6d00",
-                          border: "1px solid #fee140",
-                        }}
-                      >
+                      <span className="badge portal-faq-modal-badge">
                         <i className="bx bx-message-rounded-dots me-1"></i>
                         Answer
                       </span>
@@ -1756,9 +1958,9 @@ export const StaffDashboard = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div className="p-3 rounded portal-faq-modal-answer">
                     {selectedFaq.answer ? (
-                      <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
+                      <p className="mb-0" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedFaq.answer}
                       </p>
                     ) : (
@@ -1768,7 +1970,7 @@ export const StaffDashboard = () => {
                 </>
               )}
               </div>
-            <div className="modal-footer">
+            <div className="modal-footer portal-faq-modal-footer">
                     <button
                       type="button"
                 className="btn btn-secondary"
@@ -1793,7 +1995,7 @@ export const StaffDashboard = () => {
       >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
-            <div className="modal-header border-bottom" style={{ backgroundColor: "#667eea", color: "white" }}>
+            <div className="modal-header border-bottom" style={{ backgroundColor: "#00853f", color: "white" }}>
               <h5 className="modal-title fw-bold text-white" id="announcementViewModalLabel">
                 <i className="bx bx-bullhorn me-2"></i>
                 Announcement
@@ -1849,7 +2051,10 @@ export const StaffDashboard = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div
+                    className="p-3 rounded border portal-modal-muted-panel"
+                    style={{ backgroundColor: "#f8f9fa" }}
+                  >
                     {selectedAnnouncement.content ? (
                       <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedAnnouncement.content}
@@ -1860,9 +2065,9 @@ export const StaffDashboard = () => {
                   </div>
 
                   {/* Attachment */}
-                  {selectedAnnouncement.file_url && (
+                  {selectedAnnouncement.file_key && (
                     <div className="mt-3">
-                      <div className="card border-0" style={{ backgroundColor: "#ffffff" }}>
+                      <div className="card border-0 portal-modal-muted-panel" style={{ backgroundColor: "#ffffff" }}>
                         <div className="card-body p-3 border rounded d-flex align-items-center justify-content-between gap-3 flex-wrap">
                           <div className="d-flex align-items-center gap-3">
                             <div
@@ -1871,10 +2076,10 @@ export const StaffDashboard = () => {
                                 width: 40,
                                 height: 40,
                                 borderRadius: 10,
-                                background: "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
+                                background: "linear-gradient(135deg, rgba(0, 133, 63, 0.1) 0%, rgba(61, 166, 106, 0.1) 100%)",
                               }}
                             >
-                              <i className="bx bx-file" style={{ color: "#667eea", fontSize: "1.25rem" }}></i>
+                              <i className="bx bx-file" style={{ color: "#00853f", fontSize: "1.25rem" }}></i>
                             </div>
 
                             <div>
@@ -1882,19 +2087,31 @@ export const StaffDashboard = () => {
                             </div>
                           </div>
 
-                          <a
-                            href={selectedAnnouncement.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
                             className="btn btn-sm btn-primary"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await downloadPortalAnnouncement(
+                                  selectedAnnouncement.uid,
+                                  selectedAnnouncement.original_filename || "attachment"
+                                );
+                              } catch {
+                                showToast(
+                                  "Download failed. Sign in again or re-upload the attachment.",
+                                  "danger",
+                                  "Download"
+                                );
+                              }
+                            }}
                           >
                             <i className="bx bx-download me-1"></i>
-                            Open file
-                        </a>
+                            Download
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
                   )}
                 </>
               )}
@@ -1923,14 +2140,17 @@ export const StaffDashboard = () => {
       >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
-            <div className="modal-header border-bottom" style={{ backgroundColor: "#a8edea", color: "#333" }}>
+            <div
+              className="modal-header border-bottom portal-todo-modal-header"
+              style={{ backgroundColor: "#a8edea", color: "#333" }}
+            >
               <h5 className="modal-title fw-bold text-dark" id="todoViewModalLabel">
                 <i className="bx bx-check-square me-2"></i>
                 Todo
               </h5>
               <button
                 type="button"
-                className="btn-close"
+                className={portalDark ? "btn-close btn-close-white" : "btn-close"}
                 data-bs-dismiss="modal"
                 aria-label="Close"
                 onClick={() => setSelectedTodo(null)}
@@ -1997,7 +2217,10 @@ export const StaffDashboard = () => {
               </div>
 
                   {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div
+                    className="p-3 rounded border portal-modal-muted-panel"
+                    style={{ backgroundColor: "#f8f9fa" }}
+                  >
                     {selectedTodo.description ? (
                       <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedTodo.description}
@@ -2058,28 +2281,23 @@ export const StaffDashboard = () => {
                     <div className="d-flex flex-wrap align-items-center gap-2">
                       {selectedEvent.event_type && (
                         <span
-                          className="badge"
-                          style={{
-                            backgroundColor: "#00f2fe20",
-                            border: "1px solid #00f2fe",
-                            color: "#007c86",
-                          }}
+                          className={`badge rounded-pill ${getEventTypeBadge(selectedEvent.event_type).class}`}
                         >
-                          <i className="bx bx-tag-alt me-1" style={{ color: "#00bcd4" }}></i>
-                          Type: {selectedEvent.event_type}
-                    </span>
+                          <i className="bx bx-tag-alt me-1"></i>
+                          {getEventTypeBadge(selectedEvent.event_type).label}
+                        </span>
                       )}
 
                       {selectedEvent.location && (
                     <span
                           className="badge"
                           style={{
-                            backgroundColor: "#667eea15",
-                            border: "1px solid #667eea",
+                            backgroundColor: "#00853f15",
+                            border: "1px solid #00853f",
                             color: "#3f51b5",
                           }}
                         >
-                          <i className="bx bx-map me-1" style={{ color: "#667eea" }}></i>
+                          <i className="bx bx-map me-1" style={{ color: "#00853f" }}></i>
                           Location: {selectedEvent.location}
                     </span>
                       )}
@@ -2103,7 +2321,10 @@ export const StaffDashboard = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div
+                    className="p-3 rounded border portal-modal-muted-panel"
+                    style={{ backgroundColor: "#f8f9fa" }}
+                  >
                     {selectedEvent.description ? (
                       <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedEvent.description}
@@ -2128,6 +2349,6 @@ export const StaffDashboard = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };

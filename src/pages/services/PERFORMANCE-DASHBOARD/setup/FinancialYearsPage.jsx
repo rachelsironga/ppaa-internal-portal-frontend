@@ -101,7 +101,7 @@ export const FinancialYearsPage = () => {
           </p>
           {loading ? (
             <div className="text-center py-5">
-              <ReactLoading type="cylon" color="#696cff" height={36} width={60} />
+              <ReactLoading type="cylon" color="#00853f" height={36} width={60} />
               <p className="text-muted mt-2 mb-0">Loading financial years...</p>
             </div>
           ) : list.length === 0 ? (

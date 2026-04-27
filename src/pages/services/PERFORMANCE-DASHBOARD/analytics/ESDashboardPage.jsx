@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import { spismCan } from "../../../../utils/spismPermissions";
 import {
   getFinancialYears,
   getPerformanceAnalytics,
@@ -32,7 +35,17 @@ const formatFYLabel = (fy) => {
 };
 
 export const ESDashboardPage = () => {
+  const user = useSelector((state) => state.userReducer?.data);
+  const canViewApprovalQueue = spismCan(user, "can_view_spism_approval");
+  const canApprovePlanning = spismCan(user, "can_approve_spism_planning");
+  const canApproveImplementation = spismCan(
+    user,
+    "can_approve_spism_implementation",
+    "can_approve_spism_planning"
+  );
+  const canViewImplementation = spismCan(user, "can_view_spism_implementation");
   const [financialYear, setFinancialYear] = useState(getCurrentFinancialYear());
+  const [dataRefreshKey, setDataRefreshKey] = useState(0);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [years, setYears] = useState([]);
@@ -93,7 +106,7 @@ export const ESDashboardPage = () => {
     };
     loadYears();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dataRefreshKey]);
 
   // Load analytics for the selected financial year
   useEffect(() => {
@@ -112,7 +125,7 @@ export const ESDashboardPage = () => {
     if (financialYear) {
       loadAnalytics();
     }
-  }, [financialYear]);
+  }, [financialYear, dataRefreshKey]);
 
   // Load objective report (objectives + targets + KPI%) for the selected FY
   useEffect(() => {
@@ -130,7 +143,7 @@ export const ESDashboardPage = () => {
       }
     };
     loadObjectiveReport();
-  }, [financialYear]);
+  }, [financialYear, dataRefreshKey]);
 
   const statusObjectives = analytics?.status_distribution?.objectives || [];
   const statusTargets = analytics?.status_distribution?.targets || [];
@@ -202,9 +215,79 @@ export const ESDashboardPage = () => {
     return { badge: "bg-label-danger", bar: "bg-danger", label: "Not reached" };
   };
 
+  const showPlanningQueue = canViewApprovalQueue;
+  const showImplementationQueue = canViewImplementation;
+
   return (
-    <>
+    <div className="w-100">
       <BreadCumb pageList={["SPISM", "Approver Dashboard"]} />
+
+      <div className="row">
+        <div className="col-12 mb-4">
+          <div className="card border-0 shadow-sm">
+            <div className="d-flex align-items-end row">
+              <div className="col-md-8">
+                <div className="card-body">
+                  <h5 className="card-title text-primary">
+                    Welcome, {user?.first_name || "User"} {user?.last_name || ""}!
+                  </h5>
+                  <p className="mb-4 text-muted">
+                    {(canApprovePlanning || canApproveImplementation) && (
+                      <>
+                        <strong className="text-body">Institutional approvals.</strong> Approve or return
+                        submitted objectives, targets (KPI), activities, and implementation progress so approved
+                        data feeds this institutional view.{" "}
+                      </>
+                    )}
+                    Review strategic performance for the selected financial year, open an approval queue when you
+                    are ready to act, and refresh analytics to load the latest figures.
+                  </p>
+                  <div className="d-flex gap-2 flex-wrap">
+                    {showPlanningQueue ? (
+                      <Link
+                        className={`btn btn-sm ${showImplementationQueue ? "btn-outline-primary" : "btn-primary"}`}
+                        to="/performance-dashboard/approval"
+                      >
+                        <i className="bx bx-list-check me-1" aria-hidden="true" />
+                        Planning queue
+                      </Link>
+                    ) : null}
+                    {showImplementationQueue ? (
+                      <Link
+                        className={`btn btn-sm ${showPlanningQueue ? "btn-primary" : "btn-outline-primary"}`}
+                        to="/performance-dashboard/approval?type=implementation"
+                      >
+                        <i className="bx bx-check-shield me-1" aria-hidden="true" />
+                        Implementation queue
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setDataRefreshKey((k) => k + 1)}
+                    >
+                      <i className="bx bx-refresh me-1" aria-hidden="true" />
+                      Refresh data
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-4 text-center text-md-start d-none d-md-block">
+                <div className="card-body pb-0 px-0 px-md-4">
+                  <img
+                    src="/assets/img/illustrations/man-with-laptop-light.png"
+                    height="140"
+                    alt=""
+                    data-app-dark-img="illustrations/man-with-laptop-dark.png"
+                    data-app-light-img="illustrations/man-with-laptop-light.png"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="card shadow-sm animate__animated animate__fadeInUp animate__fast">
         <div className="card-header bg-light">
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
@@ -649,7 +732,7 @@ export const ESDashboardPage = () => {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

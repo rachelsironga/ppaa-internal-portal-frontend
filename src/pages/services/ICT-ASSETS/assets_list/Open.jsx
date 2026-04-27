@@ -394,7 +394,7 @@ export const AssetViewPage = () => {
                 <div className="card">
                     <div className="card-body">
                         <center>
-                            <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+                            <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
                             <h6 className="text-muted mt-2">Loading Asset Details...</h6>
                         </center>
                     </div>
@@ -870,7 +870,7 @@ export const AssetViewPage = () => {
                                     <h5 className="mb-3 fw-semibold">Custodian History</h5>
                                     {loadingCustodianHistory ? (
                                         <div className="text-center py-3">
-                                            <ReactLoading type={"spin"} color={"#696cff"} height={30} width={30} />
+                                            <ReactLoading type={"spin"} color={"#00853f"} height={30} width={30} />
                                         </div>
                                     ) : custodianHistory.length === 0 ? (
                                         <div className="alert alert-info">No custodian history found</div>
@@ -903,7 +903,7 @@ export const AssetViewPage = () => {
                                     <h5 className="mb-3 fw-semibold">Location History</h5>
                                     {loadingLocationHistory ? (
                                         <div className="text-center py-3">
-                                            <ReactLoading type={"spin"} color={"#696cff"} height={30} width={30} />
+                                            <ReactLoading type={"spin"} color={"#00853f"} height={30} width={30} />
                                         </div>
                                     ) : locationHistory.length === 0 ? (
                                         <div className="alert alert-info">No location history found</div>
@@ -949,7 +949,7 @@ export const AssetViewPage = () => {
 
                                 {loadingMaintenance ? (
                                     <div className="text-center py-4">
-                                        <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                        <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                         <p className="text-muted mt-2">Loading maintenance records...</p>
                                     </div>
                                 ) : maintenanceRecords.length === 0 ? (
@@ -1050,7 +1050,7 @@ export const AssetViewPage = () => {
 
                                 {loadingTickets ? (
                                     <div className="text-center py-4">
-                                        <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                        <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                         <p className="text-muted mt-2">Loading support tickets...</p>
                                     </div>
                                 ) : supportTickets.length === 0 ? (
@@ -1123,7 +1123,7 @@ export const AssetViewPage = () => {
                                 <h5 className="mb-3 fw-semibold">Asset Activity History</h5>
                                 {loadingHistory ? (
                                     <div className="text-center py-4">
-                                        <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                        <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                         <p className="text-muted mt-2">Loading history...</p>
                                     </div>
                                 ) : assetHistory.length === 0 ? (

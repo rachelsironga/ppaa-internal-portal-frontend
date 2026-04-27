@@ -22,6 +22,25 @@ import { KpiActualsPage } from "../pages/services/PERFORMANCE-DASHBOARD/kpi/KpiA
 import { FinancialYearsPage } from "../pages/services/PERFORMANCE-DASHBOARD/setup/FinancialYearsPage";
 import { FinancialYearOpenPage } from "../pages/services/PERFORMANCE-DASHBOARD/setup/Open";
 
+/** Hide setup / notifications admin UI for planning-officer groups (JWT may lag behind DB). */
+const SPISM_PLANNING_OFFICER_EXCLUDE_ROLES = [
+  "spism_planning_officer",
+  "spims_planning_officer",
+  "spism_planning_office",
+  "spims_planning_office",
+];
+
+/** Financial years + alerts UI: not for planning officers, department heads, or ES approvers. */
+const SPISM_SETUP_ADMIN_EXCLUDE_ROLES = [
+  ...SPISM_PLANNING_OFFICER_EXCLUDE_ROLES,
+  "spism_dept_head",
+  "spism_contributor",
+  "spism_approver",
+];
+
+/** Audit trail UI: not for ES approvers (SPISM Admin still sees it). */
+const SPISM_AUDIT_UI_EXCLUDE_ROLES = ["spism_approver"];
+
 export const performanceDashboardRoutes = (
   <>
     <Route
@@ -35,7 +54,9 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/es-dashboard"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_analytics"]}>
+        <ProtectedRoute
+          requiredPermissions={["can_view_spism_analytics", "can_view_spism_approval"]}
+        >
           <ESDashboardPage />
         </ProtectedRoute>
       }
@@ -43,7 +64,20 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/viewer-dashboard"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_reports"]}>
+        <ProtectedRoute
+          requiredPermissions={["can_view_spism_reports"]}
+          excludeRoles={[
+            "spism_approver",
+            "spims_approver",
+            "spism_planning_officer",
+            "spims_planning_officer",
+            "spism_planning_office",
+            "spims_planning_office",
+            "spism_dept_head",
+            "spism_contributor",
+            "spims_dept_head",
+          ]}
+        >
           <ViewerDashboardPage />
         </ProtectedRoute>
       }
@@ -108,7 +142,10 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/setup/financial-years"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_setup"]}>
+        <ProtectedRoute
+          requiredPermissions={["can_view_spism_setup"]}
+          excludeRoles={SPISM_SETUP_ADMIN_EXCLUDE_ROLES}
+        >
           <FinancialYearsPage />
         </ProtectedRoute>
       }
@@ -116,7 +153,10 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/setup/financial-years/open/:uid"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_setup"]}>
+        <ProtectedRoute
+          requiredPermissions={["can_view_spism_setup"]}
+          excludeRoles={SPISM_SETUP_ADMIN_EXCLUDE_ROLES}
+        >
           <FinancialYearOpenPage />
         </ProtectedRoute>
       }
@@ -180,7 +220,13 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/analytics"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_analytics"]}>
+        <ProtectedRoute
+          requiredPermissions={[
+            "can_view_spism_analytics",
+            "can_view_spism_dashboard",
+            "can_view_spism_reports",
+          ]}
+        >
           <AnalyticsPage />
         </ProtectedRoute>
       }
@@ -188,7 +234,10 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/audit-logs"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_audit_log"]}>
+        <ProtectedRoute
+          requiredPermissions={["can_view_spism_audit_log"]}
+          excludeRoles={SPISM_AUDIT_UI_EXCLUDE_ROLES}
+        >
           <AuditLogsPage />
         </ProtectedRoute>
       }
@@ -196,7 +245,10 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/audit-logs/open/:uid"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_audit_log"]}>
+        <ProtectedRoute
+          requiredPermissions={["can_view_spism_audit_log"]}
+          excludeRoles={SPISM_AUDIT_UI_EXCLUDE_ROLES}
+        >
           <PerformanceAuditLogOpenPage />
         </ProtectedRoute>
       }
@@ -204,7 +256,10 @@ export const performanceDashboardRoutes = (
     <Route
       path="/performance-dashboard/notifications"
       element={
-        <ProtectedRoute requiredPermissions={["can_view_spism_dashboard"]}>
+        <ProtectedRoute
+          requiredPermissions={["can_view_spism_setup"]}
+          excludeRoles={SPISM_SETUP_ADMIN_EXCLUDE_ROLES}
+        >
           <NotificationsPage />
         </ProtectedRoute>
       }

@@ -249,7 +249,7 @@ export const OxygenAllocationPage = () => {
                         <center>
                           <ReactLoading
                             type={"cylon"}
-                            color={"#696cff"}
+                            color={"#00853f"}
                             height={"30px"}
                             width={"50px"}
                           />

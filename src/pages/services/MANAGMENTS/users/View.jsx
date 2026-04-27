@@ -78,7 +78,7 @@ export const UserListPage = () => {
       }}
     >
       <BreadCumb pageList={["Users"]} />
-      <div className="flex-grow-1 container-p-y container-fluid">
+      <div className="flex-grow-1 container-p-y">
         <div className="row g-6 mb-6" style={{ marginBottom: "20px" }}>
           <div className="col-sm-6 col-xl-3">
             <div className="card">
@@ -88,7 +88,7 @@ export const UserListPage = () => {
                     <span className="text-heading">System Users</span>
                     <div className="d-flex align-items-center my-1">
                       {loadingStats ? (
-                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                        <ReactLoading type={"cylon"} color={"#00853f"} height={"20px"} width={"30px"} />
                       ) : (
                         <>
                           <h4 className="mb-0 me-2">{statistics.total}</h4>
@@ -115,7 +115,7 @@ export const UserListPage = () => {
                     <span className="text-heading">Active Users</span>
                     <div className="d-flex align-items-center my-1">
                       {loadingStats ? (
-                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                        <ReactLoading type={"cylon"} color={"#00853f"} height={"20px"} width={"30px"} />
                       ) : (
                         <>
                           <h4 className="mb-0 me-2">{statistics.active}</h4>
@@ -144,7 +144,7 @@ export const UserListPage = () => {
                     <span className="text-heading">Suspend Users</span>
                     <div className="d-flex align-items-center my-1">
                       {loadingStats ? (
-                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                        <ReactLoading type={"cylon"} color={"#00853f"} height={"20px"} width={"30px"} />
                       ) : (
                         <>
                           <h4 className="mb-0 me-2">{statistics.suspended}</h4>
@@ -173,7 +173,7 @@ export const UserListPage = () => {
                     <span className="text-heading">Retired Users</span>
                     <div className="d-flex align-items-center my-1">
                       {loadingStats ? (
-                        <ReactLoading type={"cylon"} color={"#696cff"} height={"20px"} width={"30px"} />
+                        <ReactLoading type={"cylon"} color={"#00853f"} height={"20px"} width={"30px"} />
                       ) : (
                         <>
                           <h4 className="mb-0 me-2">{statistics.retired}</h4>

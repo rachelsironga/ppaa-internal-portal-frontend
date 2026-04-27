@@ -34,10 +34,11 @@ export const Services = () => {
           service.permission,
           service.role,
           userPermissions,
-          userRoles
+          userRoles,
+          user
         )
       ),
-    [userPermissions, userRoles]
+    [userPermissions, userRoles, user]
   );
 
   const categories = [
@@ -97,7 +98,8 @@ export const Services = () => {
       service.permission,
       service.role,
       userPermissions,
-      userRoles
+      userRoles,
+      user
     );
     if (!allowed) {
       // Silently ignore click for now; UI already hides restricted services.
@@ -170,7 +172,7 @@ export const Services = () => {
             color: white;
             text-shadow: 
               0 2px 10px rgba(0, 0, 0, 0.7),
-              0 0 30px rgba(25, 118, 210, 0.5);
+              0 0 28px rgba(0, 133, 63, 0.4);
             letter-spacing: 0.5px;
             position: relative;
             padding: 0 20px;
@@ -193,9 +195,9 @@ export const Services = () => {
             height: 3px;
             background: linear-gradient(90deg, 
               transparent, 
-              #1976d2, 
-              #e53935, 
-              #ffd700, 
+              #b9d9b7, 
+              #3da66a, 
+              #00853f, 
               transparent
             );
             border-radius: 2px;
@@ -318,16 +320,18 @@ export const Services = () => {
             min-width: 300px;
           }
 
+          /* PPAA greens: sage #B9D9B7 → forest #00853F */
           .category-btn {
             padding: 10px 18px;
             background: rgba(255, 255, 255, 0.08);
-            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            border: 1.5px solid rgba(185, 217, 183, 0.35);
             border-radius: 10px;
             color: rgba(255, 255, 255, 0.9);
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease,
+              transform 0.2s ease, filter 0.2s ease;
             white-space: nowrap;
             min-height: 40px;
             display: flex;
@@ -336,16 +340,24 @@ export const Services = () => {
           }
 
           .category-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 215, 0, 0.4);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(0, 133, 63, 0.55);
             transform: translateY(-1px);
           }
 
           .category-btn.active {
-            background: linear-gradient(135deg, #1976d2, #e53935);
-            border-color: rgba(255, 215, 0, 0.6);
-            color: white;
-            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+            background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 45, 22, 0.55), 0 0 10px rgba(0, 90, 45, 0.25);
+            box-shadow: 0 4px 14px rgba(0, 133, 63, 0.45), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+          }
+
+          .category-btn.active:hover {
+            background: linear-gradient(135deg, #c8e4c6 0%, #45b578 45%, #00994a 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 6px 18px rgba(0, 133, 63, 0.5), 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+            transform: translateY(-1px);
           }
 
           .view-toggle {
@@ -434,7 +446,7 @@ export const Services = () => {
             border-radius: 18px;
             background: 
               linear-gradient(#fff, #fff) padding-box,
-              linear-gradient(135deg, #1976d2ef 0%, #e53835e7 60%, #ffd700 100%) border-box;
+              linear-gradient(135deg, rgba(185, 217, 183, 0.95) 0%, rgba(61, 166, 106, 0.92) 45%, rgba(0, 133, 63, 0.95) 100%) border-box;
             padding: 18px;
             cursor: pointer;
             position: relative;
@@ -454,13 +466,13 @@ export const Services = () => {
           }
 
           .compact-service-card:hover {
-            background: linear-gradient(135deg, #1976d2 0%, #e53935 60%, #ffd700 100%) !important;
-            border-color: #ffd700 !important;
+            background: linear-gradient(135deg, #c8e4c6 0%, #45b578 45%, #00994a 100%) !important;
+            border-color: rgba(255, 255, 255, 0.45) !important;
             color: #fff !important;
             transform: translateY(-5px) scale(1.02);
             box-shadow: 
-              0 10px 25px rgba(229, 57, 53, 0.15),
-              0 3px 10px rgba(25, 118, 210, 0.15) !important;
+              0 10px 25px rgba(0, 133, 63, 0.28),
+              0 3px 10px rgba(61, 166, 106, 0.22) !important;
           }
 
           /* Bending Icon Effect */
@@ -473,7 +485,7 @@ export const Services = () => {
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid rgba(25, 118, 210, 0.15);
+            border: 2px solid rgba(0, 133, 63, 0.18);
             transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             position: relative;
             overflow: hidden;
@@ -524,7 +536,7 @@ export const Services = () => {
 
           .compact-icon {
             font-size: 22px;
-            background: linear-gradient(90deg, #1976d2 0%, #e53935 60%, #ffd700 100%);
+            background: linear-gradient(90deg, #b9d9b7 0%, #3da66a 45%, #00853f 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -549,7 +561,7 @@ export const Services = () => {
             font-size: 15px;
             font-weight: 700;
             margin-bottom: 4px;
-            background: linear-gradient(90deg, #1976d2 0%, #e53935 60%, #ffd700 100%);
+            background: linear-gradient(90deg, #b9d9b7 0%, #3da66a 45%, #00853f 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -595,7 +607,7 @@ export const Services = () => {
 
           .compact-card-arrow {
             opacity: 0;
-            color: rgba(25, 118, 210, 0.5);
+            color: rgba(0, 133, 63, 0.55);
             transition: all 0.3s ease;
             flex-shrink: 0;
             width: 18px;
@@ -671,7 +683,7 @@ export const Services = () => {
           }
 
           .reset-btn {
-            background: linear-gradient(135deg, #1976d2, #e53935);
+            background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
             color: white;
             border: none;
             padding: 14px 35px;
@@ -683,13 +695,15 @@ export const Services = () => {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 8px 25px rgba(25, 118, 210, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 133, 63, 0.35);
             min-height: 48px;
+            text-shadow: 0 1px 2px rgba(0, 45, 22, 0.45);
           }
 
           .reset-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(25, 118, 210, 0.4);
+            background: linear-gradient(135deg, #c8e4c6 0%, #45b578 45%, #00994a 100%);
+            box-shadow: 0 12px 35px rgba(0, 133, 63, 0.45);
           }
 
           /* Responsive */

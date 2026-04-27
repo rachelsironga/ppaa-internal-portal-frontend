@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -89,22 +89,31 @@ const ActivityModal = ({
       .finally(() => setTargetsLoading(false));
   }, []);
 
-  const initialValues = {
-    target: selectedActivity?.target ?? "",
-    title: selectedActivity?.title ?? "",
-    description: selectedActivity?.description ?? "",
-    weight: selectedActivity?.weight ?? "",
-    planned_value: selectedActivity?.planned_value ?? "",
-    planned_value_type: inferPlannedValueType(selectedActivity),
-    planned_value_label: selectedActivity?.planned_value_label ?? "",
-    planned_financial_year: selectedActivity?.planned_financial_year ?? "",
-    planned_quarter: selectedActivity?.planned_quarter ?? "",
-    planned_quarters: Array.isArray(selectedActivity?.planned_quarters)
-      ? selectedActivity.planned_quarters
-      : selectedActivity?.planned_quarter != null
-        ? [Number(selectedActivity.planned_quarter)]
-        : [],
-  };
+  const initialValues = useMemo(() => {
+    const targetUid = selectedActivity?.target ?? "";
+    const targetRow = targets.find((t) => t.uid === targetUid);
+    const fyFromObjective =
+      (selectedActivity?.planned_financial_year &&
+        String(selectedActivity.planned_financial_year).trim()) ||
+      targetRow?.objective_financial_year ||
+      "";
+    return {
+      target: targetUid,
+      title: selectedActivity?.title ?? "",
+      description: selectedActivity?.description ?? "",
+      weight: selectedActivity?.weight ?? "",
+      planned_value: selectedActivity?.planned_value ?? "",
+      planned_value_type: inferPlannedValueType(selectedActivity),
+      planned_value_label: selectedActivity?.planned_value_label ?? "",
+      planned_financial_year: fyFromObjective,
+      planned_quarter: selectedActivity?.planned_quarter ?? "",
+      planned_quarters: Array.isArray(selectedActivity?.planned_quarters)
+        ? selectedActivity.planned_quarters
+        : selectedActivity?.planned_quarter != null
+          ? [Number(selectedActivity.planned_quarter)]
+          : [],
+    };
+  }, [selectedActivity, targets]);
 
   const QUARTER_OPTIONS = [
     { value: 1, label: "Q1" },
@@ -121,6 +130,11 @@ const ActivityModal = ({
 
   const handleSubmit = async (values, { setSubmitting, resetForm, setErrors }) => {
     try {
+      const targetRow = targets.find((t) => t.uid === values.target);
+      const resolvedFy =
+        (values.planned_financial_year && String(values.planned_financial_year).trim()) ||
+        targetRow?.objective_financial_year ||
+        "";
       const payload = {
         ...(selectedActivity?.uid && { uid: selectedActivity.uid }),
         target: values.target,
@@ -131,7 +145,7 @@ const ActivityModal = ({
         planned_value_label:
           values.planned_value_label?.trim() ||
           (values.planned_value && values.planned_value_type === "PERCENT" ? "%" : null),
-        planned_financial_year: values.planned_financial_year?.trim() || null,
+        planned_financial_year: resolvedFy || null,
         planned_quarter: values.planned_quarters?.length === 1 ? values.planned_quarters[0] : null,
         planned_quarters: Array.isArray(values.planned_quarters) ? values.planned_quarters : [],
       };
@@ -193,10 +207,13 @@ const ActivityModal = ({
       data-bs-backdrop="static"
       data-bs-keyboard="false"
     >
-      <div className="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+      <div
+        className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+        role="document"
+      >
         <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">{selectedActivity ? "Edit" : "Add"} Activity</h5>
+          <div className="modal-header flex-shrink-0">
+            <h5 className="modal-title">{selectedActivity?.uid ? "Edit" : "Add"} Activity</h5>
             <button type="button" className="btn-close" onClick={handleClose} aria-label="Close" />
           </div>
           <Formik
@@ -215,8 +232,8 @@ const ActivityModal = ({
                 ? getQuarterDateRange(selectedFy?.start_date, selectedFy?.end_date, values.planned_quarters[0])
                 : null;
               return (
-              <Form>
-                <div className="modal-body">
+              <Form className="d-flex flex-column flex-grow-1 overflow-hidden w-100" style={{ minHeight: 0 }}>
+                <div className="modal-body flex-grow-1 overflow-y-auto">
                   <div className="mb-3">
                     <label className="form-label">Target *</label>
                     <Field as="select" name="target" className="form-select" disabled={targetsLoading}
@@ -378,7 +395,7 @@ const ActivityModal = ({
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer flex-shrink-0 border-top">
                   <button
                     type="button"
                     className="btn btn-label-secondary"

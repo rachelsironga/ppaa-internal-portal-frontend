@@ -1,8 +1,35 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import "animate.css";
 import axios from "axios";
-import { API_BASE_URL } from "./Costants";
+import { API_BASE_URL, ACCESS_TOKEN } from "./Costants";
+import "./css/portalAnnouncementNewBadge.css";
+import "./css/portalFaqTheme.css";
+import "./css/portalHighlightCarousel.css";
+import "./css/portalWelcomeHero.css";
 import { formatDate } from "./helpers/DateFormater";
+import { persistAndApplyPortalFontSize, readPortalFontPct } from "./helpers/portalFontSize";
+import { applyPortalThemeToDocument } from "./helpers/portalTheme";
+import "./css/portalSurfaceDark.css";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import showToast from "./helpers/ToastHelper";
+import { downloadPortalDocument } from "./pages/services/PPAA-INTERNAL-PORTAL/documents/Queries";
+import { downloadPortalAnnouncement } from "./pages/services/PPAA-INTERNAL-PORTAL/announcements/Queries";
+import {
+  buildInterleavedPortalHighlightItems,
+  filterDashboardAnnouncements,
+  filterDashboardEvents,
+  filterDashboardTodos,
+  getTodoDashboardAccentColor,
+  isPortalAnnouncementNew,
+  useUtcDateKey,
+} from "./helpers/dashboardActivityVisibility";
+import {
+  getEventTypeBadge,
+  getEventTypeCalendarStyle,
+} from "./pages/services/PPAA-INTERNAL-PORTAL/events/eventDisplay";
+import { getUserFormalFullName } from "./utils/userDisplayName";
+import { PrFlyersGallery } from "./components/portal/PrFlyersGallery.jsx";
 
 const PUBLIC_DASHBOARD_CACHE_KEY = "publicPortalDashboardCache";
 const PUBLIC_DASHBOARD_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -150,7 +177,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                               <i 
                                 className="bx bx-circle" 
                                 style={{ 
-                                  fontSize: "6px", 
+                                  fontSize: "0.375rem",
                                   color: "#00f2fe",
                                   marginTop: "2px"
                                 }}
@@ -161,22 +188,18 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                           {dayEvents.length > 0 && (
                             <div className="d-flex flex-column gap-1">
                               {dayEvents.slice(0, 2).map((event, idx) => {
-                                const eventColors = [
-                                  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                                  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                                  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                                ];
+                                const chipStyle = getEventTypeCalendarStyle(
+                                  event.event_type
+                                );
                                 return (
                                   <div
-                                    key={idx}
-                                    className="badge text-white"
-                                    style={{ 
-                                      fontSize: "0.65rem", 
+                                    key={event.uid || idx}
+                                    className="badge border-0"
+                                    style={{
+                                      fontSize: "0.65rem",
                                       cursor: "pointer",
-                                      background: eventColors[idx % eventColors.length],
-                                      border: "none",
-                                      padding: "3px 6px"
+                                      ...chipStyle,
+                                      padding: "3px 6px",
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -214,6 +237,13 @@ const PortalPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const user = useSelector((state) => state.userReducer?.data);
+  const welcomeFormalName = useMemo(() => getUserFormalFullName(user), [user]);
+  const hasPortalSession = Boolean(
+    typeof window !== "undefined" &&
+      localStorage.getItem(ACCESS_TOKEN) &&
+      user
+  );
   const [selectedFaq, setSelectedFaq] = useState(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   const [selectedTodo, setSelectedTodo] = useState(null);
@@ -221,14 +251,12 @@ const PortalPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [announcementOffset, setAnnouncementOffset] = useState(0);
   const [todoOffset, setTodoOffset] = useState(0);
-  const [faqOffset, setFaqOffset] = useState(0);
-  const [faqSearchQuery, setFaqSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showAllDocumentCategories, setShowAllDocumentCategories] = useState(false);
-  const [fontSize, setFontSize] = useState(() => {
-    const saved = localStorage.getItem('portalFontSize');
-    return saved ? parseInt(saved) : 100; // Default 100% (base size)
-  });
+  const [docsLibraryTab, setDocsLibraryTab] = useState("documents");
+  const [libraryFaqSearch, setLibraryFaqSearch] = useState("");
+  const [libraryFaqOffset, setLibraryFaqOffset] = useState(0);
+  const [fontSize, setFontSize] = useState(() => readPortalFontPct());
   const [isDarkTheme, setIsDarkTheme] = useState(() => {
     const saved = localStorage.getItem('portalTheme');
     return saved === 'dark';
@@ -239,6 +267,7 @@ const PortalPage = () => {
   const SHOW_DURATION_MS = 60 * 1000;   // visible for 1 min
   const HIDE_DURATION_MS = 4 * 60 * 1000; // hidden 4 min, then show again (every 5 min)
   const FIVE_MIN_MS = 5 * 60 * 1000;
+  const utcDateKey = useUtcDateKey();
 
   // Default Daily Motivation when none in DB (used in popup and useEffects below)
   const DEFAULT_MOTIVATIONAL_QUOTE = "Timely and Fair Appeals Dispensation";
@@ -285,21 +314,14 @@ const PortalPage = () => {
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
 
-  // Save font size to localStorage whenever it changes
+  // Scale root `rem` / Bootstrap typography (wrapper % alone does not affect `rem`)
   useEffect(() => {
-    localStorage.setItem('portalFontSize', fontSize.toString());
+    persistAndApplyPortalFontSize(fontSize);
   }, [fontSize]);
 
-  // Apply dark/light theme to document
+  // Apply dark/light theme to document (shared with staff internal portal via Layout)
   useEffect(() => {
-    const root = document.documentElement;
-    if (isDarkTheme) {
-      root.setAttribute('data-portal-theme', 'dark');
-      localStorage.setItem('portalTheme', 'dark');
-    } else {
-      root.removeAttribute('data-portal-theme');
-      localStorage.setItem('portalTheme', 'light');
-    }
+    applyPortalThemeToDocument(isDarkTheme);
   }, [isDarkTheme]);
 
   // Back to top: show button after scrolling down
@@ -327,9 +349,10 @@ const PortalPage = () => {
         const raw = sessionStorage.getItem(PUBLIC_DASHBOARD_CACHE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
-        if (!parsed?.data || !parsed?.timestamp) return null;
+        if (!parsed?.timestamp) return null;
         const isFresh = Date.now() - parsed.timestamp < PUBLIC_DASHBOARD_CACHE_TTL_MS;
-        return isFresh ? parsed.data : null;
+        if (!isFresh) return null;
+        return parsed.apiPayload ?? parsed.data ?? null;
       } catch {
         return null;
       }
@@ -339,11 +362,12 @@ const PortalPage = () => {
     if (cached) {
       setData(cached);
       setLoading(false);
+      return;
     }
 
     const fetchPublicDashboard = async () => {
       try {
-        if (!cached) setLoading(true);
+        setLoading(true);
         setError(null);
         const res = await axios.get(`${API_BASE_URL}/public/ppaa-dashboard/`, {
           timeout: 15000,
@@ -355,7 +379,7 @@ const PortalPage = () => {
             PUBLIC_DASHBOARD_CACHE_KEY,
             JSON.stringify({
               timestamp: Date.now(),
-              data: nextData,
+              apiPayload: nextData,
             })
           );
         } catch {
@@ -363,11 +387,9 @@ const PortalPage = () => {
         }
       } catch (err) {
         console.error("Failed to load public dashboard:", err);
-        if (!cached) {
-          setError("Failed to load portal data. Please try again later.");
-        }
+        setError("Failed to load portal data. Please try again later.");
       } finally {
-        if (!cached) setLoading(false);
+        setLoading(false);
       }
     };
 
@@ -522,12 +544,39 @@ const PortalPage = () => {
   }, []);
 
   const stats = data?.stats || {};
-  const announcementsData = data?.announcements || [];
-  const eventsData = data?.events || [];
+  const announcementsData = useMemo(
+    () => filterDashboardAnnouncements(data?.announcements || []),
+    [data?.announcements, utcDateKey]
+  );
+  const eventsData = useMemo(
+    () => filterDashboardEvents(data?.events || []),
+    [data?.events, utcDateKey]
+  );
   const faqs = data?.faqs || [];
   const quickLinks = data?.quick_links || [];
+  const quickLinkColorSchemes = useMemo(
+    () =>
+      isDarkTheme
+        ? [
+            { bg: "rgba(30, 41, 59, 0.92)", border: "#34d399", icon: "#34d399", text: "#e2e8f0" },
+            { bg: "rgba(30, 41, 59, 0.92)", border: "#fb7185", icon: "#fb7185", text: "#e2e8f0" },
+            { bg: "rgba(30, 41, 59, 0.92)", border: "#38bdf8", icon: "#38bdf8", text: "#e2e8f0" },
+            { bg: "rgba(30, 41, 59, 0.92)", border: "#facc15", icon: "#facc15", text: "#e2e8f0" },
+          ]
+        : [
+            { bg: "#f0f4ff", border: "#00853f", icon: "#00853f", text: "#333" },
+            { bg: "#fff0f5", border: "#f5576c", icon: "#f5576c", text: "#333" },
+            { bg: "#e6f7ff", border: "#00f2fe", icon: "#00f2fe", text: "#333" },
+            { bg: "#fff9e6", border: "#fee140", icon: "#fee140", text: "#333" },
+          ],
+    [isDarkTheme]
+  );
+  const prFlyers = data?.pr_flyers || [];
   const documentsData = data?.documents || [];
-  const todosData = data?.todos || [];
+  const todosData = useMemo(
+    () => filterDashboardTodos(data?.todos || []),
+    [data?.todos, utcDateKey]
+  );
   const popupCard = data?.popup_card || null;
 
   // Filter documents to show only public and published documents
@@ -545,112 +594,26 @@ const PortalPage = () => {
     });
   }, [documentsData]);
 
-  // Get current date (start of today) for comparison
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Same event list as staff dashboard (API already scopes rows; no extra client filter).
+  const events = eventsData;
 
-  // Filter events to exclude those with end_date in the past
-  const events = useMemo(() => {
-    return eventsData.filter(event => {
-      // If no end_date, include the event
-      if (!event.end_date) return true;
-      // Include only if end_date is today or in the future
-      const endDate = new Date(event.end_date);
-      endDate.setHours(0, 0, 0, 0);
-      return endDate >= today;
+  // Same as staff: one carousel — announcement, todo, event, repeating (shared animation).
+  const combinedItems = useMemo(
+    () =>
+      buildInterleavedPortalHighlightItems({
+        announcements: announcementsData,
+        todos: todosData,
+        events,
+      }),
+    [todosData, announcementsData, events]
+  );
+
+  useEffect(() => {
+    setCurrentIndex((prev) => {
+      if (combinedItems.length === 0) return 0;
+      return prev < combinedItems.length ? prev : 0;
     });
-  }, [eventsData]);
-
-  // Filter active todos (is_active=true and status not COMPLETED or CANCELLED)
-  // Also exclude todos with due_date in the past
-  // Sort by start_date (earliest first), then by due_date if start_date is missing
-  const activeTodos = useMemo(() => {
-    return todosData
-      .filter(todo => {
-        // Basic active filter
-        if (todo.is_active !== true || 
-            todo.status === 'COMPLETED' || 
-            todo.status === 'CANCELLED') {
-          return false;
-        }
-        // If todo has a due_date, check if it's in the past
-        if (todo.due_date) {
-          const dueDate = new Date(todo.due_date);
-          dueDate.setHours(0, 0, 0, 0);
-          // Exclude if due_date is before today
-          if (dueDate < today) {
-            return false;
-          }
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        // Sort by start_date if available
-        if (a.start_date && b.start_date) {
-          return new Date(a.start_date) - new Date(b.start_date);
-        }
-        if (a.start_date) return -1;
-        if (b.start_date) return 1;
-        // If no start_date, sort by due_date
-        if (a.due_date && b.due_date) {
-          return new Date(a.due_date) - new Date(b.due_date);
-        }
-        if (a.due_date) return -1;
-        if (b.due_date) return 1;
-        return 0;
-      });
-  }, [todosData]);
-
-  // Filter active announcements and sort by start_date (earliest first), then by created_at if start_date is missing
-  // Also exclude announcements with end_date in the past
-  const activeAnnouncements = useMemo(() => {
-    // Get today's date string (YYYY-MM-DD) for comparison
-    const todayStr = today.toISOString().split('T')[0];
-    
-    return announcementsData
-      .filter(announcement => {
-        // Basic active filter
-        if (announcement.is_active !== true) {
-          return false;
-        }
-        // If announcement has an end_date, check if it's in the past
-        if (announcement.end_date) {
-          const endDateStr = new Date(announcement.end_date).toISOString().split('T')[0];
-          // Exclude if end_date is before today (comparing date strings)
-          if (endDateStr < todayStr) {
-            return false;
-          }
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        // Sort by start_date if available
-        if (a.start_date && b.start_date) {
-          return new Date(a.start_date) - new Date(b.start_date);
-        }
-        if (a.start_date) return -1;
-        if (b.start_date) return 1;
-        // If no start_date, sort by created_at
-        if (a.created_at && b.created_at) {
-          return new Date(b.created_at) - new Date(a.created_at); // Most recent first if no start_date
-        }
-        return 0;
-      });
-  }, [announcementsData]);
-
-  // Combine todos and announcements for alternating display
-  // Show all announcements if there are more than one
-  const combinedItems = useMemo(() => {
-    const items = [];
-    activeTodos.slice(0, 5).forEach(todo => {
-      items.push({ type: 'todo', data: todo });
-    });
-    // Show all announcements instead of limiting to 5
-    activeAnnouncements.forEach(announcement => {
-      items.push({ type: 'announcement', data: announcement });
-    });
-    return items;
-  }, [activeTodos, activeAnnouncements]);
+  }, [combinedItems]);
 
   // Auto-rotate through items
   useEffect(() => {
@@ -692,7 +655,7 @@ const PortalPage = () => {
       <div
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%)",
         }}
         className="d-flex align-items-center justify-content-center text-white"
       >
@@ -720,11 +683,11 @@ const PortalPage = () => {
           position: absolute;
           inset: -50%;
           background: linear-gradient(135deg,
-            rgba(102, 126, 234, 0.04) 0%,
-            rgba(118, 75, 162, 0.03) 25%,
-            rgba(79, 172, 254, 0.03) 50%,
-            rgba(0, 242, 254, 0.02) 75%,
-            rgba(102, 126, 234, 0.04) 100%);
+            rgba(185, 217, 183, 0.14) 0%,
+            rgba(0, 133, 63, 0.05) 25%,
+            rgba(61, 166, 106, 0.06) 50%,
+            rgba(185, 217, 183, 0.1) 75%,
+            rgba(0, 133, 63, 0.05) 100%);
           background-size: 400% 400%;
           animation: portalGradientShift 18s ease infinite;
         }
@@ -736,7 +699,7 @@ const PortalPage = () => {
           top: -20vmax;
           right: -20vmax;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(118, 75, 162, 0.06) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(61, 166, 106, 0.1) 0%, transparent 70%);
           animation: portalBlobFloat 22s ease-in-out infinite;
         }
         @keyframes portalGradientShift {
@@ -785,19 +748,19 @@ const PortalPage = () => {
           height: 48px;
           border-radius: 50%;
           border: none;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
           color: white;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 1.25rem;
-          box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 4px 20px rgba(0, 133, 63, 0.35);
           transition: transform 0.2s ease, opacity 0.3s ease, box-shadow 0.2s ease;
         }
         .portal-back-to-top:hover {
           transform: translateX(-50%) translateY(-3px);
-          box-shadow: 0 8px 28px rgba(102, 126, 234, 0.5);
+          box-shadow: 0 8px 28px rgba(0, 133, 63, 0.42);
         }
         .portal-back-to-top i { transition: transform 0.2s ease; }
         .portal-back-to-top:hover i { transform: translateY(-2px); }
@@ -820,6 +783,43 @@ const PortalPage = () => {
           background: rgba(255, 255, 255, 0.12);
           margin-right: 8px;
         }
+        @media (max-width: 575.98px) {
+          .portal-greeting-heading {
+            font-size: clamp(1.05rem, 4vw + 0.65rem, 1.35rem);
+            line-height: 1.35;
+          }
+          .portal-greeting-icon {
+            width: 28px;
+            height: 28px;
+            margin-right: 6px;
+          }
+        }
+        .portal-highlight-carousel {
+          min-height: clamp(220px, 48vw, 300px);
+        }
+        @media (min-width: 576px) {
+          .portal-highlight-carousel {
+            min-height: clamp(240px, 38vw, 320px);
+          }
+        }
+        @media (min-width: 992px) {
+          .portal-highlight-carousel {
+            min-height: 260px;
+          }
+        }
+        .portal-highlight-card-body {
+          padding-bottom: 2.75rem;
+          box-sizing: border-box;
+        }
+        .portal-highlight-title {
+          color: #333;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+        .portal-highlight-sub {
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
         @keyframes portalGreetingEnter {
           0% {
             opacity: 0;
@@ -834,15 +834,6 @@ const PortalPage = () => {
             transform: translateY(0) scale(1);
           }
         }
-        [data-portal-theme="dark"] {
-          --portal-nav-bg: #1e293b;
-          --portal-body-bg: rgba(15, 23, 42, 0.85);
-          --portal-body-text: #e2e8f0;
-        }
-        [data-portal-theme="dark"] .text-muted { color: #94a3b8 !important; }
-        [data-portal-theme="dark"] .card { background: rgba(30, 41, 59, 0.6); border-color: rgba(71, 85, 105, 0.5); }
-        [data-portal-theme="dark"] .list-group-item { background: rgba(30, 41, 59, 0.4); border-color: rgba(71, 85, 105, 0.4); }
-        [data-portal-theme="dark"] .form-control, [data-portal-theme="dark"] .input-group-text { background: #334155; border-color: #475569; color: #e2e8f0; }
       `}</style>
 
       {/* Subtle animated background */}
@@ -874,13 +865,13 @@ const PortalPage = () => {
             <div className="d-flex align-items-center gap-2">
               <span
                 className="fw-bold"
-                style={{ fontSize: "1.1rem", color: "#667eea" }}
+                style={{ fontSize: "1.1rem", color: "#00853f" }}
               >
                 PPAA
               </span>
               <span
                 className="fw-bold"
-                style={{ fontSize: "1.1rem", color: "#764ba2" }}
+                style={{ fontSize: "1.1rem", color: "#3da66a" }}
               >
                 PORTAL
               </span>
@@ -987,74 +978,82 @@ const PortalPage = () => {
       </nav>
 
       <div
-        className="portal-main-content"
+        className="portal-main-content portal-surface-scope"
         style={{
           minHeight: "100vh",
           paddingTop: "5rem",
           paddingBottom: "3rem",
-          paddingLeft: "1rem",
-          paddingRight: "1rem",
-          fontSize: `${fontSize}%`,
+          paddingLeft: 0,
+          paddingRight: 0,
           color: "var(--portal-body-text, inherit)",
           backgroundColor: "var(--portal-body-bg, transparent)",
         }}
       >
-        <div className="container">
-        {/* Welcome + rotating card – scroll reveal */}
-        <SectionReveal className="row mb-4 mt-4">
-          <div className="col-lg-8 mb-3 mb-lg-0">
-            <div
-              className="card border-0"
-              style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-              }}
-            >
-              <div className="d-flex align-items-end row">
-                <div className="col-sm-7">
-                  <div className="card-body">
-                    <h5 className="card-title text-white mb-2 portal-greeting-heading">
-                      <span className="portal-greeting-icon">
-                        <i className="bx bx-smile"></i>
-                      </span>
-                      <span>
-                        {timeGreeting.greeting},{" "}
-                        <span className="portal-greeting-highlight">
-                          welcome to PPAA Internal Portal
-                        </span>
-                      </span>
-                    </h5>
-                    <p className="text-white-50 mb-3" style={{ fontSize: "0.9rem" }}>
-                      {timeGreeting.sub}
-                    </p>
-                    <p
-                      className="mb-4 text-white-50"
-                      style={{ fontSize: "0.95rem" }}
-                    >
-                      Explore public announcements, upcoming events, documents,
-                      FAQs and quick links. Let's explore.
-                    </p>
-                    <button
-                      className="btn btn-light btn-sm"
-                      style={{ borderRadius: 999, fontWeight: 600 }}
-                      onClick={() => navigate("/auth/login")}
-                    >
-                      <i className="bx bx-log-in me-2" />
-                      Login to Internal Portal
-                    </button>
+        <div className="container-fluid">
+        {/* Welcome + rotating card – matches StaffDashboard layout / carousel behavior */}
+        <SectionReveal className="row g-3 g-lg-4 mb-4 mt-4 align-items-stretch">
+          <div className="col-12 col-lg-8 order-0">
+            <div className="card border-0 h-100 staff-dashboard-welcome-hero text-white">
+              <div className="card-body px-3 px-sm-4 py-4 py-md-4 staff-dashboard-welcome-inner">
+                <div className="row g-3 g-sm-4 align-items-center">
+                  <div className="col-12 col-sm-6 col-lg-7 text-center text-sm-start">
+                    {hasPortalSession ? (
+                      <>
+                        <h5 className="card-title internal-portal-welcome__title mb-2 mb-sm-3 animate__animated animate__fadeInDown">
+                          <i className="bx bx-smile me-2" aria-hidden="true"></i>
+                          {welcomeFormalName ? (
+                            <>Welcome, {welcomeFormalName}!</>
+                          ) : (
+                            <>Welcome to the Internal Portal!</>
+                          )}
+                        </h5>
+                        <p className="mb-0 internal-portal-welcome__lead animate__animated animate__fadeIn animate__slow">
+                          Here&apos;s an overview of Internal Portal activities including
+                          announcements, documents, events, FAQs, flyers & posters gallery, and quick links.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-light btn-sm mt-3 w-100 w-sm-auto"
+                          style={{ borderRadius: 999, fontWeight: 600 }}
+                          onClick={() => navigate("/ppaa-internal-portal")}
+                        >
+                          <i className="bx bx-grid-alt me-2" />
+                          Open internal portal dashboard
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <h5 className="card-title internal-portal-welcome__title mb-2 mb-sm-3 animate__animated animate__fadeInDown portal-greeting-heading">
+                          <i className="bx bx-smile me-2" aria-hidden="true"></i>
+                          {timeGreeting.greeting}, welcome to PPAA Internal Portal
+                        </h5>
+                        <p className="mb-0 internal-portal-welcome__lead mb-3 mb-sm-4 animate__animated animate__fadeIn animate__slow">
+                          Here&apos;s an overview of Internal Portal activities including
+                          announcements, documents, events, FAQs, flyers & posters gallery, and quick links.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-light btn-sm w-auto w-sm-auto"
+                          style={{ borderRadius: 999, fontWeight: 600 }}
+                          onClick={() => navigate("/auth/login")}
+                        >
+                          <i className="bx bx-log-in me-2" />
+                          Login to Internal Portal
+                        </button>
+                      </>
+                    )}
                   </div>
-                </div>
-                <div className="col-sm-5 text-center text-sm-left">
-                  <div className="card-body pb-0 px-0 px-md-4">
-                    <img
-                      aria-label="dashboard icon image"
-                      src="/assets/img/illustrations/man-with-laptop-light.png"
-                      height="140"
-                      alt="Dashboard"
-                      data-app-dark-img="illustrations/man-with-laptop-dark.png"
-                      data-app-light-img="illustrations/man-with-laptop-light.png"
-                      style={{ filter: "brightness(1.1)" }}
-                    />
+                  <div className="col-12 col-sm-5 col-lg-4">
+                    <div className="d-flex justify-content-center justify-content-sm-end align-items-end pt-2 pt-sm-0 welcome-illustration-wrap">
+                      <img
+                        className="img-fluid welcome-illustration animate__animated animate__fadeIn animate__delay-1s"
+                        aria-label="Dashboard illustration"
+                        src="/assets/img/illustrations/man-with-laptop-light.png"
+                        alt=""
+                        data-app-dark-img="illustrations/man-with-laptop-dark.png"
+                        data-app-light-img="illustrations/man-with-laptop-light.png"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1062,13 +1061,13 @@ const PortalPage = () => {
           </div>
 
           {/* Right highlight card – rotating animation */}
-          <div className="col-lg-4">
+          <div className="col-12 col-lg-4 d-flex order-1">
             <div
-              className="card border-0 shadow-lg h-100 portal-card-lift"
+              className="card border-0 shadow-lg h-100 flex-grow-1 w-100"
               style={{
                 overflow: "hidden",
                 position: "relative",
-                minHeight: "200px",
+                minHeight: "clamp(200px, 42vw, 280px)",
               }}
             >
               {combinedItems.length === 0 ? (
@@ -1082,57 +1081,69 @@ const PortalPage = () => {
                 <div style={{ position: "relative", height: "100%", minHeight: "200px" }}>
                   {combinedItems.map((item, index) => {
                     const isActive = index === currentIndex;
-                    const isTodo = item.type === 'todo';
+                    const isTodo = item.type === "todo";
+                    const isEvent = item.type === "event";
                     const data = item.data;
-                    
+
                     return (
                       <div
                         key={`${item.type}-${data.uid}-${index}`}
-                        className="card-body"
+                        className="card-body px-3 px-md-4 py-3 py-md-4"
                         style={{
                           position: isActive ? "relative" : "absolute",
                           width: "100%",
+                          maxWidth: "100%",
+                          left: 0,
+                          top: 0,
+                          minWidth: 0,
+                          boxSizing: "border-box",
                           opacity: isActive ? 1 : 0,
                           transform: isActive ? "translateX(0)" : "translateX(100%)",
-                          transition: "all 1.9s ease-in-out",
+                          transition: "all 1.5s ease-in-out",
                           zIndex: isActive ? 10 : 1,
-                          minHeight: "200px",
+                          minHeight: "min(100%, 200px)",
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "center",
-                          background: isTodo 
-                            ? "linear-gradient(135deg, #a8edea15 0%, #fed6e315 100%)"
-                            : "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
-                          borderTop: `4px solid ${isTodo ? "#a8edea" : "#667eea"}`,
+                          overflow: "hidden",
+                          background:
+                            "linear-gradient(135deg, rgba(0, 133, 63, 0.14) 0%, rgba(61, 166, 106, 0.14) 100%)",
+                          borderTop: "4px solid #00853f",
                           borderRadius: "8px",
+                          paddingBottom: "2.75rem",
                           cursor: isActive ? "pointer" : "default"
                         }}
                         onClick={() => {
                           if (!isActive) return;
-                          // Scroll to the appropriate section based on item type
-                          // Account for fixed navbar (approximately 80px)
                           const navbarOffset = 80;
-                          
-                          if (item.type === 'todo') {
-                            const todosSection = document.getElementById('todos-section');
+
+                          if (item.type === "todo") {
+                            const todosSection = document.getElementById("todos-section");
                             if (todosSection) {
                               const elementPosition = todosSection.getBoundingClientRect().top;
                               const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
-                              window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                              window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                             }
-                          } else if (item.type === 'announcement') {
-                            const announcementsSection = document.getElementById('announcements-section');
+                          } else if (item.type === "announcement") {
+                            const announcementsSection = document.getElementById("announcements-section");
                             if (announcementsSection) {
                               const elementPosition = announcementsSection.getBoundingClientRect().top;
                               const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
-                              window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                              window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                             }
-                          } else if (item.type === 'event') {
-                            const eventsSection = document.getElementById('events-section');
-                            if (eventsSection) {
-                              const elementPosition = eventsSection.getBoundingClientRect().top;
-                              const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
-                              window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                          } else if (item.type === "event") {
+                            setSelectedEvent(data);
+                            const el = document.getElementById("eventViewModal");
+                            if (el && window.bootstrap?.Modal) {
+                              const modal = new window.bootstrap.Modal(el);
+                              modal.show();
+                            } else {
+                              const eventsSection = document.getElementById("events-section");
+                              if (eventsSection) {
+                                const elementPosition = eventsSection.getBoundingClientRect().top;
+                                const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
+                                window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                              }
                             }
                           }
                         }}
@@ -1140,15 +1151,15 @@ const PortalPage = () => {
                         {isTodo ? (
                           <>
                             <div className="d-flex align-items-center gap-2 mb-2">
-                              <i className="bx bx-check-square" style={{ color: "#a8edea", fontSize: "1.5rem" }}></i>
-                              <h6 className="mb-0 fw-bold" style={{ color: "#a8edea" }}>Active Todo</h6>
+                              <i className="bx bx-check-square" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
+                              <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Active Todo</h6>
                             </div>
-                            <h5 className="mb-2 fw-bold" style={{ color: "#333" }}>{data.title}</h5>
-                            {data.description && (
-                              <p className="text-muted mb-2 small" style={{ lineHeight: "1.0" }}>
-                                {truncateWords(data.description, 15)}
-                              </p>
-                            )}
+                            <h5
+                              className="mb-2 fw-bold text-break portal-dashboard-title"
+                              style={{ color: "#333", wordBreak: "break-word", overflowWrap: "anywhere" }}
+                            >
+                              {data.title}
+                            </h5>
                             <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
                               <span className={getTodoStatusBadge(data.status)}>
                                 {data.status === 'PENDING' ? 'Pending' : 
@@ -1174,25 +1185,136 @@ const PortalPage = () => {
                               )}
                             </div>
                           </>
+                        ) : isEvent ? (
+                          <>
+                            <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                              <i
+                                className="bx bx-calendar-event"
+                                style={{ color: "#4facfe", fontSize: "1.5rem" }}
+                              />
+                              <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
+                                Event
+                              </h6>
+                              {data.event_type && (
+                                <span
+                                  className={`badge rounded-pill ${getEventTypeBadge(data.event_type).class}`}
+                                >
+                                  {getEventTypeBadge(data.event_type).label}
+                                </span>
+                              )}
+                            </div>
+                            <h5
+                              className="mb-2 fw-bold text-break portal-dashboard-title"
+                              style={{ color: "#333", wordBreak: "break-word", overflowWrap: "anywhere" }}
+                            >
+                              {data.title}
+                            </h5>
+                            {data.description ? (
+                              <p
+                                className="text-muted mb-2 small text-break"
+                                style={{ lineHeight: 1.35, wordBreak: "break-word", overflowWrap: "anywhere" }}
+                              >
+                                {truncateWords(data.description, 15)}
+                              </p>
+                            ) : null}
+                            <div
+                              className="d-flex flex-row align-items-center flex-wrap gap-2 gap-sm-3 w-100"
+                              style={{ minWidth: 0 }}
+                            >
+                              {data.start_date && (
+                                <small className="d-flex align-items-center mb-0" style={{ color: "#198754" }}>
+                                  <i className="bx bx-calendar-event me-1" style={{ color: "#198754" }} />
+                                  <span className="fw-semibold me-1">Start:</span>
+                                  <span>{formatDate(data.start_date)}</span>
+                                </small>
+                              )}
+                              {data.end_date && (
+                                <small className="d-flex align-items-center mb-0" style={{ color: "#c62828" }}>
+                                  <i className="bx bx-calendar-check me-1" style={{ color: "#dc3545" }} />
+                                  <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
+                                    End:
+                                  </span>
+                                  <span style={{ color: "#c62828" }}>{formatDate(data.end_date)}</span>
+                                </small>
+                              )}
+                            </div>
+                          </>
                         ) : (
                           <>
-                            <div className="d-flex align-items-center gap-2 mb-2">
-                              <i className="bx bx-bullhorn" style={{ color: "#667eea", fontSize: "1.5rem" }}></i>
-                              <h6 className="mb-0 fw-bold" style={{ color: "#667eea" }}>Announcement</h6>
+                            <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                              <i className="bx bx-bullhorn" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
+                              <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Announcement</h6>
                               {data.is_pinned && <i className="bx bx-pin text-warning"></i>}
+                              {isPortalAnnouncementNew(data.created_at) && (
+                                <span className="badge rounded-pill portal-announcement-new-badge">
+                                  NEW
+                                </span>
+                              )}
                             </div>
-                            <h5 className="mb-2 fw-bold" style={{ color: "#333" }}>{data.title}</h5>
-                            <p className="text-muted mb-2 small" style={{ lineHeight: "1.0" }}>
+                            <h5
+                              className="mb-2 fw-bold text-break portal-dashboard-title"
+                              style={{ color: "#333", wordBreak: "break-word", overflowWrap: "anywhere" }}
+                            >
+                              {data.title}
+                            </h5>
+                            <p
+                              className="text-muted mb-2 small text-break"
+                              style={{ lineHeight: 1.35, wordBreak: "break-word", overflowWrap: "anywhere" }}
+                            >
                               {truncateWords(data.content, 15)}
                             </p>
-                            <div className="d-flex align-items-center gap-2 mb-2">
-                              <span className={`badge ${getPriorityColor(data.priority)}`}>
+                            <div
+                              className="d-flex align-items-center gap-2 mb-2 flex-wrap w-100"
+                              style={{ minWidth: 0 }}
+                            >
+                              <span className={`badge ${getPriorityColor(data.priority)} flex-shrink-0`}>
                                 {data.priority}
                               </span>
-                              <small className="text-muted">
-                                <i className="bx bx-calendar me-1"></i>
-                                {formatDate(data.created_at, "DD/MM/YYYY")}
-                              </small>
+                              {isPortalAnnouncementNew(data.created_at) ? (
+                                <div
+                                  className="d-flex flex-row align-items-center flex-wrap gap-2 gap-sm-3 w-100"
+                                  style={{ minWidth: 0 }}
+                                >
+                                  <small
+                                    className="d-flex align-items-center mb-0"
+                                    style={{ color: "#198754" }}
+                                  >
+                                    <i
+                                      className="bx bx-calendar-event me-1"
+                                      style={{ color: "#198754" }}
+                                    ></i>
+                                    <span className="fw-semibold me-1">Start:</span>
+                                    <span>{formatDate(data.start_date || data.created_at)}</span>
+                                  </small>
+                                  <span
+                                    className="d-none d-sm-inline text-muted"
+                                    style={{ opacity: 0.45 }}
+                                    aria-hidden
+                                  >
+                                    |
+                                  </span>
+                                  <small
+                                    className="d-flex align-items-center mb-0"
+                                    style={{ color: "#c62828" }}
+                                  >
+                                    <i
+                                      className="bx bx-calendar-check me-1"
+                                      style={{ color: "#dc3545" }}
+                                    ></i>
+                                    <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
+                                      End:
+                                    </span>
+                                    <span style={{ color: "#c62828" }}>
+                                      {data.end_date ? formatDate(data.end_date) : "—"}
+                                    </span>
+                                  </small>
+                                </div>
+                              ) : (
+                                <small className="text-muted">
+                                  <i className="bx bx-calendar me-1"></i>
+                                  {formatDate(data.start_date || data.created_at, "DD/MM/YYYY")}
+                                </small>
+                              )}
                             </div>
                           </>
                         )}
@@ -1201,22 +1323,27 @@ const PortalPage = () => {
                   })}
                   {/* Navigation dots */}
                   {combinedItems.length > 1 && (
-                    <div className="position-absolute bottom-0 start-50 translate-middle-x mb-2" style={{ zIndex: 20 }}>
-                      <div className="d-flex gap-1">
+                    <div
+                      className="position-absolute bottom-0 start-50 translate-middle-x portal-highlight-carousel-dots"
+                      style={{ zIndex: 20, paddingBottom: "max(0.35rem, env(safe-area-inset-bottom))" }}
+                    >
+                      <div
+                        className="d-flex gap-0 align-items-center justify-content-center flex-nowrap"
+                        role="tablist"
+                        aria-label="Highlight slides"
+                      >
                         {combinedItems.map((_, index) => (
                           <button
                             key={index}
-                            className="btn btn-sm p-1"
-                            style={{
-                              width: "8px",
-                              height: "8px",
-                              borderRadius: "50%",
-                              padding: 0,
-                              backgroundColor: index === currentIndex ? "#667eea" : "#ccc",
-                              border: "none"
-                            }}
+                            type="button"
+                            className={`portal-highlight-dot-btn ${index === currentIndex ? "is-active" : ""}`}
+                            aria-label={`Show highlight ${index + 1} of ${combinedItems.length}`}
+                            aria-selected={index === currentIndex}
+                            role="tab"
                             onClick={() => setCurrentIndex(index)}
-                          />
+                          >
+                            <span className="portal-highlight-dot" aria-hidden />
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -1227,16 +1354,16 @@ const PortalPage = () => {
           </div>
         </SectionReveal>
 
-        {/* Events & FAQs row */}
-        <SectionReveal className="row g-4 mb-4" id="events-section">
+        {/* Events and PR flyers — one row on large screens */}
+        <SectionReveal className="row g-3 g-lg-4 mb-4 align-items-stretch" id="events-section">
           {/* Events */}
-          <div className="col-lg-8 col-md-12">
+          <div className="col-12 col-lg-8 d-flex">
             <div
-              className="card border-0 shadow-lg h-100 portal-card-lift"
+              className="card border-0 shadow-lg h-100 w-100 portal-card-lift d-flex flex-column"
               style={{ borderTop: "4px solid #00f2fe" }}
             >
               <div
-                className="card-header border-0 d-flex justify-content-between align-items-center"
+                className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center"
                 style={{
                   background:
                     "linear-gradient(135deg, #4facfe15 0%, #00f2fe15 100%)",
@@ -1252,7 +1379,7 @@ const PortalPage = () => {
               </div>
               {nextEventCountdown && (
                 <div
-                  className="mx-3 mt-2 mb-0 py-2 px-3 rounded d-flex align-items-center justify-content-between flex-wrap gap-2"
+                  className="portal-next-up-strip mx-3 mt-2 mb-0 py-2 px-3 rounded d-flex align-items-center justify-content-between flex-wrap gap-2"
                   style={{
                     background: "linear-gradient(135deg, #00f2fe18 0%, #4facfe18 100%)",
                     borderLeft: "4px solid #00f2fe",
@@ -1268,7 +1395,7 @@ const PortalPage = () => {
                   <span className="badge bg-primary">{nextEventCountdown.text}</span>
                 </div>
               )}
-              <div className="card-body">
+              <div className="card-body flex-grow-1 d-flex flex-column">
                 <SimpleCalendar
                   events={events}
                   onEventClick={(event) => {
@@ -1277,286 +1404,41 @@ const PortalPage = () => {
                     modal.show();
                   }}
                 />
-             
-                {events.length > 0 && (
-                  <div className="mt-3">
-                    <h6 className="mb-2">Upcoming Events</h6>
-                    <div className="list-group">
-                      {events
-                        .filter(event => {
-                          if (!event.start_date) return false;
-                          return new Date(event.start_date) >= new Date();
-                        })
-                        .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
-                        .slice(0, 3)
-                        .map((event, index) => (
-                          <div
-                            key={event.uid}
-                            className="list-group-item list-group-item-action cursor-pointer"
-                            style={{ 
-                              borderLeft: "4px solid #00f2fe",
-                              transition: "all 0.5s ease-in-out",
-                              opacity: 0,
-                              transform: "translateX(100%)",
-                              animation: `slideInRight 0.5s ease-out ${index * 0.2}s forwards`
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#00f2fe10";
-                              e.currentTarget.style.transform = "translateX(5px)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "transparent";
-                              e.currentTarget.style.transform = "translateX(0)";
-                            }}
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              const modal = new window.bootstrap.Modal(document.getElementById('eventViewModal'));
-                              modal.show();
-                            }}
-                          >
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <h6 className="mb-1 fw-semibold">{event.title}</h6>
-                                <div className="d-flex align-items-center gap-2 mb-1">
-                                  <small className="text-muted d-flex align-items-center">
-                                    <i className="bx bx-calendar me-1"></i>
-                                    <strong>Start:</strong> {formatDate(event.start_date, "DD/MM/YYYY HH:mm")}
-                                  </small>
-                                </div>
-                                {event.end_date && (
-                                  <div className="mb-1">
-                                    <small className="text-muted d-flex align-items-center">
-                                      <i className="bx bx-calendar-check me-1"></i>
-                                      <strong>End:</strong> {formatDate(event.end_date, "DD/MM/YYYY HH:mm")}
-                                    </small>
-                                  </div>
-                                )}
-                                {event.location && (
-                                  <div className="mt-1">
-                                    <small className="text-muted d-flex align-items-center">
-                                      <i className="bx bx-map me-1"></i>
-                                      {event.location}
-                                    </small>
-                                  </div>
-                                )}
-                              </div>
-                              {event.event_type && (
-                                <span className="badge bg-light text-dark">
-                                  {event.event_type}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
 
-          {/* FAQs */}
-          <div className="col-lg-4 col-md-12">
-            <div
-              className="card border-0 shadow-lg h-100 portal-card-lift"
-              style={{ borderTop: "4px solid #fee140" }}
-            >
-              <div
-                className="card-header border-0"
-                
-                style={{
-                  background:
-                    "linear-gradient(135deg, #fa709a15 0%, #fee14015 100%)",
-                }}
-              >
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h5 className="mb-0">
-                    <i
-                      className="bx bx-help-circle me-2"
-                      style={{ color: "#fee140" }}
-                    ></i>
-                    <span style={{ color: "#fee140" }}>Recent FAQs</span>
-                  </h5>
-                </div>
-                <div className="mt-2">
-                  <div className="input-group input-group-sm">
-                    <span className="input-group-text" style={{ backgroundColor: "white", borderColor: "#fee140" }}>
-                      <i className="bx bx-search" style={{ color: "#fee140" }}></i>
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search FAQs..."
-                      value={faqSearchQuery}
-                      onChange={(e) => {
-                        setFaqSearchQuery(e.target.value);
-                        setFaqOffset(0); // Reset offset when searching
-                      }}
-                      style={{ borderColor: "#fee140" }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="card-body p-3">
-                {(() => {
-                  const filteredFaqs = faqs.filter(faq => {
-                    if (!faqSearchQuery.trim()) return true;
-                    const query = faqSearchQuery.toLowerCase();
-                    return (
-                      faq.question?.toLowerCase().includes(query) ||
-                      faq.answer?.toLowerCase().includes(query)
-                    );
-                  });
-
-                  if (filteredFaqs.length === 0) {
-                    return (
-                      <div className="text-center py-4 text-muted">
-                        <i className="bx bx-info-circle fs-1 mb-2"></i>
-                        <p>{faqSearchQuery ? "No FAQs found matching your search" : "No FAQs available"}</p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <>
-                      <div 
-                        className="row g-3"
-                        style={{
-                          overflow: "hidden",
-                          position: "relative",
-                          minHeight: "200px"
-                        }}
-                      >
-                        {filteredFaqs.slice(faqOffset, faqOffset + 3).map((faq, index) => (
-                          <div 
-                            key={faq.uid} 
-                            className="col-12"
-                            style={{
-                              animation: `slideInRight 0.5s ease-out ${index * 0.1}s both`
-                            }}
-                          >
-                            <div
-                              className="card border-0 shadow-sm cursor-pointer h-100"
-                              style={{ 
-                                borderLeft: "4px solid #fee140",
-                                transition: "all 0.3s ease",
-                                background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)"
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateY(-5px)";
-                                e.currentTarget.style.boxShadow = "0 8px 16px rgba(254, 225, 64, 0.2)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                              }}
-                              onClick={() => {
-                                setSelectedFaq(faq);
-                                const modal = new window.bootstrap.Modal(document.getElementById('faqViewModal'));
-                                modal.show();
-                              }}
-                            >
-                              <div className="card-body p-3">
-                                <div className="d-flex align-items-start mb-2">
-                                  <i className="bx bx-help-circle text-warning me-2 mt-1 fs-5"></i>
-                                  <h6 className="mb-0 fw-bold flex-grow-1" style={{ color: "#fee140" }}>
-                                    {faq.question}
-                                  </h6>
-                                </div>
-                                <p className="text-muted mb-2 small" style={{ lineHeight: "1.5" }}>
-                                  {truncateWords(faq.answer, 20)}
-                                </p>
-                          
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {filteredFaqs.length > 3 && (
-                        <div className="text-center mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
-                          {faqOffset > 0 && (
-                            <button
-                              className="btn btn-sm"
-                              style={{ 
-                                backgroundColor: "#fee140", 
-                                color: "#333", 
-                                border: "none",
-                                fontWeight: "500"
-                              }}
-                              onClick={() => setFaqOffset(Math.max(0, faqOffset - 3))}
-                            >
-                              <i className="bx bx-chevron-left me-1"></i>
-                              Previous
-                            </button>
-                          )}
-                          {faqOffset === 0 && <div></div>}
-                          {faqOffset + 3 < filteredFaqs.length && (
-                            <button
-                              className="btn btn-sm"
-                              style={{ 
-                                backgroundColor: "#fee140", 
-                                color: "#333", 
-                                border: "none",
-                                fontWeight: "500"
-                              }}
-                              onClick={() => setFaqOffset(Math.min(filteredFaqs.length - 3, faqOffset + 3))}
-                            >
-                              <i className="bx bx-chevron-right me-1"></i>
-                              See More ({filteredFaqs.length - faqOffset - 3} more)
-                            </button>
-                          )}
-                          {faqOffset + 3 >= filteredFaqs.length && faqOffset > 0 && (
-                            <div></div>
-                          )}
-                        </div>
-                      )}
-                      <style>{`
-                        @keyframes slideInRight {
-                          from {
-                            opacity: 0;
-                            transform: translateX(100%);
-                          }
-                          to {
-                            opacity: 1;
-                            transform: translateX(0);
-                          }
-                        }
-                      `}</style>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
+          {/* PR flyers & posters — same row */}
+          <div className="col-12 col-lg-4 d-flex">
+            <PrFlyersGallery flyers={prFlyers} id="pr-flyers-section" lift />
           </div>
         </SectionReveal>
 
         {/* Active Todos and Announcements - Side by Side */}
-        <SectionReveal className="row g-4 mb-4">
+        <SectionReveal className="row g-3 g-lg-4 mb-4">
           {/* Active Todos Section - Left */}
-          <div className="col-lg-6 col-md-12" id="todos-section">
+          <div className="col-12 col-lg-6" id="todos-section">
             <div
               className="card border-0 shadow-lg h-100 portal-card-lift"
-              style={{ borderTop: "4px solid #a8edea" }}
+              style={{ borderTop: "4px solid #00853f" }}
             >
               <div
-                className="card-header border-0 d-flex justify-content-between align-items-center"
+                className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center"
                 style={{
                   background:
-                    "linear-gradient(135deg, #a8edea15 0%, #fed6e315 100%)",
+                    "linear-gradient(135deg, rgba(0, 133, 63, 0.14) 0%, rgba(61, 166, 106, 0.14) 100%)",
                 }}
               >
                 <h5 className="mb-0">
                   <i
                     className="bx bx-check-square me-2"
-                    style={{ color: "#a8edea" }}
+                    style={{ color: "#00853f" }}
                   ></i>
-                  <span style={{ color: "#a8edea", fontWeight: "bold" }}>
-                    Active Todo List
-                  </span>
+                  <span style={{ color: "#00853f" }}>Active Todo List</span>
                 </h5>
               </div>
               <div className="card-body p-0">
-                {activeTodos.length === 0 ? (
+                {todosData.length === 0 ? (
                   <div className="text-center py-4 text-muted">
                     <i className="bx bx-info-circle fs-1 mb-2"></i>
                     <p>No Active Todo List at the moment</p>
@@ -1570,25 +1452,27 @@ const PortalPage = () => {
                         position: "relative",
                       }}
                     >
-                      {activeTodos
+                      {todosData
                         .slice(todoOffset, todoOffset + 3)
                         .map((todo, index) => (
                           <div
                             key={todo.uid}
-                            className="list-group-item list-group-item-action cursor-pointer"
+                            className="list-group-item list-group-item-action cursor-pointer py-3 px-3"
                             style={{
-                              borderLeft: "4px solid #a8edea",
+                              borderLeft: `5px solid ${getTodoDashboardAccentColor(todo)}`,
                               transition: "all 0.2s ease",
                               animation: `slideInRight 0.5s ease-out ${
                                 index * 0.1
                               }s both`,
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#a8edea10";
+                              e.currentTarget.style.backgroundColor = isDarkTheme
+                                ? "rgba(51, 65, 85, 0.55)"
+                                : "rgba(0, 133, 63, 0.06)";
                               e.currentTarget.style.transform = "translateX(5px)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "transparent";
+                              e.currentTarget.style.backgroundColor = "";
                               e.currentTarget.style.transform = "translateX(0)";
                             }}
                             onClick={() => {
@@ -1600,27 +1484,21 @@ const PortalPage = () => {
                             }}
                           >
                             <div className="d-flex justify-content-between align-items-start">
-                              <div className="flex-grow-1">
-                                <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                  <h6 className="mb-0">{todo.title}</h6>
-                                  <span className={getTodoStatusBadge(todo.status)}>
+                              <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                  <h6 className="mb-0 text-break">{todo.title}</h6>
+                                  <span className={`${getTodoStatusBadge(todo.status)} flex-shrink-0`}>
                                     {todo.status === "PENDING"
                                       ? "Pending"
                                       : todo.status === "IN_PROGRESS"
                                       ? "In Progress"
                                       : todo.status}
                                   </span>
-                                  <span className={getTodoPriorityBadge(todo.priority)}>
+                                  <span className={`${getTodoPriorityBadge(todo.priority)} flex-shrink-0`}>
                                     {todo.priority}
                                   </span>
                                 </div>
-                                {todo.description && (
-                                  <p className="text-muted mb-1 small">
-                                    {todo.description.substring(0, 80)}
-                                    {todo.description.length > 80 ? "..." : ""}
-                                  </p>
-                                )}
-                                <div className="d-flex align-items-center gap-2 flex-wrap">
+                                <div className="d-flex align-items-center gap-3 flex-wrap mt-1">
                                   {todo.department && (
                                     <span className="badge bg-light text-dark">
                                       <i className="bx bx-building me-1"></i>
@@ -1657,14 +1535,14 @@ const PortalPage = () => {
                           </div>
                         ))}
                     </div>
-                    {activeTodos.length > 3 && (
+                    {todosData.length > 3 && (
                       <div className="text-center py-3 border-top d-flex justify-content-between align-items-center">
                         {todoOffset > 0 && (
                           <button
                             className="btn btn-sm"
                             style={{
-                              backgroundColor: "#a8edea",
-                              color: "#333",
+                              backgroundColor: "#00853f",
+                              color: "#fff",
                               border: "none",
                               fontWeight: "500",
                             }}
@@ -1677,26 +1555,26 @@ const PortalPage = () => {
                           </button>
                         )}
                         {todoOffset === 0 && <div></div>}
-                        {todoOffset + 3 < activeTodos.length && (
+                        {todoOffset + 3 < todosData.length && (
                           <button
                             className="btn btn-sm"
                             style={{
-                              backgroundColor: "#a8edea",
-                              color: "#333",
+                              backgroundColor: "#00853f",
+                              color: "#fff",
                               border: "none",
                               fontWeight: "500",
                             }}
                             onClick={() =>
                               setTodoOffset(
-                                Math.min(activeTodos.length - 3, todoOffset + 3)
+                                Math.min(todosData.length - 3, todoOffset + 3)
                               )
                             }
                           >
                             <i className="bx bx-chevron-right me-1"></i>
-                            See More ({activeTodos.length - todoOffset - 3} more)
+                            See More ({todosData.length - todoOffset - 3} more)
                           </button>
                         )}
-                        {todoOffset + 3 >= activeTodos.length &&
+                        {todoOffset + 3 >= todosData.length &&
                           todoOffset > 0 && <div></div>}
                       </div>
                     )}
@@ -1719,28 +1597,28 @@ const PortalPage = () => {
           </div>
 
           {/* Announcements Section - Right */}
-          <div className="col-lg-6 col-md-12" id="announcements-section">
+          <div className="col-12 col-lg-6" id="announcements-section">
             <div
               className="card border-0 shadow-lg h-100 portal-card-lift"
-              style={{ borderTop: "4px solid #667eea" }}
+              style={{ borderTop: "4px solid #00853f" }}
             >
               <div
-                className="card-header border-0 d-flex justify-content-between align-items-center"
+                className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center"
                 style={{
                   background:
-                    "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
+                    "linear-gradient(135deg, rgba(0, 133, 63, 0.14) 0%, rgba(61, 166, 106, 0.14) 100%)",
                 }}
               >
                 <h5 className="mb-0">
                   <i
                     className="bx bx-bullhorn me-2"
-                    style={{ color: "#667eea" }}
+                    style={{ color: "#00853f" }}
                   ></i>
-                  <span style={{ color: "#667eea" }}>Recent Announcements</span>
+                  <span style={{ color: "#00853f" }}>Recent Announcements</span>
                 </h5>
               </div>
               <div className="card-body p-3">
-                {activeAnnouncements.length === 0 ? (
+                {announcementsData.length === 0 ? (
                   <div className="text-center py-4 text-muted">
                     <i className="bx bx-info-circle fs-1 mb-2"></i>
                     <p className="mb-0">No announcements available</p>
@@ -1755,7 +1633,7 @@ const PortalPage = () => {
                         minHeight: "200px"
                       }}
                     >
-                      {activeAnnouncements.slice(announcementOffset, announcementOffset + 3).map((announcement, index) => (
+                      {announcementsData.slice(announcementOffset, announcementOffset + 3).map((announcement, index) => (
                         <div
                           key={announcement.uid}
                           className="col-12"
@@ -1764,16 +1642,16 @@ const PortalPage = () => {
                           }}
                         >
                           <div
-                            className="card border-0 shadow-sm cursor-pointer h-100"
+                            className="card border-0 shadow-sm cursor-pointer h-100 portal-tile-surface"
                             style={{
-                              borderLeft: "4px solid #667eea",
+                              borderLeft: "4px solid #00853f",
                               transition: "all 0.3s ease",
                               background:
                                 "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)"
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.transform = "translateY(-5px)";
-                              e.currentTarget.style.boxShadow = "0 8px 16px rgba(102, 126, 234, 0.2)";
+                              e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 133, 63, 0.18)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.transform = "translateY(0)";
@@ -1793,10 +1671,17 @@ const PortalPage = () => {
                                   )}
                                   <h6
                                     className="mb-0 fw-bold"
-                                    style={{ color: "#667eea" }}
+                                    style={{ color: "#00853f" }}
                                   >
                                     {announcement.title}
                                   </h6>
+                                  {isPortalAnnouncementNew(
+                                    announcement.created_at
+                                  ) && (
+                                    <span className="badge rounded-pill portal-announcement-new-badge">
+                                      NEW
+                                    </span>
+                                  )}
                                 </div>
                                 <span
                                   className={`badge ${getPriorityColor(
@@ -1812,37 +1697,84 @@ const PortalPage = () => {
                               >
                                 {truncateWords(announcement.content, 20)}
                               </p>
-                              <div className="d-flex align-items-center gap-2">
-                                {announcement.start_date ? (
-                                  <small className="text-muted d-flex align-items-center">
-                                    <i className="bx bx-calendar me-1"></i>
-                                    {formatDate(
-                                      announcement.start_date,
-                                      "DD/MM/YYYY"
-                                    )}
+                              {isPortalAnnouncementNew(
+                                announcement.created_at
+                              ) ? (
+                                <div className="d-flex flex-row align-items-center flex-wrap gap-2 gap-sm-3">
+                                  <small
+                                    className="d-flex align-items-center mb-0"
+                                    style={{ color: "#198754" }}
+                                  >
+                                    <i
+                                      className="bx bx-calendar-event me-1"
+                                      style={{ color: "#198754" }}
+                                    ></i>
+                                    <span className="fw-semibold me-1">Start:</span>
+                                    <span>
+                                      {formatDate(
+                                        announcement.start_date ||
+                                          announcement.created_at
+                                      )}
+                                    </span>
                                   </small>
-                                ) : (
-                                  <small className="text-muted d-flex align-items-center">
-                                    <i className="bx bx-calendar me-1"></i>
-                                    {formatDate(
-                                      announcement.created_at,
-                                      "DD/MM/YYYY"
-                                    )}
+                                  <span
+                                    className="d-none d-sm-inline text-muted"
+                                    style={{ opacity: 0.45 }}
+                                    aria-hidden
+                                  >
+                                    |
+                                  </span>
+                                  <small
+                                    className="d-flex align-items-center mb-0"
+                                    style={{ color: "#c62828" }}
+                                  >
+                                    <i
+                                      className="bx bx-calendar-check me-1"
+                                      style={{ color: "#dc3545" }}
+                                    ></i>
+                                    <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
+                                      End:
+                                    </span>
+                                    <span style={{ color: "#c62828" }}>
+                                      {announcement.end_date
+                                        ? formatDate(announcement.end_date)
+                                        : "—"}
+                                    </span>
                                   </small>
-                                )}
-                              </div>
+                                </div>
+                              ) : (
+                                <div className="d-flex align-items-center gap-2">
+                                  {announcement.start_date ? (
+                                    <small className="text-muted d-flex align-items-center">
+                                      <i className="bx bx-calendar me-1"></i>
+                                      {formatDate(
+                                        announcement.start_date,
+                                        "DD/MM/YYYY"
+                                      )}
+                                    </small>
+                                  ) : (
+                                    <small className="text-muted d-flex align-items-center">
+                                      <i className="bx bx-calendar me-1"></i>
+                                      {formatDate(
+                                        announcement.created_at,
+                                        "DD/MM/YYYY"
+                                      )}
+                                    </small>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                    {activeAnnouncements.length > 3 && (
+                    {announcementsData.length > 3 && (
                       <div className="text-center mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
                         {announcementOffset > 0 && (
                           <button
                             className="btn btn-sm"
                             style={{ 
-                              backgroundColor: "#667eea", 
+                              backgroundColor: "#00853f", 
                               color: "white", 
                               border: "none",
                               fontWeight: "500"
@@ -1854,22 +1786,22 @@ const PortalPage = () => {
                           </button>
                         )}
                         {announcementOffset === 0 && <div></div>}
-                        {announcementOffset + 3 < activeAnnouncements.length && (
+                        {announcementOffset + 3 < announcementsData.length && (
                           <button
                             className="btn btn-sm"
                             style={{ 
-                              backgroundColor: "#667eea", 
+                              backgroundColor: "#00853f", 
                               color: "white", 
                               border: "none",
                               fontWeight: "500"
                             }}
-                            onClick={() => setAnnouncementOffset(Math.min(activeAnnouncements.length - 3, announcementOffset + 3))}
+                            onClick={() => setAnnouncementOffset(Math.min(announcementsData.length - 3, announcementOffset + 3))}
                           >
                             <i className="bx bx-chevron-right me-1"></i>
-                            See More ({activeAnnouncements.length - announcementOffset - 3} more)
+                            See More ({announcementsData.length - announcementOffset - 3} more)
                           </button>
                         )}
-                        {announcementOffset + 3 >= activeAnnouncements.length && announcementOffset > 0 && (
+                        {announcementOffset + 3 >= announcementsData.length && announcementOffset > 0 && (
                           <div></div>
                         )}
                       </div>
@@ -1901,21 +1833,49 @@ const PortalPage = () => {
               style={{ borderTop: "4px solid #17a2b8" }}
             >
               <div
-                className="card-header border-0 d-flex justify-content-between align-items-center"
+                className="card-header border-0 portal-dashboard-card-header d-flex flex-wrap justify-content-between align-items-center gap-2"
                 style={{
                   background:
                     "linear-gradient(135deg, #17a2b815 0%, #13849615 100%)",
                 }}
               >
-                <h5 className="mb-0">
-                  <i
-                    className="bx bx-file me-2"
-                    style={{ color: "#17a2b8" }}
-                  ></i>
-                  <span style={{ color: "#17a2b8" }}>Documents by Category</span>
+                <h5 className="mb-0 d-flex align-items-center flex-wrap gap-2">
+                  <i className="bx bx-library me-2" style={{ color: "#17a2b8" }}></i>
+                  <span style={{ color: "#17a2b8" }}>Documents & FAQs</span>
                 </h5>
-                <div className="d-flex align-items-center gap-2">
-                  {selectedCategory && (
+                <div className="d-flex align-items-center flex-wrap gap-2 ms-auto">
+                  <div className="btn-group btn-group-sm" role="group" aria-label="Documents or FAQs">
+                    <button
+                      type="button"
+                      className={`btn ${docsLibraryTab === "documents" ? "" : "btn-outline-secondary"}`}
+                      style={
+                        docsLibraryTab === "documents"
+                          ? { backgroundColor: "#17a2b8", color: "white", borderColor: "#17a2b8" }
+                          : { borderColor: "#17a2b8", color: "#17a2b8" }
+                      }
+                      onClick={() => setDocsLibraryTab("documents")}
+                    >
+                      <i className="bx bx-folder me-1"></i>
+                      Documents
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${docsLibraryTab === "faqs" ? "" : "btn-outline-secondary"}`}
+                      style={
+                        docsLibraryTab === "faqs"
+                          ? { backgroundColor: "#17a2b8", color: "white", borderColor: "#17a2b8" }
+                          : { borderColor: "#17a2b8", color: "#17a2b8" }
+                      }
+                      onClick={() => {
+                        setDocsLibraryTab("faqs");
+                        setLibraryFaqOffset(0);
+                      }}
+                    >
+                      <i className="bx bx-help-circle me-1"></i>
+                      FAQs
+                    </button>
+                  </div>
+                  {docsLibraryTab === "documents" && selectedCategory && (
                     <button
                       className="btn btn-sm"
                       style={{ backgroundColor: "#17a2b8", color: "white", border: "none" }}
@@ -1930,7 +1890,123 @@ const PortalPage = () => {
                 </div>
               </div>
               <div className="card-body p-0">
-                {(() => {
+                {docsLibraryTab === "faqs" ? (
+                  <div className="p-3">
+                    <div className="input-group input-group-sm mb-3">
+                      <span className="input-group-text bg-light">
+                        <i className="bx bx-search text-muted"></i>
+                      </span>
+                      <input
+                        type="search"
+                        className="form-control"
+                        placeholder="Search FAQs in this panel…"
+                        value={libraryFaqSearch}
+                        onChange={(e) => {
+                          setLibraryFaqSearch(e.target.value);
+                          setLibraryFaqOffset(0);
+                        }}
+                        aria-label="Search FAQs"
+                      />
+                    </div>
+                    {(() => {
+                      const filtered = faqs.filter((faq) => {
+                        if (!libraryFaqSearch.trim()) return true;
+                        const q = libraryFaqSearch.toLowerCase();
+                        return (
+                          faq.question?.toLowerCase().includes(q) ||
+                          faq.answer?.toLowerCase().includes(q)
+                        );
+                      });
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="text-center py-4 text-muted">
+                            <i className="bx bx-info-circle fs-1 mb-2"></i>
+                            <p className="mb-0">
+                              {libraryFaqSearch.trim()
+                                ? "No FAQs match your search."
+                                : "No FAQs available."}
+                            </p>
+                          </div>
+                        );
+                      }
+                      const pageSize = 5;
+                      const slice = filtered.slice(libraryFaqOffset, libraryFaqOffset + pageSize);
+                      return (
+                        <>
+                          <div className="row g-3">
+                            {slice.map((faq, index) => (
+                              <div key={faq.uid} className="col-12 col-md-6 col-xl-4">
+                                <div
+                                  className="card border-0 shadow-sm h-100 cursor-pointer portal-faq-item-card"
+                                  style={{
+                                    borderLeft: "4px solid #17a2b8",
+                                    animation: `slideInRight 0.35s ease-out ${index * 0.06}s both`,
+                                  }}
+                                  onClick={() => {
+                                    setSelectedFaq(faq);
+                                    const modal = new window.bootstrap.Modal(
+                                      document.getElementById("faqViewModal")
+                                    );
+                                    modal.show();
+                                  }}
+                                >
+                                  <div className="card-body p-3">
+                                    <div className="d-flex align-items-start mb-2">
+                                      <i className="bx bx-help-circle me-2 mt-1 fs-5" style={{ color: "#17a2b8" }}></i>
+                                      <h6 className="mb-0 flex-grow-1 fw-semibold">{faq.question}</h6>
+                                    </div>
+                                    <p className="mb-0 small text-muted" style={{ lineHeight: 1.5 }}>
+                                      {truncateWords(faq.answer, 22)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {filtered.length > pageSize && (
+                            <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                disabled={libraryFaqOffset <= 0}
+                                onClick={() =>
+                                  setLibraryFaqOffset((o) => Math.max(0, o - pageSize))
+                                }
+                              >
+                                <i className="bx bx-chevron-left me-1"></i>
+                                Previous
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                disabled={libraryFaqOffset + pageSize >= filtered.length}
+                                onClick={() =>
+                                  setLibraryFaqOffset((o) =>
+                                    Math.min(
+                                      Math.max(0, filtered.length - pageSize),
+                                      o + pageSize
+                                    )
+                                  )
+                                }
+                              >
+                                Next
+                                <i className="bx bx-chevron-right ms-1"></i>
+                              </button>
+                            </div>
+                          )}
+                          <style>{`
+                            @keyframes slideInRight {
+                              from { opacity: 0; transform: translateX(12px); }
+                              to { opacity: 1; transform: translateX(0); }
+                            }
+                          `}</style>
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : null}
+                {docsLibraryTab === "documents"
+                  ? (() => {
                   // Group documents by category
                   const documentsByCategory = {};
                   documents.forEach(doc => {
@@ -1968,7 +2044,7 @@ const PortalPage = () => {
                             return (
                               <div key={categoryName} className="col-lg-4 col-md-6 col-sm-6">
                                 <div
-                                  className="card border-0 shadow-sm cursor-pointer h-100"
+                                  className="card border-0 shadow-sm cursor-pointer h-100 portal-tile-surface"
                                   style={{ 
                                     borderLeft: "4px solid #17a2b8",
                                     transition: "all 0.3s ease",
@@ -2084,27 +2160,36 @@ const PortalPage = () => {
                                   </p>
                                 )}
                               </div>
-                              {document.file_url ? (
-                                <a
-                                  href={document.file_url}
-                                  download
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                              {document.file_key ? (
+                                <button
+                                  type="button"
                                   className="btn btn-sm w-100"
-                                  style={{ 
-                                    backgroundColor: "#17a2b8", 
-                                    color: "white", 
+                                  style={{
+                                    backgroundColor: "#17a2b8",
+                                    color: "white",
                                     border: "none",
                                     fontWeight: "500",
-                                    marginTop: "auto"
+                                    marginTop: "auto",
                                   }}
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                     e.stopPropagation();
+                                    try {
+                                      await downloadPortalDocument(
+                                        document.uid,
+                                        document.original_filename || "document"
+                                      );
+                                    } catch {
+                                      showToast(
+                                        "Download failed. Re-upload the file if this is an old document.",
+                                        "danger",
+                                        "Download"
+                                      );
+                                    }
                                   }}
                                 >
                                   <i className="bx bx-download me-1"></i>
                                   Download
-                                </a>
+                                </button>
                               ) : (
                                 <button
                                   className="btn btn-sm w-100"
@@ -2140,7 +2225,8 @@ const PortalPage = () => {
                       `}</style>
                     </>
                   );
-                })()}
+                })()
+                : null}
               </div>
             </div>
           </div>
@@ -2154,7 +2240,7 @@ const PortalPage = () => {
               style={{ borderTop: "4px solid #ff6b6b" }}
             >
               <div
-                className="card-header border-0 d-flex justify-content-between align-items-center"
+                className="card-header border-0 portal-dashboard-card-header d-flex justify-content-between align-items-center"
                 style={{
                   background:
                     "linear-gradient(135deg, #ff6b6b15 0%, #ee5a6f15 100%)",
@@ -2169,7 +2255,7 @@ const PortalPage = () => {
                 </h5>
               </div>
               <div
-                className="card-body p-3 p-md-4"
+                className="card-body p-3 p-md-4 portal-quick-links-body"
                 style={{
                   background:
                     "linear-gradient(135deg, #ff6b6b05 0%, #ee5a6f05 100%)",
@@ -2183,33 +2269,7 @@ const PortalPage = () => {
                 ) : (
                   <div className="row g-3 justify-content-start">
                     {quickLinks.slice(0, 8).map((link, index) => {
-                      const colors = [
-                        {
-                          bg: "#f0f4ff",
-                          border: "#667eea",
-                          icon: "#667eea",
-                          text: "#333",
-                        },
-                        {
-                          bg: "#fff0f5",
-                          border: "#f5576c",
-                          icon: "#f5576c",
-                          text: "#333",
-                        },
-                        {
-                          bg: "#e6f7ff",
-                          border: "#00f2fe",
-                          icon: "#00f2fe",
-                          text: "#333",
-                        },
-                        {
-                          bg: "#fff9e6",
-                          border: "#fee140",
-                          icon: "#fee140",
-                          text: "#333",
-                        },
-                      ];
-                      const colorScheme = colors[index % colors.length];
+                      const colorScheme = quickLinkColorSchemes[index % quickLinkColorSchemes.length];
 
                       return (
                         <div
@@ -2356,50 +2416,39 @@ const PortalPage = () => {
         aria-hidden="true"
       >
         <div className="modal-dialog modal-lg">
-          <div className="modal-content">
-            <div className="modal-header border-bottom" style={{ backgroundColor: "#fee140", color: "#333" }}>
-              <h5 className="modal-title fw-bold text-dark" id="faqViewModalLabel">
-                <i className="bx bx-help-circle me-2"></i>
+          <div className="modal-content portal-faq-modal-content">
+            <div className="modal-header border-bottom portal-faq-modal-header">
+              <h5 className="modal-title fw-bold text-white" id="faqViewModalLabel">
+                <i className="bx bx-help-circle me-2" aria-hidden></i>
                 FAQ
               </h5>
               <button
                 type="button"
-                className="btn-close"
+                className="btn-close portal-faq-modal-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
                 onClick={() => setSelectedFaq(null)}
               ></button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body portal-faq-modal-body">
               {selectedFaq && (
                 <>
-                  {/* Header */}
                   <div className="mb-3">
-                    <h4 className="mb-2 fw-bold text-dark" style={{ lineHeight: "1.2" }}>
+                    <h4 className="mb-2 fw-bold portal-faq-modal-question" style={{ lineHeight: "1.2" }}>
                       {selectedFaq.question}
                     </h4>
 
                     <div className="d-flex flex-wrap align-items-center gap-2">
-                      <span
-                        className="badge"
-                        style={{
-                          backgroundColor: "#fee14025",
-                          color: "#8a6d00",
-                          border: "1px solid #fee140",
-                        }}
-                      >
-                          <i className="bx bx-message-rounded-dots me-1"></i>
+                      <span className="badge portal-faq-modal-badge">
+                        <i className="bx bx-message-rounded-dots me-1"></i>
                         Answer
                       </span>
-
-                   
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div className="p-3 rounded portal-faq-modal-answer">
                     {selectedFaq.answer ? (
-                      <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
+                      <p className="mb-0" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedFaq.answer}
                       </p>
                     ) : (
@@ -2409,7 +2458,7 @@ const PortalPage = () => {
                 </>
               )}
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer portal-faq-modal-footer">
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -2433,7 +2482,7 @@ const PortalPage = () => {
       >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
-            <div className="modal-header border-bottom" style={{ backgroundColor: "#667eea", color: "white" }}>
+            <div className="modal-header border-bottom" style={{ backgroundColor: "#00853f", color: "white" }}>
               <h5 className="modal-title fw-bold text-white" id="announcementViewModalLabel">
                 <i className="bx bx-bullhorn me-2"></i>
                 Announcement
@@ -2489,7 +2538,7 @@ const PortalPage = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div className="p-3 rounded border portal-modal-muted-panel" style={{ backgroundColor: "#f8f9fa" }}>
                     {selectedAnnouncement.content ? (
                       <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedAnnouncement.content}
@@ -2500,7 +2549,7 @@ const PortalPage = () => {
                   </div>
 
                   {/* Attachment */}
-                  {selectedAnnouncement.file_url && (
+                  {selectedAnnouncement.file_key && (
                     <div className="mt-3">
                       <div className="card border-0" style={{ backgroundColor: "#ffffff" }}>
                         <div className="card-body p-3 border rounded d-flex align-items-center justify-content-between gap-3 flex-wrap">
@@ -2511,28 +2560,39 @@ const PortalPage = () => {
                                 width: 40,
                                 height: 40,
                                 borderRadius: 10,
-                                background: "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
+                                background: "linear-gradient(135deg, rgba(0, 133, 63, 0.1) 0%, rgba(61, 166, 106, 0.1) 100%)",
                               }}
                             >
-                              <i className="bx bx-file" style={{ color: "#667eea", fontSize: "1.25rem" }}></i>
+                              <i className="bx bx-file" style={{ color: "#00853f", fontSize: "1.25rem" }}></i>
                             </div>
 
                             <div>
-                    
-                              <div className="text-muted small">Open or download the attached file</div>
+                              <div className="text-muted small">Open or download the attached file (sign in may be required)</div>
                             </div>
                           </div>
 
-                          <a
-                            href={selectedAnnouncement.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
                             className="btn btn-sm btn-primary"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await downloadPortalAnnouncement(
+                                  selectedAnnouncement.uid,
+                                  selectedAnnouncement.original_filename || "attachment"
+                                );
+                              } catch {
+                                showToast(
+                                  "Download failed. Use the staff portal while signed in, or the file may be missing.",
+                                  "warning",
+                                  "Download"
+                                );
+                              }
+                            }}
                           >
                             <i className="bx bx-download me-1"></i>
-                            Open file
-                          </a>
+                            Download
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2564,7 +2624,7 @@ const PortalPage = () => {
       >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
-            <div className="modal-header border-bottom" style={{ backgroundColor: "#a8edea", color: "#333" }}>
+            <div className="modal-header border-bottom portal-todo-modal-header" style={{ backgroundColor: "#a8edea", color: "#333" }}>
               <h5 className="modal-title fw-bold text-dark" id="todoViewModalLabel">
                 <i className="bx bx-check-square me-2"></i>
                 Todo
@@ -2638,7 +2698,7 @@ const PortalPage = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div className="p-3 rounded border portal-modal-muted-panel" style={{ backgroundColor: "#f8f9fa" }}>
                     {selectedTodo.description ? (
                       <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedTodo.description}
@@ -2698,9 +2758,11 @@ const PortalPage = () => {
 
                     <div className="d-flex flex-wrap align-items-center gap-2">
                       {selectedEvent.event_type && (
-                        <span className="badge bg-light text-dark">
+                        <span
+                          className={`badge rounded-pill ${getEventTypeBadge(selectedEvent.event_type).class}`}
+                        >
                           <i className="bx bx-tag-alt me-1"></i>
-                          Type: {selectedEvent.event_type}
+                          {getEventTypeBadge(selectedEvent.event_type).label}
                         </span>
                       )}
 
@@ -2730,7 +2792,7 @@ const PortalPage = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-3 rounded border" style={{ backgroundColor: "#f8f9fa" }}>
+                  <div className="p-3 rounded border portal-modal-muted-panel" style={{ backgroundColor: "#f8f9fa" }}>
                     {selectedEvent.description ? (
                       <p className="mb-0 text-dark" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
                         {selectedEvent.description}
@@ -2759,11 +2821,14 @@ const PortalPage = () => {
       {/* Daily Motivation – floating popup: visible 1 min, reappears every 5 min (uses defaults if none in DB) */}
       {data && (displayQuote || displayGratitude || displayEsImage) && (
         <div
+          className="portal-daily-motivation-popout"
           style={{
             position: "fixed",
             bottom: "24px",
             right: "24px",
             zIndex: 1050,
+            /* Keep physical size stable while global portal text scale changes `html` / rem */
+            zoom: 100 / Math.max(fontSize, 1),
           }}
         >
           <style>{`
@@ -2772,8 +2837,8 @@ const PortalPage = () => {
               to { opacity: 1; transform: translateY(0) scale(1); }
             }
             @keyframes dailyMotivationGlow {
-              0%, 100% { box-shadow: 0 12px 48px rgba(99, 102, 241, 0.18), 0 0 0 1px rgba(99, 102, 241, 0.08); }
-              50% { box-shadow: 0 16px 56px rgba(99, 102, 241, 0.22), 0 0 0 1px rgba(99, 102, 241, 0.12); }
+              0%, 100% { box-shadow: 0 12px 48px rgba(0, 133, 63, 0.16), 0 0 0 1px rgba(0, 133, 63, 0.1); }
+              50% { box-shadow: 0 16px 56px rgba(0, 133, 63, 0.22), 0 0 0 1px rgba(61, 166, 106, 0.14); }
             }
           `}</style>
           {showPopupCard ? (
@@ -2782,10 +2847,10 @@ const PortalPage = () => {
               style={{
                 width: "360px",
                 maxWidth: "calc(100vw - 48px)",
-                background: "linear-gradient(165deg, #ffffff 0%, #fafbff 50%, #f5f3ff 100%)",
-                border: "1px solid rgba(99, 102, 241, 0.2)",
+                background: "linear-gradient(165deg, #ffffff 0%, #f7fcf7 50%, #eef8ef 100%)",
+                border: "1px solid rgba(0, 133, 63, 0.18)",
                 borderRadius: "20px",
-                boxShadow: "0 12px 48px rgba(99, 102, 241, 0.18), 0 0 0 1px rgba(99, 102, 241, 0.08)",
+                boxShadow: "0 12px 48px rgba(0, 133, 63, 0.14), 0 0 0 1px rgba(0, 133, 63, 0.08)",
                 overflow: "hidden",
                 animation: "dailyMotivationFadeIn 0.45s ease-out, dailyMotivationGlow 4s ease-in-out infinite",
               }}
@@ -2797,7 +2862,7 @@ const PortalPage = () => {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "10px 14px 10px 18px",
-                  background: "linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #8b5cf6 100%)",
+                  background: "linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%)",
                   color: "#fff",
                 }}
               >
@@ -2817,7 +2882,7 @@ const PortalPage = () => {
               </div>
 
               {/* Content: image as the speaker, then their words */}
-              <div style={{ padding: "20px 20px 14px" }}>
+              <div className="daily-motivation-card__body" style={{ padding: "20px 20px 14px" }}>
                 {/* Image first – the one "saying" the words (default ES.png if none in DB or load fails) */}
                 {(displayEsImage || displayQuote || displayGratitude) && (
                   <div
@@ -2833,8 +2898,8 @@ const PortalPage = () => {
                         height: "88px",
                         borderRadius: "50%",
                         overflow: "hidden",
-                        border: "3px solid rgba(99, 102, 241, 0.35)",
-                        boxShadow: "0 4px 20px rgba(99, 102, 241, 0.2)",
+                        border: "3px solid rgba(0, 133, 63, 0.3)",
+                        boxShadow: "0 4px 20px rgba(0, 133, 63, 0.18)",
                         flexShrink: 0,
                         background: "#f3f4f6",
                       }}
@@ -2859,10 +2924,11 @@ const PortalPage = () => {
                 {/* Caption: "From the one in the image" */}
                 {(displayQuote || displayGratitude) && (
                   <p
+                    className="daily-motivation-caption"
                     style={{
                       textAlign: "center",
                       fontSize: "0.7rem",
-                      color: "#8b5cf6",
+                      color: "#00853f",
                       fontWeight: 600,
                       letterSpacing: "0.06em",
                       textTransform: "uppercase",
@@ -2879,6 +2945,7 @@ const PortalPage = () => {
                 {/* Gratitude message – their words (default if none in DB) */}
                 {displayGratitude && (
                   <p
+                    className="daily-motivation-message"
                     style={{
                       margin: 0,
                       lineHeight: 1.6,
@@ -2893,19 +2960,21 @@ const PortalPage = () => {
                     {/* Quote – their words (default if none in DB) */}
                     {displayQuote && (
                   <div
+                    className="daily-motivation-quote-wrap"
                     style={{
                       position: "relative",
                       paddingLeft: "18px",
                       marginBottom: displayGratitude ? "14px" : "0",
-                      borderLeft: "3px solid rgba(99, 102, 241, 0.4)",
+                      borderLeft: "3px solid rgba(0, 133, 63, 0.35)",
                       borderRadius: "0 4px 4px 0",
-                      background: "linear-gradient(90deg, rgba(99, 102, 241, 0.06) 0%, transparent 100%)",
+                      background: "linear-gradient(90deg, rgba(0, 133, 63, 0.08) 0%, transparent 100%)",
                       paddingTop: "10px",
                       paddingBottom: "10px",
                       paddingRight: "8px",
                     }}
                   >
                     <p
+                      className="daily-motivation-quote"
                       style={{
                         margin: 0,
                         lineHeight: 1.65,
@@ -2920,7 +2989,7 @@ const PortalPage = () => {
                   </div>
                 )}
 
-                <p style={{ marginTop: "14px", marginBottom: 0, fontSize: "0.68rem", color: "#9ca3af", textAlign: "center" }}>
+                <p className="daily-motivation-hint" style={{ marginTop: "14px", marginBottom: 0, fontSize: "0.68rem", color: "#9ca3af", textAlign: "center" }}>
                   Auto-closes in 1 min · Shows again in 5 min
                 </p>
               </div>
@@ -2930,12 +2999,12 @@ const PortalPage = () => {
               type="button"
               className="btn btn-sm"
               style={{
-                background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                background: "linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%)",
                 color: "#fff",
                 border: "none",
                 borderRadius: "14px",
                 padding: "10px 18px",
-                boxShadow: "0 6px 20px rgba(99, 102, 241, 0.4)",
+                boxShadow: "0 6px 20px rgba(0, 133, 63, 0.35)",
                 fontWeight: 600,
                 fontSize: "0.875rem",
               }}

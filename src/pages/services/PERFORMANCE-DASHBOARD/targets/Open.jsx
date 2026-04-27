@@ -19,6 +19,9 @@ import ReactLoading from "react-loading";
 import Swal from "sweetalert2";
 import TargetModal from "./Modal";
 import ActivityModal from "../activities/Modal";
+import { formatActivityTitleForDisplay } from "../implementationQuarterUtils";
+
+const ACTIVITY_TITLE_IN_TARGET_TABLE_MAX = 72;
 
 const STATUS_BADGE = {
   DRAFT: "bg-label-secondary",
@@ -293,7 +296,7 @@ export const TargetOpenPage = () => {
         <BreadCumb pageList={breadcrumb} />
         <div className="card">
           <div className="card-body text-center">
-            <ReactLoading type="cylon" color="#696cff" height={30} width={50} />
+            <ReactLoading type="cylon" color="#00853f" height={30} width={50} />
             <h6 className="text-muted mt-2">Loading Target Details...</h6>
           </div>
         </div>
@@ -340,20 +343,12 @@ export const TargetOpenPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex-grow-1">
-                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div>
-                      <h4 className="mb-1 fw-bold">{obj.title}</h4>
-                      {obj.objective_title && (
-                        <p className="mb-0 text-muted small">
-                          Under objective:&nbsp;<strong>{obj.objective_title}</strong>
-                          {obj.objective_financial_year && (
-                            <span className="ms-1">({obj.objective_financial_year})</span>
-                          )}
-                        </p>
-                      )}
+                <div className="flex-grow-1 min-w-0">
+                  <div className="d-flex align-items-start justify-content-between flex-wrap gap-2">
+                    <div className="min-w-0 flex-grow-1 me-md-2">
+                      <h4 className="mb-0 fw-bold text-break">{obj.title}</h4>
                     </div>
-                    <div className="d-flex gap-2 flex-wrap">
+                    <div className="d-flex gap-2 flex-wrap flex-shrink-0">
                       <span className={`badge ${STATUS_BADGE[obj.status] || "bg-label-secondary"}`}>
                         {obj.status}
                       </span>
@@ -371,14 +366,38 @@ export const TargetOpenPage = () => {
                       )}
                     </div>
                   </div>
-                  {(obj.responsible_officer_name || obj.responsible_officer) && (
-                    <div className="mt-2 small text-muted">
-                      Responsible officer:{" "}
-                      <strong className="text-body">
-                        {obj.responsible_officer_name || obj.responsible_officer}
-                      </strong>
+                  {(obj.objective ||
+                    obj.objective_title ||
+                    obj.objective_financial_year) && (
+                    <div className="mt-2 pt-2 border-top border-light">
+                      <div className="d-flex flex-wrap align-items-center gap-2">
+                        <span className="small text-muted text-nowrap">
+                          <i className="bx bx-bullseye me-1 align-middle text-success"></i>
+                          Under objective
+                        </span>
+                        <span className="small fw-semibold text-body text-break">
+                          {obj.objective_title?.trim() || "—"}
+                        </span>
+                        {obj.objective_financial_year ? (
+                          <span className="badge bg-label-primary">
+                            FY {obj.objective_financial_year}
+                          </span>
+                        ) : null}
+                        {obj.objective ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary py-0 px-2"
+                            onClick={() =>
+                              navigate(`/performance-dashboard/objectives/open/${obj.objective}`)
+                            }
+                          >
+                            View objective
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   )}
+
                 </div>
               </div>
             </div>
@@ -614,6 +633,25 @@ export const TargetOpenPage = () => {
                           </td>
                           <td><strong>{obj.planned_value != null ? obj.planned_value : "—"}</strong></td>
                         </tr>
+                        <tr>
+                          <td className="fw-medium align-top">
+                            <i className="bx bx-user me-2 text-secondary"></i>
+                            Responsible officer:
+                          </td>
+                          <td>
+                            <strong className="text-body">
+                              {obj.responsible_officer_name ||
+                                obj.responsible_officer_label ||
+                                obj.responsible_officer ||
+                                "Not assigned"}
+                            </strong>
+                            {obj.responsible_officer_designation ? (
+                              <div className="small text-muted mt-1">
+                                {obj.responsible_officer_designation}
+                              </div>
+                            ) : null}
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -726,7 +764,12 @@ export const TargetOpenPage = () => {
                   className="btn btn-sm btn-primary"
                   data-bs-toggle="modal"
                   data-bs-target="#activityUnderTargetModal"
-                  onClick={() => setSelectedActivity({ target: obj.uid })}
+                  onClick={() =>
+                    setSelectedActivity({
+                      target: obj.uid,
+                      planned_financial_year: obj.objective_financial_year || "",
+                    })
+                  }
                 >
                   <i className="bx bx-plus me-1"></i>
                   Add Activity
@@ -740,7 +783,7 @@ export const TargetOpenPage = () => {
                 </p>
               ) : activitiesLoading ? (
                 <div className="d-flex align-items-center justify-content-center py-3">
-                  <ReactLoading type="cylon" color="#696cff" height={24} width={40} />
+                  <ReactLoading type="cylon" color="#00853f" height={24} width={40} />
                   <span className="ms-2 text-muted small">Loading activities...</span>
                 </div>
               ) : activities.length === 0 ? (
@@ -753,7 +796,7 @@ export const TargetOpenPage = () => {
                   <table className="table table-hover align-middle">
                     <thead className="table-light">
                       <tr>
-                        <th style={{ minWidth: 220 }}>Activity</th>
+                        <th style={{ minWidth: 200, maxWidth: "28%" }}>Activity</th>
                         <th style={{ minWidth: 120 }}>Period</th>
                         <th style={{ minWidth: 200 }}>Quarter Progress</th>
                         <th style={{ minWidth: 100 }}>Status</th>
@@ -777,6 +820,22 @@ export const TargetOpenPage = () => {
                               : "";
                         const plannedPeriod = fy && qLabel ? `${fy} — ${qLabel}` : fy || qLabel || "—";
 
+                        const rawActivityTitle = act.title != null ? String(act.title) : "";
+                        const displayActivityTitle = formatActivityTitleForDisplay(
+                          rawActivityTitle,
+                          ACTIVITY_TITLE_IN_TARGET_TABLE_MAX
+                        );
+                        const looksLikeSavedErrorTitle =
+                          rawActivityTitle.trim().startsWith("{") &&
+                          rawActivityTitle.includes('"status"') &&
+                          rawActivityTitle.includes('"message"');
+                        const activityTitleTooltip =
+                          looksLikeSavedErrorTitle || rawActivityTitle.length > ACTIVITY_TITLE_IN_TARGET_TABLE_MAX
+                            ? rawActivityTitle.length > 400
+                              ? `${rawActivityTitle.slice(0, 400)}…`
+                              : rawActivityTitle
+                            : undefined;
+
                         // Quarter progress from quarterly_summary
                         const summary = Array.isArray(act.quarterly_summary) ? act.quarterly_summary : [];
                         const submittedQs = summary.filter((s) => s.is_locked).map((s) => s.quarter);
@@ -792,8 +851,13 @@ export const TargetOpenPage = () => {
                               })
                             }
                           >
-                            <td>
-                              <div className="fw-semibold text-body mb-1">{act.title}</div>
+                            <td style={{ maxWidth: 320 }}>
+                              <div
+                                className="fw-semibold text-body mb-1 text-break"
+                                title={activityTitleTooltip}
+                              >
+                                {displayActivityTitle}
+                              </div>
                               <div className="d-flex align-items-center gap-2 flex-wrap">
                                 {act.weight != null && (
                                   <span className="badge bg-label-warning text-warning px-2 py-1" style={{ fontSize: "0.72rem" }}>

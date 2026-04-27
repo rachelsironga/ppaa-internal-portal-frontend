@@ -7,12 +7,16 @@ import {
   getImplementationActivities,
   getFinancialYears,
   activityImplementationApproval,
-  getQuarterlyData,
 } from "../Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import { formatDate } from "../../../../helpers/DateFormater";
 import Swal from "sweetalert2";
 import { hasPermission } from "../../../../utils/permissions";
+import {
+  getPendingImplementationQuartersFromRow,
+  formatActivityTitleForDisplay,
+} from "../implementationQuarterUtils";
+import { ActivityPlanningContext } from "../ActivityPlanningContext";
 
 const STATUS_BADGE = {
   DRAFT: "bg-label-secondary",
@@ -39,14 +43,16 @@ const ApprovalView = () => {
     ["can_approve_spism_planning"],
     [],
     user?.user_permissions,
-    user?.groups
+    user?.groups,
+    user
   );
   // Same ES users often have only planning permission assigned; allow either codename for implementation review.
   const canApproveImplementation = hasPermission(
     ["can_approve_spism_implementation", "can_approve_spism_planning"],
     [],
     user?.user_permissions,
-    user?.groups
+    user?.groups,
+    user
   );
   const [status, setStatus] = useState("PENDING");
   const [financialYear, setFinancialYear] = useState("");
@@ -134,37 +140,62 @@ const ApprovalView = () => {
     if (mode === "implementation") fetchImplementationApprovals();
   };
 
-  /** Quarters locked & SUBMITTED (awaiting ES implementation approval). */
-  const fetchPendingImplementationQuarters = async (row) => {
-    const fy = (row.planned_financial_year || implFinancialYear || "").trim();
-    const res = await getQuarterlyData({
-      activity: row.uid,
-      financial_year: fy,
-      pagination: { page_size: 20 },
-    });
-    const raw = res?.data ?? res?.results ?? res;
-    const list = Array.isArray(raw) ? raw : raw?.data ?? raw?.results ?? [];
-    if (!Array.isArray(list)) return [];
-    return list.filter(
-      (q) =>
-        q.is_locked &&
-        String(q.implementation_status || "").toUpperCase() === "SUBMITTED" &&
-        !q.implementation_approved_at
-    );
+  const quickImplementationDecision = async (row, quarter, action) => {
+    let comment = "";
+    if (action === "return") {
+      const c = await Swal.fire({
+        title:
+          quarter != null && quarter !== ""
+            ? `Return Q${quarter} implementation?`
+            : "Return implementation?",
+        input: "textarea",
+        inputLabel: "Comment (required)",
+        inputPlaceholder: "Explain what must be revised before resubmission…",
+        showCancelButton: true,
+        confirmButtonColor: "#ffab00",
+        confirmButtonText: "Return",
+        inputValidator: (v) => (!v || !String(v).trim() ? "Comment is required" : null),
+      });
+      if (!c.value) return;
+      comment = String(c.value).trim();
+    } else {
+      const ok = await Swal.fire({
+        title:
+          quarter != null && quarter !== ""
+            ? `Approve Q${quarter} implementation?`
+            : "Approve implementation?",
+        text: "This confirms the submitted implementation for the selected scope.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Approve",
+        confirmButtonColor: "#28a745",
+      });
+      if (!ok.isConfirmed) return;
+    }
+
+    setActionLoading(row.uid);
+    try {
+      const res = await activityImplementationApproval(row.uid, {
+        action,
+        comment,
+        ...(quarter != null && quarter !== "" ? { quarter: Number(quarter) } : {}),
+      });
+      if (res?.status === 200 || res?.status === 8000) {
+        showToast(res?.message || (action === "approve" ? "Approved" : "Returned"), "success");
+        fetchImplementationApprovals();
+      } else {
+        showToast(res?.message || "Action failed", "warning", "Error");
+      }
+    } catch (e) {
+      showToast(e?.response?.data?.message || "Action failed", "danger", "Error");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const runImplementationReview = async (row) => {
     const label = row.title || "Activity";
-    setActionLoading(row.uid);
-    let pending = [];
-    try {
-      pending = await fetchPendingImplementationQuarters(row);
-    } catch {
-      showToast("Could not load quarterly data for this activity", "danger", "Error");
-      setActionLoading(null);
-      return;
-    }
-    setActionLoading(null);
+    const pending = getPendingImplementationQuartersFromRow(row);
 
     if (pending.length === 0) {
       showToast("No quarters are awaiting implementation approval.", "info", "Queue");
@@ -172,8 +203,10 @@ const ApprovalView = () => {
       return;
     }
 
-    const sortedQ = [...new Set(pending.map((p) => p.quarter))].sort((a, b) => a - b);
-    const pendingLabel = sortedQ.map((q) => `Q${q}`).join(", ");
+    const sortedQ = [
+      ...new Set(pending.map((p) => p.quarter).filter((q) => q != null && q !== "")),
+    ].sort((a, b) => a - b);
+    const pendingLabel = pending.map((p) => (p.quarter != null ? `Q${p.quarter}` : p.label)).join(", ");
 
     const pick = await Swal.fire({
       title: "Implementation review",
@@ -271,7 +304,7 @@ const ApprovalView = () => {
         : "Are you sure you want to approve this item?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#696cff",
+      confirmButtonColor: "#00853f",
       cancelButtonColor: "#6c757d",
       confirmButtonText: "Yes, approve",
     });
@@ -336,11 +369,7 @@ const ApprovalView = () => {
     );
     const status = row.implementation_review_status;
     if (status === "APPROVED") return false;
-    return (
-      pending > 0 ||
-      status === "PENDING_APPROVAL" ||
-      !!row.implementation_submitted_at
-    );
+    return pending > 0 || status === "PENDING_APPROVAL";
   };
 
   const implementationReviewBadge = (row) => {
@@ -375,6 +404,13 @@ const ApprovalView = () => {
   if (mode === "implementation") {
     return (
       <>
+        <style>{`
+          .implementation-approvals-table thead th { white-space: nowrap; font-size: 0.8125rem; vertical-align: middle; }
+          .implementation-approvals-table td.impl-review-td { vertical-align: middle; }
+          .implementation-approvals-table .impl-review-dropdown { min-width: 15.5rem; max-width: min(22rem, 92vw); }
+          .implementation-approvals-table .impl-review-dropdown .impl-q-row { padding: 0.35rem 0.75rem; }
+          .implementation-approvals-table .impl-review-dropdown .impl-q-row .btn { padding-top: 0.2rem; padding-bottom: 0.2rem; font-size: 0.75rem; font-weight: 600; }
+        `}</style>
         <BreadCumb pageList={["SPISM", "Approval", "Implementation"]} />
         <div className="card shadow-sm animate__animated animate__fadeInUp animate__fast">
           <div className="card-header bg-light">
@@ -472,7 +508,8 @@ const ApprovalView = () => {
               {canApproveImplementation ? (
                 <span className="text-muted small">
                   <i className="bx bx-info-circle me-1"></i>
-                  Use <strong>Review</strong> to approve or return <strong>all pending quarters</strong> or <strong>one quarter at a time</strong>.
+                  Use the <strong>⋯</strong> menu: choose <strong>Open activity</strong>, then <strong>Approve</strong> / <strong>Return</strong> per quarter.{" "}
+                  <strong>Batch review</strong> appears when multiple quarters are pending.
                 </span>
               ) : (
                 <span className="text-muted small">
@@ -489,26 +526,27 @@ const ApprovalView = () => {
               </p>
             ) : (
               <div className="table-responsive">
-                <table className="table table-sm table-hover align-middle">
+                <table className="table table-sm table-hover align-middle implementation-approvals-table">
                   <thead>
                     <tr>
                       <th>Activity</th>
                       <th>Target / Objective</th>
                       <th>FY / Quarters</th>
                       <th>Status</th>
-                      <th>Quarterly data</th>
-                      <th>Documents</th>
+                      <th>Qtr. data</th>
+                      <th>Docs</th>
                       <th>Submitted</th>
-                      <th className="text-end" style={{ minWidth: "120px" }}>Review</th>
-                      <th className="text-end">Open</th>
+                      <th className="text-end" style={{ minWidth: "88px" }}>Review</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {implActivities.map((row) => (
+                    {implActivities.map((row) => {
+                      const pendingImplQuarters = getPendingImplementationQuartersFromRow(row);
+                      return (
                       <tr key={row.uid}>
                         <td>
                           <span className="text-primary fw-semibold">
-                            {row.title && row.title.length > 80 ? `${row.title.substring(0, 80)}...` : row.title}
+                            {formatActivityTitleForDisplay(row.title, 80)}
                           </span>
                           {row.weight != null && (
                             <span className="badge bg-label-warning ms-1">Weight {row.weight}%</span>
@@ -550,43 +588,123 @@ const ApprovalView = () => {
                             <span className="text-muted">—</span>
                           )}
                         </td>
-                        <td className="text-end">
-                          {canApproveImplementation &&
-                          ((row.pending_implementation_approval_count ?? 0) > 0 ||
-                            row.implementation_review_status === "PENDING_APPROVAL" ||
-                            (!!row.implementation_submitted_at &&
-                              row.implementation_review_status !== "APPROVED")) ? (
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-primary"
-                              disabled={actionLoading !== null}
-                              onClick={() => runImplementationReview(row)}
-                              title="Approve or return by quarter or for all pending"
-                            >
-                              {actionLoading === row.uid ? (
-                                <span className="spinner-border spinner-border-sm" />
-                              ) : (
-                                <>
-                                  <i className="bx bx-check-shield me-1"></i>
-                                  Review
-                                </>
-                              )}
-                            </button>
-                          ) : (
-                            <span className="text-muted small">—</span>
-                          )}
-                        </td>
-                        <td className="text-end">
-                          <button
-                            type="button"
-                            className="btn btn-outline-primary btn-sm"
-                            onClick={() => navigate(`/performance-dashboard/activities/open/${row.uid}?es=1`)}
-                          >
-                            Open
-                          </button>
+                        <td className="text-end impl-review-td">
+                          <div className="d-inline-flex flex-column align-items-end gap-1">
+                            <div className="dropdown d-inline-block text-start">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-icon btn-outline-secondary"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                aria-haspopup="true"
+                                title={
+                                  canApproveImplementation && rowNeedsImplementationReview(row)
+                                    ? "Open activity, Approve, Return"
+                                    : "Open activity"
+                                }
+                                disabled={canApproveImplementation && actionLoading !== null}
+                              >
+                                <i className="bx bx-dots-vertical"></i>
+                              </button>
+                              <ul className="dropdown-menu dropdown-menu-end shadow-sm impl-review-dropdown">
+                                <li>
+                                  <button
+                                    type="button"
+                                    className="dropdown-item d-flex align-items-center"
+                                    onClick={() =>
+                                      navigate(`/performance-dashboard/activities/open/${row.uid}?es=1`)
+                                    }
+                                  >
+                                    <i className="bx bx-link-external me-2 text-primary"></i>
+                                    Open activity
+                                  </button>
+                                </li>
+                                {canApproveImplementation &&
+                                rowNeedsImplementationReview(row) &&
+                                pendingImplQuarters.length > 0 ? (
+                                  <>
+                                    <li>
+                                      <h6 className="dropdown-header text-uppercase small mb-0 py-2">
+                                        By quarter
+                                      </h6>
+                                    </li>
+                                    {pendingImplQuarters.map((p) => (
+                                      <li key={`${row.uid}-${p.label}-${p.quarter ?? "all"}`}>
+                                        <span className="dropdown-item-text impl-q-row">
+                                          <div className="d-flex flex-wrap align-items-center gap-2">
+                                            <span className="badge bg-label-primary rounded-pill px-2 py-1 flex-shrink-0">
+                                              {p.quarter != null ? `Q${p.quarter}` : "All"}
+                                            </span>
+                                            <div
+                                              className="btn-group btn-group-sm ms-auto"
+                                              role="group"
+                                              aria-label={`Review ${p.label}`}
+                                            >
+                                              <button
+                                                type="button"
+                                                className="btn btn-success text-white"
+                                                disabled={actionLoading !== null}
+                                                onClick={() => quickImplementationDecision(row, p.quarter, "approve")}
+                                                title={
+                                                  p.quarter != null
+                                                    ? `Approve implementation for quarter ${p.quarter}`
+                                                    : "Approve full activity implementation"
+                                                }
+                                              >
+                                                Approve
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="btn btn-warning text-dark"
+                                                disabled={actionLoading !== null}
+                                                onClick={() => quickImplementationDecision(row, p.quarter, "return")}
+                                                title="Return for revision (comment required)"
+                                              >
+                                                Return
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </span>
+                                      </li>
+                                    ))}
+                                    {pendingImplQuarters.length > 1 ? (
+                                      <>
+                                        <li>
+                                          <hr className="dropdown-divider my-1" />
+                                        </li>
+                                        <li>
+                                          <button
+                                            type="button"
+                                            className="dropdown-item d-flex align-items-center fw-semibold text-primary"
+                                            disabled={actionLoading !== null}
+                                            onClick={() => runImplementationReview(row)}
+                                          >
+                                            <i className="bx bx-list-check me-2"></i>
+                                            Batch review…
+                                          </button>
+                                        </li>
+                                      </>
+                                    ) : null}
+                                  </>
+                                ) : null}
+                              </ul>
+                            </div>
+                            {canApproveImplementation && actionLoading === row.uid ? (
+                              <small className="text-muted d-flex align-items-center justify-content-end gap-1">
+                                <span
+                                  className="spinner-border spinner-border-sm"
+                                  style={{ width: "0.65rem", height: "0.65rem" }}
+                                  role="status"
+                                  aria-hidden="true"
+                                />
+                                Working…
+                              </small>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -934,6 +1052,18 @@ const ApprovalView = () => {
                                   </div>
                                 )}
                               </div>
+                              <ActivityPlanningContext row={row} />
+                              {row.status === "RETURNED" && row.approval_comment ? (
+                                <div className="small mt-2 text-break" title={row.approval_comment}>
+                                  <span className="text-danger fw-semibold">
+                                    <i className="bx bx-message-square-detail me-1" aria-hidden="true" />
+                                    Return note:
+                                  </span>{" "}
+                                  {row.approval_comment.length > 160
+                                    ? `${row.approval_comment.slice(0, 160)}…`
+                                    : row.approval_comment}
+                                </div>
+                              ) : null}
                             </td>
                             <td className="pe-3 text-end">
                               {row.planned_value != null ? (

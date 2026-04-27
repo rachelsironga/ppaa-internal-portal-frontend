@@ -1,6 +1,5 @@
 [
   {
-    "header": " ",
     "items": [
       {
         "text": "Services",
@@ -18,6 +17,7 @@
         "link": "/performance-dashboard",
         "permission": ["can_view_spism_dashboard"],
         "role": [],
+        "excludeRoles": ["spism_approver"],
         "isMain": true
       },
       {
@@ -27,7 +27,14 @@
         "available": true,
         "link": "/performance-dashboard/viewer-dashboard",
         "permission": ["can_view_spism_reports"],
-        "role": []
+        "role": [],
+        "excludeRoles": [
+          "spism_approver",
+          "spism_planning_officer",
+          "spims_planning_officer",
+          "spism_planning_office",
+          "spims_planning_office"
+        ]
       },
       {
         "id": "spism-es-dashboard",
@@ -45,7 +52,14 @@
         "available": true,
         "link": "/performance-dashboard/profile",
         "permission": [],
-        "role": ["admin", "staff", "head_of_unit"]
+        "role": [
+          "SPISM_Admin",
+          "SPISM_Viewer",
+          "SPISM_Approver",
+          "SPISM_Dept_Head",
+          "SPISM_Planning_Officer",
+          "SPIMS_Planning_Officer"
+        ]
       }
     ]
   },
@@ -98,7 +112,7 @@
         "icon": "bx bx-calendar-check",
         "available": true,
         "link": "",
-        "permission": ["can_view_spism_implementation"],
+        "permission": ["can_view_spism_implementation", "can_view_spism_activity"],
         "role": [],
         "submenu": [
           {
@@ -106,6 +120,13 @@
             "icon": "bx bx-check-double",
             "link": "/performance-dashboard/implementation",
             "permission": ["can_view_spism_implementation"],
+            "role": []
+          },
+          {
+            "text": "Activities",
+            "icon": "bx bx-list-ul",
+            "link": "/performance-dashboard/activities",
+            "permission": ["can_view_spism_activity"],
             "role": []
           }
         ]
@@ -170,7 +191,8 @@
         "available": true,
         "link": "/performance-dashboard/audit-logs",
         "permission": ["can_view_spism_audit_log"],
-        "role": []
+        "role": [],
+        "excludeRoles": ["spism_approver"]
       }
     ]
   },
@@ -183,15 +205,33 @@
         "available": true,
         "link": "/performance-dashboard/setup/financial-years",
         "permission": ["can_view_spism_setup"],
-        "role": []
+        "role": [],
+        "excludeRoles": [
+          "spism_planning_officer",
+          "spims_planning_officer",
+          "spism_planning_office",
+          "spims_planning_office",
+          "spism_dept_head",
+          "spism_contributor",
+          "spism_approver"
+        ]
       },
       {
         "text": "Alerts & Notifications",
         "icon": "bx bx-bell",
         "available": true,
         "link": "/performance-dashboard/notifications",
-        "permission": ["can_view_spism_dashboard"],
-        "role": []
+        "permission": ["can_view_spism_setup"],
+        "role": [],
+        "excludeRoles": [
+          "spism_planning_officer",
+          "spims_planning_officer",
+          "spism_planning_office",
+          "spims_planning_office",
+          "spism_dept_head",
+          "spism_contributor",
+          "spism_approver"
+        ]
       }
     ]
   }

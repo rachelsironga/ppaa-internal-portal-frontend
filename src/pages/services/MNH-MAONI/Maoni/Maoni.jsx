@@ -7,6 +7,7 @@ import MaoniModal from "./MaoniModal";
 import { MaoniContext } from "../../../../utils/context";
 import { getSuggestions, getDepartments, getSuggestion } from "../../PPAA-MAONI/Queries";
 import Swal from "sweetalert2";
+import { isMaoniReviewer } from "../../../../utils/maoniRoles";
 
 export const Maoni = () => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -15,9 +16,11 @@ export const Maoni = () => {
   const userRoles =
     user?.groups?.map((r) => String(r).toLowerCase()) || [];
   const isStaff = userRoles.includes("staff");
-  const isHR = userRoles.includes("hr");
+  const isMaoniReviewerUser = isMaoniReviewer(user);
   const isAdmin = userRoles.includes("admin");
-  const canAccessMaoni = Boolean(isStaff || isHR || isAdmin || user?.is_superuser);
+  const canAccessMaoni = Boolean(
+    isStaff || isMaoniReviewerUser || isAdmin || user?.is_superuser
+  );
 
   // User's personal maoni stats
   const [myMaoniStats, setMyMaoniStats] = useState({
@@ -30,8 +33,9 @@ export const Maoni = () => {
   const [myRecentMaoni, setMyRecentMaoni] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMaoni, setSelectedMaoni] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Restrict Maoni dashboard to staff/HR/Admin/Superuser only
+  // Restrict /ppaa-maoni to staff / PPAA_Maoni_Reviewer / Admin / Superuser
   useEffect(() => {
     if (!user) return;
     if (canAccessMaoni) return;
@@ -49,11 +53,12 @@ export const Maoni = () => {
     try {
       setLoading(true);
       const [suggestionsRes, departmentsRes] = await Promise.all([
-        getSuggestions(1, 100),
+        // Personal "My Maoni" — reviewers/admins still only their own rows here (see dashboard for all).
+        getSuggestions(1, 100, { onlyMine: true }),
         getDepartments(),
       ]);
 
-      let suggestions =
+      const suggestions =
         suggestionsRes?.data && Array.isArray(suggestionsRes.data)
           ? suggestionsRes.data
           : [];
@@ -61,98 +66,6 @@ export const Maoni = () => {
         departmentsRes?.data && Array.isArray(departmentsRes.data)
           ? departmentsRes.data
           : [];
-
-      // Personal dashboard: show ONLY this user's suggestions ("My Maoni").
-      // If user has STAFF role (even with HR/Admin), they must see their own suggestions.
-      // Backend returns ALL suggestions for HR/Admin; for staff-only it may scope to user.
-      // We always filter client-side when user has staff so "my suggestions" are guaranteed.
-      const roles =
-        user?.groups?.map((r) => String(r).toLowerCase()) || [];
-      const hasStaff = roles.includes("staff");
-      const isPrivilegedViewer = Boolean(
-        roles.includes("hr") || roles.includes("admin") || user?.is_superuser
-      );
-      // When user has staff, treat as "My Maoni" and filter to their suggestions (ID or name).
-      const filterToMySuggestions = hasStaff || isPrivilegedViewer;
-
-      // Normalize name for matching: collapse spaces, trim, lowercase
-      const normalizeName = (str) =>
-        (str ?? "")
-          .toString()
-          .replace(/\s+/g, " ")
-          .trim()
-          .toLowerCase();1
-
-      const currentUserId =
-        user?.id ??
-        user?.user_id ??
-        user?.userId ??
-        user?.pk ??
-        user?.profile?.id ??
-        user?.profile_id;
-
-      const rawNames = [
-        user?.full_name,
-        user?.fullName,
-        user?.username,
-        user?.name,
-        user?.first_name && user?.last_name
-          ? `${user.first_name} ${user.last_name}`.trim()
-          : null,
-        user?.first_name && user?.middle_name && user?.last_name
-          ? `${user.first_name} ${user.middle_name} ${user.last_name}`.trim()
-          : null,
-        user?.first_name,
-        user?.last_name,
-        user?.middle_name,
-      ].filter(Boolean);
-
-      const nameCandidates = [...new Set(rawNames.map(normalizeName))].filter(
-        Boolean
-      );
-
-      // Match suggestion to current user: by numeric ID or by name (exact or partial).
-      const isMySuggestion = (s) => {
-        const submittedId = s?.submitted_by_id;
-        const submittedName = normalizeName(s?.submitted_by_name ?? "");
-
-        if (
-          currentUserId != null &&
-          submittedId != null &&
-          Number(currentUserId) === Number(submittedId)
-        ) {
-          return true;
-        }
-        if (!submittedName || nameCandidates.length === 0) return false;
-        if (nameCandidates.some((n) => n === submittedName)) return true;
-        // Partial match: all words in a name candidate appear in submitted name (e.g. "james sando" vs "james m sando")
-        if (
-          nameCandidates.some((nc) => {
-            const words = nc.split(/\s+/).filter(Boolean);
-            return words.length >= 1 && words.every((w) => submittedName.includes(w));
-          })
-        ) {
-          return true;
-        }
-        return false;
-      };
-
-      if (filterToMySuggestions) {
-        if (currentUserId == null && nameCandidates.length === 0) {
-          suggestions = [];
-        } else {
-          suggestions = suggestions.filter(isMySuggestion);
-        }
-      } else {
-        if (currentUserId != null) {
-          suggestions = suggestions.filter((s) => {
-            const submittedId = s?.submitted_by_id;
-            return submittedId != null
-              ? Number(submittedId) === Number(currentUserId)
-              : true;
-          });
-        }
-      }
 
       const deptByUid = new Map(departments.map((d) => [d.uid, d]));
 
@@ -188,34 +101,13 @@ export const Maoni = () => {
     } finally {
       setLoading(false);
     }
-  }, [
-    user?.id,
-    user?.user_id,
-    user?.userId,
-    user?.pk,
-    user?.profile?.id,
-    user?.profile_id,
-    user?.groups,
-    user?.is_superuser,
-    user?.full_name,
-    user?.fullName,
-    user?.username,
-    user?.name,
-    user?.first_name,
-    user?.middle_name,
-    user?.last_name,
-  ]);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!canAccessMaoni) return;
     handleFetchData();
-  }, [handleFetchData]);
+  }, [handleFetchData, canAccessMaoni]);
 
-  if (!canAccessMaoni) {
-    return null;
-  }
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
   const totalPages = Math.ceil(myRecentMaoni.length / itemsPerPage);
 
@@ -288,6 +180,10 @@ export const Maoni = () => {
     }
   };
 
+  if (!canAccessMaoni) {
+    return null;
+  }
+
   return (
     <MaoniContext.Provider
       value={{
@@ -297,7 +193,7 @@ export const Maoni = () => {
         setSelectedMaoni,
       }}
     >
-      <div className="container-fluid py-4">
+      <div className="w-100 py-4">
         {/* Header Section */}
         <div className="row align-items-center mb-6">
           <div className="col-lg-8 col-md-6 mb-4 mb-md-0">

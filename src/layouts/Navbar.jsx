@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import getGreetingMessage from "../utils/greetingHandler";
 import { logout } from "../redux/actions/authentication/logoutAction";
+import { refreshCurrentUser } from "../redux/actions/authentication/refreshUserAction";
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import servicesList from "../data/servicesList.json";
@@ -25,10 +26,20 @@ import {
   Star,
   Sparkles,
 } from "lucide-react";
-import { use } from "react";
+import { getUserDisplayName } from "../utils/userDisplayName";
+import {
+  persistAndApplyPortalFontSize,
+  readPortalFontPct,
+} from "../helpers/portalFontSize";
+import {
+  applyPortalThemeToDocument,
+  readPortalThemeIsDark,
+  PORTAL_THEME_STORAGE_KEY,
+} from "../helpers/portalTheme";
 
 const Navbar = ({ isService = false, activeService = "" }) => {
   const user = useSelector((state) => state.userReducer?.data);
+  const displayName = getUserDisplayName(user);
   const userRoles = user?.groups || [];
   const staffOnly = isStaffOnly(userRoles);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -43,6 +54,41 @@ const Navbar = ({ isService = false, activeService = "" }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [portalFontPct, setPortalFontPct] = useState(() => readPortalFontPct());
+  const [portalDark, setPortalDark] = useState(() => readPortalThemeIsDark());
+
+  useEffect(() => {
+    const onPortalFont = (e) => {
+      setPortalFontPct(
+        typeof e.detail === "number" ? e.detail : readPortalFontPct()
+      );
+    };
+    window.addEventListener("portal-font-size-changed", onPortalFont);
+    return () => window.removeEventListener("portal-font-size-changed", onPortalFont);
+  }, []);
+
+  useEffect(() => {
+    const onTheme = (e) => {
+      setPortalDark(
+        typeof e.detail === "boolean" ? e.detail : readPortalThemeIsDark()
+      );
+    };
+    const onStorage = (e) => {
+      if (!e.key || e.key === PORTAL_THEME_STORAGE_KEY) {
+        setPortalDark(readPortalThemeIsDark());
+      }
+    };
+    window.addEventListener("portal-theme-changed", onTheme);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("portal-theme-changed", onTheme);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    dispatch(refreshCurrentUser());
+  }, [dispatch]);
 
   // Get the correct profile path based on current location
   const getProfilePath = () => {
@@ -180,8 +226,8 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           #${navbarId} .mnh-mobile-menu-btn:hover {
-            background: rgba(25, 118, 210, 0.08);
-            color: #1976d2;
+            background: rgba(0, 133, 63, 0.08);
+            color: #00853f;
           }
           
           /* Quick Access Button */
@@ -191,7 +237,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           #${navbarId} .mnh-quick-access-btn {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1.5px solid rgba(25, 118, 210, 0.3);
+            border: 1.5px solid rgba(0, 133, 63, 0.28);
             border-radius: 12px;
             color: #2d3748;
             padding: 10px 16px;
@@ -203,14 +249,14 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             gap: 10px;
             cursor: pointer;
             white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 133, 63, 0.08);
           }
           
           #${navbarId} .mnh-quick-access-btn:hover {
-            background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
-            border-color: rgba(25, 118, 210, 0.6);
+            background: linear-gradient(135deg, #f0faf4 0%, #e8f5e9 100%);
+            border-color: rgba(0, 133, 63, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 133, 63, 0.14);
           }
           
           #${navbarId} .mnh-quick-access-btn:active {
@@ -227,7 +273,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             background: white;
             border-radius: 16px;
             border: 1px solid rgba(0, 0, 0, 0.1);
-            box-shadow: 0 20px 60px rgba(25, 118, 210, 0.15), 0 0 40px rgba(229, 57, 53, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 133, 63, 0.12), 0 0 40px rgba(0, 133, 63, 0.06);
             overflow: hidden;
             z-index: 1050;
             animation: mnhSlideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -246,7 +292,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           #${servicesDropdownId} .mnh-dropdown-header {
             padding: 20px;
-            background: linear-gradient(135deg, #1976d2 0%, #e53935 50%, #ffd700 100%);
+            background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 38%, #00853f 100%);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
@@ -273,7 +319,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             font-weight: 700;
             color: white;
             margin-bottom: 6px;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 1px 3px rgba(0, 45, 22, 0.45);
             position: relative;
           }
           
@@ -285,8 +331,8 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           #${servicesDropdownId} .mnh-search-container {
             padding: 20px;
-            background: linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%);
-            border-bottom: 1px solid rgba(25, 118, 210, 0.1);
+            background: linear-gradient(135deg, #f8fafc 0%, #ecf8ed 100%);
+            border-bottom: 1px solid rgba(0, 133, 63, 0.1);
             position: relative;
           }
           
@@ -298,18 +344,18 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             width: 100%;
             padding: 12px 16px 12px 45px;
             background: white;
-            border: 2px solid rgba(25, 118, 210, 0.2);
+            border: 2px solid rgba(0, 133, 63, 0.2);
             border-radius: 12px;
             font-size: 14px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             color: #334155;
-            box-shadow: 0 2px 10px rgba(25, 118, 210, 0.08);
+            box-shadow: 0 2px 10px rgba(0, 133, 63, 0.06);
           }
           
           #${servicesDropdownId} .mnh-search-input:focus {
             outline: none;
-            border-color: #1976d2;
-            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2), 0 4px 20px rgba(25, 118, 210, 0.3);
+            border-color: #00853f;
+            box-shadow: 0 0 0 3px rgba(0, 133, 63, 0.18), 0 4px 20px rgba(0, 133, 63, 0.15);
             transform: scale(1.02);
           }
           
@@ -318,13 +364,13 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #1976d2;
+            color: #00853f;
             font-size: 16px;
             transition: all 0.3s ease;
           }
           
           #${servicesDropdownId} .mnh-search-input:focus + .mnh-search-icon {
-            color: #e53935;
+            color: #006b34;
             transform: translateY(-50%) scale(1.1);
           }
           
@@ -335,7 +381,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             display: grid;
             grid-template-columns: 1fr;
             gap: 10px;
-            background: linear-gradient(135deg, #fafcff 0%, #f5f9ff 100%);
+            background: linear-gradient(135deg, #fafcfb 0%, #f4faf5 100%);
           }
           
           #${servicesDropdownId} .mnh-service-item {
@@ -360,15 +406,15 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(229, 57, 53, 0.1));
+            background: linear-gradient(135deg, rgba(185, 217, 183, 0.35), rgba(0, 133, 63, 0.12));
             opacity: 0;
             transition: opacity 0.3s ease;
           }
           
           #${servicesDropdownId} .mnh-service-item:hover {
             transform: translateY(-4px) scale(1.02);
-            border-image: linear-gradient(135deg, #1976d2, #e53935, #ffd700) 1;
-            box-shadow: 0 12px 30px rgba(25, 118, 210, 0.2), 0 0 20px rgba(229, 57, 53, 0.15);
+            border-image: linear-gradient(135deg, #b9d9b7, #3da66a, #00853f) 1;
+            box-shadow: 0 12px 30px rgba(0, 133, 63, 0.15), 0 0 20px rgba(61, 166, 106, 0.12);
           }
           
           #${servicesDropdownId} .mnh-service-item:hover::before {
@@ -376,7 +422,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           #${servicesDropdownId} .mnh-service-item:hover .mnh-service-icon {
-            background: linear-gradient(135deg, #1976d2, #e53935);
+            background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 45%, #00853f 100%);
             transform: rotate(12deg) scale(1.15);
           }
           
@@ -384,7 +430,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             width: 40px;
             height: 40px;
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(25, 118, 210, 0.15), rgba(229, 57, 53, 0.15));
+            background: linear-gradient(135deg, rgba(185, 217, 183, 0.45), rgba(0, 133, 63, 0.12));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -414,7 +460,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           #${servicesDropdownId} .mnh-service-icon i {
             font-size: 18px;
-            background: linear-gradient(135deg, #1976d2, #e53935);
+            background: linear-gradient(135deg, #5aaf78 0%, #00853f 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -447,7 +493,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           #${servicesDropdownId} .mnh-service-item:hover .mnh-service-name {
-            -webkit-text-fill-color: #1976d2;
+            -webkit-text-fill-color: #00853f;
             background: none;
           }
           
@@ -468,15 +514,15 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
           
-          #${servicesDropdownId} .ppaa-service-item:hover .mnh-service-arrow {
+          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-arrow {
             opacity: 1;
-            color: #1976d2;
+            color: #00853f;
             transform: translateX(0);
           }
           
           #${servicesDropdownId} .mnh-dropdown-footer {
             padding: 20px;
-            background: linear-gradient(135deg, #1976d2 0%, #e53935 100%);
+            background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
             border-top: 1px solid rgba(255, 255, 255, 0.2);
             text-align: center;
           }
@@ -485,7 +531,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             width: 100%;
             background: rgba(255, 255, 255, 0.95);
             border: none;
-            color: #1976d2;
+            color: #00853f;
             padding: 12px 20px;
             border-radius: 12px;
             font-size: 14px;
@@ -503,9 +549,9 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           #${servicesDropdownId} .mnh-view-all-btn:hover {
             background: white;
-            color: #e53935;
+            color: #006b34;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 133, 63, 0.2);
           }
           
           #${servicesDropdownId} .mnh-view-all-btn::before {
@@ -536,19 +582,19 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             align-items: center;
             gap: 12px;
             padding: 8px 12px;
-            background: linear-gradient(135deg, #f8fafc 0%, #f0f7ff 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #f0faf4 100%);
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            border: 1.5px solid rgba(25, 118, 210, 0.15);
+            border: 1.5px solid rgba(0, 133, 63, 0.2);
           }
           
           #${navbarId} .mnh-user-profile-compact:hover {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border-color: rgba(25, 118, 210, 0.4);
+            background: linear-gradient(135deg, #ecf8ed 0%, #d4eed8 100%);
+            border-color: rgba(0, 133, 63, 0.45);
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.15);
+            box-shadow: 0 6px 20px rgba(0, 133, 63, 0.12);
           }
           
           #${navbarId} .mnh-user-avatar {
@@ -556,20 +602,20 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             height: 38px;
             border-radius: 10px;
             overflow: hidden;
-            background: linear-gradient(135deg, #1976d2, #e53935);
+            background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: 700;
             font-size: 15px;
-            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 133, 63, 0.28);
             transition: all 0.3s ease;
           }
           
           #${navbarId} .mnh-user-profile-compact:hover .mnh-user-avatar {
             transform: rotate(8deg) scale(1.1);
-            box-shadow: 0 6px 20px rgba(229, 57, 53, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 133, 63, 0.38);
           }
           
           #${navbarId} .mnh-user-avatar img {
@@ -615,7 +661,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           #${navbarId} .mnh-user-profile-compact.active .mnh-user-chevron {
             transform: rotate(180deg);
-            color: #1976d2;
+            color: #00853f;
           }
           
           /* Notification Button */
@@ -633,15 +679,15 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             color: #5a6a85;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1.5px solid rgba(25, 118, 210, 0.15);
+            border: 1.5px solid rgba(0, 133, 63, 0.15);
           }
           
           #${navbarId} .mnh-notification-btn:hover {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border-color: rgba(25, 118, 210, 0.4);
-            color: #1976d2;
+            background: linear-gradient(135deg, #ecf8ed 0%, #d4eed8 100%);
+            border-color: rgba(0, 133, 63, 0.4);
+            color: #00853f;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.15);
+            box-shadow: 0 6px 20px rgba(0, 133, 63, 0.12);
           }
           
           #${navbarId} .mnh-notification-badge {
@@ -664,20 +710,20 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           
           /* Active Service Badge */
           #${navbarId} .mnh-active-service-badge {
-            background: linear-gradient(135deg, #1976d2, #e53935);
+            background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
             margin-left: 8px;
-            box-shadow: 0 3px 15px rgba(25, 118, 210, 0.4);
+            box-shadow: 0 3px 15px rgba(0, 133, 63, 0.35);
             animation: mnhGlow 2s infinite alternate;
           }
           
           @keyframes mnhGlow {
-            0% { box-shadow: 0 3px 15px rgba(25, 118, 210, 0.4); }
-            100% { box-shadow: 0 3px 25px rgba(25, 118, 210, 0.7), 0 0 15px rgba(229, 57, 53, 0.4); }
+            0% { box-shadow: 0 3px 15px rgba(0, 133, 63, 0.35); }
+            100% { box-shadow: 0 3px 25px rgba(0, 133, 63, 0.55), 0 0 15px rgba(61, 166, 106, 0.35); }
           }
           
           /* Scrollbar Styling */
@@ -686,12 +732,12 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar-track {
-            background: rgba(25, 118, 210, 0.05);
+            background: rgba(0, 133, 63, 0.06);
             border-radius: 3px;
           }
           
           #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #1976d2, #e53935);
+            background: linear-gradient(135deg, #7bc49a 0%, #00853f 100%);
             border-radius: 3px;
           }
 
@@ -712,8 +758,8 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           #${navbarId} .mnh-sidebar-toggle-btn:hover {
-            background: rgba(25, 118, 210, 0.08);
-            color: #1976d2;
+            background: rgba(0, 133, 63, 0.08);
+            color: #00853f;
           }
           
           #${navbarId} .mnh-sidebar-toggle-btn i {
@@ -896,6 +942,93 @@ const Navbar = ({ isService = false, activeService = "" }) => {
 
             {/* Right Section - User Info */}
             <div className="mnh-nav-right">
+              {location.pathname.startsWith("/ppaa-internal-portal") ? (
+                <div
+                  className="portal-nav-theme d-flex align-items-center gap-1 me-1 flex-nowrap"
+                  aria-label="Portal appearance"
+                >
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary d-none d-md-flex"
+                    onClick={() => applyPortalThemeToDocument(!portalDark)}
+                    title={portalDark ? "Switch to light mode" : "Switch to dark mode"}
+                    aria-pressed={portalDark}
+                    style={{
+                      borderRadius: "50%",
+                      width: "34px",
+                      height: "34px",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <i
+                      className={portalDark ? "bx bx-sun" : "bx bx-moon"}
+                      aria-hidden
+                    />
+                  </button>
+                  <div
+                    className="d-none d-md-flex align-items-center gap-1"
+                    title="Portal text size"
+                    aria-label="Portal text size controls"
+                  >
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() =>
+                        persistAndApplyPortalFontSize(readPortalFontPct() - 10)
+                      }
+                      title="Decrease text size"
+                      style={{
+                        borderRadius: "50%",
+                        width: "34px",
+                        height: "34px",
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <i className="bx bx-minus" aria-hidden />
+                    </button>
+                    <span
+                      className="text-muted small"
+                      style={{ minWidth: "40px", textAlign: "center", fontWeight: 600 }}
+                    >
+                      {portalFontPct}%
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() =>
+                        persistAndApplyPortalFontSize(readPortalFontPct() + 10)
+                      }
+                      title="Increase text size"
+                      style={{
+                        borderRadius: "50%",
+                        width: "34px",
+                        height: "34px",
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <i className="bx bx-plus" aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary px-2 py-0"
+                      onClick={() => persistAndApplyPortalFontSize(100)}
+                      title="Reset text size"
+                      style={{ fontSize: "0.7rem" }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {/* Notifications */}
               <button className="mnh-notification-btn">
                 <Bell size={20} />
@@ -912,21 +1045,23 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                 >
                   <div className="mnh-user-avatar">
                     {user && user.photo && user.photo.trim() !== "" ? (
-                      <img src={user.photo} alt={user.first_name || "User"} />
+                      <img src={user.photo} alt={displayName} />
                     ) : (
                       <User size={20} />
                     )}
                   </div>
                   <div className="mnh-user-info-compact">
-                    <div className="mnh-user-name">
-                      {user ? `${user.first_name} ${user.last_name}` : "Guest"}
-                    </div>
+                    <div className="mnh-user-name">{displayName}</div>
                     <div className="mnh-user-designation">
-                      {user?.position?.level_name
-                        ? user.position.level_name.length > 35
-                          ? `${user.position.level_name.substring(0, 32)}...`
-                          : user.position.level_name
-                        : "PPAA Staff"}
+                      {(() => {
+                        const level =
+                          user?.position?.level_name ||
+                          user?.current_level_name;
+                        if (!level) return "PPAA Staff";
+                        return level.length > 35
+                          ? `${level.substring(0, 32)}...`
+                          : level;
+                      })()}
                     </div>
                   </div>
                   <ChevronDown size={14} className="mnh-user-chevron" />
@@ -956,7 +1091,8 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                     <div
                       style={{
                         padding: "20px",
-                        background: "linear-gradient(135deg, #1976d2, #e53935)",
+                        background:
+                          "linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%)",
                         color: "white",
                       }}
                     >
@@ -982,7 +1118,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                           {user && user.photo && user.photo.trim() !== "" ? (
                             <img
                               src={user.photo}
-                              alt={user.first_name || "User"}
+                              alt={displayName}
                               style={{
                                 width: "100%",
                                 height: "100%",
@@ -990,7 +1126,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                               }}
                             />
                           ) : (
-                            <User size={24} color="#1976d2" />
+                            <User size={24} color="#00853f" />
                           )}
                         </div>
                         <div>
@@ -1001,9 +1137,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                               marginBottom: "4px",
                             }}
                           >
-                            {user
-                              ? `${user.first_name} ${user.last_name}`
-                              : "Guest"}
+                            {displayName}
                           </div>
                           <div
                             style={{
@@ -1012,7 +1146,9 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                               textTransform: "uppercase",
                             }}
                           >
-                            {user?.position?.level_name || "PPAA Staff"}
+                            {user?.position?.level_name ||
+                              user?.current_level_name ||
+                              "PPAA Staff"}
                           </div>
                         </div>
                       </div>

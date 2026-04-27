@@ -254,13 +254,20 @@ export const submitReport = async (uid, data) => {
   const formData = new FormData();
   if (data.attachment) formData.append("attachment", data.attachment);
   if (data.notes) formData.append("notes", data.notes);
+  if (data.financial_period_uid) {
+    formData.append("financial_period_uid", data.financial_period_uid);
+  }
   const response = await api.post(`${API_URL}/reports/${uid}/submit`, formData, multipartConfig);
   return response.data;
 };
 
 /** Get authenticated preview URL for viewing a report attachment in modal */
-export const getReportAttachmentUrl = async (uid) => {
-  const response = await api.get(`${API_URL}/reports/${uid}/preview`, {
+export const getReportAttachmentUrl = async (uid, financialPeriodUid = null) => {
+  let url = `${API_URL}/reports/${uid}/preview`;
+  if (financialPeriodUid) {
+    url += `?financial_period_uid=${encodeURIComponent(financialPeriodUid)}`;
+  }
+  const response = await api.get(url, {
     responseType: "blob",
   });
   const blob = response.data;
@@ -280,8 +287,12 @@ export const getReportAttachmentUrl = async (uid) => {
 };
 
 /** Download report attachment with security watermark (PDFs get watermark with download time, user, department) */
-export const downloadReportAttachment = async (uid, filename = "report-document") => {
-  const response = await api.get(`${API_URL}/reports/${uid}/download`, {
+export const downloadReportAttachment = async (uid, filename = "report-document", financialPeriodUid = null) => {
+  let apiUrl = `${API_URL}/reports/${uid}/download`;
+  if (financialPeriodUid) {
+    apiUrl += `?financial_period_uid=${encodeURIComponent(financialPeriodUid)}`;
+  }
+  const response = await api.get(apiUrl, {
     responseType: "blob",
   });
   const blob = response.data;
@@ -291,18 +302,22 @@ export const downloadReportAttachment = async (uid, filename = "report-document"
     const err = JSON.parse(text);
     throw new Error(err.message || "Download failed");
   }
-  const url = window.URL.createObjectURL(blob);
+  const blobUrl = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = url;
+  link.href = blobUrl;
   link.download = filename || "report-document";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  window.URL.revokeObjectURL(blobUrl);
 };
 
-export const updateReportProgress = async (uid, percentage, notes = "") => {
-  const response = await api.post(`${API_URL}/reports/${uid}/progress`, { percentage, notes }, config);
+export const updateReportProgress = async (uid, percentage, notes = "", financialPeriodUid = null) => {
+  const body = { percentage, notes: notes || "" };
+  if (financialPeriodUid) {
+    body.financial_period_uid = financialPeriodUid;
+  }
+  const response = await api.post(`${API_URL}/reports/${uid}/progress`, body, config);
   return response.data;
 };
 
@@ -392,6 +407,7 @@ export const updateReportSettings = async (data) => {
 
 // ==================== HELPER CONSTANTS ====================
 export const STATUS_OPTIONS = [
+  { value: "draft", label: "Draft", color: "secondary" },
   { value: "pending", label: "Pending", color: "warning" },
   { value: "in_progress", label: "In Progress", color: "info" },
   { value: "submitted", label: "Submitted", color: "success" },
@@ -475,12 +491,11 @@ export const getDirectories = async ({ uid, search, paginated = false } = {}) =>
   return response.data;
 };
 
-export const getDepartments = async ({ uid, directory_uid, search, paginated = false } = {}) => {
+export const getDepartments = async ({ uid, search, paginated = false } = {}) => {
   let url = `${API_URL}/departments`;
   const params = new URLSearchParams();
   
   if (uid) url = `${API_URL}/departments/${uid}`;
-  if (directory_uid) params.append("directory_uid", directory_uid);
   if (search) params.append("search", search);
   if (paginated) params.append("paginated", "true");
   

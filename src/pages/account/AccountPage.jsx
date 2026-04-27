@@ -14,6 +14,7 @@ import { useSelector } from "react-redux";
 import DelegationModal from "./DelegationModal";
 import { hasAccess } from "../../hooks/AccessHandler";
 import { useDispatch } from "react-redux";
+import { refreshCurrentUser } from "../../redux/actions/authentication/refreshUserAction";
 import { userTypes } from "../../redux/types/authentication";
 import ResetPasswordModal from "./ResetPasswordModal";
 import {
@@ -104,21 +105,23 @@ export const AccountPage = () => {
     setLoading(true);
     setError(null);
     try {
-      if (user !== null) {
-        setSelectedUser(user);
+      const fresh = await dispatch(refreshCurrentUser());
+      const u = fresh || user;
+      if (u !== null && u !== undefined) {
+        setSelectedUser(u);
         setPreviewImage(
-          user.photo && user.photo.trim() !== ""
-            ? user.photo
+          u.photo && u.photo.trim() !== ""
+            ? u.photo
             : "/assets/img/avatars/1.png"
         );
         setPreviewSign(
-          user.signature && user.signature.trim() !== ""
-            ? user.signature
+          u.signature && u.signature.trim() !== ""
+            ? u.signature
             : "/assets/img/avatars/signature.png"
         );
         setIsFileSelected(false);
-        uploadValues.uid = user.guid;
-        fetchPositions(user.guid);
+        uploadValues.uid = u.guid;
+        fetchPositions(u.guid);
       } else {
         setError(true);
         showToast("No User Found", "warning", "Fetch Completed");
@@ -233,7 +236,7 @@ export const AccountPage = () => {
         text: "You're about to save the new Profile Photo",
         icon: "info",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Save",
       });
@@ -314,7 +317,7 @@ export const AccountPage = () => {
         text: "You are about to save the new Signature",
         icon: "info",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Save",
       });
@@ -482,7 +485,7 @@ export const AccountPage = () => {
 }
 
 .refresh-btn {
-  background: linear-gradient(135deg, #1976d2, #e53935);
+  background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -494,11 +497,13 @@ export const AccountPage = () => {
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
+  text-shadow: 0 1px 2px rgba(0, 45, 22, 0.35);
 }
 
 .refresh-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  background: linear-gradient(135deg, #c8e4c6 0%, #45b578 45%, #00994a 100%);
+  box-shadow: 0 4px 12px rgba(0, 133, 63, 0.35);
 }
 
 /* Profile Card */
@@ -537,7 +542,7 @@ export const AccountPage = () => {
   right: 0;
   width: 36px;
   height: 36px;
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -549,7 +554,7 @@ export const AccountPage = () => {
 }
 
 .camera-btn:hover {
-  background: #1565c0;
+  background: #006b34;
   transform: scale(1.1);
 }
 
@@ -609,7 +614,7 @@ export const AccountPage = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1976d2;
+  color: #00853f;
 }
 
 .info-item-content {
@@ -682,14 +687,14 @@ export const AccountPage = () => {
 }
 
 .tab-button:hover {
-  border-color: #1976d2;
-  color: #1976d2;
+  border-color: #00853f;
+  color: #00853f;
 }
 
 .tab-button.active {
-  background: #1976d2;
+  background: #00853f;
   color: white;
-  border-color: #1976d2;
+  border-color: #00853f;
 }
 
 .alert-badge {
@@ -723,7 +728,7 @@ export const AccountPage = () => {
 }
 
 .position-card.current {
-  border-left-color: #1976d2;
+  border-left-color: #00853f;
 }
 
 .position-card.delegated {
@@ -767,7 +772,7 @@ export const AccountPage = () => {
 }
 
 .delegate-btn {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -782,7 +787,7 @@ export const AccountPage = () => {
 }
 
 .delegate-btn:hover {
-  background: #1565c0;
+  background: #006b34;
 }
 
 .remove-delegate-btn {
@@ -884,7 +889,7 @@ export const AccountPage = () => {
 }
 
 .signature-preview:hover {
-  border-color: #1976d2;
+  border-color: #00853f;
   background: #f8fafc;
 }
 
@@ -910,13 +915,13 @@ export const AccountPage = () => {
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
-  color: #1976d2;
-  border: 1px solid rgba(25, 118, 210, 0.2);
+  color: #00853f;
+  border: 1px solid rgba(0, 133, 63, 0.2);
 }
 
 /* Buttons */
 .btn-primary {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -932,7 +937,7 @@ export const AccountPage = () => {
 }
 
 .btn-primary:hover {
-  background: #1565c0;
+  background: #006b34;
 }
 
 .btn-primary:disabled {
@@ -942,8 +947,8 @@ export const AccountPage = () => {
 
 .btn-outline {
   background: white;
-  color: #1976d2;
-  border: 2px solid #1976d2;
+  color: #00853f;
+  border: 2px solid #00853f;
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
@@ -994,7 +999,7 @@ export const AccountPage = () => {
 }
 
 .retry-btn {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -1007,7 +1012,7 @@ export const AccountPage = () => {
 }
 
 .retry-btn:hover {
-  background: #1565c0;
+  background: #006b34;
 }
 
 .loading-positions,
@@ -1030,7 +1035,7 @@ export const AccountPage = () => {
 
 /* Badges */
 .badge-primary {
-  background: #1976d2;
+  background: #00853f;
   color: white;
   padding: 4px 12px;
   border-radius: 12px;
@@ -1831,7 +1836,7 @@ export const AccountPage = () => {
         )}
       </div>
 
-      <DelegationModal />
+      {hasAccess(user, ["can_assign_delegate"]) && <DelegationModal />}
       <ResetPasswordModal />
     </AccountContext.Provider>
   );

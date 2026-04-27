@@ -142,16 +142,16 @@ const SuggestionForm = ({ initialData = null, isEditMode = false, onSuccess = nu
         getDepartments(),
       ]);
 
-      // Handle categories response
-      if (categoriesRes.status === 8000 || categoriesRes.status === 200) {
-        const categoriesData = categoriesRes.data || [];
-        console.log("Categories loaded:", categoriesData.map(c => ({ id: c.id, uid: c.uid, name: c.name })));
-        setCategories(categoriesData);
-      } else {
-        console.warn("Categories response format unexpected:", categoriesRes);
-        const categoriesData = categoriesRes.data || categoriesRes || [];
-        console.log("Categories (fallback):", categoriesData.map(c => ({ id: c.id, uid: c.uid, name: c.name })));
-        setCategories(categoriesData);
+      const categoriesData = Array.isArray(categoriesRes?.data)
+        ? categoriesRes.data
+        : [];
+      setCategories(categoriesData);
+      if (
+        categoriesData.length === 0 &&
+        categoriesRes?.status !== 8000 &&
+        categoriesRes?.status !== 200
+      ) {
+        console.warn("Categories unavailable:", categoriesRes?.message);
       }
 
       // Handle departments response
@@ -465,6 +465,15 @@ const SuggestionForm = ({ initialData = null, isEditMode = false, onSuccess = nu
                         );
                       })}
                     </select>
+                    {!loadingData && categories.length === 0 && (
+                      <small className="text-danger d-block mt-1">
+                        <i className="bx bx-error-circle me-1"></i>
+                        No categories loaded. Enable the Maoni API on the server (
+                        <code className="small">microservices.maoni</code> in{" "}
+                        <code className="small">INSTALLED_APPS</code>, then{" "}
+                        <code className="small">migrate maoni</code>).
+                      </small>
+                    )}
                     {isEditMode && initialData?.category && !formData.category && categories.length > 0 && (
                       <small className="text-warning d-block mt-1">
                         <i className="bx bx-info-circle me-1"></i>

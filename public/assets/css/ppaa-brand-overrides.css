@@ -1,0 +1,148 @@
+/**
+ * PPAA institutional brand – global primary / link palette.
+ * Loaded after theme-default.css. Replaces template purple (#696cff) with forest green (#00853f).
+ * Use with SCSS sources updated in public/scss for future rebuilds.
+ */
+:root,
+[data-bs-theme="light"] {
+  --bs-purple: #00853f;
+  --bs-primary: #00853f;
+  --bs-primary-rgb: 0, 133, 63;
+  --bs-primary-text-emphasis: #003b1c;
+  --bs-primary-bg-subtle: #e8f5ea;
+  --bs-primary-border-subtle: #b7e1c0;
+  --bs-link-color: #007238;
+  --bs-link-color-rgb: 0, 114, 56;
+  --bs-link-hover-color: #005a2c;
+  --bs-link-hover-color-rgb: 0, 90, 44;
+  --bs-progress-bar-bg: #00853f;
+  /* Same PPAA gradients as Services page (.category-btn.active / .reset-btn) */
+  --ppaa-btn-gradient: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
+  --ppaa-btn-gradient-hover: linear-gradient(135deg, #c8e4c6 0%, #45b578 45%, #00994a 100%);
+  --ppaa-btn-gradient-active: linear-gradient(135deg, #2d8f5a 0%, #007238 50%, #005a2c 100%);
+}
+
+/* ─── Primary actions: Services-style gradient + depth (Sign In, modals, etc.) ─── */
+.btn-primary {
+  color: #fff !important;
+  background-color: #00853f !important;
+  background-image: var(--ppaa-btn-gradient) !important;
+  border-color: rgba(0, 114, 56, 0.95) !important;
+  box-shadow:
+    0 4px 14px rgba(0, 133, 63, 0.38),
+    0 1px 0 rgba(255, 255, 255, 0.22) inset !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 45, 22, 0.45);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  color: #fff !important;
+  background-color: #00994a !important;
+  background-image: var(--ppaa-btn-gradient-hover) !important;
+  border-color: #006b34 !important;
+  box-shadow:
+    0 6px 18px rgba(0, 133, 63, 0.42),
+    0 1px 0 rgba(255, 255, 255, 0.28) inset !important;
+}
+
+.btn-check:focus + .btn-primary,
+.btn-primary:focus,
+.btn-primary.focus {
+  color: #fff !important;
+  background-color: #00994a !important;
+  background-image: var(--ppaa-btn-gradient-hover) !important;
+  border-color: #006b34 !important;
+  box-shadow:
+    0 0 0 0.2rem rgba(0, 133, 63, 0.35),
+    0 4px 14px rgba(0, 133, 63, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.22) inset !important;
+}
+
+.btn-check:checked + .btn-primary,
+.btn-check:active + .btn-primary,
+.btn-primary:active,
+.btn-primary.active,
+.btn-primary.show.dropdown-toggle,
+.show > .btn-primary.dropdown-toggle {
+  color: #fff !important;
+  background-color: #005a2c !important;
+  background-image: var(--ppaa-btn-gradient-active) !important;
+  border-color: #004a24 !important;
+  box-shadow: 0 2px 8px rgba(0, 90, 44, 0.35) !important;
+}
+
+.btn-primary:disabled,
+.btn-primary.disabled {
+  color: #fff !important;
+  background-image: none !important;
+  background-color: #5aaf78 !important;
+  border-color: #5aaf78 !important;
+  opacity: 0.85;
+  box-shadow: none !important;
+  text-shadow: none;
+}
+
+.btn-outline-primary {
+  color: #007238 !important;
+  border-color: #00853f !important;
+  background: transparent !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus-visible {
+  color: #fff !important;
+  background-color: #00853f !important;
+  background-image: var(--ppaa-btn-gradient) !important;
+  border-color: rgba(0, 114, 56, 0.95) !important;
+  box-shadow:
+    0 4px 12px rgba(0, 133, 63, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.2) inset !important;
+  text-shadow: 0 1px 2px rgba(0, 45, 22, 0.4);
+}
+
+.btn-check:checked + .btn-outline-primary,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.btn-outline-primary.dropdown-toggle.show {
+  color: #fff !important;
+  background-color: #005a2c !important;
+  background-image: var(--ppaa-btn-gradient-active) !important;
+  border-color: #004a24 !important;
+}
+
+.text-primary {
+  color: #007238 !important;
+}
+
+.bg-primary {
+  background-color: #00853f !important;
+}
+
+.border-primary {
+  border-color: #00853f !important;
+}
+
+/* Subtle primary surfaces (badges, chips) */
+.bg-label-primary {
+  background-color: rgba(0, 133, 63, 0.14) !important;
+  color: #005a2c !important;
+}
+
+/* Table striping tuned to green */
+.table-primary {
+  --bs-table-bg: #e8f5ea;
+  --bs-table-striped-bg: #dff3e2;
+  --bs-table-active-bg: #cfead4;
+  --bs-table-hover-bg: #d5edd9;
+  border-color: #c5e4cb;
+}
+
+/* Pagination active */
+.page-item.active .page-link {
+  background-color: #00853f !important;
+  border-color: #00853f !important;
+}

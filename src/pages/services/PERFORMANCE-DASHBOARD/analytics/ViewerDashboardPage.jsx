@@ -1,22 +1,21 @@
 import React, { useEffect, useState } from "react";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import {
+  getFinancialYears,
   getPerformanceAnalytics,
   getSPISMReport,
 } from "../Queries";
+import {
+  extractFinancialYearRows,
+  getDefaultFinancialYear,
+  resolveFinancialYearForList,
+} from "../financialYearUtils";
 import {
   GaugeChart,
   ObjectivePerformanceChart,
   BarChart,
 } from "../../../../components/DashboardCharts";
 import showToast from "../../../../helpers/ToastHelper";
-
-const getCurrentFinancialYear = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  return month >= 7 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
-};
 
 const formatFYLabel = (fy) => {
   const parts = String(fy || "").split("/");
@@ -33,10 +32,36 @@ const truncateLabel = (s, max = 40) => {
 };
 
 export const ViewerDashboardPage = () => {
-  const [financialYear, setFinancialYear] = useState(getCurrentFinancialYear());
+  const [financialYear, setFinancialYear] = useState(getDefaultFinancialYear());
+  const [financialYearRows, setFinancialYearRows] = useState([]);
+  const [financialYearsLoading, setFinancialYearsLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadYears = async () => {
+      setFinancialYearsLoading(true);
+      try {
+        const res = await getFinancialYears();
+        const sorted = extractFinancialYearRows(res);
+        if (cancelled) return;
+        setFinancialYearRows(sorted);
+        if (sorted.length) {
+          setFinancialYear((current) => resolveFinancialYearForList(sorted, current));
+        }
+      } catch {
+        if (!cancelled) setFinancialYearRows([]);
+      } finally {
+        if (!cancelled) setFinancialYearsLoading(false);
+      }
+    };
+    loadYears();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -220,18 +245,35 @@ export const ViewerDashboardPage = () => {
               KPI targets and a downloadable institutional performance report.
             </p>
           </div>
-          <div className="d-flex align-items-center gap-2">
-            <label className="form-label mb-0 small text-muted">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <label
+              htmlFor="spism-viewer-financial-year"
+              className="form-label mb-0 small text-muted text-uppercase"
+            >
               Financial Year
             </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              style={{ width: "140px" }}
-              placeholder="e.g. 2024/2025"
+            <select
+              id="spism-viewer-financial-year"
+              className="form-select form-select-sm"
+              style={{ minWidth: "180px", maxWidth: "240px" }}
               value={financialYear}
               onChange={(e) => setFinancialYear(e.target.value)}
-            />
+              disabled={financialYearsLoading}
+              aria-label="Financial year"
+              title="Choose a configured financial year"
+            >
+              {financialYearRows.length === 0 ? (
+                <option value={financialYear}>
+                  {financialYearsLoading ? "Loading years…" : financialYear}
+                </option>
+              ) : (
+                financialYearRows.map((y) => (
+                  <option key={y.uid || y.name} value={y.name}>
+                    {y.name}
+                  </option>
+                ))
+              )}
+            </select>
             <button
               type="button"
               className="btn btn-outline-primary btn-sm"

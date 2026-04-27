@@ -7,6 +7,7 @@ import Swal from "sweetalert2";
 import { getSuggestions, getDepartments } from "../../PPAA-MAONI/Queries";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import { isMaoniReviewer } from "../../../../utils/maoniRoles";
 
 // Chart components (using simple div-based charts for demo)
 const BarChart = ({ data, labels, colors, height = 200 }) => {
@@ -162,10 +163,7 @@ export const MaoniDashboardPage = () => {
   const isAdmin =
     user?.groups?.some((role) => String(role).toLowerCase() === "admin") ||
     user?.is_superuser;
-  const isHR =
-    user?.groups?.some((role) => String(role).toLowerCase() === "hr") ||
-    user?.is_superuser;
-  const canAccessDashboard = Boolean(isHR || isAdmin);
+  const canAccessDashboard = Boolean(isMaoniReviewer(user) || isAdmin);
 
   const [loading, setLoading] = useState(true);
   const [allSuggestionsRaw, setAllSuggestionsRaw] = useState([]);
@@ -299,7 +297,7 @@ export const MaoniDashboardPage = () => {
     // For "custom" and "all" we do NOT override the inputs.
   }, [timeRange]);
 
-  // Access control: only HR / Admin / Superuser
+  // Access control: PPAA_Maoni_Reviewer / Maoni_Admin / admin / superuser
   useEffect(() => {
     if (!user) return;
     if (canAccessDashboard) return;
@@ -408,7 +406,7 @@ export const MaoniDashboardPage = () => {
     };
     const isNotDraft = (s) => String(s.status || "").toUpperCase() !== "DRAFT";
 
-    // Exclude drafts from dashboard: HR/Admin do not see draft suggestions
+    // Exclude drafts from dashboard: leads/admins do not see draft suggestions
     const scoped = suggestions.filter(inRange).filter(isNotDraft);
 
     // Basic stats (all scoped are non-draft)
@@ -1091,7 +1089,7 @@ export const MaoniDashboardPage = () => {
   };
 
   // ✅ Important: do NOT return early before hooks above have been declared.
-  // Access control: only HR / Admin / Superuser
+  // Access control: Maoni leads, admins, superusers
   if (!canAccessDashboard) {
     return null;
   }
@@ -1099,7 +1097,7 @@ export const MaoniDashboardPage = () => {
   // Loading UI while we fetch backend suggestions for analytics
   if (loading) {
     return (
-      <div className="container-fluid py-4">
+      <div className="w-100 py-4">
         <div className="card border-0 shadow-sm">
           <div className="card-body p-5 text-center">
             <i className="bx bx-loader-circle bx-spin fs-1 text-primary mb-3"></i>
@@ -1114,7 +1112,7 @@ export const MaoniDashboardPage = () => {
   }
 
   return (
-    <div className="container-fluid py-4">
+    <div className="w-100 py-4">
       {/* Dashboard Header */}
       <div className="row align-items-center mb-6">
         <div className="col-lg-6 col-md-6 mb-4 mb-md-0">

@@ -277,7 +277,7 @@ export const ComputerAssetModal = ({ loadOnlyModal = false }) => {
               <Form>
                 <FormWizard
                   shape="circle"
-                  color="#696cff"
+                  color="#00853f"
                   stepSize="xs"
                   onTabChange={({ prevIndex, nextIndex }) => {
                     setTimeout(() => setTabIndex(nextIndex), 0);

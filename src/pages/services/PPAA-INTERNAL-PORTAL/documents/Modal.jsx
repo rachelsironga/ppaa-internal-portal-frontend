@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { createUpdateDocument, getDocumentCategories } from "./Queries";
+import { createUpdateDocument, getDocumentCategories, downloadPortalDocument } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import Select from "react-select";
 
@@ -11,6 +11,7 @@ const DocumentModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefr
   const [fileBase64, setFileBase64] = useState("");
   const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentFileDownloading, setCurrentFileDownloading] = useState(false);
 
   const initialValues = {
     title: selectedObj?.title || "",
@@ -29,11 +30,16 @@ const DocumentModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefr
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const catsResult = await getDocumentCategories();
+        const catsResult = await getDocumentCategories({ activeOnly: true });
 
         if (catsResult.status === 200 || catsResult.status === 8000) {
+          let rows = catsResult.data || [];
+          const cur = selectedObj?.category;
+          if (cur?.uid && !rows.some((c) => c.uid === cur.uid)) {
+            rows = [...rows, cur];
+          }
           setCategories(
-            (catsResult.data || []).map((cat) => ({
+            rows.map((cat) => ({
               value: cat.uid,
               label: cat.name,
             }))
@@ -45,7 +51,7 @@ const DocumentModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefr
     };
 
     fetchOptions();
-  }, []);
+  }, [selectedObj?.category?.uid]);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -252,16 +258,42 @@ const DocumentModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefr
                       {fileName && (
                         <small className="text-muted">Selected: {fileName}</small>
                       )}
-                      {selectedObj?.file_url && !fileBase64 && (
+                      {selectedObj?.file_key && !fileBase64 && (
                         <div className="mt-2">
-                          <a
-                            href={selectedObj.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
                             className="btn btn-sm btn-outline-primary"
+                            disabled={currentFileDownloading}
+                            onClick={async () => {
+                              if (!selectedObj?.uid) return;
+                              setCurrentFileDownloading(true);
+                              try {
+                                await downloadPortalDocument(
+                                  selectedObj.uid,
+                                  selectedObj.original_filename || "document"
+                                );
+                              } catch {
+                                showToast(
+                                  "Download failed. Re-upload the file if needed.",
+                                  "danger",
+                                  "Download"
+                                );
+                              } finally {
+                                setCurrentFileDownloading(false);
+                              }
+                            }}
                           >
-                            <i className="bx bx-download me-1"></i> View Current File
-                          </a>
+                            {currentFileDownloading ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-1" role="status" />
+                                Loading…
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-download me-1"></i> View Current File
+                              </>
+                            )}
+                          </button>
                         </div>
                       )}
                     </div>

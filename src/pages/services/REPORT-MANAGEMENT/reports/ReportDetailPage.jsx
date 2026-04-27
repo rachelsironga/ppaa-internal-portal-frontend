@@ -37,9 +37,36 @@ import {
 } from "../Queries";
 import { formatDate, formatDateTime } from "../../../../helpers/DateFormater";
 import showToast from "../../../../helpers/ToastHelper";
-import { hasAccess } from "../../../../hooks/AccessHandler";
+import {
+  canChangeRmsReport,
+  canSubmitRmsReport,
+} from "../../../../utils/rmsReportPermissions";
 import Swal from "sweetalert2";
 import ReportModal from "./ReportModal";
+
+const normalizeReportDetailFrequency = (raw) => {
+  const s = String(raw || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/_+/g, "-");
+  if (
+    s === "biannual" ||
+    s === "bi-annual" ||
+    s === "semi-annual" ||
+    s === "semiannual" ||
+    s === "half-year" ||
+    s === "half-yearly" ||
+    s === "halfyear"
+  ) {
+    return "biannual";
+  }
+  if (s === "year" || s === "yearly") return "annual";
+  if (s === "quarter" || s === "qtr") return "quarterly";
+  if (s === "month") return "monthly";
+  if (s === "ad-hoc" || s === "adhook" || s === "ad-hook") return "adhoc";
+  return s;
+};
 
 const ReportDetailPage = () => {
   const { uid } = useParams();
@@ -66,6 +93,9 @@ const ReportDetailPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [attachmentTargetUid, setAttachmentTargetUid] = useState(null);
   const [attachmentTargetFilename, setAttachmentTargetFilename] = useState(null);
+  const [attachmentTargetPeriodUid, setAttachmentTargetPeriodUid] = useState(null);
+  /** Selected implementation period (Q1–Q4 / H1–H2) for progress + submit */
+  const [selectedPeriodUid, setSelectedPeriodUid] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -78,6 +108,31 @@ const ReportDetailPage = () => {
   useEffect(() => {
     fetchReport();
   }, [uid]);
+
+  useEffect(() => {
+    if (!report) return;
+    const subs = report.quarter_submissions;
+    if (!Array.isArray(subs) || subs.length === 0) {
+      setSelectedPeriodUid(null);
+      setProgressValue(report.progress_percentage ?? 0);
+      return;
+    }
+    setSelectedPeriodUid((prev) => {
+      if (prev && subs.some((q) => String(q.period_uid) === String(prev))) {
+        return prev;
+      }
+      const next = subs.find((q) => q.status !== "submitted") || subs[0];
+      return next?.period_uid ?? null;
+    });
+  }, [report]);
+
+  useEffect(() => {
+    if (!report?.quarter_submissions?.length || !selectedPeriodUid) return;
+    const row = report.quarter_submissions.find(
+      (q) => String(q.period_uid) === String(selectedPeriodUid)
+    );
+    if (row) setProgressValue(row.progress_percentage ?? 0);
+  }, [selectedPeriodUid, report]);
 
   useEffect(() => {
     fetchAuditTrail();
@@ -156,14 +211,31 @@ const ReportDetailPage = () => {
   };
 
   const handleProgressUpdate = async () => {
-    if (progressValue === report.progress_percentage && !progressNotes) {
+    const hasPeriods =
+      Array.isArray(report?.quarter_submissions) && report.quarter_submissions.length > 0;
+    if (hasPeriods && !selectedPeriodUid) {
+      showToast("Select a quarter or period first", "warning");
+      return;
+    }
+    const periodRow = hasPeriods
+      ? report.quarter_submissions.find(
+          (q) => String(q.period_uid) === String(selectedPeriodUid)
+        )
+      : null;
+    const currentPct = periodRow?.progress_percentage ?? report.progress_percentage ?? 0;
+    if (progressValue === currentPct && !progressNotes) {
       showToast("No changes to save", "info");
       return;
     }
 
     setUpdatingProgress(true);
     try {
-      const response = await updateReportProgress(uid, progressValue, progressNotes);
+      const response = await updateReportProgress(
+        uid,
+        progressValue,
+        progressNotes,
+        hasPeriods ? selectedPeriodUid : null
+      );
       if (response.status === 8000) {
         showToast("Progress updated successfully", "success");
         setProgressNotes("");
@@ -179,11 +251,18 @@ const ReportDetailPage = () => {
   };
 
   const handleSubmitReport = async () => {
+    const hasPeriods =
+      Array.isArray(report?.quarter_submissions) && report.quarter_submissions.length > 0;
+    if (hasPeriods && !selectedPeriodUid) {
+      showToast("Select a quarter or period first", "warning");
+      return;
+    }
     // User has already confirmed in the modal card; just submit
     setSubmitting(true);
     try {
       const data = { notes: submitNotes };
       if (submitFile) data.attachment = submitFile;
+      if (hasPeriods) data.financial_period_uid = selectedPeriodUid;
 
       const response = await submitReport(uid, data);
       if (response.status === 8000) {
@@ -252,6 +331,7 @@ const ReportDetailPage = () => {
       submitted: { color: "success", icon: "bx-check-double" },
       progress_updated: { color: "primary", icon: "bx-trending-up" },
       comment_added: { color: "info", icon: "bx-message" },
+      reminder_sent: { color: "warning", icon: "bx-bell" },
       deleted: { color: "danger", icon: "bx-trash" },
     };
     return configs[action] || { color: "secondary", icon: "bx-info-circle" };
@@ -259,7 +339,7 @@ const ReportDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="container-fluid flex-grow-1 container-p-y px-4">
+      <div className="w-100">
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
@@ -271,7 +351,7 @@ const ReportDetailPage = () => {
 
   if (!report) {
     return (
-      <div className="container-fluid flex-grow-1 container-p-y px-4">
+      <div className="w-100">
         <div className="text-center py-5">
           <i className="bx bx-error-circle fs-1 text-danger mb-3"></i>
           <h4>Report Not Found</h4>
@@ -289,28 +369,53 @@ const ReportDetailPage = () => {
 
   const hasAttachment = !!report.attachment;
 
-  const isQuarterlyOrBiannual =
-    report?.report_type?.frequency === "quarterly" || report?.report_type?.frequency === "biannual";
-  const quarterlyRequiredCount = Array.isArray(report?.quarter_submissions)
-    ? report.quarter_submissions.length
-    : 0;
-  const quarterlySubmittedCount = Array.isArray(report?.quarter_submissions)
+  const reportFrequencyNorm = normalizeReportDetailFrequency(report?.report_type?.frequency);
+  const hasImplementationPeriods =
+    Array.isArray(report?.quarter_submissions) && report.quarter_submissions.length > 0;
+  const quarterlyRequiredCount = hasImplementationPeriods ? report.quarter_submissions.length : 0;
+  const quarterlySubmittedCount = hasImplementationPeriods
     ? report.quarter_submissions.filter((q) => q?.status === "submitted").length
     : 0;
   const periodicCompletionProgressPercentage =
-    isQuarterlyOrBiannual && quarterlyRequiredCount > 0
+    hasImplementationPeriods && quarterlyRequiredCount > 0
       ? Math.round((quarterlySubmittedCount / quarterlyRequiredCount) * 100)
       : null;
 
   const displayProgressPercentage =
-    isQuarterlyOrBiannual && periodicCompletionProgressPercentage != null
+    hasImplementationPeriods && periodicCompletionProgressPercentage != null
       ? periodicCompletionProgressPercentage
       : (report.progress_percentage || 0);
+
+  const selectedPeriodRow =
+    hasImplementationPeriods && selectedPeriodUid
+      ? report.quarter_submissions.find(
+          (q) => String(q.period_uid) === String(selectedPeriodUid)
+        )
+      : null;
+
   const isReadyForSubmission =
-    report.status !== "submitted" && displayProgressPercentage >= 100;
+    report.status !== "submitted" &&
+    (hasImplementationPeriods
+      ? !!selectedPeriodRow &&
+        selectedPeriodRow.status !== "submitted" &&
+        (selectedPeriodRow.progress_percentage ?? 0) >= 100
+      : displayProgressPercentage >= 100);
   const commentCount = Math.max(report?.comments_count || 0, comments.length || 0);
 
-  const handleOpenAttachmentModal = async (targetUid = uid, filename = null) => {
+  const visibleProgressUpdates =
+    hasImplementationPeriods && selectedPeriodUid
+      ? (report.progress_updates || []).filter(
+          (u) =>
+            String(u.period_uid || u.financial_period_uid || "") ===
+            String(selectedPeriodUid)
+        )
+      : report.progress_updates || [];
+
+  const handleOpenAttachmentModal = async (
+    targetUid = uid,
+    filename = null,
+    financialPeriodUid = null
+  ) => {
     setAttachmentUrlLoading(true);
     if (attachmentPresignedUrl) {
       window.URL.revokeObjectURL(attachmentPresignedUrl);
@@ -320,7 +425,8 @@ const ReportDetailPage = () => {
     try {
       setAttachmentTargetUid(targetUid);
       setAttachmentTargetFilename(filename);
-      const response = await getReportAttachmentUrl(targetUid);
+      setAttachmentTargetPeriodUid(financialPeriodUid || null);
+      const response = await getReportAttachmentUrl(targetUid, financialPeriodUid || null);
       if (response.status === 8000 && response.data?.url) {
         setAttachmentPresignedUrl(response.data.url);
       } else {
@@ -343,16 +449,21 @@ const ReportDetailPage = () => {
     setAttachmentPresignedUrl(null);
     setAttachmentTargetUid(null);
     setAttachmentTargetFilename(null);
+    setAttachmentTargetPeriodUid(null);
   };
 
-  const handleDownloadWithWatermark = async (targetUid = uid, filenameOverride = null) => {
+  const handleDownloadWithWatermark = async (
+    targetUid = uid,
+    filenameOverride = null,
+    financialPeriodUid = null
+  ) => {
     const att = report?.attachment;
     const filenameFromReport =
       typeof att === "string" && att.includes("/") ? att.split("/").pop() : "report-document";
     const filename = filenameOverride || filenameFromReport || "report-document";
     setDownloading(true);
     try {
-      await downloadReportAttachment(targetUid, filename);
+      await downloadReportAttachment(targetUid, filename, financialPeriodUid || null);
       showToast("Document downloaded (with security watermark)", "success");
     } catch (err) {
       showToast(err.message || "Download failed", "error");
@@ -362,7 +473,7 @@ const ReportDetailPage = () => {
   };
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Reports", "Details"]} />
 
       {/* Header Section */}
@@ -394,7 +505,7 @@ const ReportDetailPage = () => {
             </Col>
             <Col lg={4} className="text-lg-end">
               <div className="d-flex gap-2 justify-content-lg-end">
-                {report.status !== 'submitted' && hasAccess(user, ['change_report']) && (
+                {report.status !== "submitted" && canChangeRmsReport(user) && (
                   <button
                     className="btn btn-outline-primary"
                     onClick={() => setShowEditModal(true)}
@@ -402,7 +513,7 @@ const ReportDetailPage = () => {
                     <i className="bx bx-edit me-1"></i>Edit
                   </button>
                 )}
-                {report.status !== 'submitted' && hasAccess(user, ['submit_report']) && (
+                {report.status !== "submitted" && canSubmitRmsReport(user) && (
                   <button
                     className={`btn ${displayProgressPercentage >= 100 ? 'btn-success' : 'btn-secondary'}`}
                     onClick={() => setShowSubmitModal(true)}
@@ -496,20 +607,39 @@ const ReportDetailPage = () => {
                   </span>
                 </div>
                 <div className="flex-grow-1">
-                  <small className="text-muted d-block mb-1">Reminder Date</small>
+                  <small className="text-muted d-block mb-1">Reminder schedule</small>
                   {(() => {
-                    const reminderDays = report.report_type?.before_reminder_days;
-                    const reminderTiming = "before";
-                    const reminderDate = computeReminderDate(report.deadline_date, reminderDays, reminderTiming);
+                    const beforeDays = report.report_type?.before_reminder_days;
+                    const afterDays = report.report_type?.after_reminder_days;
+                    const beforeDate = computeReminderDate(
+                      report.deadline_date,
+                      beforeDays,
+                      "before"
+                    );
+                    const afterDate = computeReminderDate(
+                      report.deadline_date,
+                      afterDays,
+                      "after"
+                    );
                     return (
                       <>
-                        <h6 className="mb-0 text-truncate">
-                          {reminderDate ? formatDate(reminderDate) : "N/A"}
+                        <h6 className="mb-1 text-truncate">
+                          <span className="text-muted small fw-normal">Before: </span>
+                          {beforeDate ? formatDate(beforeDate) : "N/A"}
+                        </h6>
+                        <small className="text-muted d-block mb-1">
+                          {beforeDays != null
+                            ? `${beforeDays} day(s) before deadline`
+                            : ""}
+                        </small>
+                        <h6 className="mb-1 text-truncate">
+                          <span className="text-muted small fw-normal">After: </span>
+                          {afterDate ? formatDate(afterDate) : "N/A"}
                         </h6>
                         <small className="text-muted">
-                          {reminderDays != null
-                            ? `${reminderDays} day(s) before deadline`
-                            : ""}
+                          {afterDays != null && Number(afterDays) > 0
+                            ? `${afterDays} day(s) after deadline (overdue notice)`
+                            : "No after-deadline reminder"}
                         </small>
                       </>
                     );
@@ -729,160 +859,219 @@ const ReportDetailPage = () => {
 
                 {/* Progress Tab */}
                 <TabPane tabId="progress">
-                  {/* Quarterly submissions list (Q1-Q4) - show only for quarterly report types */}
-                  {isQuarterlyOrBiannual &&
-                    Array.isArray(report?.quarter_submissions) &&
-                    report.quarter_submissions.length > 0 && (
-                      <Card className="border-0 shadow-sm mb-4">
-                        <CardBody>
-                          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-                            <div>
-                              <h5 className="mb-0 fw-semibold">
-                                <i className="bx bx-calendar-check text-primary me-2"></i>
-                                {report?.report_type?.frequency === "biannual" ? "Half-Year Periods to Submit" : "Quarters to Submit"}
-                              </h5>
-                              <small className="text-muted">
-                                {report?.report_type?.frequency === "biannual"
-                                  ? "Submit progress and final submission per half-year."
-                                  : "Submit progress and final submission per quarter."}
-                              </small>
-                            </div>
-                            <span className="badge bg-label-info">
-                              {report.quarter_submissions.length} period(s)
-                            </span>
+                  {hasImplementationPeriods && (
+                    <Card className="border-0 shadow-sm mb-4">
+                      <CardBody>
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                          <div>
+                            <h5 className="mb-0 fw-semibold">
+                              <i className="bx bx-calendar-check text-primary me-2"></i>
+                              {reportFrequencyNorm === "biannual"
+                                ? "Implementation periods (half-years)"
+                                : reportFrequencyNorm === "monthly"
+                                  ? "Implementation periods (months)"
+                                  : reportFrequencyNorm === "annual"
+                                    ? "Implementation period (annual)"
+                                    : reportFrequencyNorm === "adhoc"
+                                      ? "Implementation period (ad-hoc)"
+                                      : "Implementation periods (quarters)"}
+                            </h5>
+                            <small className="text-muted">
+                              Select a period below, update progress to 100%, then submit that period. Complete each
+                              period in order.
+                            </small>
                           </div>
+                          <span className="badge bg-label-info">
+                            {quarterlySubmittedCount}/{report.quarter_submissions.length} submitted
+                          </span>
+                        </div>
 
-                          <div className="table-responsive">
-                            <table className="table align-middle mb-0">
-                              <thead className="table-light">
-                                <tr>
-                                  <th style={{ width: "220px" }}>
-                                    {report?.report_type?.frequency === "biannual" ? "Half Year" : "Quarter"}
-                                  </th>
-                                  <th style={{ width: "180px" }}>Status</th>
-                                  <th style={{ width: "140px" }}>Progress</th>
-                                  <th style={{ width: "180px" }}>Deadline</th>
-                                  <th className="text-end" style={{ width: "280px" }}>Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {report.quarter_submissions.map((q) => {
-                                  const statusCfg =
-                                    STATUS_OPTIONS.find((o) => o.value === q.status) || null;
-                                  const isCurrent = String(q.uid) === String(report.uid);
-                                  const hasDoc = !!q.has_attachment;
-                                  const canViewDoc = q.status === "submitted" && hasDoc;
-                                  const filename =
-                                    typeof q.attachment_name === "string" && q.attachment_name.includes("/")
-                                      ? q.attachment_name.split("/").pop()
-                                      : (q.attachment_name || "report-document");
-                                  return (
-                                    <tr key={q.uid} className={isCurrent ? "table-primary" : ""}>
-                                      <td className="fw-medium">
-                                        <div>
-                                          <span className={`badge ${isCurrent ? "bg-primary" : "bg-label-primary"}`}>
-                                            {q.period_name || "N/A"}
-                                          </span>
-                                          {q.period_start_date && q.period_end_date && (
-                                            <div className="small text-muted mt-1">
-                                              {formatDate(q.period_start_date)} - {formatDate(q.period_end_date)}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </td>
-                                      <td>
-                                        <span className={`badge bg-label-${statusCfg?.color || "secondary"}`}>
-                                          {q.status_display || statusCfg?.label || q.status}
+                        <div className="d-flex flex-wrap gap-2 mb-4">
+                          {report.quarter_submissions.map((q) => {
+                            const isSel = String(q.period_uid) === String(selectedPeriodUid);
+                            const done = q.status === "submitted";
+                            return (
+                              <button
+                                key={q.period_uid}
+                                type="button"
+                                className={`btn btn-sm ${isSel ? "btn-primary" : "btn-outline-primary"} ${
+                                  done ? "border-success" : ""
+                                }`}
+                                onClick={() => setSelectedPeriodUid(q.period_uid)}
+                              >
+                                <span className="fw-semibold">{q.period_name || q.period_uid}</span>
+                                {done && <i className="bx bx-check ms-1" />}
+                                {isSel && <span className="ms-1 badge bg-white text-primary">{q.progress_percentage ?? 0}%</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="table-responsive">
+                          <table className="table align-middle mb-0">
+                            <thead className="table-light">
+                              <tr>
+                                <th style={{ width: "220px" }}>
+                                  {reportFrequencyNorm === "biannual"
+                                    ? "Half year"
+                                    : reportFrequencyNorm === "monthly"
+                                      ? "Month"
+                                      : reportFrequencyNorm === "annual"
+                                        ? "Annual"
+                                        : reportFrequencyNorm === "adhoc"
+                                          ? "Ad-hoc"
+                                          : "Quarter"}
+                                </th>
+                                <th style={{ width: "180px" }}>Status</th>
+                                <th style={{ width: "140px" }}>Progress</th>
+                                <th style={{ width: "180px" }}>Deadline</th>
+                                <th className="text-end" style={{ width: "280px" }}>
+                                  Actions
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {report.quarter_submissions.map((q) => {
+                                const statusCfg =
+                                  STATUS_OPTIONS.find((o) => o.value === q.status) || null;
+                                const isSelected = String(q.period_uid) === String(selectedPeriodUid);
+                                const hasDoc = !!q.has_attachment;
+                                const canViewDoc = q.status === "submitted" && hasDoc;
+                                const filename =
+                                  typeof q.attachment_name === "string" && q.attachment_name.includes("/")
+                                    ? q.attachment_name.split("/").pop()
+                                    : (q.attachment_name || "report-document");
+                                return (
+                                  <tr key={q.period_uid} className={isSelected ? "table-primary" : ""}>
+                                    <td className="fw-medium">
+                                      <div>
+                                        <span
+                                          className={`badge ${isSelected ? "bg-primary" : "bg-label-primary"}`}
+                                        >
+                                          {q.period_name || "N/A"}
                                         </span>
-                                      </td>
-                                      <td>
-                                        <span className="fw-medium">{q.progress_percentage ?? 0}%</span>
-                                      </td>
-                                      <td>
-                                        <span className="text-muted">{q.deadline_date ? formatDate(q.deadline_date) : "N/A"}</span>
-                                      </td>
-                                      <td className="text-end">
-                                        <div className="d-flex justify-content-end">
-                                          <UncontrolledDropdown>
-                                            <DropdownToggle
-                                              color="link"
-                                              className="p-0 text-muted"
-                                              title="More options"
+                                        {q.period_start_date && q.period_end_date && (
+                                          <div className="small text-muted mt-1">
+                                            {formatDate(q.period_start_date)} -{" "}
+                                            {formatDate(q.period_end_date)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span
+                                        className={`badge bg-label-${statusCfg?.color || "secondary"}`}
+                                      >
+                                        {q.status_display || statusCfg?.label || q.status}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span className="fw-medium">{q.progress_percentage ?? 0}%</span>
+                                    </td>
+                                    <td>
+                                      <span className="text-muted">
+                                        {q.deadline_date ? formatDate(q.deadline_date) : "N/A"}
+                                      </span>
+                                    </td>
+                                    <td className="text-end">
+                                      <div className="d-flex justify-content-end gap-1">
+                                        <button
+                                          type="button"
+                                          className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
+                                          onClick={() => setSelectedPeriodUid(q.period_uid)}
+                                        >
+                                          {isSelected ? "Selected" : "Select"}
+                                        </button>
+                                        <UncontrolledDropdown>
+                                          <DropdownToggle
+                                            color="link"
+                                            className="p-0 text-muted"
+                                            title="More options"
+                                          >
+                                            <i className="bx bx-dots-vertical-rounded fs-4" />
+                                          </DropdownToggle>
+                                          <DropdownMenu end>
+                                            <DropdownItem
+                                              disabled={!canViewDoc}
+                                              title={
+                                                !canViewDoc
+                                                  ? "Available after submission (with uploaded document)"
+                                                  : "View submitted document"
+                                              }
+                                              onClick={() =>
+                                                handleOpenAttachmentModal(
+                                                  report.uid,
+                                                  filename,
+                                                  q.period_uid
+                                                )
+                                              }
                                             >
-                                              <i className="bx bx-dots-vertical-rounded fs-4" />
-                                            </DropdownToggle>
-                                            <DropdownMenu end>
-                                              <DropdownItem
-                                                disabled={isCurrent}
-                                                onClick={() => {
-                                                  if (!isCurrent) navigate(`/report-management/reports/${q.uid}`);
-                                                }}
-                                              >
-                                                <i className="bx bx-link-external me-2" />
-                                                {isCurrent ? "Current period" : "Open"}
-                                              </DropdownItem>
+                                              <i className="bx bx-show me-2" />
+                                              View document
+                                            </DropdownItem>
 
-                                              <DropdownItem divider />
+                                            <DropdownItem
+                                              disabled={!canViewDoc || downloading}
+                                              title={
+                                                !canViewDoc
+                                                  ? "Available after submission (with uploaded document)"
+                                                  : "Download submitted document"
+                                              }
+                                              onClick={() =>
+                                                handleDownloadWithWatermark(
+                                                  report.uid,
+                                                  filename,
+                                                  q.period_uid
+                                                )
+                                              }
+                                            >
+                                              <i className="bx bx-download me-2" />
+                                              Download document
+                                            </DropdownItem>
+                                          </DropdownMenu>
+                                        </UncontrolledDropdown>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  )}
 
-                                              <DropdownItem
-                                                disabled={!canViewDoc}
-                                                title={
-                                                  !canViewDoc
-                                                    ? "Available after submission (with uploaded document)"
-                                                    : "View submitted document"
-                                                }
-                                                onClick={() => handleOpenAttachmentModal(q.uid, filename)}
-                                              >
-                                                <i className="bx bx-show me-2" />
-                                                View document
-                                              </DropdownItem>
-
-                                              <DropdownItem
-                                                disabled={!canViewDoc || downloading}
-                                                title={
-                                                  !canViewDoc
-                                                    ? "Available after submission (with uploaded document)"
-                                                    : "Download submitted document"
-                                                }
-                                                onClick={() => handleDownloadWithWatermark(q.uid, filename)}
-                                              >
-                                                <i className="bx bx-download me-2" />
-                                                Download document
-                                              </DropdownItem>
-                                            </DropdownMenu>
-                                          </UncontrolledDropdown>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    )}
-
-                  {/* Quarterly context note */}
-                  {isQuarterlyOrBiannual && report?.financial_period?.display_name && (
+                  {hasImplementationPeriods && selectedPeriodRow && (
                     <div className="alert alert-info d-flex align-items-center" role="alert">
                       <i className="bx bx-info-circle fs-4 me-2"></i>
                       <div>
-                        You are updating progress for{" "}
-                        <span className="badge bg-primary ms-1">{report.financial_period.display_name}</span>.
-                        {report?.financial_period?.start_date && report?.financial_period?.end_date && (
+                        Updating{" "}
+                        <span className="badge bg-primary ms-1">
+                          {selectedPeriodRow.period_name || selectedPeriodRow.period_uid}
+                        </span>
+                        {selectedPeriodRow.period_start_date && selectedPeriodRow.period_end_date && (
                           <span className="ms-1">
-                            ({formatDate(report.financial_period.start_date)} - {formatDate(report.financial_period.end_date)})
+                            ({formatDate(selectedPeriodRow.period_start_date)} -{" "}
+                            {formatDate(selectedPeriodRow.period_end_date)})
                           </span>
                         )}
-                        {" "}Use the list above to switch periods.
+                        . Choose another period using the buttons or table above.
+                        {selectedPeriodRow.status === "submitted" && (
+                          <span className="ms-2 fw-semibold text-success">
+                            This period is already submitted.
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {report.status !== 'submitted' && hasAccess(user, ['change_report']) && (
+                  {report.status !== "submitted" &&
+                    canChangeRmsReport(user) &&
+                    (!hasImplementationPeriods ||
+                      selectedPeriodRow?.status !== "submitted") && (
                     <div className="mb-4">
-                      {/* Progress Update Card */}
+                      {/* Progress Update Card — hidden when this period is already submitted */}
                       <Card className={`border-2 ${progressValue >= 100 ? 'border-success bg-label-success' : 'border-primary'}`}>
                         <CardBody>
                           <div className="d-flex align-items-center mb-3">
@@ -896,7 +1085,14 @@ const ReportDetailPage = () => {
                             <div>
                               <h5 className="mb-0">Update Progress</h5>
                               <small className="text-muted">
-                                {progressValue >= 100 ? 'Report is ready for submission!' : 'Track your report completion'}
+                                {hasImplementationPeriods && selectedPeriodRow?.period_name
+                                  ? `Period: ${selectedPeriodRow.period_name}. `
+                                  : ""}
+                                {selectedPeriodRow?.status === "submitted"
+                                  ? "This period is submitted — select another period to continue."
+                                  : progressValue >= 100
+                                    ? "Ready to submit this period (use Submit Report)."
+                                    : "Track completion for the selected period."}
                               </small>
                             </div>
                           </div>
@@ -916,6 +1112,7 @@ const ReportDetailPage = () => {
                               max="100"
                               step="5"
                               value={progressValue}
+                              disabled={hasImplementationPeriods && selectedPeriodRow?.status === "submitted"}
                               onChange={(e) => setProgressValue(parseInt(e.target.value))}
                             />
                             <div className="d-flex justify-content-between mt-1">
@@ -977,7 +1174,11 @@ const ReportDetailPage = () => {
                             <button
                               className="btn btn-primary"
                               onClick={handleProgressUpdate}
-                              disabled={updatingProgress}
+                              disabled={
+                                updatingProgress ||
+                                (hasImplementationPeriods &&
+                                  selectedPeriodRow?.status === "submitted")
+                              }
                             >
                               {updatingProgress ? (
                                 <span className="spinner-border spinner-border-sm me-2"></span>
@@ -986,7 +1187,8 @@ const ReportDetailPage = () => {
                               )}
                               Save Progress
                             </button>
-                            {progressValue >= 100 && (
+                            {progressValue >= 100 &&
+                              !(hasImplementationPeriods && selectedPeriodRow?.status === "submitted") && (
                               <button
                                 className="btn btn-success"
                                 onClick={() => setShowSubmitModal(true)}
@@ -1002,9 +1204,16 @@ const ReportDetailPage = () => {
                   )}
 
                   <h6 className="mb-3">Progress History</h6>
-                  {report.progress_updates?.length > 0 ? (
+                  {hasImplementationPeriods && selectedPeriodRow && (
+                    <p className="text-muted small mb-2">
+                      Showing updates for{" "}
+                      <strong>{selectedPeriodRow.period_name || selectedPeriodRow.period_uid}</strong>
+                      .
+                    </p>
+                  )}
+                  {visibleProgressUpdates?.length > 0 ? (
                     <div className="timeline">
-                      {report.progress_updates.map((update, index) => (
+                      {visibleProgressUpdates.map((update, index) => (
                         <div key={index} className="d-flex mb-3">
                           <div className="flex-shrink-0 me-3">
                             <div className={`rounded-circle bg-primary text-white d-flex align-items-center justify-content-center`} style={{ width: '40px', height: '40px' }}>
@@ -1082,7 +1291,7 @@ const ReportDetailPage = () => {
                               style={{
                                 width: "48px",
                                 height: "48px",
-                                background: "linear-gradient(135deg, #696cff 0%, #8c7bff 100%)",
+                                background: "linear-gradient(135deg, #00853f 0%, #3da66a 100%)",
                                 fontSize: "1rem",
                               }}
                             >
@@ -1271,7 +1480,7 @@ const ReportDetailPage = () => {
                   </div>
                 </div>
                 <h6 className="text-warning mb-1">In Progress</h6>
-                {isQuarterlyOrBiannual && quarterlyRequiredCount > 0 ? (
+                {hasImplementationPeriods && quarterlyRequiredCount > 0 ? (
                   <small className="text-muted">
                     Submitted {quarterlySubmittedCount}/{quarterlyRequiredCount} period(s)
                   </small>
@@ -1414,7 +1623,8 @@ const ReportDetailPage = () => {
                     onClick={() =>
                       handleDownloadWithWatermark(
                         attachmentTargetUid || uid,
-                        attachmentTargetFilename || null
+                        attachmentTargetFilename || null,
+                        attachmentTargetPeriodUid || null
                       )
                     }
                     disabled={downloading}

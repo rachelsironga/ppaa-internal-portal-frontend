@@ -19,13 +19,13 @@ const servicesConfig = [
     },
     {
         id: "performance-dashboard",
-        name: "Strategic Performance Management (SPISM)",
+        name: "Strategic Performance",
         link: "/performance-dashboard",
         menu: performanceDashboardMenu
     },
     {
         id: "report-management",
-        name: "Reports Management(RMS)",
+        name: "Reports Management",
         link: "/report-management",
         menu: reportManagementMenu
     },

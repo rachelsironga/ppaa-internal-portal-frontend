@@ -323,7 +323,7 @@ export const ApplicationModal = ({ application = null, onSuccess, onClose }) => 
                             <Form>
                                 <FormWizard
                                     shape="circle"
-                                    color="#696cff"
+                                    color="#00853f"
                                     stepSize="xs"
                                     onTabChange={({ prevIndex, nextIndex }) => {
                                         setTimeout(() => setTabIndex(nextIndex), 0);

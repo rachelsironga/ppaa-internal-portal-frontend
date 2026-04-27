@@ -18,9 +18,37 @@ import {
 } from "../Queries";
 import { formatDate } from "../../../../helpers/DateFormater";
 import showToast from "../../../../helpers/ToastHelper";
-import { hasAccess } from "../../../../hooks/AccessHandler";
+import {
+  canChangeRmsReport,
+  canCreateRmsReport,
+  canDeleteRmsReport,
+} from "../../../../utils/rmsReportPermissions";
 import Swal from "sweetalert2";
 import "animate.css";
+
+const normalizeListReportFrequency = (raw) => {
+  const s = String(raw || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/_+/g, "-");
+  if (
+    s === "biannual" ||
+    s === "bi-annual" ||
+    s === "semi-annual" ||
+    s === "semiannual" ||
+    s === "half-year" ||
+    s === "half-yearly" ||
+    s === "halfyear"
+  ) {
+    return "biannual";
+  }
+  if (s === "year" || s === "yearly") return "annual";
+  if (s === "quarter" || s === "qtr") return "quarterly";
+  if (s === "month") return "monthly";
+  if (s === "ad-hoc" || s === "adhook" || s === "ad-hook") return "adhoc";
+  return s;
+};
 
 const ReportsListPage = () => {
   const navigate = useNavigate();
@@ -195,28 +223,34 @@ const ReportsListPage = () => {
           </div>
           <div className="d-flex flex-wrap gap-2 align-items-center mt-1">
             <small className="text-muted">{(row.report_type_name || "").toUpperCase()}</small>
-            {row.report_type_frequency === "quarterly" && row.period_total_count > 0 && (
-              (() => {
-                const totalPeriods = Number(row.period_total_count || 0);
-                const pendingPeriods = Number(row.period_pending_count || 0);
-                const showPendingBadge = pendingPeriods > 0 || totalPeriods > 1;
-
-                return (
-                  <>
-                <span className="badge bg-label-success" title="Submitted quarters">
-                  <i className="bx bx-check-circle me-1"></i>
-                  {row.period_done_count || 0} done
-                </span>
-                {showPendingBadge && (
-                  <span className="badge bg-label-warning" title="Remaining quarters">
-                    <i className="bx bx-time-five me-1"></i>
-                    {row.period_pending_count || 0} pending
+            {(() => {
+              const nf = normalizeListReportFrequency(row.report_type_frequency);
+              const isPeriodicFreq = [
+                "quarterly",
+                "biannual",
+                "monthly",
+                "annual",
+                "adhoc",
+              ].includes(nf);
+              if (!isPeriodicFreq || !(Number(row.period_total_count || 0) > 0)) return null;
+              const totalPeriods = Number(row.period_total_count || 0);
+              const pendingPeriods = Number(row.period_pending_count || 0);
+              const showPendingBadge = pendingPeriods > 0 || totalPeriods > 1;
+              return (
+                <>
+                  <span className="badge bg-label-success" title="Submitted implementation periods">
+                    <i className="bx bx-check-circle me-1"></i>
+                    {row.period_done_count || 0} done
                   </span>
-                )}
-                  </>
-                );
-              })()
-            )}
+                  {showPendingBadge && (
+                    <span className="badge bg-label-warning" title="Remaining implementation periods">
+                      <i className="bx bx-time-five me-1"></i>
+                      {row.period_pending_count || 0} pending
+                    </span>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       ),
@@ -262,7 +296,13 @@ const ReportsListPage = () => {
       label: "Progress",
       style: { width: "100px" },
       render: (row) => {
-        const isPeriodic = row.report_type_frequency === "quarterly" || row.report_type_frequency === "biannual";
+        const isPeriodic = [
+          "quarterly",
+          "biannual",
+          "monthly",
+          "annual",
+          "adhoc",
+        ].includes(normalizeListReportFrequency(row.report_type_frequency));
         const doneCount = Number(row.period_done_count || 0);
         const totalCount = Number(row.period_total_count || 0);
         const effectiveProgressPercentage =
@@ -310,7 +350,7 @@ const ReportsListPage = () => {
                 View Details
               </button>
             </li>
-            {row.status !== 'submitted' && hasAccess(user, ['change_report']) && (
+            {row.status !== "submitted" && canChangeRmsReport(user) && (
               <li>
                 <button
                   className="dropdown-item d-flex align-items-center"
@@ -324,7 +364,7 @@ const ReportsListPage = () => {
                 </button>
               </li>
             )}
-            {hasAccess(user, ['delete_report']) && (
+            {canDeleteRmsReport(user) && (
               <>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
@@ -396,6 +436,7 @@ const ReportsListPage = () => {
   const getInitialFilters = () => {
     const filters = {};
     const status = searchParams.get('status');
+    const priority = searchParams.get('priority');
     const deadline_state = searchParams.get('deadline_state');
     const scope = searchParams.get('scope');
     const financial_year_uid = searchParams.get('financial_year_uid') || defaultFinancialYearUid;
@@ -403,6 +444,7 @@ const ReportsListPage = () => {
     const category_uid = searchParams.get('category_uid');
     const department_uid = searchParams.get('department_uid');
     if (status) filters.status = status;
+    if (priority) filters.priority = priority;
     if (deadline_state) filters.deadline_state = deadline_state;
     if (scope) filters.scope = scope;
     if (financial_year_uid) filters.financial_year_uid = financial_year_uid;
@@ -417,7 +459,7 @@ const ReportsListPage = () => {
   };
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Reports"]} />
 
       <div className="card border-0 shadow-sm">
@@ -429,7 +471,7 @@ const ReportsListPage = () => {
             </h5>
             <small className="text-muted">Manage and track all PPAA reports</small>
           </div>
-          {hasAccess(user, ['add_report']) && (
+          {canCreateRmsReport(user) && (
             <button
               className="btn btn-primary"
               onClick={() => {
@@ -470,7 +512,11 @@ const ReportsListPage = () => {
             setShowModal(false);
             setSelectedReport(null);
           }}
-          onSuccess={() => {
+          onSuccess={(created) => {
+            // List defaults to "current" FY; new rows are hidden if the modal used a different FY.
+            if (created?.financial_year?.uid) {
+              setDefaultFinancialYearUid(created.financial_year.uid);
+            }
             setShowModal(false);
             setSelectedReport(null);
             handleRefresh();

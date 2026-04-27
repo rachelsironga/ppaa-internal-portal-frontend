@@ -44,7 +44,7 @@ export const UserImportModal = ({ loadOnlyModal = false }) => {
         text: "Your About to Import Users. Do you want to proceed?",
         icon: "info",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Save",
         customClass: {

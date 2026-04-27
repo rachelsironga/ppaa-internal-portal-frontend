@@ -76,7 +76,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  color: #696cff;
+  color: #00853f;
   transition: color 0.2s;
 }
 
@@ -88,7 +88,7 @@
   display: none;
   margin-left: 6px;
   font-size: 0.95em;
-  color: #696cff;
+  color: #00853f;
   background: #f3f3f3;
   border-radius: 4px;
   padding: 2px 8px;
@@ -150,7 +150,7 @@
 .layout-menu .menu-item.menu-item-main .menu-link.active,
 .layout-menu .menu-item.menu-item-main .menu-link:hover {
   background: rgba(105, 108, 255, 0.16);
-  color: #696cff;
+  color: #00853f;
 }
 .layout-menu .menu-item.menu-item-main .menu-link.active {
   background: rgba(105, 108, 255, 0.2);

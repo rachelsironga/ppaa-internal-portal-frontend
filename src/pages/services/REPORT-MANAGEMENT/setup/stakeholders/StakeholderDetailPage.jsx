@@ -5,7 +5,7 @@ import { Card, CardBody, Row, Col } from "reactstrap";
 import BreadCumb from "../../../../../layouts/BreadCumb";
 import { getStakeholders, getReports, ORGANIZATION_TYPE_OPTIONS } from "../../Queries";
 import { formatDate, formatDateTime } from "../../../../../helpers/DateFormater";
-import { hasAccess } from "../../../../../hooks/AccessHandler";
+import { canChangeStakeholder } from "../../../../../utils/rmsSetupPermissions";
 import StakeholderModal from "./StakeholderModal";
 import showToast from "../../../../../helpers/ToastHelper";
 
@@ -62,7 +62,7 @@ const StakeholderDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="container-fluid flex-grow-1 container-p-y px-4">
+      <div className="w-100">
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
@@ -74,7 +74,7 @@ const StakeholderDetailPage = () => {
 
   if (!stakeholder) {
     return (
-      <div className="container-fluid flex-grow-1 container-p-y px-4">
+      <div className="w-100">
         <div className="alert alert-danger">
           Stakeholder not found
         </div>
@@ -83,7 +83,7 @@ const StakeholderDetailPage = () => {
   }
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Setup", "Stakeholders", "Details"]} />
 
       {/* Header Card */}
@@ -112,7 +112,7 @@ const StakeholderDetailPage = () => {
                 <i className="bx bx-arrow-back me-1"></i>
                 Back to List
               </button>
-              {hasAccess(user, ['change_stakeholder']) && (
+              {canChangeStakeholder(user) && (
                 <button
                   className="btn btn-primary"
                   onClick={() => setShowModal(true)}

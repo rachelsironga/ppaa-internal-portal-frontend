@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
 import ReactLoading from "react-loading";
@@ -27,7 +27,7 @@ export const DirectoryOpenPage = () => {
   const [error, setError] = useState(null);
   const [errorDepartment, setErrorDepartment] = useState(null);
 
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const directorySearchMount = useRef(0);
   const [directoryDepartments, setDirectoryDepartments] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,7 +73,6 @@ export const DirectoryOpenPage = () => {
     try {
       const result = await getDepartments({
         search: searchQuery,
-        directory: uid,
         pagination: {
           page: currentPage,
           page_size: pageSize,
@@ -191,22 +190,25 @@ export const DirectoryOpenPage = () => {
   };
 
   useEffect(() => {
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    const timeout = setTimeout(() => {
-      handleFetchData();
-      fetchDepartments();
-    }, 1000);
+    handleFetchData();
+  }, [uid, tableRefresh]);
 
-    setDebounceTimeout(timeout);
+  useEffect(() => {
+    fetchDepartments();
+  }, [pageSize, currentPage, tableRefresh]);
 
-    return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage, tableRefresh]);
+  useEffect(() => {
+    directorySearchMount.current += 1;
+    if (directorySearchMount.current === 1) {
+      return undefined;
+    }
+    const t = setTimeout(() => fetchDepartments(), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   return (
     <DirectoryContext.Provider
       value={{
-        debounceTimeout,
-        setDebounceTimeout,
         handleFetchData,
         selectedObj,
         setSelectedObj,
@@ -257,7 +259,7 @@ export const DirectoryOpenPage = () => {
                 <center>
                   <ReactLoading
                     type={"cylon"}
-                    color={"#696cff"}
+                    color={"#00853f"}
                     height={"30px"}
                     width={"50px"}
                   />
@@ -399,7 +401,7 @@ export const DirectoryOpenPage = () => {
                         <center>
                           <ReactLoading
                             type={"cylon"}
-                            color={"#696cff"}
+                            color={"#00853f"}
                             height={"30px"}
                             width={"50px"}
                           />

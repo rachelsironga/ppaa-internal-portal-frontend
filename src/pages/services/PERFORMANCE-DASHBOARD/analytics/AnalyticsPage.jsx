@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import BreadCumb from "../../../../layouts/BreadCumb";
-import { getPerformanceAnalytics } from "../Queries";
+import { getFinancialYears, getPerformanceAnalytics } from "../Queries";
+import {
+  extractFinancialYearRows,
+  getDefaultFinancialYear,
+  resolveFinancialYearForList,
+} from "../financialYearUtils";
 import {
   BarChart,
   DoughnutChart,
@@ -8,17 +13,36 @@ import {
   GaugeChart,
 } from "../../../../components/DashboardCharts";
 
-const getCurrentFinancialYear = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  return month >= 7 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
-};
-
 export const AnalyticsPage = () => {
-  const [financialYear, setFinancialYear] = useState(getCurrentFinancialYear());
+  const [financialYear, setFinancialYear] = useState(getDefaultFinancialYear());
+  const [financialYearRows, setFinancialYearRows] = useState([]);
+  const [financialYearsLoading, setFinancialYearsLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadYears = async () => {
+      setFinancialYearsLoading(true);
+      try {
+        const res = await getFinancialYears();
+        const sorted = extractFinancialYearRows(res);
+        if (cancelled) return;
+        setFinancialYearRows(sorted);
+        if (sorted.length) {
+          setFinancialYear((current) => resolveFinancialYearForList(sorted, current));
+        }
+      } catch {
+        if (!cancelled) setFinancialYearRows([]);
+      } finally {
+        if (!cancelled) setFinancialYearsLoading(false);
+      }
+    };
+    loadYears();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -69,16 +93,35 @@ export const AnalyticsPage = () => {
           </h5>
         </div>
         <div className="card-body">
-          <div className="d-flex align-items-center gap-2 mb-4">
-            <label className="form-label mb-0 small">Financial Year</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              style={{ width: "140px" }}
-              placeholder="e.g. 2024/2025"
+          <div className="d-flex align-items-center gap-2 mb-4 flex-wrap">
+            <label
+              htmlFor="spism-analytics-financial-year"
+              className="form-label mb-0 small text-muted text-uppercase"
+            >
+              Financial Year
+            </label>
+            <select
+              id="spism-analytics-financial-year"
+              className="form-select form-select-sm"
+              style={{ minWidth: "180px", maxWidth: "240px" }}
               value={financialYear}
               onChange={(e) => setFinancialYear(e.target.value)}
-            />
+              disabled={financialYearsLoading}
+              aria-label="Financial year"
+              title="Choose a configured financial year"
+            >
+              {financialYearRows.length === 0 ? (
+                <option value={financialYear}>
+                  {financialYearsLoading ? "Loading years…" : financialYear}
+                </option>
+              ) : (
+                financialYearRows.map((y) => (
+                  <option key={y.uid || y.name} value={y.name}>
+                    {y.name}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
           {loading ? (
             <p className="text-muted mb-0">Loading analytics…</p>

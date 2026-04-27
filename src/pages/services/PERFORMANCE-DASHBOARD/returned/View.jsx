@@ -5,6 +5,7 @@ import { getPendingApprovals } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import { formatDate } from "../../../../helpers/DateFormater";
 import ReturnCommentModal from "./Modal";
+import { ActivityPlanningContext } from "../ActivityPlanningContext";
 
 const STATUS_BADGE = {
   DRAFT: "bg-label-secondary",
@@ -338,6 +339,7 @@ export const ReturnedView = () => {
                                     : row.approval_comment}
                                 </small>
                               )}
+                              <ActivityPlanningContext row={row} />
                             </td>
                             <td className="pe-3 text-end">{formatDate(row.updated_at, "DD/MM/YYYY")}</td>
                             <td className="ps-3">

@@ -6,7 +6,11 @@ import FinancialYearModal from "./FinancialYearModal";
 import { deleteFinancialYear } from "../../Queries";
 import { formatDate } from "../../../../../helpers/DateFormater";
 import showToast from "../../../../../helpers/ToastHelper";
-import { hasAccess } from "../../../../../hooks/AccessHandler";
+import {
+  canAddFinancialYear,
+  canChangeFinancialYear,
+  canDeleteFinancialYear,
+} from "../../../../../utils/rmsSetupPermissions";
 import Swal from "sweetalert2";
 
 const FinancialYearListPage = () => {
@@ -95,7 +99,7 @@ const FinancialYearListPage = () => {
       label: "Actions",
       render: (row) => (
         <div className="d-flex gap-1">
-          {hasAccess(user, ['change_financialyear']) && (
+          {canChangeFinancialYear(user) && (
             <button
               className="btn btn-sm btn-outline-primary"
               onClick={(e) => {
@@ -107,7 +111,7 @@ const FinancialYearListPage = () => {
               <i className="bx bx-edit"></i>
             </button>
           )}
-          {hasAccess(user, ['delete_financialyear']) && (
+          {canDeleteFinancialYear(user) && (
             <button
               className="btn btn-sm btn-outline-danger"
               onClick={(e) => {
@@ -124,7 +128,7 @@ const FinancialYearListPage = () => {
     },
   ];
 
-  const addButton = hasAccess(user, ['add_financialyear']) ? [
+  const addButton = canAddFinancialYear(user) ? [
     {
       label: (
         <>
@@ -141,7 +145,7 @@ const FinancialYearListPage = () => {
   ] : [];
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Setup", "Financial Years"]} />
 
       <PaginatedTable

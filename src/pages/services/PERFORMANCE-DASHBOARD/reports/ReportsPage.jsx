@@ -146,7 +146,11 @@ export const ReportsPage = () => {
     if (reportType === "quarterly") {
       return [
         { label: "Institutional Performance", value: summary.institutional_performance != null ? `${summary.institutional_performance}%` : "—" },
-        { label: "Reported Quarters", value: summary.quarters_reported ?? 0 },
+        { label: "Quarters with submitted data", value: summary.quarters_reported ?? 0 },
+        {
+          label: "Submitted quarter records",
+          value: summary.submitted_quarter_rows ?? "—",
+        },
       ];
     }
     if (reportType === "annual") {
@@ -189,7 +193,9 @@ export const ReportsPage = () => {
         <div className="card-body">
           <p className="text-muted small mb-3">
             Choose a report type and financial year. Use the tabs to switch between Quarterly,
-            Annual, KPI and Performance reports.
+            Annual, KPI and Performance reports. Quarterly and performance views use{" "}
+            <strong>submitted</strong> quarterly implementation only (submitted for ES review or
+            already approved); draft quarters are excluded.
           </p>
           <ul className="nav nav-tabs mb-3">
             {REPORT_TYPES.map((r) => (
@@ -258,7 +264,10 @@ export const ReportsPage = () => {
               {summaryCards.length > 0 && (
                 <div className="row g-3 mb-3">
                   {summaryCards.map((card) => (
-                    <div className="col-12 col-md-6" key={card.label}>
+                    <div
+                      className={`col-12 ${summaryCards.length > 2 ? "col-md-4" : "col-md-6"}`}
+                      key={card.label}
+                    >
                       <div className="card border shadow-none h-100">
                         <div className="card-body py-3">
                           <div className="text-muted small">{card.label}</div>

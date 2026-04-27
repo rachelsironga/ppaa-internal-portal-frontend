@@ -180,16 +180,21 @@ export const TargetPage = () => {
               key: "responsible_officer",
               label: "Responsible officer",
               style: { width: "260px" },
-              render: (row) => (
-                <div className="small">
-                  <div className="fw-semibold text-body">
-                    {row.responsible_officer_name || "Not assigned"}
+              render: (row) => {
+                const name =
+                  row.responsible_officer_name || row.responsible_officer_label;
+                const designation = row.responsible_officer_designation;
+                return (
+                  <div className="small">
+                    <div className="fw-semibold text-body">
+                      {name || "Not assigned"}
+                    </div>
+                    {designation ? (
+                      <div className="text-muted mt-1">{designation}</div>
+                    ) : null}
                   </div>
-                  <div className="text-muted mt-1">
-                    {row.responsible_officer_label || ""}
-                  </div>
-                </div>
-              ),
+                );
+              },
             },
             {
               key: "status",

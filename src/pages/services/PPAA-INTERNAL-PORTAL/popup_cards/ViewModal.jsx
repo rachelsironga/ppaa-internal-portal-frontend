@@ -52,7 +52,7 @@ const PopupCardViewModal = ({ card, onClose }) => {
     >
       <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "420px" }}>
         <div className="modal-content overflow-hidden" style={{ borderRadius: "20px", border: "none", boxShadow: "0 12px 48px rgba(99, 102, 241, 0.18)" }}>
-          <div className="modal-header border-0 pb-0" style={{ background: "linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #8b5cf6 100%)", color: "#fff" }}>
+          <div className="modal-header border-0 pb-0" style={{ background: "linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%)", color: "#fff" }}>
             <h5 className="modal-title d-flex align-items-center gap-2" id="popupCardViewModalLabel">
               <i className="bx bx-bulb" style={{ fontSize: "1.2rem" }} />
               Daily Motivation – Preview

@@ -2,7 +2,8 @@
 @import './_theme/common';
 @import './_theme/_theme';
 
-$primary-color: #696cff;
+// PPAA institutional green (matches public portal / Services)
+$primary-color: #00853f;
 
 @include template-common-theme($primary-color);
 

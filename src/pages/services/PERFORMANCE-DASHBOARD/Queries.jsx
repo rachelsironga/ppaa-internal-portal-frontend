@@ -62,12 +62,14 @@ export const getTargets = async ({
   objective = "",
   search = "",
   financial_year = "",
+  assigned_to_me = false,
   pagination = {},
 }) => {
   const params = new URLSearchParams();
   if (objective) params.append("objective", objective);
   if (search) params.append("search", search);
   if (financial_year) params.append("financial_year", financial_year);
+  if (assigned_to_me) params.append("assigned_to_me", "1");
   if (pagination.page) params.append("page", pagination.page);
   if (pagination.page_size) params.append("page_size", pagination.page_size);
   const url = uid
@@ -168,7 +170,9 @@ export const createUpdateQuarterlyData = async (formData) => {
     ? `${API_BASE}/quarterly-data/${formData.uid}`
     : `${API_BASE}/quarterly-data`;
   const method = formData.uid ? "put" : "post";
-  const response = await api[method](url, formData);
+  const payload = { ...formData };
+  if (method === "put") delete payload.uid;
+  const response = await api[method](url, payload);
   return response.data;
 };
 

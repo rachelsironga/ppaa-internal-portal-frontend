@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Modal, ModalHeader, ModalBody, ModalFooter, Row, Col, Progress } from "reactstrap";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -31,15 +31,151 @@ const formatValidationErrors = (errors) => {
   return `<ul style="text-align: left; margin: 0; padding-left: 20px;">${errorMessages.join('')}</ul>`;
 };
 
-const PERIODIC_FREQUENCIES = ['quarterly', 'monthly', 'biannual'];
-const AUTO_DEADLINE_FREQUENCIES = ['monthly', 'quarterly', 'biannual', 'annual'];
+const PERIODIC_FREQUENCIES = ["quarterly", "monthly", "biannual", "annual"];
+const AUTO_DEADLINE_FREQUENCIES = ["monthly", "quarterly", "biannual", "annual"];
+
+/** Canonical frequency for validation/UI (matches backend RmsReportType + common aliases). */
+const normalizeReportFrequency = (raw) => {
+  const s = String(raw || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/_+/g, "-");
+  if (
+    s === "biannual" ||
+    s === "bi-annual" ||
+    s === "semi-annual" ||
+    s === "semiannual" ||
+    s === "half-year" ||
+    s === "half-yearly" ||
+    s === "halfyear"
+  ) {
+    return "biannual";
+  }
+  if (s === "ad-hoc" || s === "adhook" || s === "ad-hook") return "adhoc";
+  if (s === "year" || s === "yearly") return "annual";
+  if (s === "quarter" || s === "qtr") return "quarterly";
+  if (s === "month") return "monthly";
+  return s;
+};
 
 const getPeriodTypeForFrequency = (frequency) => {
-  if (frequency === 'quarterly') return 'quarter';
-  if (frequency === 'monthly') return 'month';
-  if (frequency === 'biannual') return 'biannual';
+  const f = normalizeReportFrequency(frequency);
+  if (f === "quarterly") return "quarter";
+  if (f === "monthly") return "month";
+  if (f === "biannual") return "biannual";
+  if (f === "annual") return "annual";
   return null;
 };
+
+const parseFYDateUTC = (iso) => {
+  const part = String(iso).split("T")[0];
+  const [y, m, d] = part.split("-").map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return null;
+  return new Date(Date.UTC(y, m - 1, d));
+};
+
+const formatFYDateUTC = (d) => {
+  const y = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${mo}-${day}`;
+};
+
+const addDaysUTC = (d, days) => {
+  const t = new Date(d.getTime());
+  t.setUTCDate(t.getUTCDate() + days);
+  return t;
+};
+
+/** Equal-length segments over FY (same idea as backend _equal_date_segments). */
+const buildEqualSegmentsFromFY = (fy, n, period_type, labels) => {
+  if (!fy?.uid || !fy.start_date || !fy.end_date) return [];
+  const start = parseFYDateUTC(fy.start_date);
+  const end = parseFYDateUTC(fy.end_date);
+  if (!start || !end || end < start) return [];
+  const totalDays = Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
+  if (totalDays < 1 || n < 1) return [];
+  const data = [];
+  for (let i = 0; i < n; i++) {
+    const ai = Math.floor((i * totalDays) / n);
+    const bi = Math.floor(((i + 1) * totalDays + n - 1) / n);
+    if (ai >= bi) continue;
+    let segStart = addDaysUTC(start, ai);
+    let segEnd = addDaysUTC(start, bi - 1);
+    if (segEnd > end) segEnd = end;
+    if (segStart > end) break;
+    data.push({
+      uid: `${fy.uid}-pt-${period_type}-${i + 1}`,
+      display_name: labels[i] || `P${i + 1}`,
+      start_date: formatFYDateUTC(segStart),
+      end_date: formatFYDateUTC(segEnd),
+      period_type,
+    });
+  }
+  return data;
+};
+
+const buildQuarterPeriodsFromFY = (fy) =>
+  buildEqualSegmentsFromFY(fy, 4, "quarter", ["Q1", "Q2", "Q3", "Q4"]);
+
+const buildBiannualPeriodsFromFY = (fy) =>
+  buildEqualSegmentsFromFY(fy, 2, "biannual", ["H1", "H2"]);
+
+const buildAnnualPeriodFromFY = (fy) =>
+  buildEqualSegmentsFromFY(fy, 1, "annual", ["Annual"]);
+
+const MONTH_ABBR = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+/** Calendar months clipped to FY (same idea as backend _calendar_month_segments). */
+const buildMonthlyPeriodsFromFY = (fy) => {
+  if (!fy?.uid || !fy.start_date || !fy.end_date) return [];
+  const fyStart = parseFYDateUTC(fy.start_date);
+  const fyEnd = parseFYDateUTC(fy.end_date);
+  if (!fyStart || !fyEnd || fyEnd < fyStart) return [];
+  const data = [];
+  let cur = new Date(fyStart.getTime());
+  while (cur <= fyEnd) {
+    const y = cur.getUTCFullYear();
+    const m = cur.getUTCMonth();
+    const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    const monthEnd = new Date(Date.UTC(y, m, lastDay));
+    const segEnd = monthEnd > fyEnd ? fyEnd : monthEnd;
+    data.push({
+      uid: `${fy.uid}-pt-month-${data.length + 1}`,
+      display_name: `${MONTH_ABBR[m]} ${y}`,
+      start_date: formatFYDateUTC(cur),
+      end_date: formatFYDateUTC(segEnd),
+      period_type: "month",
+    });
+    if (segEnd >= fyEnd) break;
+    const ny = m === 11 ? y + 1 : y;
+    const nm = m === 11 ? 0 : m + 1;
+    cur = new Date(Date.UTC(ny, nm, 1));
+  }
+  return data;
+};
+
+/** When step 2 mounts, load periods (create flow often never fires FY onChange). */
+function ReportPeriodSync({ financialYearUid, reportTypeUid, syncFn }) {
+  useEffect(() => {
+    if (financialYearUid && reportTypeUid) syncFn(financialYearUid, reportTypeUid);
+  }, [financialYearUid, reportTypeUid, syncFn]);
+  return null;
+}
 
 const resolveCurrentFinancialYear = (years = []) => {
   const today = new Date();
@@ -67,6 +203,9 @@ const STEPS = [
   { id: 2, title: "Timeline", icon: "bx-calendar", description: "Period and deadline" },
   { id: 3, title: "Assignment", icon: "bx-user-plus", description: "Scope and stakeholders" },
 ];
+
+/** Select value: not a real stakeholder UID — shows the custom name field when chosen */
+const STAKEHOLDER_OTHER_VALUE = "__ppaa_stakeholder_other__";
 
 const ReportModal = ({ show, onClose, onSuccess, report }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -120,14 +259,23 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
   const fetchOptions = async () => {
     setLoadingOptions(true);
     try {
-      const [fyRes, typesRes, catsRes, stakeholdersRes, profileRes] = await Promise.all([
+      // Use allSettled so one missing endpoint (e.g. user-profile 404) does not block
+      // report types, categories, and stakeholders from loading.
+      const settled = await Promise.allSettled([
         getFinancialYears(),
         getReportTypes(),
         getReportCategories(),
         getStakeholders(),
         getUserProfileInfo(),
       ]);
-      
+
+      const unwrap = (result) =>
+        result.status === "fulfilled"
+          ? result.value
+          : { status: null, data: null };
+
+      const [fyRes, typesRes, catsRes, stakeholdersRes, profileRes] = settled.map(unwrap);
+
       if (fyRes.status === 8000) setFinancialYears(fyRes.data || []);
       if (typesRes.status === 8000) setReportTypes(typesRes.data || []);
       if (catsRes.status === 8000) setCategories(catsRes.data || []);
@@ -141,29 +289,62 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
     }
   };
 
-  const loadFinancialPeriods = async (fyUid, reportTypeUid) => {
-    if (!fyUid) {
-      setFinancialPeriods([]);
-      return;
-    }
-    try {
-      const selectedType =
-        getSelectedReportType(reportTypeUid) ||
-        (report?.report_type?.uid === reportTypeUid ? report.report_type : null);
-      const periodType = getPeriodTypeForFrequency(selectedType?.frequency);
-      const res = await getFinancialPeriods({
-        financial_year_uid: fyUid,
-        period_type: periodType || undefined,
-      });
-      if (res.status === 8000) setFinancialPeriods(res.data || []);
-      else setFinancialPeriods([]);
-    } catch (e) {
-      setFinancialPeriods([]);
-    }
-  };
-
   const getSelectedReportType = (reportTypeUid) => {
     return reportTypes.find(t => t.uid === reportTypeUid);
+  };
+
+  const freqOf = (reportTypeUid) =>
+    normalizeReportFrequency(getSelectedReportType(reportTypeUid)?.frequency);
+
+  /** Create flow: quarterly + bi-annual use multi-select (`financial_period_uids`). */
+  const usesMultiPeriodSelection = (reportTypeUid) =>
+    !isEditMode &&
+    (freqOf(reportTypeUid) === "quarterly" || freqOf(reportTypeUid) === "biannual");
+
+  const loadFinancialPeriods = useCallback(
+    async (fyUid, reportTypeUid) => {
+      if (!fyUid) {
+        setFinancialPeriods([]);
+        return;
+      }
+      try {
+        const selectedType =
+          reportTypes.find((t) => t.uid === reportTypeUid) ||
+          (report?.report_type?.uid === reportTypeUid ? report.report_type : null);
+        const periodType = getPeriodTypeForFrequency(selectedType?.frequency);
+        const res = await getFinancialPeriods({
+          financial_year_uid: fyUid,
+          period_type: periodType || undefined,
+        });
+        if (res.status === 8000) setFinancialPeriods(res.data || []);
+        else setFinancialPeriods([]);
+      } catch (e) {
+        setFinancialPeriods([]);
+      }
+    },
+    [reportTypes, report]
+  );
+
+  /** Derive periods from FY when API is empty (same reliability as quarterly for all periodic types). */
+  const getPeriodicOptions = (values) => {
+    const selectedType = getSelectedReportType(values.report_type_uid);
+    const freq = normalizeReportFrequency(selectedType?.frequency);
+    const fy = financialYears.find((f) => f.uid === values.financial_year_uid);
+    if (!fy?.start_date || !fy?.end_date) return financialPeriods || [];
+    if (freq === "quarterly") {
+      const built = buildQuarterPeriodsFromFY(fy);
+      if (built.length > 0) return built;
+    } else if (freq === "biannual") {
+      const built = buildBiannualPeriodsFromFY(fy);
+      if (built.length > 0) return built;
+    } else if (freq === "monthly") {
+      const built = buildMonthlyPeriodsFromFY(fy);
+      if (built.length > 0) return built;
+    } else if (freq === "annual") {
+      const built = buildAnnualPeriodFromFY(fy);
+      if (built.length > 0) return built;
+    }
+    return financialPeriods || [];
   };
 
   const getSelectedFinancialYear = (fyUid) => {
@@ -174,26 +355,36 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
 
   const isPeriodic = (reportTypeUid) => {
     const selectedType = getSelectedReportType(reportTypeUid);
-    return selectedType && PERIODIC_FREQUENCIES.includes(selectedType.frequency);
+    const f = normalizeReportFrequency(selectedType?.frequency);
+    return selectedType && PERIODIC_FREQUENCIES.includes(f);
   };
 
   const isAutoDeadlineType = (reportTypeUid) => {
     const selectedType = getSelectedReportType(reportTypeUid);
-    return selectedType && AUTO_DEADLINE_FREQUENCIES.includes(selectedType.frequency);
+    const f = normalizeReportFrequency(selectedType?.frequency);
+    return selectedType && AUTO_DEADLINE_FREQUENCIES.includes(f);
   };
 
-  const getComputedDeadline = ({ reportTypeUid, financialYearUid, financialPeriodUid }) => {
+  const getComputedDeadline = ({
+    reportTypeUid,
+    financialYearUid,
+    financialPeriodUid,
+    values: formValues,
+  }) => {
     const selectedType = getSelectedReportType(reportTypeUid);
-    if (!selectedType || !AUTO_DEADLINE_FREQUENCIES.includes(selectedType.frequency)) return "";
+    const freq = normalizeReportFrequency(selectedType?.frequency);
+    if (!selectedType || !AUTO_DEADLINE_FREQUENCIES.includes(freq)) return "";
 
     const days = Number(selectedType.submission_deadline_days || 0);
 
-    if (selectedType.frequency === "annual") {
+    if (freq === "annual") {
       const fy = getSelectedFinancialYear(financialYearUid);
       return addDaysToDateString(fy?.end_date, days);
     }
 
-    const period = (financialPeriods || []).find((p) => p.uid === financialPeriodUid);
+    const opts =
+      formValues != null ? getPeriodicOptions(formValues) : financialPeriods || [];
+    const period = opts.find((p) => p.uid === financialPeriodUid);
     return addDaysToDateString(period?.end_date, days);
   };
 
@@ -206,15 +397,19 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
     financial_period_uids: Yup.array().when(['report_type_uid'], {
       is: (report_type_uid) => {
         const t = getSelectedReportType(report_type_uid);
-        return !isEditMode && t?.frequency === 'quarterly';
+        const f = normalizeReportFrequency(t?.frequency);
+        return !isEditMode && (f === "quarterly" || f === "biannual");
       },
       then: (schema) => schema.min(1, "Select at least one period"),
     }),
     financial_period_uid: Yup.string().when(['report_type_uid'], {
       is: (report_type_uid) => {
         const t = getSelectedReportType(report_type_uid);
-        // Semi-Annual must be selected one at a time
-        return isPeriodic(report_type_uid) && !( !isEditMode && t?.frequency === 'quarterly');
+        const f = normalizeReportFrequency(t?.frequency);
+        return (
+          isPeriodic(report_type_uid) &&
+          !(!isEditMode && (f === "quarterly" || f === "biannual"))
+        );
       },
       then: (schema) => schema.required("Period is required"),
     }),
@@ -225,15 +420,32 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
     }),
     scope: Yup.string().required("Scope is required"),
     priority: Yup.string().required("Priority is required"),
-    stakeholder_uid: Yup.string().when('scope', {
-      is: 'external',
-      then: (schema) => schema.test(
-        'stakeholder-required',
-        'Stakeholder or custom stakeholder name is required for external reports',
-        function(value) {
-          return value || this.parent.other_stakeholder_name;
-        }
-      ),
+    stakeholder_uid: Yup.string().when("scope", {
+      is: (scope) => String(scope || "").toLowerCase() === "external",
+      then: (schema) =>
+        schema.test(
+          "external-stakeholder",
+          "Select a stakeholder from the list, or choose Other and enter a name",
+          function (value) {
+            const name = String(this.parent.other_stakeholder_name || "").trim();
+            const v = String(value || "").trim();
+            if (!v) return false;
+            if (v === STAKEHOLDER_OTHER_VALUE) return name.length >= 2;
+            return true;
+          }
+        ),
+      otherwise: (schema) => schema.notRequired().nullable(),
+    }),
+    other_stakeholder_name: Yup.string().when(["scope", "stakeholder_uid"], {
+      is: (scope, uid) =>
+        String(scope || "").toLowerCase() === "external" &&
+        String(uid || "") === STAKEHOLDER_OTHER_VALUE,
+      then: (schema) =>
+        schema
+          .trim()
+          .required("Enter the stakeholder name")
+          .min(2, "Name should be at least 2 characters"),
+      otherwise: (schema) => schema.notRequired().nullable(),
     }),
   });
 
@@ -244,6 +456,17 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
   };
 
   const validateStep = (values, errors, step) => {
+    if (step === 3) {
+      if (!values.scope || errors.scope) return false;
+      if (String(values.scope).toLowerCase() !== "external") return true;
+      const uid = String(values.stakeholder_uid || "").trim();
+      const other = String(values.other_stakeholder_name || "").trim();
+      if (!uid) return false;
+      if (uid === STAKEHOLDER_OTHER_VALUE) {
+        return other.length >= 2 && !errors.other_stakeholder_name;
+      }
+      return !errors.stakeholder_uid;
+    }
     if (step === 2) {
       const baseOk =
         !!values.financial_year_uid &&
@@ -254,11 +477,16 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
       if (!baseOk) return false;
       if (!isEditMode && isAutoDeadlineType(values.report_type_uid)) {
         const selectedType = getSelectedReportType(values.report_type_uid);
-        if (selectedType?.frequency === "quarterly") {
+        const sf = normalizeReportFrequency(selectedType?.frequency);
+        if (sf === "quarterly" || sf === "biannual") {
           return Array.isArray(values.financial_period_uids) && values.financial_period_uids.length > 0 && !errors.financial_period_uids;
         }
-        if (selectedType?.frequency === "annual") {
-          return !!values.financial_year_uid;
+        if (sf === "annual") {
+          return (
+            !!values.financial_year_uid &&
+            !!values.financial_period_uid &&
+            !errors.financial_period_uid
+          );
         }
         return !!values.financial_period_uid && !errors.financial_period_uid;
       }
@@ -279,7 +507,9 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
     deadline_date: report?.deadline_date || "",
     scope: report?.scope || "",
     priority: report?.priority || "medium",
-    stakeholder_uid: report?.stakeholder?.uid || "",
+    stakeholder_uid:
+      report?.stakeholder?.uid ||
+      (report?.other_stakeholder_name ? STAKEHOLDER_OTHER_VALUE : ""),
     other_stakeholder_name: report?.other_stakeholder_name || "",
     description: report?.description || "",
     notes: report?.notes || "",
@@ -311,20 +541,26 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
         data.financial_year_uid = currentFinancialYear?.uid || financialYears?.[0]?.uid || "";
       }
       
+      if (data.scope !== "external") {
+        delete data.stakeholder_uid;
+        delete data.other_stakeholder_name;
+      } else if (data.stakeholder_uid === STAKEHOLDER_OTHER_VALUE) {
+        delete data.stakeholder_uid;
+      } else if (data.stakeholder_uid) {
+        delete data.other_stakeholder_name;
+      }
       if (!data.stakeholder_uid) delete data.stakeholder_uid;
       if (!data.category_uid) delete data.category_uid;
       if (!isEditMode && isAutoDeadlineType(values.report_type_uid)) {
         delete data.deadline_date;
       }
-      // Quarterly (create): allow multiple quarters
-      if (!isEditMode && selectedType?.frequency === 'quarterly') {
+      // Quarterly / bi-annual (create): multiple periods via financial_period_uids
+      const nf = normalizeReportFrequency(selectedType?.frequency);
+      if (!isEditMode && (nf === "quarterly" || nf === "biannual")) {
         delete data.financial_period_uid;
         if (!data.financial_period_uids || data.financial_period_uids.length === 0) {
           delete data.financial_period_uids;
         }
-      } else if (selectedType?.frequency === "adhoc") {
-        delete data.financial_period_uid;
-        delete data.financial_period_uids;
       } else {
         delete data.financial_period_uids;
         if (!data.financial_period_uid) delete data.financial_period_uid;
@@ -341,13 +577,16 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
         response = await createReport(data);
       }
 
-      if (response.status === 8000) {
+      const apiStatus = Number(response?.status);
+      if (apiStatus === 8000) {
         showToast(
           isEditMode ? "Report updated successfully" : "Report created successfully",
           "success"
         );
-        onSuccess();
-      } else if (response.status === 8002 && response.data) {
+        if (typeof onSuccess === "function") {
+          onSuccess(response?.data ?? null);
+        }
+      } else if (apiStatus === 8002 && response.data) {
         Swal.fire({
           title: "Validation Error",
           html: formatValidationErrors(response.data),
@@ -535,7 +774,11 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
     </div>
   );
 
-  const renderStep2 = (values, errors, touched, setFieldValue) => (
+  const renderStep2 = (values, errors, touched, setFieldValue) => {
+    const periodList = getPeriodicOptions(values);
+    const multiPeriod = usesMultiPeriodSelection(values.report_type_uid);
+    const fStep = freqOf(values.report_type_uid);
+    return (
     <div className="step-content">
       <div className="text-center mb-4">
         <div className="avatar avatar-lg bg-label-info rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
@@ -577,33 +820,73 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
           <Col md={6}>
             <label className="form-label fw-medium">
               <i className="bx bx-calendar-event me-1 text-primary"></i>
-              {getSelectedReportType(values.report_type_uid)?.frequency === 'quarterly' ? 'Quarter' : 
-               getSelectedReportType(values.report_type_uid)?.frequency === 'biannual' ? 'Half Year' : 'Period'}
+              {freqOf(values.report_type_uid) === "quarterly"
+                ? "Quarter"
+                : freqOf(values.report_type_uid) === "biannual"
+                  ? "Half year"
+                  : freqOf(values.report_type_uid) === "monthly"
+                    ? "Month"
+                    : freqOf(values.report_type_uid) === "annual"
+                      ? "Annual period"
+                      : "Period"}
             </label>
-            {(!isEditMode && getSelectedReportType(values.report_type_uid)?.frequency === 'quarterly') ? (
-              <>
+            {multiPeriod ? (
+              <div className="d-flex flex-column gap-2">
                 <Select
                   isMulti
-                  options={(financialPeriods || []).map(p => ({
+                  options={periodList.map((p) => ({
                     value: p.uid,
                     label: `${p.display_name} (${p.start_date} - ${p.end_date})`,
                   }))}
-                  value={(financialPeriods || [])
-                    .filter(p => (values.financial_period_uids || []).includes(p.uid))
-                    .map(p => ({ value: p.uid, label: `${p.display_name} (${p.start_date} - ${p.end_date})` }))}
+                  value={periodList
+                    .filter((p) => (values.financial_period_uids || []).includes(p.uid))
+                    .map((p) => ({
+                      value: p.uid,
+                      label: `${p.display_name} (${p.start_date} - ${p.end_date})`,
+                    }))}
                   onChange={(selected) => {
-                    const selectedUids = (selected || []).map(o => o.value);
-                    setFieldValue('financial_period_uids', selectedUids);
+                    const selectedUids = (selected || []).map((o) => o.value);
+                    setFieldValue("financial_period_uids", selectedUids);
                   }}
                   classNamePrefix="react-select"
-                  placeholder="Select one or more quarters..."
+                  placeholder={
+                    fStep === "biannual"
+                      ? "Select one or more half-years (H1, H2)..."
+                      : "Select one or more quarters..."
+                  }
                   styles={{
                     menu: (base) => ({ ...base, zIndex: 99999 }),
                     control: (base) => ({ ...base, minHeight: "46px" }),
                   }}
                 />
-                <small className="text-muted">Select one or more quarters.</small>
-              </>
+                <div className="d-flex flex-wrap align-items-center gap-2 justify-content-start">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary flex-shrink-0"
+                    disabled={periodList.length === 0}
+                    onClick={() =>
+                      setFieldValue(
+                        "financial_period_uids",
+                        periodList.map((p) => p.uid)
+                      )
+                    }
+                  >
+                    {fStep === "biannual"
+                      ? "Select all (H1–H2)"
+                      : "Select all (Q1–Q4)"}
+                  </button>
+                  <small className="text-muted lh-sm mb-0 flex-grow-1" style={{ minWidth: "10rem" }}>
+                    {fStep === "biannual"
+                      ? "Choose H1, H2, or both below, or add both half-years at once."
+                      : "Choose Q1–Q4 below, or add every quarter at once."}
+                  </small>
+                </div>
+                <ErrorMessage
+                  name="financial_period_uids"
+                  component="div"
+                  className="text-danger small d-block"
+                />
+              </div>
             ) : (
               <>
                 <Field
@@ -612,16 +895,13 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
                   className={`form-select form-select-lg ${errors.financial_period_uid && touched.financial_period_uid ? 'is-invalid' : ''}`}
                 >
                   <option value="">Select period</option>
-                  {(financialPeriods || []).map(p => (
+                  {periodList.map((p) => (
                     <option key={p.uid} value={p.uid}>
                       {p.display_name} ({p.start_date} - {p.end_date})
                     </option>
                   ))}
                 </Field>
                 <ErrorMessage name="financial_period_uid" component="div" className="invalid-feedback" />
-                {!isEditMode && getSelectedReportType(values.report_type_uid)?.frequency === 'biannual' && (
-                  <small className="text-muted">Select only one half-year at a time.</small>
-                )}
               </>
             )}
           </Col>
@@ -631,22 +911,28 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
           {!isEditMode && isAutoDeadlineType(values.report_type_uid) ? (
             <>
               <label className="form-label fw-medium">Computed Submission Deadline</label>
-              {getSelectedReportType(values.report_type_uid)?.frequency === "quarterly" ? (
+              {multiPeriod ? (
                 <div className="alert alert-info mb-0">
                   <div className="fw-semibold mb-2">Deadlines will be computed automatically</div>
-                  {(financialPeriods || [])
+                  {periodList
                     .filter((p) => (values.financial_period_uids || []).includes(p.uid))
                     .map((p) => (
                       <div key={p.uid} className="small mb-1">
-                        <strong>{p.display_name}:</strong> {getComputedDeadline({
+                        <strong>{p.display_name}:</strong>{" "}
+                        {getComputedDeadline({
                           reportTypeUid: values.report_type_uid,
                           financialYearUid: values.financial_year_uid,
                           financialPeriodUid: p.uid,
+                          values,
                         }) || "Select period"}
                       </div>
                     ))}
                   {(!values.financial_period_uids || values.financial_period_uids.length === 0) && (
-                    <div className="small text-muted">Select one or more quarters to preview deadlines.</div>
+                    <div className="small text-muted">
+                      {fStep === "biannual"
+                        ? "Select one or more half-years to preview deadlines."
+                        : "Select one or more quarters to preview deadlines."}
+                    </div>
                   )}
                 </div>
               ) : (
@@ -656,6 +942,7 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
                       reportTypeUid: values.report_type_uid,
                       financialYearUid: values.financial_year_uid,
                       financialPeriodUid: values.financial_period_uid,
+                      values,
                     }) || "Select the required period/year to preview the deadline"}
                   </div>
                   <small className="text-muted">
@@ -720,7 +1007,8 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
         )}
       </Row>
     </div>
-  );
+    );
+  };
 
   const renderStep3 = (values, errors, touched, setFieldValue) => (
     <div className="step-content">
@@ -745,7 +1033,13 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
                   values.scope === option.value ? 'border-primary bg-label-primary' : 'border bg-light'
                 }`}
                 style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
-                onClick={() => setFieldValue('scope', option.value)}
+                onClick={() => {
+                  setFieldValue('scope', option.value);
+                  if (option.value === 'internal') {
+                    setFieldValue('stakeholder_uid', '');
+                    setFieldValue('other_stakeholder_name', '');
+                  }
+                }}
               >
                 <div className="d-flex align-items-center">
                   <Field
@@ -812,34 +1106,87 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
           </div>
         </Col>
 
-        {values.scope === 'external' && (
+        {values.scope === "external" && (
           <>
             <Col md={12}>
               <div className="alert alert-info mb-3">
                 <i className="bx bx-info-circle me-2"></i>
-                External reports require a stakeholder. Select from the list or enter a custom name.
+                Select the stakeholder this report is sent to. If they are not in the list, choose{" "}
+                <strong>Other</strong> and enter their name below.
               </div>
             </Col>
-            <Col md={6}>
-              <label className="form-label fw-medium">Select Stakeholder</label>
-              <Field as="select" name="stakeholder_uid" className="form-select form-select-lg">
-                <option value="">Select stakeholder</option>
-                {stakeholders.map(stakeholder => (
-                  <option key={stakeholder.uid} value={stakeholder.uid}>
-                    {stakeholder.name} ({stakeholder.organization_type_display || stakeholder.organization_type})
-                  </option>
-                ))}
+            {stakeholders.length === 0 && (
+              <Col md={12}>
+                <div className="alert alert-warning mb-0">
+                  <i className="bx bx-error-circle me-2"></i>
+                  No stakeholders are configured yet. Choose <strong>Other</strong> and enter the
+                  organization name (at least 2 characters) to register this external report.
+                </div>
+              </Col>
+            )}
+            <Col md={12}>
+              <label className="form-label fw-medium">
+                Select stakeholder <span className="text-danger">*</span>
+              </label>
+              <Field name="stakeholder_uid">
+                {({ field, form }) => (
+                  <select
+                    {...field}
+                    id={field.name}
+                    className={`form-select form-select-lg ${
+                      errors.stakeholder_uid && touched.stakeholder_uid ? "is-invalid" : ""
+                    }`}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      const v = e.target.value;
+                      if (v !== STAKEHOLDER_OTHER_VALUE) {
+                        form.setFieldValue("other_stakeholder_name", "");
+                      }
+                      form.setFieldTouched("stakeholder_uid", true, false);
+                      form.setFieldTouched("other_stakeholder_name", true, false);
+                      setTimeout(() => {
+                        form.validateField("stakeholder_uid");
+                        form.validateField("other_stakeholder_name");
+                      }, 0);
+                    }}
+                  >
+                    <option value="">Select stakeholder</option>
+                    {stakeholders.map((stakeholder) => (
+                      <option key={stakeholder.uid} value={String(stakeholder.uid)}>
+                        {stakeholder.name} ({stakeholder.organization_type_display || stakeholder.organization_type})
+                      </option>
+                    ))}
+                    <option value={STAKEHOLDER_OTHER_VALUE}>Other (enter name manually)</option>
+                  </select>
+                )}
               </Field>
-            </Col>
-            <Col md={6}>
-              <label className="form-label fw-medium">Or Enter Custom Stakeholder</label>
-              <Field
-                name="other_stakeholder_name"
-                type="text"
-                className="form-control form-control-lg"
-                placeholder="Enter stakeholder name if not in list"
+              <ErrorMessage
+                name="stakeholder_uid"
+                component="div"
+                className="invalid-feedback d-block"
               />
             </Col>
+            {values.stakeholder_uid === STAKEHOLDER_OTHER_VALUE && (
+              <Col md={12}>
+                <label className="form-label fw-medium">
+                  Enter custom stakeholder <span className="text-danger">*</span>
+                </label>
+                <Field
+                  name="other_stakeholder_name"
+                  type="text"
+                  className={`form-control form-control-lg ${
+                    errors.other_stakeholder_name && touched.other_stakeholder_name ? "is-invalid" : ""
+                  }`}
+                  placeholder='Enter stakeholder name if not in list'
+                  autoComplete="organization"
+                />
+                <ErrorMessage
+                  name="other_stakeholder_name"
+                  component="div"
+                  className="invalid-feedback d-block"
+                />
+              </Col>
+            )}
           </>
         )}
       </Row>
@@ -877,7 +1224,15 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
           }}
           enableReinitialize
         >
-          {({ values, setFieldValue, isSubmitting, errors, touched, setTouched }) => (
+          {({
+            values,
+            setFieldValue,
+            isSubmitting,
+            errors,
+            touched,
+            setTouched,
+            submitForm,
+          }) => (
             <Form
               onKeyDown={(e) => {
                 if (e.key === "Enter" && currentStep < totalSteps) {
@@ -892,7 +1247,13 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
             >
               <ModalBody style={{ minHeight: '450px' }}>
                 {renderStepIndicator(values, errors)}
-                
+                {currentStep === 2 && (
+                  <ReportPeriodSync
+                    financialYearUid={values.financial_year_uid}
+                    reportTypeUid={values.report_type_uid}
+                    syncFn={loadFinancialPeriods}
+                  />
+                )}
                 <div className="step-content-wrapper">
                   {currentStep === 1 && renderStep1(values, errors, touched, setFieldValue)}
                   {currentStep === 2 && renderStep2(values, errors, touched, setFieldValue)}
@@ -936,9 +1297,18 @@ const ReportModal = ({ show, onClose, onSuccess, report }) => {
                     </button>
                   ) : (
                     <button
-                      type="submit"
+                      type="button"
                       className="btn btn-success"
                       disabled={loading || isSubmitting}
+                      onClick={async () => {
+                        setTouched({
+                          ...touched,
+                          scope: true,
+                          stakeholder_uid: true,
+                          other_stakeholder_name: true,
+                        });
+                        await submitForm();
+                      }}
                     >
                       {loading ? (
                         <>

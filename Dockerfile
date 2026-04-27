@@ -1,5 +1,14 @@
+# Override bases in `.env` (DOCKER_NODE_IMAGE / DOCKER_NGINX_IMAGE) or pass --build-arg.
+# Defaults target AWS Public ECR (Docker Official Images mirror) so builds work when
+# registry-1.docker.io / auth.docker.io do not resolve. Use Hub explicitly if you prefer:
+#   DOCKER_NODE_IMAGE=node:18-alpine
+#   DOCKER_NGINX_IMAGE=nginx:alpine
+
+ARG NODE_IMAGE=public.ecr.aws/docker/library/node:18-alpine
+ARG NGINX_IMAGE=public.ecr.aws/docker/library/nginx:alpine
+
 # ---- Stage 1: Build the React app ----
-FROM node:18-alpine AS builder
+FROM ${NODE_IMAGE} AS builder
 
 WORKDIR /app
 
@@ -12,7 +21,7 @@ COPY . .
 RUN npm run build
 
 # ---- Stage 2: Serve with Nginx ----
-FROM nginx:alpine
+FROM ${NGINX_IMAGE}
 
 # Remove default nginx html
 RUN rm -rf /usr/share/nginx/html/*
@@ -27,4 +36,3 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
-

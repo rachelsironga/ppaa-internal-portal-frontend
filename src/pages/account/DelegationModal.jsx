@@ -3,7 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { AccountContext } from "../../utils/context";
 import { useSelector } from "react-redux";
-import { assignDelegatedUser, getUsers } from "./Queries";
+import { assignDelegatedUser } from "./Queries";
 import Select from "react-select";
 import showToast from "../../helpers/ToastHelper";
 import { userTypes } from "../../redux/types/authentication";
@@ -22,9 +22,6 @@ const DelegationModal = () => {
   const [errors, setOtherError] = useState({});
   const user = useSelector((state) => state.userReducer?.data);
 
-  const [loadingUser, setLoadingUser] = useState(false);
-  const [errorUser, setErrorUser] = useState(false);
-  const [users, setUsers] = useState([]);
   const dispatch = useDispatch();
 
   const initialValues = {
@@ -40,33 +37,6 @@ const DelegationModal = () => {
     const modalElement = document.getElementById("delegatedUserModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) modalInstance.hide();
-  };
-
-  const fetchUsers = async (searchValue = "") => {
-    setLoadingUser(true);
-    try {
-      const result = await getUsers({
-        search: searchValue,
-        pagination: {
-          page: 1,
-          page_size: 10,
-          paginated: true,
-          exception: {
-            user: "mimi",
-            age: "sfdfd",
-          },
-        },
-      });
-      if (result.status === 200 || result.status === 8000) {
-        setUsers(result.data);
-      } else {
-        setUsers([]);
-      }
-    } catch (err) {
-      setUsers([]);
-    } finally {
-      setLoadingUser(false);
-    }
   };
 
   const handleSubmit = async (
@@ -106,11 +76,6 @@ const DelegationModal = () => {
       setSubmitting(false);
     }
   };
-
-  // Fetch ApprovalRequests on initial load
-  useEffect(() => {
-    fetchUsers();
-  }, [loadDelagationModal]);
 
   return (
     <>

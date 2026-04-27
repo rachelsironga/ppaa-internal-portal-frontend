@@ -248,7 +248,7 @@ export const KpiActualsPage = () => {
           {/* Table */}
           {loadingTargets ? (
             <div className="d-flex justify-content-center py-5">
-              <ReactLoading type="spin" color="#696cff" height={36} width={36} />
+              <ReactLoading type="spin" color="#00853f" height={36} width={36} />
             </div>
           ) : targets.length === 0 ? (
             <div className="text-center py-5 text-muted">

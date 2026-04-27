@@ -7,7 +7,12 @@ import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { getDepartments, getCategories, createSuggestion, updateSuggestion } from "../../PPAA-MAONI/Queries";
+import {
+  getDepartments,
+  getCategories,
+  createSuggestion,
+  updateSuggestion,
+} from "../../PPAA-MAONI/Queries";
 
 const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -29,10 +34,14 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
   const fetchCategories = async () => {
     try {
       const result = await getCategories();
-      const cats = result?.data && Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
+      const cats = Array.isArray(result?.data) ? result.data : [];
       setCategories(cats);
+      if (cats.length === 0 && result?.message) {
+        console.warn("Maoni categories:", result.message);
+      }
     } catch (error) {
       console.error("Error fetching categories:", error);
+      setCategories([]);
     }
   };
 
@@ -128,7 +137,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
         `,
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#fff",
         confirmButtonText: "Submit Suggestion",
         cancelButtonText: "Review Again",
@@ -375,19 +384,39 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                           onChange={(e) => {
                             const categoryId = e.target.value;
                             const category = categories.find(
-                              (c) => String(c.id) === String(categoryId)
+                              (c) =>
+                                String(c.id ?? c.uid) === String(categoryId)
                             );
                             setSelectedCategory(category?.name || "");
                             setFieldValue("category", categoryId);
                           }}
                         >
                           <option value="">Select area of concern</option>
-                          {categories.map((category) => (
-                            <option key={category.id ?? category.uid} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
+                          {categories.map((category) => {
+                            const optVal =
+                              category.id != null
+                                ? String(category.id)
+                                : String(category.uid ?? "");
+                            return (
+                              <option
+                                key={category.uid ?? category.id}
+                                value={optVal}
+                              >
+                                {category.name}
+                              </option>
+                            );
+                          })}
                         </Field>
+                        {categories.length === 0 && (
+                          <small className="text-danger d-block mt-1">
+                            <i className="bx bx-error-circle me-1"></i>
+                            No categories available. Enable{" "}
+                            <code className="small">microservices.maoni</code>{" "}
+                            and run{" "}
+                            <code className="small">python manage.py migrate maoni</code>
+                            .
+                          </small>
+                        )}
                         <ErrorMessage
                           name="category"
                           component="div"

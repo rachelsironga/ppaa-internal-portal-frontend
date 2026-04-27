@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Select from "react-select";
-import { createUpdateAnnouncement, getAnnouncements } from "./Queries";
+import { createUpdateAnnouncement, getAnnouncements, downloadPortalAnnouncement } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 
 const AnnouncementModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefresh }) => {
@@ -11,6 +11,7 @@ const AnnouncementModal = ({ selectedObj, setSelectedObj, tableRefresh, setTable
   const [priorityChoices, setPriorityChoices] = useState([]);
   const [fileBase64, setFileBase64] = useState("");
   const [fileName, setFileName] = useState("");
+  const [currentFileDownloading, setCurrentFileDownloading] = useState(false);
 
   const initialValues = {
     title: selectedObj?.title || "",
@@ -301,16 +302,42 @@ const AnnouncementModal = ({ selectedObj, setSelectedObj, tableRefresh, setTable
                       {fileName && (
                         <small className="text-muted">Selected: {fileName}</small>
                       )}
-                      {selectedObj?.file_url && !fileBase64 && (
+                      {selectedObj?.file_key && !fileBase64 && (
                         <div className="mt-2">
-                          <a
-                            href={selectedObj.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
                             className="btn btn-sm btn-outline-primary"
+                            disabled={currentFileDownloading}
+                            onClick={async () => {
+                              if (!selectedObj?.uid) return;
+                              setCurrentFileDownloading(true);
+                              try {
+                                await downloadPortalAnnouncement(
+                                  selectedObj.uid,
+                                  selectedObj.original_filename || "attachment"
+                                );
+                              } catch {
+                                showToast(
+                                  "Download failed. Re-upload the file if needed.",
+                                  "danger",
+                                  "Download"
+                                );
+                              } finally {
+                                setCurrentFileDownloading(false);
+                              }
+                            }}
                           >
-                            <i className="bx bx-download me-1"></i> View Current File
-                          </a>
+                            {currentFileDownloading ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-1" role="status" />
+                                Loading…
+                              </>
+                            ) : (
+                              <>
+                                <i className="bx bx-download me-1"></i> View Current File
+                              </>
+                            )}
+                          </button>
                         </div>
                       )}
                     </div>

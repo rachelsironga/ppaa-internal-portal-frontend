@@ -14,7 +14,12 @@ import ReportTypeListPage from "../pages/services/REPORT-MANAGEMENT/setup/report
 
 const ReportsManagementEntryRedirect = () => {
   const roles = useSelector((state) => state.userReducer?.data?.groups || []);
-  const landingPath = roles.includes("RMS_REPORT_MANAGER")
+  const normalized = roles.map((r) => String(r).toLowerCase());
+  const institutionDash =
+    normalized.includes("rms_report_manager") ||
+    normalized.includes("rms_sys_admin") ||
+    normalized.includes("admin");
+  const landingPath = institutionDash
     ? "/report-management/dashboard/ed"
     : "/report-management/dashboard";
 
@@ -31,8 +36,8 @@ export const reportManagementRoutes = (
       path="/report-management/dashboard"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_report"]}
-          requiredRoles={["RMS_DEPT_REPORTER", "RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsreport"]}
+          requiredRoles={["RMS_DEPT_REPORTER", "RMS_SYS_ADMIN", "admin"]}
         >
           <Dashboard />
         </ProtectedRoute>
@@ -42,8 +47,8 @@ export const reportManagementRoutes = (
       path="/report-management/dashboard/ed"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_report", "view_institution_reports"]}
-          requiredRoles={["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsreport"]}
+          requiredRoles={["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "admin"]}
         >
           <EdDashboard />
         </ProtectedRoute>
@@ -53,8 +58,8 @@ export const reportManagementRoutes = (
       path="/report-management/reports"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_report"]}
-          requiredRoles={["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "RMS_DEPT_REPORTER"]}
+          requiredPermissions={["view_rmsreport"]}
+          requiredRoles={["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "RMS_DEPT_REPORTER", "admin"]}
         >
           <ReportsListPage />
         </ProtectedRoute>
@@ -64,8 +69,8 @@ export const reportManagementRoutes = (
       path="/report-management/reports/:uid"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_report"]}
-          requiredRoles={["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "RMS_DEPT_REPORTER"]}
+          requiredPermissions={["view_rmsreport"]}
+          requiredRoles={["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "RMS_DEPT_REPORTER", "admin"]}
         >
           <ReportDetailPage />
         </ProtectedRoute>
@@ -75,8 +80,8 @@ export const reportManagementRoutes = (
       path="/report-management/audit-trail"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_system_audit"]}
-          requiredRoles={["RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsreport"]}
+          requiredRoles={["RMS_SYS_ADMIN", "admin"]}
         >
           <AuditTrailPage />
         </ProtectedRoute>
@@ -86,8 +91,8 @@ export const reportManagementRoutes = (
       path="/report-management/setup/financial-years"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_financialyear"]}
-          requiredRoles={["RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsreport"]}
+          requiredRoles={["RMS_SYS_ADMIN", "admin"]}
         >
           <FinancialYearListPage />
         </ProtectedRoute>
@@ -97,8 +102,8 @@ export const reportManagementRoutes = (
       path="/report-management/setup/stakeholders"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_stakeholder"]}
-          requiredRoles={["RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsstakeholder"]}
+          requiredRoles={["RMS_SYS_ADMIN", "admin"]}
         >
           <StakeholderListPage />
         </ProtectedRoute>
@@ -108,8 +113,8 @@ export const reportManagementRoutes = (
       path="/report-management/setup/stakeholders/:uid"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_stakeholder"]}
-          requiredRoles={["RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsstakeholder"]}
+          requiredRoles={["RMS_SYS_ADMIN", "admin"]}
         >
           <StakeholderDetailPage />
         </ProtectedRoute>
@@ -119,8 +124,8 @@ export const reportManagementRoutes = (
       path="/report-management/setup/report-categories"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_reportcategory"]}
-          requiredRoles={["RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsreportcategory"]}
+          requiredRoles={["RMS_SYS_ADMIN", "admin"]}
         >
           <ReportCategoryListPage />
         </ProtectedRoute>
@@ -130,8 +135,8 @@ export const reportManagementRoutes = (
       path="/report-management/setup/report-types"
       element={
         <ProtectedRoute
-          requiredPermissions={["view_reporttype"]}
-          requiredRoles={["RMS_SYS_ADMIN"]}
+          requiredPermissions={["view_rmsreporttype"]}
+          requiredRoles={["RMS_SYS_ADMIN", "admin"]}
         >
           <ReportTypeListPage />
         </ProtectedRoute>

@@ -1,39 +1,18 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { createUpdateDepartment, getDirectories } from "./Queries";
+import { createUpdateDepartment } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import { DepartmentContext } from "./DepartmentsListPage";
 
 export const DepartmentModal = () => {
     const { selectedObj, setSelectedObj, setTableRefresh } = useContext(DepartmentContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [directories, setDirectories] = useState([]);
-    const [loadingDirectories, setLoadingDirectories] = useState(false);
-
-    useEffect(() => {
-        fetchDirectories();
-    }, []);
-
-    const fetchDirectories = async () => {
-        setLoadingDirectories(true);
-        try {
-            const result = await getDirectories({ pagination: { paginated: false } });
-            if (result.status === 200 || result.status === 8000) {
-                setDirectories(result.data || []);
-            }
-        } catch (error) {
-            console.error("Error fetching directories:", error);
-        } finally {
-            setLoadingDirectories(false);
-        }
-    };
 
     const initialValues = {
         uid: selectedObj?.uid || "",
         name: selectedObj?.name || "",
         code: selectedObj?.code || "",
-        directory_uid: selectedObj?.directory?.uid || selectedObj?.directory_uid || "",
         description: selectedObj?.description || "",
         is_active: selectedObj?.is_active ?? true,
     };
@@ -41,7 +20,6 @@ export const DepartmentModal = () => {
     const validationSchema = Yup.object().shape({
         name: Yup.string().required("Department name is required"),
         code: Yup.string().required("Department code is required"),
-        directory_uid: Yup.string().required("Directory is required"),
         description: Yup.string().nullable(),
     });
 
@@ -143,31 +121,6 @@ export const DepartmentModal = () => {
                                             />
                                             <ErrorMessage
                                                 name="code"
-                                                component="div"
-                                                className="text-danger small"
-                                            />
-                                        </div>
-
-                                        <div className="col-md-6 mb-3">
-                                            <label htmlFor="directory_uid" className="form-label">
-                                                Directory <span className="text-danger">*</span>
-                                            </label>
-                                            <Field
-                                                as="select"
-                                                name="directory_uid"
-                                                className="form-select"
-                                            >
-                                                <option value="">
-                                                    {loadingDirectories ? "Loading directories..." : "Select Directory"}
-                                                </option>
-                                                {directories.map((directory) => (
-                                                    <option key={directory.uid} value={directory.uid}>
-                                                        {directory.name} ({directory.code})
-                                                    </option>
-                                                ))}
-                                            </Field>
-                                            <ErrorMessage
-                                                name="directory_uid"
                                                 component="div"
                                                 className="text-danger small"
                                             />

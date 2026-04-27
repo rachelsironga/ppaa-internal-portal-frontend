@@ -6,7 +6,11 @@ import PaginatedTable from "../../../../../components/ui-templates/PaginatedTabl
 import StakeholderModal from "./StakeholderModal";
 import { deleteStakeholder, ORGANIZATION_TYPE_OPTIONS } from "../../Queries";
 import showToast from "../../../../../helpers/ToastHelper";
-import { hasAccess } from "../../../../../hooks/AccessHandler";
+import {
+  canAddStakeholder,
+  canChangeStakeholder,
+  canDeleteStakeholder,
+} from "../../../../../utils/rmsSetupPermissions";
 import Swal from "sweetalert2";
 
 const StakeholderListPage = () => {
@@ -114,7 +118,7 @@ const StakeholderListPage = () => {
           >
             <i className="bx bx-show"></i>
           </button>
-          {hasAccess(user, ['change_stakeholder']) && (
+          {canChangeStakeholder(user) && (
             <button
               className="btn btn-sm btn-outline-primary"
               onClick={(e) => {
@@ -126,7 +130,7 @@ const StakeholderListPage = () => {
               <i className="bx bx-edit"></i>
             </button>
           )}
-          {hasAccess(user, ['delete_stakeholder']) && (
+          {canDeleteStakeholder(user) && (
             <button
               className="btn btn-sm btn-outline-danger"
               onClick={(e) => {
@@ -151,7 +155,7 @@ const StakeholderListPage = () => {
     },
   ];
 
-  const addButton = hasAccess(user, ['add_stakeholder']) ? [
+  const addButton = canAddStakeholder(user) ? [
     {
       label: (<><i className="bx bx-plus me-1"></i>Add Stakeholder</>),
       className: "btn-primary",
@@ -160,7 +164,7 @@ const StakeholderListPage = () => {
   ] : [];
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Setup", "Stakeholders"]} />
 
       <PaginatedTable

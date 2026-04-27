@@ -81,7 +81,7 @@ export const PopupCardOpenPage = () => {
         <BreadCumb pageList={["Internal Portal", "Popup Card", "View"]} />
         <div className="card">
           <div className="card-body text-center py-5">
-            <ReactLoading type="cylon" color="#696cff" height={30} width={50} />
+            <ReactLoading type="cylon" color="#00853f" height={30} width={50} />
             <h6 className="text-muted mt-2">Loading popup card...</h6>
           </div>
         </div>

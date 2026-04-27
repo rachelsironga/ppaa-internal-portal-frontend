@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BreadCumb from "../../../../layouts/BreadCumb";
-import { getAnnouncements, deleteAnnouncement } from "./Queries";
+import { getAnnouncements, deleteAnnouncement, downloadPortalAnnouncement } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import { formatDate } from "../../../../helpers/DateFormater";
 import ReactLoading from "react-loading";
@@ -18,6 +18,7 @@ export const AnnouncementOpenPage = () => {
   const [loading, setLoading] = useState(false);
   const [tableRefresh, setTableRefresh] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [attachmentDownloading, setAttachmentDownloading] = useState(false);
 
   const handleFetchData = async () => {
     setLoading(true);
@@ -34,6 +35,25 @@ export const AnnouncementOpenPage = () => {
       showToast("Unable to fetch announcement details", "danger", "Failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadAttachment = async () => {
+    if (!selectedObj?.uid || !selectedObj?.file_key) return;
+    setAttachmentDownloading(true);
+    try {
+      await downloadPortalAnnouncement(
+        selectedObj.uid,
+        selectedObj.original_filename || "attachment"
+      );
+    } catch {
+      showToast(
+        "Download failed. Re-upload the attachment if the file is missing in storage.",
+        "danger",
+        "Download"
+      );
+    } finally {
+      setAttachmentDownloading(false);
     }
   };
 
@@ -91,7 +111,7 @@ export const AnnouncementOpenPage = () => {
         <div className="card">
           <div className="card-body">
             <center>
-              <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+              <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
               <h6 className="text-muted mt-2">Loading Announcement Details...</h6>
             </center>
           </div>
@@ -353,21 +373,30 @@ export const AnnouncementOpenPage = () => {
                       </span>
                     </td>
                   </tr>
-                  {selectedObj.file_url && (
+                  {selectedObj.file_key && (
                     <tr>
                       <td className="fw-medium">
                         <i className="bx bx-file me-2 text-primary"></i>
                         File:
                       </td>
                       <td>
-                        <a
-                          href={selectedObj.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
                           className="btn btn-sm btn-outline-primary"
+                          disabled={attachmentDownloading}
+                          onClick={handleDownloadAttachment}
                         >
-                          <i className="bx bx-download me-1"></i> Download File
-                        </a>
+                          {attachmentDownloading ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-1" role="status" />
+                              Downloading…
+                            </>
+                          ) : (
+                            <>
+                              <i className="bx bx-download me-1"></i> Download File
+                            </>
+                          )}
+                        </button>
                       </td>
                     </tr>
                   )}

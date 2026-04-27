@@ -15,12 +15,18 @@ import {
   createUpdateActivity,
   deleteActivity,
   activityApproval,
+  activityImplementationApproval,
   getPerformanceAuditLogs,
   postConversationComment,
   submitActivityImplementation,
 } from "./Queries";
+import {
+  formatActivityTitleForDisplay,
+  getPendingImplementationQuartersFromRow,
+} from "../implementationQuarterUtils";
 import { getKpiActuals } from "../Queries";
 import ActivityModal from "./Modal";
+import { ActivityPlanningContext } from "../ActivityPlanningContext";
 import showToast from "../../../../helpers/ToastHelper";
 import { formatDate } from "../../../../helpers/DateFormater";
 import ReactLoading from "react-loading";
@@ -39,6 +45,9 @@ const QUARTERS = [
   { value: 3, label: "Q3" },
   { value: 4, label: "Q4" },
 ];
+
+/** Activity open page: shorten long titles; full text available via native tooltip. */
+const OPEN_ACTIVITY_PAGE_TITLE_MAX = 120;
 
 /** Quarters available for implementation: only those selected when creating the activity (planned_quarters). */
 function getImplementationQuarterOptions(activity) {
@@ -87,8 +96,16 @@ export const ActivityOpenPage = () => {
   const [docEditQuarter, setDocEditQuarter] = useState(null);
   const [docEditFile, setDocEditFile] = useState(null);
   const [implementationSubmitting, setImplementationSubmitting] = useState(false);
+  const [implReviewLoading, setImplReviewLoading] = useState(false);
   const [kpiActualsForTarget, setKpiActualsForTarget] = useState([]);
-  const isImplementationLocked = !!obj?.implementation_submitted_at;
+
+  /** Whole-activity legacy submit (sets implementation_submitted_at) without per-quarter JSON keys. */
+  const hasPerQuarterImplementationState =
+    obj?.implementation_quarters_state &&
+    typeof obj.implementation_quarters_state === "object" &&
+    Object.keys(obj.implementation_quarters_state).some((k) => /^[1-4]$/.test(String(k)));
+  const isLegacyBulkImplementationLocked =
+    !!obj?.implementation_submitted_at && !hasPerQuarterImplementationState;
   // For DIRECT KPI targets, submissions are blocked until at least one KPI actual exists
   const directKpiBlocked =
     obj?.target_kpi_source_type === "DIRECT" && kpiActualsForTarget.length === 0;
@@ -108,14 +125,32 @@ export const ActivityOpenPage = () => {
     }
   };
 
-  /** True when this quarter's implementation has been submitted (row locked server-side). */
-  const isQImplementationLocked = (q) =>
-    q?.is_locked === true ||
-    String(q?.implementation_status || "").toUpperCase() === "SUBMITTED";
+  /** True when this quarter's implementation is submitted or approved (not editable / no re-submit). */
+  const isQImplementationLocked = (q) => {
+    if (q?.is_locked === true) return true;
+    const rowSt = String(q?.implementation_status || "").toUpperCase();
+    if (rowSt === "RETURNED") return false;
+    if (rowSt === "SUBMITTED" || rowSt === "PENDING" || rowSt === "APPROVED") return true;
+
+    const st = obj?.implementation_quarters_state;
+    if (!st || typeof st !== "object") return false;
+    const entry = st[String(q?.quarter)];
+    if (!entry || typeof entry !== "object") return false;
+    const s = String(entry.status || "").toUpperCase();
+    if (s === "RETURNED") return false;
+    return s === "PENDING" || s === "APPROVED" || s === "SUBMITTED";
+  };
+
+  const getQuarterImplementationEntry = (quarter) => {
+    const st = obj?.implementation_quarters_state;
+    if (!st || typeof st !== "object") return null;
+    const e = st[String(quarter)];
+    return e && typeof e === "object" ? e : null;
+  };
 
   /** Documents tagged to a submitted quarter cannot be edited or deleted. */
   const isDocLockedByQuarter = (doc) => {
-    if (isImplementationLocked) return true;
+    if (isLegacyBulkImplementationLocked) return true;
     if (doc.quarter == null || doc.quarter === "") return false;
     const row = quarterly.find(
       (r) =>
@@ -172,6 +207,20 @@ export const ActivityOpenPage = () => {
 
   // Implementation year is fixed from activity (derived from target/objective)
   const implementationYear = obj?.planned_financial_year || financialYear;
+
+  /** At least one supporting document linked to this quarter (and FY when known). */
+  const hasEvidenceForQuarter = (quarter, financialYear) => {
+    const q = Number(quarter);
+    const fy = (financialYear || implementationYear || "").trim();
+    if (!Array.isArray(documents) || documents.length === 0) return false;
+    return documents.some((doc) => {
+      if (doc.quarter == null || doc.quarter === "") return false;
+      if (Number(doc.quarter) !== q) return false;
+      const dfy = (doc.financial_year || "").trim();
+      if (!fy) return true;
+      return !dfy || dfy === fy;
+    });
+  };
 
   useEffect(() => {
     if (uid) {
@@ -571,11 +620,40 @@ export const ActivityOpenPage = () => {
           showCancelButton: true,
           confirmButtonText: "Go to KPI Actuals",
           cancelButtonText: "Cancel",
-          confirmButtonColor: "#696cff",
+          confirmButtonColor: "#00853f",
         });
         if (confirmed.isConfirmed) {
           navigate("/performance-dashboard/kpi-actuals");
         }
+        return;
+      }
+    }
+
+    if (quarter != null) {
+      const row = quarterly.find((r) => Number(r.quarter) === Number(quarter));
+      if (!row) return;
+      if (!hasEvidenceForQuarter(quarter, row.financial_year)) {
+        showToast(
+          "Upload at least one supporting document linked to this quarter before submitting.",
+          "warning",
+          "Validation"
+        );
+        return;
+      }
+    } else {
+      const groupable = quarterly.filter(
+        (q) => !isQImplementationLocked(q) && parseFloat(q.actual_value || 0) > 0
+      );
+      if (groupable.length === 0) return;
+      const missingEvidence = groupable.filter(
+        (q) => !hasEvidenceForQuarter(q.quarter, q.financial_year)
+      );
+      if (missingEvidence.length > 0) {
+        showToast(
+          `Upload supporting documents for ${missingEvidence.map((q) => `Q${q.quarter}`).join(", ")} before submitting.`,
+          "warning",
+          "Validation"
+        );
         return;
       }
     }
@@ -586,8 +664,8 @@ export const ActivityOpenPage = () => {
       if (result?.status === 200 || result?.status === 8000) {
         showToast(
           quarter != null
-            ? `Q${quarter} implementation submitted`
-            : "Implementation submitted successfully",
+            ? `Q${quarter} implementation submitted for Executive Secretariat approval.`
+            : "Implementation submitted for Executive Secretariat approval.",
           "success",
           "Done"
         );
@@ -602,6 +680,168 @@ export const ActivityOpenPage = () => {
       showToast("Failed to submit implementation", "danger", "Error");
     } finally {
       setImplementationSubmitting(false);
+    }
+  };
+
+  const handleImplementationReviewDecision = async (quarter, action) => {
+    if (!obj?.uid) return;
+    let comment = "";
+    if (action === "return") {
+      const c = await Swal.fire({
+        title:
+          quarter != null && quarter !== ""
+            ? `Return Q${quarter} implementation?`
+            : "Return implementation?",
+        input: "textarea",
+        inputLabel: "Comment (required)",
+        inputPlaceholder: "Explain what must be revised before resubmission…",
+        showCancelButton: true,
+        confirmButtonColor: "#ffab00",
+        confirmButtonText: "Return",
+        inputValidator: (v) => (!v || !String(v).trim() ? "Comment is required" : null),
+      });
+      if (!c.value) return;
+      comment = String(c.value).trim();
+    } else {
+      const ok = await Swal.fire({
+        title:
+          quarter != null && quarter !== ""
+            ? `Approve Q${quarter} implementation?`
+            : "Approve implementation?",
+        text: "This confirms the submitted quarterly implementation for the selected scope.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Approve",
+        confirmButtonColor: "#28a745",
+      });
+      if (!ok.isConfirmed) return;
+    }
+
+    setImplReviewLoading(true);
+    try {
+      const res = await activityImplementationApproval(obj.uid, {
+        action,
+        comment,
+        ...(quarter != null && quarter !== "" ? { quarter: Number(quarter) } : {}),
+      });
+      if (res?.status === 200 || res?.status === 8000) {
+        showToast(res?.message || (action === "approve" ? "Approved" : "Returned"), "success", "Done");
+        await loadActivity();
+        const fy = obj?.planned_financial_year || financialYear;
+        await loadQuarterly(fy);
+        loadDocuments();
+      } else {
+        showToast(res?.message || "Action failed", "warning", "Error");
+      }
+    } catch (e) {
+      showToast(e?.response?.data?.message || "Action failed", "danger", "Error");
+    } finally {
+      setImplReviewLoading(false);
+    }
+  };
+
+  const runImplementationBulkReview = async () => {
+    if (!obj?.uid) return;
+    const label = formatActivityTitleForDisplay(obj.title, 120);
+    const pending = getPendingImplementationQuartersFromRow(obj);
+
+    if (pending.length === 0) {
+      showToast("No quarters are awaiting implementation approval.", "info", "Queue");
+      await loadActivity();
+      return;
+    }
+
+    const sortedQ = [
+      ...new Set(pending.map((p) => p.quarter).filter((q) => q != null && q !== "")),
+    ].sort((a, b) => a - b);
+    const pendingLabel = pending.map((p) => (p.quarter != null ? `Q${p.quarter}` : p.label)).join(", ");
+
+    const pick = await Swal.fire({
+      title: "Implementation review",
+      html:
+        `<p class="text-start mb-2"><strong>${label}</strong></p>` +
+        `<p class="text-start small text-muted">Pending approval: <strong>${pendingLabel}</strong></p>` +
+        `<p class="text-start small">Choose <strong>Approve</strong> to accept implementation, or <strong>Return</strong> to send back for revision (you will add a comment).</p>`,
+      icon: "question",
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: "Approve…",
+      denyButtonText: "Return…",
+      confirmButtonColor: "#28a745",
+      denyButtonColor: "#ffab00",
+      cancelButtonColor: "#6c757d",
+    });
+
+    if (pick.isDismissed) return;
+    const isApprove = pick.isConfirmed;
+    const isReturn = pick.isDenied;
+
+    const scopeOpts = {
+      all: `All pending (${pendingLabel})`,
+    };
+    sortedQ.forEach((q) => {
+      scopeOpts[String(q)] = `Quarter Q${q} only`;
+    });
+
+    const { value: scope } = await Swal.fire({
+      title: isApprove ? "Approve which quarter(s)?" : "Return which quarter(s)?",
+      input: "select",
+      inputOptions: scopeOpts,
+      showCancelButton: true,
+      confirmButtonText: "Next",
+      inputValidator: (v) => (!v ? "Please select an option" : null),
+    });
+    if (!scope) return;
+
+    const quarterParam = scope === "all" ? null : parseInt(scope, 10);
+    const scopeText = scope === "all" ? `all pending (${pendingLabel})` : `Q${quarterParam} only`;
+
+    let comment = "";
+    if (isReturn) {
+      const c = await Swal.fire({
+        title: `Return ${scopeText}`,
+        input: "textarea",
+        inputLabel: "Comment (required)",
+        inputPlaceholder: "Explain what must be revised before resubmission…",
+        showCancelButton: true,
+        confirmButtonColor: "#ffab00",
+        confirmButtonText: "Return",
+        inputValidator: (v) => (!v || !String(v).trim() ? "Comment is required" : null),
+      });
+      if (!c.value) return;
+      comment = String(c.value).trim();
+    } else {
+      const ok = await Swal.fire({
+        title: `Approve ${scopeText}?`,
+        text: "This will lock in the approved implementation for the selected quarter(s).",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes, approve",
+        confirmButtonColor: "#28a745",
+      });
+      if (!ok.isConfirmed) return;
+    }
+
+    setImplReviewLoading(true);
+    try {
+      const res = await activityImplementationApproval(obj.uid, {
+        action: isApprove ? "approve" : "return",
+        comment,
+        quarter: quarterParam,
+      });
+      if (res?.status === 200 || res?.status === 8000) {
+        showToast(res?.message || (isApprove ? "Approved" : "Returned"), "success", "Done");
+        await loadActivity();
+        const fy = obj?.planned_financial_year || financialYear;
+        await loadQuarterly(fy);
+        loadDocuments();
+      } else {
+        showToast(res?.message || "Action failed", "warning", "Error");
+      }
+    } catch (e) {
+      showToast(e?.response?.data?.message || "Action failed", "danger", "Error");
+    } finally {
+      setImplReviewLoading(false);
     }
   };
 
@@ -621,6 +861,11 @@ export const ActivityOpenPage = () => {
   const canEditActivity = draftOrReturned && spismCan(user, "can_edit_spism_activity");
   const canDeleteActivity = draftOrReturned && spismCan(user, "can_delete_spism_activity");
   const canApprovePlanningAct = spismCan(user, "can_approve_spism_planning");
+  const canApproveImplementation = spismCan(
+    user,
+    "can_approve_spism_implementation",
+    "can_approve_spism_planning"
+  );
   const canQuarterlyWrite = spismCan(
     user,
     "can_add_spism_quarterly_data",
@@ -640,6 +885,30 @@ export const ActivityOpenPage = () => {
     "can_approve_spism_planning"
   );
 
+  const pendingImplementationQuarters = React.useMemo(
+    () => (obj ? getPendingImplementationQuartersFromRow(obj) : []),
+    [obj]
+  );
+
+  /** Quarter number for API, or `null` for bulk pending; `undefined` if this row has no ES review menu. */
+  const esReviewQuarterParamForRow = (q) => {
+    if (!canApproveImplementation || !obj || obj.status !== "APPROVED") {
+      return undefined;
+    }
+    const pending = pendingImplementationQuarters;
+    if (pending.length === 0) return undefined;
+    const qn = Number(q.quarter);
+    if (pending.some((p) => p.quarter === qn)) return qn;
+    if (
+      pending.length === 1 &&
+      pending[0].quarter == null &&
+      String(q.implementation_status || "").toUpperCase() === "SUBMITTED"
+    ) {
+      return null;
+    }
+    return undefined;
+  };
+
   const conversationLogs = React.useMemo(
     () =>
       Array.isArray(conversations)
@@ -654,6 +923,22 @@ export const ActivityOpenPage = () => {
     (isApprovalContext && obj?.status === "PENDING") ||
     conversationLogs.length > 0;
 
+  const activityOpenTitle = React.useMemo(() => {
+    const raw = obj?.title != null ? String(obj.title) : "";
+    const display = formatActivityTitleForDisplay(obj?.title, OPEN_ACTIVITY_PAGE_TITLE_MAX);
+    const looksLikeSavedError =
+      raw.trim().startsWith("{") &&
+      raw.includes('"status"') &&
+      raw.includes('"message"');
+    const hint =
+      looksLikeSavedError || raw.length > OPEN_ACTIVITY_PAGE_TITLE_MAX
+        ? raw.length > 500
+          ? `${raw.slice(0, 500)}…`
+          : raw || undefined
+        : undefined;
+    return { display, hint };
+  }, [obj?.title]);
+
   if (loading) {
     return (
       <>
@@ -661,7 +946,7 @@ export const ActivityOpenPage = () => {
         <div className="card">
           <div className="card-body">
             <center>
-              <ReactLoading type="cylon" color="#696cff" height={30} width={50} />
+              <ReactLoading type="cylon" color="#00853f" height={30} width={50} />
               <h6 className="text-muted mt-2">Loading Activity Details...</h6>
             </center>
           </div>
@@ -713,18 +998,56 @@ export const ActivityOpenPage = () => {
                   </div>
                 </div>
                 <div className="flex-grow-1">
-                  <h4 className="mb-1 fw-bold">{obj.title}</h4>
+                  <h4 className="mb-1 fw-bold text-break" title={activityOpenTitle.hint}>
+                    {activityOpenTitle.display}
+                  </h4>
                   <div className="d-flex gap-2 flex-wrap">
                     <span className={`badge ${STATUS_BADGE[obj.status] || "bg-label-secondary"}`}>
                       {obj.status}
                     </span>
                     {obj.weight != null && <span className="badge bg-label-warning">Weight {obj.weight}%</span>}
                   </div>
+                  <ActivityPlanningContext row={obj} variant="detail" />
+                  {obj.status === "RETURNED" && (
+                    <div
+                      className={`alert mt-3 mb-0 py-3 ${
+                        obj.approval_comment ? "alert-warning border-warning" : "alert-secondary border"
+                      }`}
+                      role="status"
+                    >
+                      <div className="d-flex align-items-start gap-2">
+                        <i className="bx bx-error-circle fs-4 text-danger flex-shrink-0 mt-1" aria-hidden="true" />
+                        <div>
+                          <strong className="d-block mb-1">Planning return — why this was sent back</strong>
+                          {obj.approval_comment ? (
+                            <p className="mb-0 text-body">{obj.approval_comment}</p>
+                          ) : (
+                            <p className="mb-0 text-muted small">
+                              No return comment is on file for this version. If this was returned before comments
+                              were stored, check the <strong>Conversations</strong> tab or contact the approver.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {obj?.target && spismCan(user, "can_view_spism_target") && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => navigate(`/performance-dashboard/targets/open/${obj.target}`)}
+                      >
+                        <i className="bx bx-link-external me-1" />
+                        Open parent target
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             <div className="col-md-4 d-flex flex-wrap gap-2 justify-content-end align-items-center">
-              {canEditActivity && !isImplementationLocked && (
+              {canEditActivity && !isLegacyBulkImplementationLocked && (
                 <button
                   type="button"
                   className="btn btn-sm btn-warning d-flex align-items-center gap-1"
@@ -744,7 +1067,7 @@ export const ActivityOpenPage = () => {
                   )}
                 </button>
               )}
-              {canEditActivity && !isImplementationLocked && (
+              {canEditActivity && !isLegacyBulkImplementationLocked && (
                 <button
                   type="button"
                   className="btn btn-primary btn-sm d-flex align-items-center gap-1"
@@ -754,7 +1077,7 @@ export const ActivityOpenPage = () => {
                   <span>Edit</span>
                 </button>
               )}
-              {canDeleteActivity && !isImplementationLocked && (
+              {canDeleteActivity && !isLegacyBulkImplementationLocked && (
                 <button
                   type="button"
                   className="btn btn-danger btn-sm d-flex align-items-center gap-1"
@@ -860,11 +1183,6 @@ export const ActivityOpenPage = () => {
         </div>
       </div>
 
-      {obj.status === "RETURNED" && obj.approval_comment && (
-        <div className="alert alert-warning mb-3">
-          <strong>Return comment:</strong> {obj.approval_comment}
-        </div>
-      )}
       {obj.status === "PENDING" && canApprovePlanningAct && (
         <div className="mb-3 d-flex justify-content-end gap-2">
           <button
@@ -1028,7 +1346,9 @@ export const ActivityOpenPage = () => {
                       <i className="bx bx-task me-2 text-primary"></i>
                       Title:
                     </td>
-                    <td><strong>{obj.title}</strong></td>
+                    <td className="text-break">
+                      <strong>{formatActivityTitleForDisplay(obj.title, false)}</strong>
+                    </td>
                   </tr>
                   <tr>
                     <td className="fw-medium">
@@ -1114,7 +1434,7 @@ export const ActivityOpenPage = () => {
       {obj.status === "APPROVED" && (
         <>
       {/* Implementation status / progress banner */}
-      {obj.implementation_submitted_at ? (
+      {isLegacyBulkImplementationLocked ? (
         <div className="alert alert-success mb-4 d-flex align-items-center gap-3 flex-wrap">
           <i className="bx bx-lock-alt fs-4 flex-shrink-0"></i>
           <div>
@@ -1140,6 +1460,16 @@ export const ActivityOpenPage = () => {
           )
           .map((s) => s.quarter);
 
+        const implStMap =
+          obj.implementation_quarters_state && typeof obj.implementation_quarters_state === "object"
+            ? obj.implementation_quarters_state
+            : {};
+        const implQuarterStatus = (qn) => {
+          const e = implStMap[String(qn)];
+          if (!e || typeof e !== "object") return "";
+          return String(e.status || "").toUpperCase();
+        };
+
         const filledQuarters = quarterly
           .filter((q) => parseFloat(q.actual_value || 0) > 0)
           .map((q) => q.quarter);
@@ -1152,23 +1482,68 @@ export const ActivityOpenPage = () => {
                 Implementation Progress
               </p>
               {plannedQs.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {plannedQs.map((q) => {
-                    const submitted = submittedQs.includes(q);
-                    const hasFilled = filledQuarters.includes(q);
-                    return (
-                      <span key={q}
-                        className={`badge px-3 py-2 ${submitted ? "bg-success" : hasFilled ? "bg-label-warning text-warning" : "bg-label-secondary text-muted"}`}
-                        style={{ fontSize: "0.8rem" }}>
-                        <i className={`bx ${submitted ? "bx-check-circle" : hasFilled ? "bx-time" : "bx-minus-circle"} me-1`}></i>
-                        Q{q} {submitted ? "Submitted" : hasFilled ? "Ready" : "No data"}
-                      </span>
-                    );
-                  })}
+                <div className="d-flex flex-wrap align-items-center gap-2 w-100">
+                  <div className="d-flex flex-wrap gap-2 me-auto">
+                    {plannedQs.map((q) => {
+                      const st = implQuarterStatus(q);
+                      const approved = st === "APPROVED";
+                      const inReview = st === "PENDING" || st === "SUBMITTED";
+                      const submitted = submittedQs.includes(q) || inReview || approved;
+                      const hasFilled = filledQuarters.includes(q);
+                      const badgeClass = approved
+                        ? "bg-label-success text-success"
+                        : submitted
+                          ? "bg-success"
+                          : hasFilled
+                            ? "bg-label-warning text-warning"
+                            : "bg-label-secondary text-muted";
+                      const label = approved
+                        ? "Approved"
+                        : submitted
+                          ? inReview
+                            ? "In review"
+                            : "Submitted"
+                          : hasFilled
+                            ? "Ready"
+                            : "No data";
+                      const icon = approved
+                        ? "bx-badge-check"
+                        : submitted
+                          ? "bx-check-circle"
+                          : hasFilled
+                            ? "bx-time"
+                            : "bx-minus-circle";
+                      return (
+                        <span key={q}
+                          className={`badge px-3 py-2 ${badgeClass}`}
+                          style={{ fontSize: "0.8rem" }}>
+                          <i className={`bx ${icon} me-1`}></i>
+                          Q{q} {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  {canApproveImplementation && pendingImplementationQuarters.length > 1 ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary flex-shrink-0"
+                      onClick={runImplementationBulkReview}
+                      disabled={implReviewLoading}
+                      title="Guided approve or return for multiple pending quarters"
+                    >
+                      {implReviewLoading ? (
+                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
+                      ) : (
+                        <i className="bx bx-list-check me-1"></i>
+                      )}
+                      Batch review…
+                    </button>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-muted small mb-0">
-                  Record quarterly data below, then use <strong>Submit Q{"{n}"}</strong> to submit each quarter.
+                  Record quarterly data and attach supporting documents for each quarter, then use{" "}
+                  <strong>Submit Q{"{n}"}</strong> to submit.
                 </p>
               )}
             </div>
@@ -1218,7 +1593,7 @@ export const ActivityOpenPage = () => {
           <div className="d-flex align-items-center gap-2 flex-wrap">
             <span className="text-muted small">Implementation year:</span>
             <strong className="text-body me-2">{implementationYear || "—"}</strong>
-            {!isImplementationLocked && implementationYear && canQuarterlyWrite && (
+            {!isLegacyBulkImplementationLocked && implementationYear && canQuarterlyWrite && (
               <>
                 <button
                   type="button"
@@ -1230,7 +1605,9 @@ export const ActivityOpenPage = () => {
                 {(() => {
                   const groupable = quarterly.filter(
                     (q) =>
-                      !isQImplementationLocked(q) && parseFloat(q.actual_value || 0) > 0
+                      !isQImplementationLocked(q) &&
+                      parseFloat(q.actual_value || 0) > 0 &&
+                      hasEvidenceForQuarter(q.quarter, q.financial_year)
                   );
                   const handleGroupSubmit = async () => {
                     if (groupable.length === 0) return;
@@ -1291,6 +1668,12 @@ export const ActivityOpenPage = () => {
                     const isSubmitting = implementationSubmitting === q.quarter;
                     const hasData = parseFloat(q.actual_value || 0) > 0;
                     const qLocked = isQImplementationLocked(q);
+                    const hasEvidence = hasEvidenceForQuarter(q.quarter, q.financial_year);
+                    const esReviewQ = esReviewQuarterParamForRow(q);
+                    const qImplEntry = getQuarterImplementationEntry(q.quarter);
+                    const qImplStatus = String(
+                      qImplEntry?.status || q?.implementation_status || ""
+                    ).toUpperCase();
                     return (
                       <tr key={q.uid}>
                         <td><span className="badge bg-label-primary">Q{q.quarter}</span></td>
@@ -1307,15 +1690,31 @@ export const ActivityOpenPage = () => {
                         </td>
                         <td>
                           {qLocked ? (
-                            <div className="d-flex flex-column gap-1">
-                              <span className="badge bg-success align-self-start">
-                                <i className="bx bx-check-circle me-1"></i>Submitted
-                              </span>
-                              <span className="small text-muted">
-                                <i className="bx bx-lock-alt me-1"></i>
-                                Locked — awaiting approval
-                              </span>
-                            </div>
+                            qImplStatus === "APPROVED" ? (
+                              <div className="d-flex flex-column gap-1">
+                                <span className="badge bg-label-success align-self-start">
+                                  <i className="bx bx-badge-check me-1"></i>Approved
+                                </span>
+                                <span className="small text-muted">
+                                  <i className="bx bx-info-circle me-1"></i>
+                                  Final for this quarter. Add data or submit other planned quarters as needed.
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="d-flex flex-column gap-1">
+                                <span className="badge bg-success align-self-start">
+                                  <i className="bx bx-check-circle me-1"></i>Submitted
+                                </span>
+                                <span className="small text-muted">
+                                  <i className="bx bx-lock-alt me-1"></i>
+                                  Locked — awaiting approval
+                                </span>
+                              </div>
+                            )
+                          ) : hasData && !hasEvidence ? (
+                            <span className="badge bg-label-secondary text-secondary">
+                              <i className="bx bx-file-find me-1"></i>Add evidence to submit
+                            </span>
                           ) : hasData ? (
                             <span className="badge bg-label-warning text-warning">
                               <i className="bx bx-time me-1"></i>Ready to submit
@@ -1329,32 +1728,81 @@ export const ActivityOpenPage = () => {
                         <td className="text-end">
                           <div className="d-flex gap-1 justify-content-end align-items-center">
                             {qLocked ? (
-                              <span className="small text-muted">
-                                <i className="bx bx-lock me-1"></i>No actions
-                              </span>
-                            ) : !isImplementationLocked && canQuarterlyWrite ? (
+                              esReviewQ !== undefined ? (
+                                <div className="dropdown d-inline-block">
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-icon btn-outline-secondary"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    aria-haspopup="true"
+                                    title="Approve or return this quarter’s implementation"
+                                    disabled={implReviewLoading}
+                                  >
+                                    <i className="bx bx-dots-vertical"></i>
+                                  </button>
+                                  <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li>
+                                      <button
+                                        type="button"
+                                        className="dropdown-item d-flex align-items-center text-success"
+                                        disabled={implReviewLoading}
+                                        onClick={() => handleImplementationReviewDecision(esReviewQ, "approve")}
+                                      >
+                                        <i className="bx bx-check me-2"></i>
+                                        {esReviewQ != null ? `Approve Q${esReviewQ}` : "Approve"}
+                                      </button>
+                                    </li>
+                                    <li>
+                                      <button
+                                        type="button"
+                                        className="dropdown-item d-flex align-items-center"
+                                        disabled={implReviewLoading}
+                                        onClick={() => handleImplementationReviewDecision(esReviewQ, "return")}
+                                      >
+                                        <i className="bx bx-undo me-2"></i>
+                                        Return with comment
+                                      </button>
+                                    </li>
+                                  </ul>
+                                </div>
+                              ) : (
+                                <span className="small text-muted">
+                                  <i className="bx bx-lock me-1"></i>No actions
+                                </span>
+                              )
+                            ) : !isLegacyBulkImplementationLocked && canQuarterlyWrite ? (
                               <>
                                 <button type="button" className="btn btn-sm btn-outline-secondary"
                                   onClick={() => setQuarterModal(q)} title="Edit actual data">
                                   <i className="bx bx-edit"></i>
                                 </button>
+                                {hasData && hasEvidence && !directKpiBlocked ? (
                                 <button type="button"
-                                  className={`btn btn-sm ${hasData && !directKpiBlocked ? "btn-success" : "btn-outline-secondary"}`}
-                                  onClick={() => hasData && !directKpiBlocked && handleSubmitImplementation(q.quarter)}
-                                  disabled={!hasData || directKpiBlocked || implementationSubmitting !== false}
-                                  title={
-                                    directKpiBlocked
-                                      ? "Record a KPI actual value before submitting"
-                                      : hasData
-                                        ? `Submit Q${q.quarter}`
-                                        : "Fill in actual value before submitting"
-                                  }>
+                                  className="btn btn-sm btn-success"
+                                  onClick={() => handleSubmitImplementation(q.quarter)}
+                                  disabled={implementationSubmitting !== false}
+                                  title={`Submit Q${q.quarter}`}>
                                   {isSubmitting
                                     ? <span className="spinner-border spinner-border-sm" />
                                     : <><i className="bx bx-send me-1"></i>Submit Q{q.quarter}</>}
                                 </button>
+                                ) : hasData && !hasEvidence && !directKpiBlocked ? (
+                                  <span className="small text-muted text-end" style={{ maxWidth: "160px" }}>
+                                    Upload a document linked to Q{q.quarter} below to submit.
+                                  </span>
+                                ) : directKpiBlocked && hasData ? (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-secondary"
+                                    disabled
+                                    title="Record a KPI actual value before submitting"
+                                  >
+                                    <i className="bx bx-send me-1"></i>Submit Q{q.quarter}
+                                  </button>
+                                ) : null}
                               </>
-                            ) : !isImplementationLocked ? (
+                            ) : !isLegacyBulkImplementationLocked ? (
                               <span className="small text-muted">No permission to edit quarterly data</span>
                             ) : null}
                           </div>
@@ -1376,7 +1824,7 @@ export const ActivityOpenPage = () => {
             <i className="bx bx-file me-2 text-primary"></i>
             Supporting Documents
           </h5>
-          {!isImplementationLocked && canAddDoc && (
+          {!isLegacyBulkImplementationLocked && canAddDoc && (
             <button
               type="button"
               className="btn btn-sm btn-primary"
@@ -1455,7 +1903,7 @@ export const ActivityOpenPage = () => {
                           >
                             <i className="bx bx-download"></i>
                           </button>
-                          {!isImplementationLocked && !isDocLockedByQuarter(doc) && (
+                          {!isLegacyBulkImplementationLocked && !isDocLockedByQuarter(doc) && (
                             <>
                               {canEditDoc && (
                               <button

@@ -48,7 +48,7 @@ export const AssetImportModal = ({ loadOnlyModal = false }) => {
         `,
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Yes, Import",
         cancelButtonText: "Cancel",

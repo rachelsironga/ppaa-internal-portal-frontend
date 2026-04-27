@@ -6,6 +6,9 @@ import { UsersContext } from "../../../../utils/context";
 import DualListSelect from "../../../../components/ui-templates/DualListSelect";
 import { createUpdateData, fetchData } from "../../../../utils/GlobalQueries";
 
+/** User API returns groups via get_groups() as lowercase names; Group API uses DB casing. */
+const normGroupName = (name) => String(name ?? "").trim().toLowerCase();
+
 const UserPermissionModal = () => {
   const { selectedObj, setSelectedObj, setTableRefresh, tableRefresh } =
     useContext(UsersContext);
@@ -131,35 +134,31 @@ const UserPermissionModal = () => {
         url: "/system/system-groups",
         filter: {
           page: 1,
-          page_size: 50,
+          page_size: 500,
           paginated: true,
           search: searchValue,
         },
       });
       if (result.status === 200 || result.status === 8000) {
         const formattedOptions = (result.data || []).map((group) => ({
-          value: group.id,
+          value: Number(group.uid),
           label: `${group.name}`,
         }));
 
-        // Filter out groups that are already assigned
-        // We need to check both rightOptions and selectedObj.groups
-        const assignedGroupNames = selectedObj?.groups || [];
-        const assignedFromRightOptions = rightOptions.map((g) => g.value);
-        const unassignedGroups = formattedOptions.filter((group) => {
-          // Exclude if it's in rightOptions
-          if (assignedFromRightOptions.includes(group.value)) return false;
-          // Exclude if it's in selectedObj.groups (user's current groups)
-          if (assignedGroupNames.includes(group.label)) return false;
-          return true;
-        });
-        
+        // Only treat current right-hand selection as assigned (not stale selectedObj.groups)
+        const assignedIds = new Set(rightOptions.map((g) => g.value));
+        const unassignedGroups = formattedOptions.filter(
+          (group) => !assignedIds.has(group.value)
+        );
+
         setLeftOptions(unassignedGroups);
-      } else {
-        setLeftOptions([]);
+        return unassignedGroups;
       }
+      setLeftOptions([]);
+      return [];
     } catch (err) {
       setLeftOptions([]);
+      return [];
     }
   };
 
@@ -191,23 +190,23 @@ const UserPermissionModal = () => {
             url: "/system/system-groups",
             filter: {
               page: 1,
-              page_size: 50,
+              page_size: 500,
               paginated: true,
               search: "",
             },
           });
           if (result.status === 200 || result.status === 8000) {
             const allGroups = (result.data || []).map((group) => ({
-              value: group.id,
+              value: Number(group.uid),
               label: `${group.name}`,
             }));
 
-            // Match user's groups (which are strings) with all groups to get the full objects
-            // Use the latest selectedObj.groups to ensure we have the most recent data
-            // This will reflect any changes made after saving
-            const userGroupNames = selectedObj?.groups || [];
+            // Match user's groups (lowercase from UserSerializer.get_groups) to Group.name (any casing)
+            const userGroupNamesLower = new Set(
+              (selectedObj?.groups || []).map(normGroupName)
+            );
             const matchedGroups = allGroups.filter((group) =>
-              userGroupNames.includes(group.label)
+              userGroupNamesLower.has(normGroupName(group.label))
             );
             
             // Update rightOptions with matched groups - this ensures removed roles are not shown
@@ -231,7 +230,8 @@ const UserPermissionModal = () => {
       setRightOptions([]);
       setLeftOptions([]);
     }
-  }, [isModalOpen, selectedObj, tableRefresh]);
+    // Use guid (not selectedObj identity) so parent re-renders don't reset the dual list mid-edit
+  }, [isModalOpen, selectedObj?.guid, tableRefresh]);
 
   return (
     <>

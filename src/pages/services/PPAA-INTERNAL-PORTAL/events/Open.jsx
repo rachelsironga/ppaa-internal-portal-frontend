@@ -9,6 +9,7 @@ import ReactLoading from "react-loading";
 import EventModal from "./Modal";
 import Swal from "sweetalert2";
 import { hasAccess } from "../../../../hooks/AccessHandler";
+import { getEventTypeBadge } from "./eventDisplay";
 
 export const EventOpenPage = () => {
   const { uid } = useParams();
@@ -74,17 +75,6 @@ export const EventOpenPage = () => {
     handleFetchData();
   }, [uid, tableRefresh]);
 
-  const getEventTypeBadge = (eventType) => {
-    const typeConfig = {
-      'MEETING': { class: 'bg-primary', label: 'Meeting' },
-      'TRAINING': { class: 'bg-info', label: 'Training' },
-      'WORKSHOP': { class: 'bg-success', label: 'Workshop' },
-      'HOLIDAY': { class: 'bg-warning', label: 'Holiday' },
-      'OTHER': { class: 'bg-secondary', label: 'Other' }
-    };
-    return typeConfig[eventType] || { class: 'bg-secondary', label: eventType || 'Unknown' };
-  };
-
   if (loading) {
     return (
       <>
@@ -92,7 +82,7 @@ export const EventOpenPage = () => {
         <div className="card">
           <div className="card-body">
             <center>
-              <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+              <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
               <h6 className="text-muted mt-2">Loading Event Details...</h6>
             </center>
           </div>

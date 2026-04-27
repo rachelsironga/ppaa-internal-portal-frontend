@@ -28,6 +28,21 @@ const getCurrentFinancialYear = () => {
 const CURRENT_FINANCIAL_YEAR = getCurrentFinancialYear();
 const PAGE_SIZE = 10;
 
+/** Bulk submit sets `implementation_submitted_at`; per-quarter submit sets PENDING in `implementation_quarters_state`. */
+function pendingImplementationCount(row) {
+  return Number(row.pending_implementation_approval_count ?? row.pendingImplementationApprovalCount ?? 0);
+}
+
+function implementationSubmittedForEsReview(row) {
+  return Boolean(row.implementation_submitted_at) || pendingImplementationCount(row) > 0;
+}
+
+/** Bulk "Submit implementation" on this list (no quarter): only when no quarter has already been sent for ES review. */
+function canBulkSubmitImplementationFromList(row) {
+  if (row.implementation_submitted_at) return false;
+  return pendingImplementationCount(row) === 0;
+}
+
 const TAB_SUBMIT = "submit";
 const TAB_KPI = "kpi";
 
@@ -56,6 +71,14 @@ export const ImplementationPage = () => {
   const [submittingId, setSubmittingId] = useState(null);
   const [page, setPage] = useState(1);
   const [kpiPage, setKpiPage] = useState(1);
+
+  useEffect(() => {
+    const fyQ = (searchParams.get("financial_year") || "").trim();
+    const sq = (searchParams.get("search") || "").trim();
+    if (fyQ) setFinancialYear(fyQ);
+    if (sq) setActivitySearch(sq);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadFinancialYears = async () => {
     setLoadingFY(true);
@@ -134,13 +157,13 @@ export const ImplementationPage = () => {
       );
       if (!matchesSearch) return false;
     }
-    const submitted = Boolean(row.implementation_submitted_at);
-    if (submissionFilter === "pending" && submitted) return false;
-    if (submissionFilter === "submitted" && !submitted) return false;
+    const inReview = implementationSubmittedForEsReview(row);
+    if (submissionFilter === "pending" && inReview) return false;
+    if (submissionFilter === "submitted" && !inReview) return false;
     return true;
   });
 
-  const submittedCount = implementationList.filter((r) => r.implementation_submitted_at).length;
+  const submittedCount = implementationList.filter(implementationSubmittedForEsReview).length;
   const pendingCount = implementationList.length - submittedCount;
 
   const totalActivities = filteredImplementationList.length;
@@ -168,7 +191,7 @@ export const ImplementationPage = () => {
     try {
       const result = await submitActivityImplementation(activityUid);
       if (result?.status === 200 || result?.status === 8000) {
-        showToast("Implementation submitted successfully", "success", "Done");
+        showToast("Implementation submitted for Executive Secretariat approval.", "success", "Done");
         loadImplementationActivities();
       } else {
         showToast(result?.message || "Submit failed", "warning", "Error");
@@ -192,7 +215,7 @@ export const ImplementationPage = () => {
         </div>
         <div className="card-body">
           <p className="text-muted small mb-3">
-            Choose the <strong>financial year</strong> to list approved activities for that implementation year (matches each activity&apos;s planned year). Use <strong>Submission</strong> to show only pending or fully submitted rows. Open an activity to submit quarter-by-quarter from the activity detail page.
+            Choose the <strong>financial year</strong> to list approved activities for that implementation year (matches each activity&apos;s planned year). Submit for ES approval either here (whole activity) or on the activity page (per quarter)—both update the same approval queue. Use <strong>Submission</strong> to filter by whether implementation has been sent for review.
           </p>
           <Nav tabs className="mb-3">
             <NavItem>
@@ -248,8 +271,8 @@ export const ImplementationPage = () => {
                     onChange={(e) => setSubmissionFilter(e.target.value)}
                   >
                     <option value="all">All</option>
-                    <option value="pending">Pending submission</option>
-                    <option value="submitted">Fully submitted</option>
+                    <option value="pending">Not yet sent for approval</option>
+                    <option value="submitted">Sent for approval</option>
                   </select>
                 </div>
                 <div className="col-sm">
@@ -288,14 +311,14 @@ export const ImplementationPage = () => {
                 </span>
                 <span className="text-muted">·</span>
                 <span>
-                  In this list: <span className="text-success">{submittedCount} submitted</span>
+                  In this list: <span className="text-success">{submittedCount} sent for approval</span>
                   {", "}
-                  <span className="text-warning">{pendingCount} pending</span>
+                  <span className="text-warning">{pendingCount} not yet sent</span>
                 </span>
               </div>
               {loadingList ? (
                 <div className="text-center py-4">
-                  <ReactLoading type="cylon" color="#696cff" height={36} width={60} />
+                  <ReactLoading type="cylon" color="#00853f" height={36} width={60} />
                   <p className="text-muted small mt-2 mb-0">Loading approved activities...</p>
                 </div>
               ) : filteredImplementationList.length === 0 ? (
@@ -311,13 +334,14 @@ export const ImplementationPage = () => {
                         <th>Target / Objective</th>
                         <th>Quarterly data</th>
                         <th>Documents</th>
-                        <th>Submitted</th>
+                        <th>Implementation review</th>
                         <th className="text-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {pagedImplementationList.map((row) => {
                         const canSubmit = row.quarterly_data_count > 0 || row.documents_count > 0;
+                        const pendingImpl = pendingImplementationCount(row);
                         return (
                         <tr key={row.uid}>
                           <td>
@@ -357,14 +381,24 @@ export const ImplementationPage = () => {
                               <div className="d-flex flex-column gap-1">
                                 <span className="badge bg-success align-self-start">
                                   <i className="bx bx-check-double me-1" />
-                                  Submitted
+                                  Sent for approval
                                 </span>
                                 <small className="text-success">
                                   {formatDate(row.implementation_submitted_at, "DD/MM/YYYY HH:mm")}
                                 </small>
                               </div>
+                            ) : pendingImpl > 0 ? (
+                              <div className="d-flex flex-column gap-1">
+                                <span className="badge bg-label-warning text-warning align-self-start">
+                                  <i className="bx bx-time-five me-1" />
+                                  Awaiting ES approval
+                                </span>
+                                <small className="text-muted">
+                                  {pendingImpl} quarter{pendingImpl === 1 ? "" : "s"} pending review
+                                </small>
+                              </div>
                             ) : (
-                              <span className="badge bg-label-warning text-warning">Pending</span>
+                              <span className="badge bg-label-secondary text-muted">Not sent</span>
                             )}
                           </td>
                           <td className="text-end">
@@ -376,12 +410,13 @@ export const ImplementationPage = () => {
                               >
                                 Open
                               </button>
-                              {!row.implementation_submitted_at && canSubmitImplementationHere && (
+                              {canBulkSubmitImplementationFromList(row) && canSubmitImplementationHere && (
                                 <button
                                   type="button"
                                   className="btn btn-primary"
                                   onClick={() => handleSubmitImplementation(row.uid)}
                                   disabled={submittingId === row.uid || !canSubmit}
+                                  title="Submit whole activity for ES approval (use Open if you submit by quarter)"
                                 >
                                   {submittingId === row.uid ? (
                                     <>
@@ -472,7 +507,7 @@ export const ImplementationPage = () => {
               </div>
               {loadingKpiTargets ? (
                 <div className="text-center py-4">
-                  <ReactLoading type="cylon" color="#696cff" height={36} width={60} />
+                  <ReactLoading type="cylon" color="#00853f" height={36} width={60} />
                   <p className="text-muted small mt-2 mb-0">Loading approved targets...</p>
                 </div>
               ) : kpiTargetsList.length === 0 ? (

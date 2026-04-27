@@ -6,5 +6,5 @@ import { hasPermission } from "./permissions";
  */
 export function spismCan(user, ...codenames) {
   if (!codenames.length) return true;
-  return hasPermission(codenames, [], user?.user_permissions, user?.groups);
+  return hasPermission(codenames, [], user?.user_permissions, user?.groups, user);
 }

@@ -235,7 +235,7 @@ const TargetModal = ({
                     top: "19px",
                     height: "2px",
                     width: `${(step / 2) * 100}%`,
-                    background: "#696cff",
+                    background: "#00853f",
                     zIndex: 0,
                   }}
                 />
@@ -260,7 +260,7 @@ const TargetModal = ({
                             style={{
                               width: "38px",
                               height: "38px",
-                              border: `2px solid ${isActive || isDone ? "#696cff" : "#e5e7eb"}`,
+                              border: `2px solid ${isActive || isDone ? "#00853f" : "#e5e7eb"}`,
                               boxShadow: isActive ? "0 6px 18px rgba(105,108,255,0.25)" : "none",
                             }}
                           >
@@ -280,7 +280,6 @@ const TargetModal = ({
                   })}
                 </div>
               </div>
-              <small className="text-muted">Step {step + 1} of 3</small>
             </div>
           </div>
           <Formik
@@ -295,17 +294,6 @@ const TargetModal = ({
                   {step === 0 && (
                     <div className="card shadow-sm border-0">
                       <div className="card-body p-3 p-md-4">
-                        <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                          <span className="avatar avatar-sm">
-                            <span className="avatar-initial rounded bg-label-primary">
-                              <i className="bx bx-target-lock"></i>
-                            </span>
-                          </span>
-                          <div>
-                            <h6 className="mb-0 fw-semibold">Target registration</h6>
-                            <small className="text-muted">Enter target details and weight.</small>
-                          </div>
-                        </div>
                         <div className="row g-3">
                           {!isPreselected && (
                             <div className="col-12">
@@ -388,18 +376,6 @@ const TargetModal = ({
                   {step === 1 && (
                     <div className="card shadow-sm border-0">
                       <div className="card-body p-3 p-md-4">
-                        <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                          <span className="avatar avatar-sm">
-                            <span className="avatar-initial rounded bg-label-info">
-                              <i className="bx bx-line-chart"></i>
-                            </span>
-                          </span>
-                          <div>
-                            <h6 className="mb-0 fw-semibold">KPI (optional)</h6>
-                            <small className="text-muted">Choose how planners measure KPI progress for this target.</small>
-                          </div>
-                        </div>
-
                         <div className="row g-3">
                           <div className="col-12">
                             <label className="form-label">KPI mode</label>
@@ -549,17 +525,6 @@ const TargetModal = ({
                   {step === 2 && (
                     <div className="card shadow-sm border-0">
                       <div className="card-body p-3 p-md-4">
-                        <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                          <span className="avatar avatar-sm">
-                            <span className="avatar-initial rounded bg-label-success">
-                              <i className="bx bx-user-check"></i>
-                            </span>
-                          </span>
-                          <div>
-                            <h6 className="mb-0 fw-semibold">Assign responsible officer</h6>
-                            <small className="text-muted">Only the assigned officer will see this target and add activities.</small>
-                          </div>
-                        </div>
                         <div className="mb-3">
                           <label className="form-label">Responsible Head (SPISM Performance Officer) *</label>
                           <Field as="select" name="responsible_officer_id" className="form-select" disabled={officersLoading}>

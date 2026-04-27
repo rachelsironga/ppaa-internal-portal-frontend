@@ -132,7 +132,7 @@ const LoginPage = ({ isLoading, success, error, status, state, login, authUser }
               aria-label="Go back to Portal"
               to="/"
               className="text-decoration-none"
-              style={{ color: "#667eea", fontWeight: "500" }}
+              style={{ color: "#00853f", fontWeight: "500" }}
             >
               <i className="bx bx-arrow-back me-1"></i>
               Back to Portal

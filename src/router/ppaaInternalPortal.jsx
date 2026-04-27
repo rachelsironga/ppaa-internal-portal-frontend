@@ -22,6 +22,7 @@ import { QuickLinkPage } from "../pages/services/PPAA-INTERNAL-PORTAL/quick_link
 import { QuickLinkOpenPage } from "../pages/services/PPAA-INTERNAL-PORTAL/quick_links/Open.jsx";
 import { PopupCardPage } from "../pages/services/PPAA-INTERNAL-PORTAL/popup_cards/View.jsx";
 import { PopupCardOpenPage } from "../pages/services/PPAA-INTERNAL-PORTAL/popup_cards/Open.jsx";
+import { PrFlyerPage } from "../pages/services/PPAA-INTERNAL-PORTAL/pr_flyers/View.jsx";
 
 export const ppaaInternalPortalRoutes = (
   <>
@@ -36,7 +37,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_department",
             "can_edit_department",
           ]}
-          requiredRoles={["admin"]}
+          requiredRoles={["admin", "content_editor", "ICT"]}
         >
           <DepartmentPage />
         </ProtectedRoute>
@@ -51,7 +52,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_department",
             "can_edit_department",
           ]}
-          requiredRoles={["admin"]}
+          requiredRoles={["admin", "content_editor", "ICT"]}
         >
           <DepartmentOpenPage />
         </ProtectedRoute>
@@ -96,7 +97,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_event",
             "can_edit_event",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <EventPage />
         </ProtectedRoute>
@@ -111,7 +112,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_event",
             "can_edit_event",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <EventOpenPage />
         </ProtectedRoute>
@@ -127,7 +128,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_document",
             "can_edit_document",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <DocumentCategoryPage />
         </ProtectedRoute>
@@ -143,7 +144,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_department",
             "can_edit_department",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <PositionalLevelPage />
         </ProtectedRoute>
@@ -158,7 +159,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_department",
             "can_edit_department",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <PositionalLevelOpenPage />
         </ProtectedRoute>
@@ -197,7 +198,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_faq",
             "can_edit_faq",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <FAQPage />
         </ProtectedRoute>
@@ -212,7 +213,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_faq",
             "can_edit_faq",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <FAQOpenPage />
         </ProtectedRoute>
@@ -228,7 +229,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_announcement",
             "can_edit_announcement",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <AnnouncementPage />
         </ProtectedRoute>
@@ -243,7 +244,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_announcement",
             "can_edit_announcement",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <AnnouncementOpenPage />
         </ProtectedRoute>
@@ -259,7 +260,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_todo",
             "can_edit_todo",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <TodoPage />
         </ProtectedRoute>
@@ -274,7 +275,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_todo",
             "can_edit_todo",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <TodoOpenPage />
         </ProtectedRoute>
@@ -290,7 +291,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_quick_link",
             "can_edit_quick_link",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <QuickLinkPage />
         </ProtectedRoute>
@@ -305,7 +306,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_quick_link",
             "can_edit_quick_link",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <QuickLinkOpenPage />
         </ProtectedRoute>
@@ -321,7 +322,7 @@ export const ppaaInternalPortalRoutes = (
             "can_add_popup_card",
             "can_edit_popup_card",
           ]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <PopupCardPage />
         </ProtectedRoute>
@@ -332,9 +333,32 @@ export const ppaaInternalPortalRoutes = (
       element={
         <ProtectedRoute
           requiredPermissions={["can_view_popup_card"]}
-          requiredRoles={["admin", "HR", "ICT"]}
+          requiredRoles={["admin", "ICT", "content_editor"]}
         >
           <PopupCardOpenPage />
+        </ProtectedRoute>
+      }
+    />
+
+    <Route
+      path="/ppaa-internal-portal/pr-flyers"
+      element={
+        <ProtectedRoute
+          requiredPermissions={[
+            "can_view_pr_flyer",
+            "can_add_pr_flyer",
+            "can_edit_pr_flyer",
+            "can_delete_pr_flyer",
+          ]}
+          requiredRoles={[
+            "admin",
+            "ICT",
+            "content_editor",
+            "staff",
+            "PR_Gallery_Manager",
+          ]}
+        >
+          <PrFlyerPage />
         </ProtectedRoute>
       }
     />

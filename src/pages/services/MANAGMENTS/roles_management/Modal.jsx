@@ -60,10 +60,6 @@ const SystemRoleModal = () => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (selectedObj) {
-        values.id = selectedObj.id;
-      }
-
       // Map to IDs (assuming your backend expects a list of permission IDs)
       values.permissions = rightOptions.map((item) => item.value);
       const payload = {
@@ -82,7 +78,7 @@ const SystemRoleModal = () => {
 
       const result = await createUpdateData({
         url: "/system/roles",
-        uid: selectedObj?.id || "",
+        uid: selectedObj?.uid || "",
         formData: payload,
       });
 
@@ -127,7 +123,7 @@ const SystemRoleModal = () => {
           page_size: 50,
           paginated: true,
           search: searchValue,
-          selected_role: selectedObj?.id || "",
+          selected_role: selectedObj?.uid || "",
         },
       });
       if (result.status === 200 || result.status === 8000) {

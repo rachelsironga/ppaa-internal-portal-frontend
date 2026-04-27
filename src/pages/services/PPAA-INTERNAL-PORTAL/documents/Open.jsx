@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BreadCumb from "../../../../layouts/BreadCumb";
-import { getDocuments, deleteDocument } from "./Queries";
+import { getDocuments, deleteDocument, downloadPortalDocument } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import { formatDate } from "../../../../helpers/DateFormater";
 import ReactLoading from "react-loading";
@@ -18,6 +18,7 @@ export const DocumentOpenPage = () => {
   const [loading, setLoading] = useState(false);
   const [tableRefresh, setTableRefresh] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [fileDownloading, setFileDownloading] = useState(false);
 
   const handleFetchData = async () => {
     setLoading(true);
@@ -40,6 +41,26 @@ export const DocumentOpenPage = () => {
   useEffect(() => {
     handleFetchData();
   }, [uid, tableRefresh]);
+
+  const handleDownloadFile = async () => {
+    if (!selectedObj?.uid || !selectedObj?.file_key) return;
+    setFileDownloading(true);
+    try {
+      await downloadPortalDocument(
+        selectedObj.uid,
+        selectedObj.original_filename || "document"
+      );
+      setTableRefresh((r) => r + 1);
+    } catch {
+      showToast(
+        "Download failed. For older documents, open Edit and re-upload the file.",
+        "danger",
+        "Download"
+      );
+    } finally {
+      setFileDownloading(false);
+    }
+  };
 
   const handleDelete = async () => {
     const documentUid = selectedObj?.uid || selectedObj?.id || uid;
@@ -90,7 +111,7 @@ export const DocumentOpenPage = () => {
         <div className="card">
           <div className="card-body">
             <center>
-              <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+              <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
               <h6 className="text-muted mt-2">Loading Document Details...</h6>
             </center>
           </div>
@@ -194,15 +215,24 @@ export const DocumentOpenPage = () => {
                   )}
                 </button>
               )}
-              {selectedObj.file_url && hasAccess(user, ["can_view_document"]) && (
-                <a
-                  href={selectedObj.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {selectedObj.file_key && hasAccess(user, ["can_view_document"]) && (
+                <button
+                  type="button"
                   className="btn btn-success btn-sm"
+                  disabled={fileDownloading}
+                  onClick={handleDownloadFile}
                 >
-                  <i className="bx bx-download me-1"></i> Download
-                </a>
+                  {fileDownloading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
+                      Downloading…
+                    </>
+                  ) : (
+                    <>
+                      <i className="bx bx-download me-1"></i> Download
+                    </>
+                  )}
+                </button>
               )}
             
               <button
@@ -367,21 +397,21 @@ export const DocumentOpenPage = () => {
                       <strong>{selectedObj.download_count || 0}</strong>
                     </td>
                   </tr>
-                  {selectedObj.file_url && (
+                  {selectedObj.file_key && (
                     <tr>
                       <td className="fw-medium">
                         <i className="bx bx-link me-2 text-primary"></i>
                         File:
                       </td>
                       <td>
-                        <a
-                          href={selectedObj.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
                           className="btn btn-sm btn-outline-primary"
+                          disabled={fileDownloading}
+                          onClick={handleDownloadFile}
                         >
                           <i className="bx bx-download me-1"></i> Download File
-                        </a>
+                        </button>
                       </td>
                     </tr>
                   )}

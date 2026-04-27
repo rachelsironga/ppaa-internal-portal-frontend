@@ -20,10 +20,9 @@ export const userReducer = (state = initialState, action) => {
         case "USER_UPDATE":
             return {
                 ...state,
-                data: {
-                    ...state.data,
-                    ...action.payload.user,
-                },
+                data: state.data
+                    ? { ...state.data, ...action.payload.user }
+                    : action.payload.user,
                 isLoading: false,
                 error: null,
             };

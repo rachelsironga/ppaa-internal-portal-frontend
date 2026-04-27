@@ -7,6 +7,20 @@ import { formatDate } from "../../../../helpers/DateFormater";
 import AnnouncementModal from "./Modal";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
+const ANNOUNCEMENT_TITLE_TABLE_MAX_CHARS = 80;
+
+function truncateAnnouncementTitle(title) {
+  const full = (title || "").trim();
+  if (!full) return { display: "—", full: "" };
+  if (full.length <= ANNOUNCEMENT_TITLE_TABLE_MAX_CHARS) {
+    return { display: full, full };
+  }
+  return {
+    display: `${full.slice(0, Math.max(0, ANNOUNCEMENT_TITLE_TABLE_MAX_CHARS - 1))}…`,
+    full,
+  };
+}
+
 export const AnnouncementPage = () => {
   const [selectedObj, setSelectedObj] = useState(null);
   const [tableRefresh, setTableRefresh] = useState(0);
@@ -19,33 +33,56 @@ export const AnnouncementPage = () => {
       <PaginatedTable
         fetchPath="/internal-portal/announcements"
         title="Announcement Management"
+        tableLayoutFixed
         columns={[
           {
             key: "SN",
             label: "SN",
-            style: { width: "80px" },
-            className: "text-center",
+            style: { width: "64px", minWidth: "64px", maxWidth: "64px" },
+            className: "text-center align-middle",
           },
           {
             key: "title",
             label: "Title",
-            className: "cursor-pointer",
-            render: (row) => (
-              <span
-                className="text-bold"
-                onClick={() => {
-                  navigate(`/ppaa-internal-portal/announcements/open/${row.uid}`);
-                }}
-              >
-                {row.title}
-              </span>
-            ),
+            className: "align-middle",
+            style: {
+              width: "auto",
+              minWidth: "200px",
+              maxWidth: "420px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              verticalAlign: "middle",
+            },
+            render: (row) => {
+              const { display, full } = truncateAnnouncementTitle(row.title);
+              return (
+                <span
+                  role="link"
+                  tabIndex={0}
+                  className="text-bold d-block text-truncate text-primary cursor-pointer"
+                  style={{ maxWidth: "100%" }}
+                  title={full || undefined}
+                  onClick={() => {
+                    navigate(`/ppaa-internal-portal/announcements/open/${row.uid}`);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/ppaa-internal-portal/announcements/open/${row.uid}`);
+                    }
+                  }}
+                >
+                  {display}
+                </span>
+              );
+            },
           },
           {
             key: "priority",
             label: "Priority",
-            style: { width: "120px" },
-            className: "text-center",
+            style: { width: "108px", minWidth: "108px", maxWidth: "108px" },
+            className: "text-center align-middle",
             render: (row) => {
               const priorityColors = {
                 LOW: "bg-label-info",
@@ -63,8 +100,8 @@ export const AnnouncementPage = () => {
           {
             key: "is_pinned",
             label: "Pinned",
-            style: { width: "100px" },
-            className: "text-center",
+            style: { width: "88px", minWidth: "88px", maxWidth: "88px" },
+            className: "text-center align-middle",
             render: (row) => (
               <span className={row.is_pinned ? "badge bg-label-success me-1" : "badge bg-label-secondary me-1"}>
                 {row.is_pinned ? "Yes" : "No"}
@@ -74,8 +111,8 @@ export const AnnouncementPage = () => {
           {
             key: "start_date",
             label: "Start Date",
-            style: { width: "150px" },
-            className: "text-center",
+            style: { width: "138px", minWidth: "138px", maxWidth: "138px", whiteSpace: "nowrap" },
+            className: "text-center align-middle",
             render: (row) => (
               <span className="text-purple">
                 {row.start_date ? formatDate(row.start_date, "DD/MM/YYYY HH:mm") : "-"}
@@ -85,8 +122,8 @@ export const AnnouncementPage = () => {
           {
             key: "end_date",
             label: "End Date",
-            style: { width: "150px" },
-            className: "text-center",
+            style: { width: "138px", minWidth: "138px", maxWidth: "138px", whiteSpace: "nowrap" },
+            className: "text-center align-middle",
             render: (row) => (
               <span className="text-purple">
                 {row.end_date ? formatDate(row.end_date, "DD/MM/YYYY HH:mm") : "-"}
@@ -94,49 +131,23 @@ export const AnnouncementPage = () => {
             ),
           },
           {
-            key: "is_active",
-            label: "Status",
-            style: { width: "120px" },
-            className: "text-center",
-            render: (row) => (
-              <span
-                className={
-                  row.is_active
-                    ? "badge bg-label-success me-1"
-                    : "badge bg-label-secondary me-1"
-                }
-              >
-                {row.is_active ? "Active" : "Inactive"}
-              </span>
-            ),
-          },
-          {
-            key: "created_at",
-            label: "Created At",
-            style: { width: "150px" },
-            className: "text-center",
-            render: (row) => (
-              <span className="text-purple">
-                {formatDate(row.created_at, "DD/MM/YYYY HH:mm:ss") || "-"}
-              </span>
-            ),
-          },
-          {
             key: "actions",
             label: "Actions",
-            className: "text-center",
-            style: { width: "120px" },
-            render: (row) => (
+            className: "text-center align-middle",
+            style: { width: "108px", minWidth: "108px", maxWidth: "108px" },
+            render: (row) =>
               hasAccess(user, ["can_view_announcement"]) ? (
-              <button
-                className="btn btn-sm btn-outline-primary text-center"
-                onClick={() => {    
-                  navigate(`/ppaa-internal-portal/announcements/open/${row.uid}`);
-                }}
-              >
-                <i className="bx bx-show"></i>&nbsp; View
-              </button>
-            ) : null),
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary text-center text-nowrap"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/ppaa-internal-portal/announcements/open/${row.uid}`);
+                  }}
+                >
+                  <i className="bx bx-show"></i>&nbsp; View
+                </button>
+              ) : null,
           },
         ]}
         buttons={[

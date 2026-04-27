@@ -13,6 +13,7 @@ function ProtectedRoute({
   children,
   requiredPermissions = [],
   requiredRoles = [],
+  excludeRoles = [],
 }) {
   const [isAuthorized, setIsAuthorized] = useState(null);
   const location = useLocation();
@@ -89,7 +90,18 @@ function ProtectedRoute({
   const userPermissions = user?.user_permissions || [];
   const userRoles = user?.groups || [];
   const normalizedUserRoles = userRoles.map((r) => String(r)?.toLowerCase());
-  const isPortalAdmin = normalizedUserRoles.includes("admin");
+  const isPortalAdmin =
+    user?.is_superuser || normalizedUserRoles.includes("admin");
+  const isSpismAdmin = normalizedUserRoles.includes("spism_admin");
+
+  const blockedByExcludedRole =
+    !isPortalAdmin &&
+    !isSpismAdmin &&
+    Array.isArray(excludeRoles) &&
+    excludeRoles.length > 0 &&
+    excludeRoles.some((role) =>
+      normalizedUserRoles.includes(String(role).toLowerCase().trim())
+    );
 
   // Check if user is staff-only (has only 'staff' role and no other roles)
   const staffOnly = isStaffOnly(userRoles);
@@ -99,6 +111,22 @@ function ProtectedRoute({
     Swal.fire({
       title: "Access Denied",
       text: "You don't have permission to access this page. Staff members can only access the Dashboard, Profile, and Services pages.",
+      icon: "warning",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      allowEnterKey: false,
+      confirmButtonText: "Go to Services",
+    }).then(() => {
+      window.location.href = "/services";
+    });
+
+    return null;
+  }
+
+  if (blockedByExcludedRole) {
+    Swal.fire({
+      title: "Access Denied",
+      text: "This page is not available for your role.",
       icon: "warning",
       allowOutsideClick: false,
       allowEscapeKey: false,
@@ -121,7 +149,9 @@ function ProtectedRoute({
   const hasRequiredRoles =
     isPortalAdmin ||
     !requiredRoles.length ||
-    requiredRoles.some((role) => userRoles.includes(role));
+    requiredRoles.some((role) =>
+      normalizedUserRoles.includes(String(role).toLowerCase())
+    );
 
   if (!hasRequiredPermissions || !hasRequiredRoles) {
     Swal.fire({

@@ -5,7 +5,11 @@ import PaginatedTable from "../../../../../components/ui-templates/PaginatedTabl
 import ReportTypeModal from "./ReportTypeModal";
 import { deleteReportType, FREQUENCY_OPTIONS } from "../../Queries";
 import showToast from "../../../../../helpers/ToastHelper";
-import { hasAccess } from "../../../../../hooks/AccessHandler";
+import {
+  canAddReportType,
+  canChangeReportType,
+  canDeleteReportType,
+} from "../../../../../utils/rmsSetupPermissions";
 import Swal from "sweetalert2";
 
 const ReportTypeListPage = () => {
@@ -115,7 +119,7 @@ const ReportTypeListPage = () => {
       label: "Actions",
       render: (row) => (
         <div className="d-flex gap-1">
-          {hasAccess(user, ['change_reporttype']) && (
+          {canChangeReportType(user) && (
             <button
               className="btn btn-sm btn-outline-primary"
               onClick={(e) => {
@@ -127,7 +131,7 @@ const ReportTypeListPage = () => {
               <i className="bx bx-edit"></i>
             </button>
           )}
-          {hasAccess(user, ['delete_reporttype']) && (
+          {canDeleteReportType(user) && (
             <button
               className="btn btn-sm btn-outline-danger"
               onClick={(e) => {
@@ -152,7 +156,7 @@ const ReportTypeListPage = () => {
     },
   ];
 
-  const addButton = hasAccess(user, ['add_reporttype']) ? [
+  const addButton = canAddReportType(user) ? [
     {
       label: (<><i className="bx bx-plus me-1"></i>Add Report Type</>),
       className: "btn-primary",
@@ -161,7 +165,7 @@ const ReportTypeListPage = () => {
   ] : [];
 
   return (
-    <div className="container-fluid flex-grow-1 container-p-y px-4">
+    <div className="w-100">
       <BreadCumb pageList={["Report Management System (RMS)", "Setup", "Report Types"]} />
 
       <PaginatedTable

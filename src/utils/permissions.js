@@ -1,6 +1,19 @@
-export const hasPermission = (itemPermissions, itemRoles, userPermissions, userRoles) => {
+export const hasPermission = (
+    itemPermissions,
+    itemRoles,
+    userPermissions,
+    userRoles,
+    user = null,
+    excludeRoles = null
+) => {
+    if (user?.is_superuser) {
+        return true;
+    }
     // Normalize roles to lowercase for case-insensitive comparison
-    const normalizedUserRoles = userRoles?.map((r) => String(r)?.toLowerCase()) || [];
+    let normalizedUserRoles = userRoles?.map((r) => String(r)?.toLowerCase()) || [];
+    if (user?.is_staff && !normalizedUserRoles.includes('staff')) {
+        normalizedUserRoles = [...normalizedUserRoles, 'staff'];
+    }
     const normalizedItemRoles = itemRoles?.map((r) => String(r)?.toLowerCase()) || [];
 
     // Admin users can see everything
@@ -8,11 +21,24 @@ export const hasPermission = (itemPermissions, itemRoles, userPermissions, userR
         return true;
     }
 
-    // Check if user has required permissions
+    if (excludeRoles && excludeRoles.length > 0) {
+        const excluded = excludeRoles.map((r) => String(r).toLowerCase().trim());
+        const hitsExclude = excluded.some((r) => normalizedUserRoles.includes(r));
+        // SPISM admins keep full access even if they also carry a planning-officer group.
+        if (hitsExclude && !normalizedUserRoles.includes("spism_admin")) {
+            return false;
+        }
+    }
+
+    const perms = userPermissions?.map((p) => String(p)) || [];
+    // Check if user has required permissions (codenames; tolerate case)
     const hasRequiredPermission =
-        !itemPermissions || 
-        itemPermissions.length === 0 || 
-        itemPermissions.some((p) => userPermissions?.includes(p));
+        !itemPermissions ||
+        itemPermissions.length === 0 ||
+        itemPermissions.some((p) => {
+            const want = String(p);
+            return perms.includes(want) || perms.includes(want.toLowerCase());
+        });
 
     // Check if user has required roles (case-insensitive)
     const hasRequiredRole =
@@ -38,19 +64,21 @@ export const hasPermission = (itemPermissions, itemRoles, userPermissions, userR
     return true;
 };
 
-export const hasAnyVisibleItem = (items, userPermissions, userRoles) => {
+export const hasAnyVisibleItem = (items, userPermissions, userRoles, user = null) => {
     return items.some((item) => {
         const parentVisible = hasPermission(
             item.permission,
             item.role,
             userPermissions,
-            userRoles
+            userRoles,
+            user,
+            item.excludeRoles
         );
 
         if (parentVisible) return true;
 
         if (item.submenu) {
-            return hasAnyVisibleItem(item.submenu, userPermissions, userRoles);
+            return hasAnyVisibleItem(item.submenu, userPermissions, userRoles, user);
         }
 
         return false;
@@ -89,6 +117,7 @@ export const isAllowedRouteForStaffOnly = (pathname) => {
         '/ppaa-maoni',
         // Performance Dashboard (Strategic & Operational Performance Monitoring)
         '/performance-dashboard',
+        '/report-management',
     ];
     
     // Check if pathname matches any allowed path exactly or starts with it
@@ -104,6 +133,10 @@ export const isAllowedRouteForStaffOnly = (pathname) => {
         }
         // Allow all Performance Dashboard routes
         if (path === '/performance-dashboard' && pathname.startsWith('/performance-dashboard')) {
+            return true;
+        }
+        // Allow all Reports Management routes
+        if (path === '/report-management' && pathname.startsWith('/report-management')) {
             return true;
         }
         return false;

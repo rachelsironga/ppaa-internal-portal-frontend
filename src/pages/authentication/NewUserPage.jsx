@@ -1,13 +1,13 @@
 import { useState } from "react";
+import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import "./page-auth.css";
 import { AuthWrapper } from "./AuthWrapper";
 import { connect } from "react-redux";
-import { login } from "../../redux/actions";
+import { login, refreshCurrentUser } from "../../redux/actions";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { createUpdateData } from "../../utils/GlobalQueries";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../Costants";
+import { ACCESS_TOKEN, API_BASE_URL, REFRESH_TOKEN } from "../../Costants";
 import showToast from "../../helpers/ToastHelper";
 import { loginTypes } from "../../redux/types/authentication";
 import { useDispatch } from "react-redux";
@@ -49,43 +49,76 @@ const NewUserPage = ({
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (data?.data) {
-        values.username = data?.data?.username;
+      const initialSecret = data?.initial_password;
+      if (!initialSecret) {
+        showToast(
+          "Please sign in again with your username and check number to continue.",
+          "warning",
+          "Session expired"
+        );
+        navigation("/auth/login");
+        setSubmitting(false);
+        return;
       }
 
-      const result = await createUpdateData({
-        url: "/user/new_login",
-        formData: values,
-        isFullPath: true,
-      });
+      const username = values.username || data?.data?.username;
+      const digits = (values.phone_number || "").replace(/\D/g, "");
+      const phone_number =
+        digits.length >= 9
+          ? `+255${digits.slice(-9)}`
+          : (values.phone_number || "").trim();
+
+      const payload = {
+        username,
+        email: values.email,
+        phone_number,
+        new_password: values.password,
+        confirm_password: values.confirm_password,
+        initial_password: initialSecret,
+      };
+
+      // Plain axios: no stale JWT (DRF would 401 before AllowAny) and no api interceptor modal.
+      const response = await axios.post(
+        `${API_BASE_URL}/user/new_login`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      const result = response.data;
 
       if (result.status === 200 || result.status === 8000) {
         const { access_token, refresh_token } = result.data;
         const user = result.data.user;
 
-        // Save tokens to localStorage
         localStorage.setItem(ACCESS_TOKEN, access_token);
         localStorage.setItem(REFRESH_TOKEN, refresh_token);
 
-        // Dispatch success action with user data
         dispatch({
           type: loginTypes.LOGIN_SUCCESS,
           payload: { user, access_token, refresh_token },
         });
-        console.log("New user login successful, navigating to home.");
-        navigation("/");
+        dispatch(refreshCurrentUser());
+        navigation("/services");
       } else if (result.status === 8002) {
         showToast(`${result.message}`, "warning", "Validation Failed");
-        setErrors(result.data);
-        // setOtherError(result.data);
+        setErrors(
+          typeof result.data === "object" && result.data !== null
+            ? result.data
+            : {}
+        );
       } else {
-        showToast(`${result.message}`, "warning", "Process Failed");
-        resetForm();
+        showToast(
+          result.message || "Could not complete registration",
+          "warning",
+          "Process Failed"
+        );
       }
     } catch (error) {
       console.error("Error during new user login:", error);
-      showToast("Something went wrong while saving", "error", "Failed");
-      resetForm();
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong while saving";
+      showToast(msg, "error", "Failed");
     } finally {
       setSubmitting(false);
     }

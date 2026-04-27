@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BreadCumb from "../../../layouts/BreadCumb";
-import { getDashboardSummary, getPerformanceAnalytics } from "./Queries";
+import {
+  getDashboardSummary,
+  getFinancialYears,
+  getPerformanceAnalytics,
+  getTargets,
+} from "./Queries";
+import {
+  extractFinancialYearRows,
+  getDefaultFinancialYear,
+  resolveFinancialYearForList,
+} from "./financialYearUtils";
 import showToast from "../../../helpers/ToastHelper";
+import { hasPermission } from "../../../utils/permissions";
 import {
   DoughnutChart,
   BarChart,
@@ -12,33 +23,110 @@ import {
 } from "../../../components/DashboardCharts";
 import "animate.css";
 
-const getCurrentFinancialYear = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1; // 1–12
-  // SPISM financial year assumed July–June, e.g. 2025/2026
-  if (month >= 7) {
-    return `${year}/${year + 1}`;
-  }
-  return `${year - 1}/${year}`;
-};
-
 export const PerformanceDashboardPage = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.userReducer?.data);
   const [summary, setSummary] = useState({ data: [] });
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [financialYear, setFinancialYear] = useState(getCurrentFinancialYear());
+  const [financialYear, setFinancialYear] = useState(getDefaultFinancialYear());
+  const [financialYearRows, setFinancialYearRows] = useState([]);
+  const [financialYearsLoading, setFinancialYearsLoading] = useState(true);
+  const [myAssignedTargets, setMyAssignedTargets] = useState([]);
+  const [assignedLoading, setAssignedLoading] = useState(false);
 
-  // If logged-in user has the Approver role, default them to the Approver dashboard
+  /** Charts + status rollups: analytics codename, or main dashboard / institutional reports (backend scopes dept heads). */
+  const canFetchSpismAnalytics = useMemo(
+    () =>
+      hasPermission(
+        [
+          "can_view_spism_analytics",
+          "can_view_spism_dashboard",
+          "can_view_spism_reports",
+        ],
+        [],
+        user?.user_permissions,
+        user?.groups,
+        user
+      ),
+    [user]
+  );
+
+  const canViewSpismTargets = useMemo(
+    () =>
+      hasPermission(
+        ["can_view_spism_target"],
+        [],
+        user?.user_permissions,
+        user?.groups,
+        user
+      ),
+    [user]
+  );
+
+  const isDeptHeadLike = useMemo(() => {
+    const roles = (user?.groups || []).map((r) => String(r).toLowerCase());
+    return roles.some((r) => ["spism_dept_head", "spism_contributor", "spims_dept_head"].includes(r));
+  }, [user]);
+
+  // Role-specific landing: dept heads stay here (scoped data); viewers → viewer dashboard; approvers → ES dashboard.
+  // SPISM admins keep both entry points without forced redirect.
   useEffect(() => {
-    const roles = user?.groups || [];
-    const normalized = roles.map((r) => String(r).toLowerCase());
-    if (normalized.includes("spism approver".toLowerCase())) {
+    if (!user) return;
+    const normalized = (user?.groups || []).map((r) => String(r).toLowerCase());
+    if (normalized.includes("spism_admin")) return;
+    if (isDeptHeadLike) return;
+
+    const isApproverRole = normalized.some((r) => ["spism_approver", "spims_approver"].includes(r));
+    const hasEsWorkbench =
+      hasPermission(
+        ["can_view_spism_analytics"],
+        [],
+        user?.user_permissions,
+        user?.groups,
+        user
+      ) &&
+      hasPermission(
+        ["can_view_spism_approval"],
+        [],
+        user?.user_permissions,
+        user?.groups,
+        user
+      );
+    if (isApproverRole || hasEsWorkbench) {
       navigate("/performance-dashboard/es-dashboard", { replace: true });
+      return;
     }
-  }, [user, navigate]);
+
+    const isViewerRole = normalized.some((r) => ["spism_viewer", "spims_viewer"].includes(r));
+    if (isViewerRole) {
+      navigate("/performance-dashboard/viewer-dashboard", { replace: true });
+    }
+  }, [user, navigate, isDeptHeadLike]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadFinancialYears = async () => {
+      setFinancialYearsLoading(true);
+      try {
+        const res = await getFinancialYears();
+        const sorted = extractFinancialYearRows(res);
+        if (cancelled) return;
+        setFinancialYearRows(sorted);
+        if (sorted.length) {
+          setFinancialYear((current) => resolveFinancialYearForList(sorted, current));
+        }
+      } catch {
+        if (!cancelled) setFinancialYearRows([]);
+      } finally {
+        if (!cancelled) setFinancialYearsLoading(false);
+      }
+    };
+    loadFinancialYears();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -61,6 +149,10 @@ export const PerformanceDashboardPage = () => {
   }, [financialYear]);
 
   useEffect(() => {
+    if (!canFetchSpismAnalytics) {
+      setAnalytics(null);
+      return;
+    }
     const fetchAnalytics = async () => {
       try {
         const res = await getPerformanceAnalytics(financialYear);
@@ -75,11 +167,54 @@ export const PerformanceDashboardPage = () => {
       }
     };
     fetchAnalytics();
-  }, [financialYear]);
+  }, [financialYear, canFetchSpismAnalytics]);
+
+  useEffect(() => {
+    if (!financialYear || !user || !canViewSpismTargets) {
+      setMyAssignedTargets([]);
+      setAssignedLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const loadAssigned = async () => {
+      setAssignedLoading(true);
+      try {
+        const res = await getTargets({
+          financial_year: financialYear,
+          assigned_to_me: true,
+          pagination: { page_size: 100 },
+        });
+        const raw = res?.data ?? res;
+        const list = Array.isArray(raw) ? raw : [];
+        if (!cancelled) setMyAssignedTargets(list);
+      } catch {
+        if (!cancelled) setMyAssignedTargets([]);
+      } finally {
+        if (!cancelled) setAssignedLoading(false);
+      }
+    };
+    loadAssigned();
+    return () => {
+      cancelled = true;
+    };
+  }, [financialYear, user, canViewSpismTargets]);
 
   const objectives = summary?.data || [];
   const approvedCount = objectives.filter((o) => o.status === "APPROVED").length;
   const pendingCount = objectives.filter((o) => o.status === "PENDING").length;
+
+  const objectivesStatusFromSummary = useMemo(() => {
+    const counts = {};
+    for (const o of objectives) {
+      const s = o.status || "UNKNOWN";
+      counts[s] = (counts[s] || 0) + 1;
+    }
+    return Object.entries(counts).map(([status, count]) => ({ status, count }));
+  }, [objectives]);
+
+  const assignedTargetCount = myAssignedTargets.length;
+  const targetsRollup =
+    analytics?.status_distribution?.targets?.reduce((s, t) => s + (t.count || 0), 0) ?? null;
 
   const cards = [
     {
@@ -92,11 +227,20 @@ export const PerformanceDashboardPage = () => {
     },
     {
       title: "Targets",
-      value: analytics?.status_distribution?.targets?.reduce((s, t) => s + (t.count || 0), 0) ?? "—",
-      sub: "Manage targets & KPIs",
+      value:
+        assignedTargetCount > 0
+          ? assignedTargetCount
+          : targetsRollup != null
+            ? targetsRollup
+            : "—",
+      sub:
+        assignedTargetCount > 0
+          ? `Assigned to you in ${financialYear} · Open Planning → Targets for the full register`
+          : "Manage targets & KPIs",
       icon: "bx bx-bullseye",
       color: "info",
       link: "/performance-dashboard/targets",
+      badge: assignedTargetCount > 0 ? assignedTargetCount : null,
     },
     {
       title: "Activities",
@@ -108,7 +252,10 @@ export const PerformanceDashboardPage = () => {
     },
   ];
 
-  const doughnutObjectives = analytics?.status_distribution?.objectives || [];
+  const doughnutObjectives =
+    (analytics?.status_distribution?.objectives?.length
+      ? analytics.status_distribution.objectives
+      : objectivesStatusFromSummary) || [];
   const doughnutTargets = analytics?.status_distribution?.targets || [];
   const barByFy = analytics?.objectives_by_financial_year || [];
   const progressStatus = analytics?.progress_status || [];
@@ -173,15 +320,32 @@ export const PerformanceDashboardPage = () => {
                 </p>
               </div>
               <div className="d-flex align-items-center gap-2">
-                <label className="form-label mb-0 small text-muted">Financial Year</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  style={{ width: "140px" }}
-                  placeholder="e.g. 2024/2025"
+                <label htmlFor="spism-dashboard-financial-year" className="form-label mb-0 small text-muted text-uppercase">
+                  Financial Year
+                </label>
+                <select
+                  id="spism-dashboard-financial-year"
+                  className="form-select form-select-sm"
+                  style={{ minWidth: "180px", maxWidth: "240px" }}
                   value={financialYear}
-                  onChange={(e) => setFinancialYear(e.target.value.trim())}
-                />
+                  onChange={(e) => setFinancialYear(e.target.value)}
+                  disabled={financialYearsLoading}
+                  aria-busy={financialYearsLoading}
+                  aria-label="Financial year"
+                  title="Choose a configured financial year"
+                >
+                  {financialYearRows.length === 0 ? (
+                    <option value={financialYear}>
+                      {financialYearsLoading ? "Loading years…" : financialYear}
+                    </option>
+                  ) : (
+                    financialYearRows.map((y) => (
+                      <option key={y.uid || y.name} value={y.name}>
+                        {y.name}
+                      </option>
+                    ))
+                  )}
+                </select>
               </div>
             </div>
           </div>
@@ -217,10 +381,15 @@ export const PerformanceDashboardPage = () => {
             {cards.map((card, idx) => (
               <div key={idx} className="col-md-4 col-lg-4 mb-4">
                 <div
-                  className="card h-100 cursor-pointer shadow-sm"
+                  className="card h-100 cursor-pointer shadow-sm position-relative"
                   onClick={() => navigate(card.link)}
                   style={{ cursor: "pointer" }}
                 >
+                  {card.badge != null ? (
+                    <span className="position-absolute top-0 end-0 m-2 badge bg-warning text-dark">
+                      {card.badge}
+                    </span>
+                  ) : null}
                   <div className="card-body d-flex align-items-center">
                     <div className={`avatar avatar-lg me-3 bg-label-${card.color}`}>
                       <i className={`bx ${card.icon} fs-2`}></i>
@@ -235,6 +404,105 @@ export const PerformanceDashboardPage = () => {
                 </div>
               </div>
             ))}
+
+            {canViewSpismTargets && financialYear ? (
+              <div className="col-12 mb-4">
+                {assignedLoading ? (
+                  <div className="card border-0 shadow-sm">
+                    <div className="card-body py-4 text-center text-muted small">
+                      Loading targets assigned to you…
+                    </div>
+                  </div>
+                ) : myAssignedTargets.length > 0 ? (
+                  <div className="card border-0 shadow-sm border-start border-4 border-warning">
+                    <div className="card-body">
+                      <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                        <div>
+                          <h6 className="mb-1 fw-semibold">
+                            <i className="bx bx-user-check me-2 text-warning" aria-hidden="true" />
+                            Your assigned targets — {financialYear}
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            You are the responsible officer for these KPI targets. Open a target to manage KPIs and
+                            linked activities, or go to{" "}
+                            <strong>Implementation</strong> to record quarterly progress and submit for institutional
+                            review.
+                          </p>
+                        </div>
+                        <Link
+                          className="btn btn-sm btn-primary"
+                          to={`/performance-dashboard/implementation?financial_year=${encodeURIComponent(
+                            financialYear
+                          )}`}
+                        >
+                          <i className="bx bx-calendar-check me-1" aria-hidden="true" />
+                          Implementation workspace
+                        </Link>
+                      </div>
+                      <div className="table-responsive">
+                        <table className="table table-sm table-hover align-middle mb-0">
+                          <thead className="table-light">
+                            <tr>
+                              <th>Target (KPI)</th>
+                              <th>Objective</th>
+                              <th>Status</th>
+                              <th className="text-end">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {myAssignedTargets.map((row) => {
+                              const uid = row.uid || row.target_uid;
+                              const title = row.title || "—";
+                              const objTitle = row.objective_title || row.objectiveTitle || "—";
+                              const st = (row.status || "").toUpperCase();
+                              const badge =
+                                st === "APPROVED"
+                                  ? "bg-label-success"
+                                  : st === "PENDING"
+                                    ? "bg-label-warning"
+                                    : st === "RETURNED"
+                                      ? "bg-label-danger"
+                                      : "bg-label-secondary";
+                              const implHref = `/performance-dashboard/implementation?financial_year=${encodeURIComponent(
+                                financialYear
+                              )}&search=${encodeURIComponent(title)}`;
+                              return (
+                                <tr key={uid || title}>
+                                  <td className="fw-medium">{title}</td>
+                                  <td className="text-muted small">{objTitle}</td>
+                                  <td>
+                                    <span className={`badge ${badge}`}>{st || "—"}</span>
+                                  </td>
+                                  <td className="text-end text-nowrap">
+                                    <Link
+                                      className="btn btn-sm btn-outline-primary me-1"
+                                      to={`/performance-dashboard/targets/open/${uid}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      Target
+                                    </Link>
+                                    <Link className="btn btn-sm btn-outline-success" to={implHref}>
+                                      Implementation
+                                    </Link>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : isDeptHeadLike ? (
+                  <div className="alert alert-light border small mb-0" role="status">
+                    <i className="bx bx-info-circle me-1" aria-hidden="true" />
+                    No KPI targets are assigned to you for <strong>{financialYear}</strong>. When Planning assigns you
+                    as <strong>responsible officer</strong> on a target, it will appear here with shortcuts to
+                    implementation work.
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             {/* Charts row */}
             <div className="col-12">

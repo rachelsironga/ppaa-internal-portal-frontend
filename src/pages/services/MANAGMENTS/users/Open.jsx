@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../../../helpers/ToastHelper";
 import { UsersContext } from "../../../../utils/context";
-import { useParams } from "react-router-dom";
-import { getPositions, getUsers, photoUpload } from "./Queries";
+import { useParams, useNavigate } from "react-router-dom";
+import { getPositions, getUsers, photoUpload, createUpdateUser, deleteUser } from "./Queries";
 import usePagination from "../../../../hooks/usePagination";
 import { formatDate } from "../../../../helpers/DateFormater";
 import PositionsModal from "./PositionsModal";
@@ -40,12 +40,15 @@ import {
   Building,
   KeyRound,
   AlertCircle,
+  Ban,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AdminChangePasswordModal from "./AdminChangePassword";
 
 export const UserOpenPage = () => {
   const { uid } = useParams();
+  const navigate = useNavigate();
   const user = useSelector((state) => state.userReducer?.data);
   const [selectedObj, setSelectedObj] = useState(null);
   const [tableRefresh, setTableRefresh] = useState(0);
@@ -194,7 +197,7 @@ export const UserOpenPage = () => {
         text: "You're about to save the new Profile Photo",
         icon: "info",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Save",
       });
@@ -253,7 +256,7 @@ export const UserOpenPage = () => {
         text: "Once confirmed, the user's password will be reset and a temporary password will be sent to their registered email address.",
         icon: "info",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Reset",
       });
@@ -303,7 +306,7 @@ export const UserOpenPage = () => {
         `,
         focusConfirm: false,
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Change Password",
         preConfirm: () => {
@@ -392,9 +395,145 @@ export const UserOpenPage = () => {
       case "NEW":
         return "text-info";
       case "RETIRED":
+        return "text-secondary";
+      case "SUSPENDED":
         return "text-danger";
+      case "LONG_TERM":
+        return "text-warning";
       default:
         return "text-muted";
+    }
+  };
+
+  const canManageLifecycle = hasAccess(
+    user,
+    ["can_manage_user_lifecycle"],
+    ["admin"]
+  );
+  const isViewingSelf =
+    Boolean(
+      user &&
+        selectedObj &&
+        String(user.guid) === String(selectedObj.guid)
+    );
+  const canLifecycleThisTarget =
+    Boolean(selectedObj) &&
+    !isViewingSelf &&
+    !(selectedObj.is_superuser && !user?.is_superuser);
+
+  /** Temporal / staff-only accounts must use suspend, not retired (matches backend). */
+  const mayMarkRetired =
+    selectedObj &&
+    selectedObj.account_type !== "TEMPORALLY" &&
+    !(
+      selectedObj.groups?.length === 1 &&
+      String(selectedObj.groups[0]).toLowerCase() === "staff"
+    );
+
+  const lifecycleShowRetire =
+    Boolean(selectedObj) && mayMarkRetired && selectedObj.status !== "RETIRED";
+  const lifecycleShowSuspend =
+    Boolean(selectedObj) && selectedObj.status !== "SUSPENDED";
+  const lifecycleShowAccessSection = lifecycleShowRetire || lifecycleShowSuspend;
+  const lifecycleShowRestore =
+    Boolean(selectedObj) &&
+    (selectedObj.status === "RETIRED" ||
+      selectedObj.status === "SUSPENDED" ||
+      selectedObj.status === "LONG_TERM");
+
+  const hideLifecycleModal = () => {
+    const el = document.getElementById("userLifecycleModal");
+    if (el && window.bootstrap?.Modal) {
+      const inst = window.bootstrap.Modal.getInstance(el);
+      inst?.hide();
+    }
+  };
+
+  /** Close Bootstrap modal before SweetAlert2; otherwise the confirm dialog can sit behind the modal or not receive focus. */
+  const confirmAfterClosingModal = async (swalOptions) => {
+    hideLifecycleModal();
+    await new Promise((r) => setTimeout(r, 200));
+    return Swal.fire({
+      ...swalOptions,
+      allowOutsideClick: false,
+      customClass: { container: "swal-above-modals" },
+    });
+  };
+
+  const handleLifecycleStatus = async (nextStatus) => {
+    if (!selectedObj?.guid) return;
+    const labels = {
+      RETIRED: "mark this user as retired",
+      SUSPENDED: "block (suspend) this user",
+      ACTIVE: "reactivate this user",
+    };
+    const uid = String(selectedObj.guid);
+    const confirmation = await confirmAfterClosingModal({
+      title: "Confirm account change",
+      text: `You are about to ${labels[nextStatus] || "update this account"}.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#00853f",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Confirm",
+    });
+    if (!confirmation.isConfirmed) return;
+    try {
+      const result = await createUpdateUser({
+        guid: uid,
+        user_guid: uid,
+        status: nextStatus,
+      });
+      if (result.status === 200 || result.status === 8000) {
+        showToast("Account updated", "success", "Saved");
+        await handleFetchData();
+      } else {
+        Swal.fire(
+          "Failed",
+          result.message || "Unable to update account status.",
+          "error"
+        );
+      }
+    } catch (e) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Unable to update account status. Please try again.";
+      Swal.fire("Failed", msg, "error");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedObj?.guid) return;
+    const uid = String(selectedObj.guid);
+    const confirmation = await confirmAfterClosingModal({
+      title: "Delete user",
+      text: "This will remove the user from the system (soft delete). This cannot be undone from the portal.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Delete",
+    });
+    if (!confirmation.isConfirmed) return;
+    try {
+      const result = await deleteUser(uid);
+      if (result.status === 200 || result.status === 8000) {
+        showToast("User removed", "success", "Completed");
+        navigate("/ppaa-internal-portal/users");
+      } else {
+        Swal.fire(
+          "Failed",
+          result.message || "Unable to delete user.",
+          "error"
+        );
+      }
+    } catch (e) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Unable to delete user. You may not have permission.";
+      Swal.fire("Failed", msg, "error");
     }
   };
 
@@ -1179,8 +1318,152 @@ export const UserOpenPage = () => {
 /* Header Actions */
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  justify-content: flex-end;
+}
+
+/* Account actions — portal green, distinct from blue “Change position” outline */
+.btn-account-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  border: 2px solid #00853f;
+  color: #00853f;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 133, 63, 0.1);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-account-actions:hover:not(:disabled) {
+  background: #00853f;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 133, 63, 0.28);
+}
+.btn-account-actions svg {
+  flex-shrink: 0;
+}
+.btn-account-actions:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* SweetAlert2 must sit above Bootstrap modals (1055) and backdrops */
+.swal2-container.swal-above-modals,
+.swal-above-modals {
+  z-index: 20000 !important;
+}
+
+/* Lifecycle modal */
+.user-lifecycle-modal .modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+}
+.user-lifecycle-modal .modal-header {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 55%, #f8fafc 100%);
+  border-bottom: 1px solid rgba(0, 133, 63, 0.18);
+  padding: 1rem 1.25rem;
+}
+.user-lifecycle-modal .modal-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+.user-lifecycle-modal .modal-body {
+  padding: 1.25rem 1.25rem 1rem;
+}
+.user-lifecycle-modal .lifecycle-section-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  margin-top: 0.25rem;
+}
+.user-lifecycle-modal .lifecycle-section-label:first-of-type {
+  margin-top: 0;
+}
+.user-lifecycle-modal .lifecycle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  width: 100%;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.user-lifecycle-modal .btn-lifecycle-retire {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+.user-lifecycle-modal .btn-lifecycle-retire:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+.user-lifecycle-modal .btn-lifecycle-suspend {
+  border: 2px solid #e11d48;
+  background: #fff1f2;
+  color: #be123c;
+}
+.user-lifecycle-modal .btn-lifecycle-suspend:hover {
+  background: #ffe4e6;
+  border-color: #be123c;
+  color: #9f1239;
+}
+.user-lifecycle-modal .btn-lifecycle-activate {
+  border: 2px solid #00853f;
+  background: #f0fdf4;
+  color: #00853f;
+}
+.user-lifecycle-modal .btn-lifecycle-activate:hover {
+  background: #00853f;
+  border-color: #00853f;
+  color: #fff;
+}
+.user-lifecycle-modal .btn-lifecycle-delete {
+  border: none;
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+.user-lifecycle-modal .btn-lifecycle-delete:hover {
+  background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
+  color: #fff;
+}
+.user-lifecycle-modal .modal-footer {
+  border-top: 1px solid #e2e8f0;
+  padding: 0.75rem 1.25rem;
+  background: #fafafa;
+}
+.user-lifecycle-modal .status-pill-active {
+  background: rgba(0, 133, 63, 0.12);
+  color: #047857;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+.user-lifecycle-modal .status-pill-other {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
 }
 
 /* Empty State */
@@ -1202,23 +1485,45 @@ export const UserOpenPage = () => {
       <BreadCumb pageList={["Users", "View"]}>
         <div className="header-actions">
           <button
+            type="button"
             className="btn-primary me-2"
             data-bs-toggle="modal"
             data-bs-target="#viewCreateUserModal"
             onClick={() => setIsModalOpen(true)}
+            disabled={loading || error || !selectedObj}
+            title={
+              loading || error || !selectedObj
+                ? "Load user details before editing"
+                : "Edit this user"
+            }
           >
             <Edit size={16} />
             Edit User
           </button>
           <button
+            type="button"
             className="btn-outline"
             data-bs-toggle="modal"
             data-bs-target="#viewCreateUserPossitionModal"
             onClick={() => setIsModalOpen(true)}
+            disabled={loading || error || !selectedObj}
           >
             <Briefcase size={16} />
             Change Position
           </button>
+          {canManageLifecycle && canLifecycleThisTarget && (
+            <button
+              type="button"
+              className="btn-account-actions"
+              data-bs-toggle="modal"
+              data-bs-target="#userLifecycleModal"
+              disabled={loading || error || !selectedObj}
+              title="Retire, block, or delete this user"
+            >
+              <Shield size={17} strokeWidth={2.25} />
+              Account actions
+            </button>
+          )}
         </div>
       </BreadCumb>
 
@@ -1908,7 +2213,148 @@ export const UserOpenPage = () => {
         )}
       </div>
 
-      <UserModal loadOnlyModal={true} onClose={() => setSelectedObj(null)} />
+      <div
+        className="modal fade user-lifecycle-modal"
+        id="userLifecycleModal"
+        tabIndex={-1}
+        aria-labelledby="userLifecycleModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5
+                className="modal-title d-flex align-items-center gap-2"
+                id="userLifecycleModalLabel"
+              >
+                <span
+                  className="d-inline-flex align-items-center justify-content-center rounded-circle"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    background: "rgba(0, 133, 63, 0.12)",
+                    color: "#00853f",
+                  }}
+                >
+                  <Shield size={20} strokeWidth={2.25} />
+                </span>
+                <span>Account actions</span>
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              />
+            </div>
+            <div className="modal-body">
+              {selectedObj ? (
+                <>
+                  <div className="rounded-3 border border-light bg-white p-3 mb-3 shadow-sm">
+                    <p className="mb-1 small text-muted">User</p>
+                    <p className="mb-2 fw-semibold text-dark">
+                      {selectedObj.first_name} {selectedObj.last_name}
+                    </p>
+                    <div className="d-flex align-items-center flex-wrap gap-2">
+                      <span className="small text-muted">Status</span>
+                      <span
+                        className={
+                          selectedObj.status === "ACTIVE"
+                            ? "status-pill-active"
+                            : "status-pill-other"
+                        }
+                      >
+                        {selectedObj.status}
+                      </span>
+                    </div>
+                  </div>
+                  {!mayMarkRetired && (
+                    <div className="alert alert-info border-0 py-2 small mb-3 shadow-sm">
+                      This account cannot be marked{" "}
+                      <strong>retired</strong>. Use{" "}
+                      <strong>Block (suspend)</strong> to remove access.
+                    </div>
+                  )}
+                  <div className="d-grid gap-3">
+                    {lifecycleShowAccessSection && (
+                      <div>
+                        <span className="lifecycle-section-label">
+                          Access &amp; status
+                        </span>
+                        <div className="d-grid gap-2">
+                          {lifecycleShowRetire && (
+                            <button
+                              type="button"
+                              className="btn lifecycle-btn btn-lifecycle-retire"
+                              onClick={() => handleLifecycleStatus("RETIRED")}
+                            >
+                              <UserMinus size={18} />
+                              Mark retired
+                            </button>
+                          )}
+                          {lifecycleShowSuspend && (
+                            <button
+                              type="button"
+                              className="btn lifecycle-btn btn-lifecycle-suspend"
+                              onClick={() =>
+                                handleLifecycleStatus("SUSPENDED")
+                              }
+                            >
+                              <Ban size={18} />
+                              Block (suspend)
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {lifecycleShowRestore && (
+                      <div>
+                        <span className="lifecycle-section-label">
+                          Restore
+                        </span>
+                        <button
+                          type="button"
+                          className="btn lifecycle-btn btn-lifecycle-activate"
+                          onClick={() => handleLifecycleStatus("ACTIVE")}
+                        >
+                          <CheckCircle size={18} />
+                          Activate account
+                        </button>
+                      </div>
+                    )}
+                    <div>
+                      <span className="lifecycle-section-label text-danger">
+                        Irreversible
+                      </span>
+                      <button
+                        type="button"
+                        className="btn lifecycle-btn btn-lifecycle-delete"
+                        onClick={handleDeleteUser}
+                      >
+                        <Trash2 size={18} />
+                        Delete user
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted mb-0">Load a user to use these actions.</p>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary px-3"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <UserModal loadOnlyModal={true} />
       <PositionsModal />
       <UserPermissionModal />
       <AdminChangePasswordModal />

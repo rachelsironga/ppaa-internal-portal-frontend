@@ -12,7 +12,7 @@ const UsersModal = () => {
 
   const initialValues = {
     permitted_user: "",
-    selected_role: selectedObj?.id,
+    selected_role: selectedObj?.uid,
   };
 
   const validationSchema = Yup.object().shape({
@@ -43,7 +43,6 @@ const UsersModal = () => {
       } else if (result.status === 8002) {
         showToast(`${result.message}`, "warning", "Validation Failed");
         setErrors(result.data);
-        setOtherError(result.data);
       } else {
         showToast(`${result.message}`, "warning", "Process Failed");
         handleClose();
@@ -120,7 +119,7 @@ const UsersModal = () => {
                           page: 1,
                           page_size: 10,
                           paginated: true,
-                          excluded_role: selectedObj?.id,
+                          excluded_role: selectedObj?.uid,
                         }}
                         mapOption={(item) => ({
                           value: item.guid,

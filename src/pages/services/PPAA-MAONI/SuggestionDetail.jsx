@@ -9,6 +9,7 @@ import {
 } from "./Queries";
 import { formatDate } from "../../../helpers/DateFormater";
 import LinearIndeterminate from "../../../LinearIndeterminate";
+import { isMaoniReviewer } from "../../../utils/maoniRoles";
 
 // Strip HTML but keep paragraph/line breaks by turning block elements into newlines
 const stripHtml = (html) => {
@@ -35,14 +36,13 @@ const SuggestionDetail = () => {
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
 
-  const isHR =
-    user?.groups?.some((role) => role?.toLowerCase() === "hr") ||
-    user?.is_superuser;
+  const isMaoniReviewerUser =
+    isMaoniReviewer(user) || user?.is_superuser;
   const isAdmin =
     user?.groups?.some((role) => String(role).toLowerCase() === "admin") ||
     user?.is_superuser;
   const fromDashboard =
-    (isHR || isAdmin) && location?.state?.fromDashboard === true;
+    (isMaoniReviewerUser || isAdmin) && location?.state?.fromDashboard === true;
 
   const goBackToList = () => {
     if (fromDashboard) {
@@ -162,7 +162,7 @@ const SuggestionDetail = () => {
               ${(data.all_comments || []).map((comment) => `
                 <div class="comment ${comment.is_hr_reply ? "hr-reply" : ""}">
                   <div class="comment-header">
-                    ${comment.is_hr_reply ? "👤 HR: " : ""}${comment.commented_by_name} - ${formatDate(comment.created_at)}
+                    ${comment.is_hr_reply ? "Official reply: " : ""}${comment.commented_by_name} - ${formatDate(comment.created_at)}
                   </div>
                   <div>${comment.comment.replace(/\n/g, "<br>")}</div>
                 </div>
@@ -194,7 +194,7 @@ const SuggestionDetail = () => {
         <div className="d-flex justify-content-between align-items-start mb-2">
           <div>
             <strong className={comment.is_hr_reply ? "text-danger" : "text-primary"}>
-              {comment.is_hr_reply && "👤 HR: "}
+              {comment.is_hr_reply && "Official reply: "}
               {comment.commented_by_name}
             </strong>
             <small className="text-muted ms-2">
@@ -260,13 +260,13 @@ const SuggestionDetail = () => {
   }
 
   return (
-    <div className="container-fluid py-4">
+    <div className="w-100 py-4">
       <div className="row">
         <div className="col-lg-8">
           <div className="card shadow mb-4">
             <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
               <h4 className="mb-0 text-white">{suggestion.title}</h4>
-              {isHR && (
+              {isMaoniReviewerUser && (
                 <button
                   className="btn btn-light btn-sm"
                   onClick={handlePrint}

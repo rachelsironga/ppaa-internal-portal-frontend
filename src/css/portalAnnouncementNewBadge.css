@@ -1,0 +1,42 @@
+/* High-visibility "NEW" pill on announcement cards (staff + public portal) */
+@keyframes portal-announcement-new-blink {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+    box-shadow: 0 0 0 0 rgba(255, 111, 0, 0.55), 0 2px 6px rgba(183, 28, 28, 0.25);
+  }
+  40% {
+    opacity: 1;
+    filter: brightness(1.12);
+    box-shadow: 0 0 0 4px rgba(255, 111, 0, 0.35), 0 2px 10px rgba(255, 87, 34, 0.45);
+  }
+  50% {
+    opacity: 0.72;
+    filter: brightness(1.25);
+    box-shadow: 0 0 14px 3px rgba(255, 152, 0, 0.65), 0 2px 12px rgba(255, 61, 0, 0.5);
+  }
+  60% {
+    opacity: 1;
+    filter: brightness(1.08);
+    box-shadow: 0 0 0 0 rgba(255, 111, 0, 0.45), 0 2px 8px rgba(183, 28, 28, 0.3);
+  }
+}
+
+.portal-announcement-new-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1a0a00 !important;
+  background: linear-gradient(145deg, #ffe082 0%, #ff9800 45%, #e65100 100%) !important;
+  border: 1px solid rgba(183, 28, 28, 0.45) !important;
+  animation: portal-announcement-new-blink 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-announcement-new-badge {
+    animation: none;
+    box-shadow: 0 2px 8px rgba(255, 111, 0, 0.35);
+  }
+}

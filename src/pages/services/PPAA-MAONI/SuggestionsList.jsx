@@ -6,6 +6,7 @@ import { getSuggestions, getSuggestion } from "./Queries";
 import { formatDate } from "../../../helpers/DateFormater";
 import LinearIndeterminate from "../../../LinearIndeterminate";
 import SuggestionForm from "./SuggestionForm";
+import { isMaoniReviewer } from "../../../utils/maoniRoles";
 
 const SuggestionsList = () => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -21,9 +22,8 @@ const SuggestionsList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const isHR =
-    user?.groups?.some((role) => role?.toLowerCase() === "hr") ||
-    user?.is_superuser;
+  const isMaoniReviewerUser =
+    isMaoniReviewer(user) || user?.is_superuser;
 
   const draftOnly = location?.state?.filter === "drafts";
   const filterUserId = location?.state?.userId || null;
@@ -112,7 +112,7 @@ const SuggestionsList = () => {
             base = base.filter((s) => (s.status || "").toLowerCase() === "submitted");
           }
 
-          // Filter by user id (HR/Admin use-case from dashboard)
+          // Filter by user id (Maoni lead / Admin use-case from dashboard)
           if (hasUserFilter) {
             base = base.filter(
               (s) => String(s.submitted_by_id) === String(filterUserId)
@@ -293,7 +293,7 @@ const SuggestionsList = () => {
 
   return (
     <>
-      <div className="container-fluid py-4">
+      <div className="w-100 py-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 className="mb-1">Suggestions</h2>
@@ -302,7 +302,7 @@ const SuggestionsList = () => {
                 ? "Your draft suggestions"
                 : filterUserId
                 ? `Submitted suggestions by ${filterUserName || "selected user"}`
-                : isHR
+                : isMaoniReviewerUser
                 ? "All submitted suggestions"
                 : "Your submitted suggestions"}
             </p>

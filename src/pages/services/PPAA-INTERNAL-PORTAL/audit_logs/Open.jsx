@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import { getAuditLogs } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
-import { formatDate } from "../../../../helpers/DateFormater";
+import { formatDateTime } from "../../../../helpers/DateFormater";
 import ReactLoading from "react-loading";
 
 export const AuditLogOpenPage = () => {
@@ -54,7 +54,7 @@ export const AuditLogOpenPage = () => {
         <div className="card">
           <div className="card-body">
             <center>
-              <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+              <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
               <h6 className="text-muted mt-2">Loading Audit Log Details...</h6>
             </center>
           </div>
@@ -109,15 +109,15 @@ export const AuditLogOpenPage = () => {
                 </div>
                 <div className="flex-grow-1">
                   <h4 className="mb-1 fw-bold">
-                    {actionInfo.label} Action
+                    {(selectedObj.action_label || actionInfo.label)} Action
                   </h4>
                   <p className="mb-2 text-muted">
-                    {selectedObj.model_name || "System"} - {selectedObj.object_repr || "N/A"}
+                    {selectedObj.model_name || "System"} — {selectedObj.activity_title || selectedObj.object_repr || "N/A"}
                   </p>
                   <div className="d-flex gap-2 flex-wrap">
                     <span className={`badge ${actionInfo.class}`}>
                       <i className={`bx ${actionInfo.icon} me-1`}></i>
-                      {selectedObj.action}
+                      {selectedObj.action_label || selectedObj.action}
                     </span>
                     {selectedObj.department?.name && (
                       <span className="badge bg-label-info">
@@ -195,9 +195,7 @@ export const AuditLogOpenPage = () => {
                 <div className="flex-grow-1">
                   <small className="text-muted d-block mb-1">Date & Time</small>
                   <h6 className="mb-0">
-                    {selectedObj.created_at
-                      ? formatDate(selectedObj.created_at, "DD/MM/YYYY HH:mm:ss")
-                      : "N/A"}
+                    {selectedObj.created_at ? formatDateTime(selectedObj.created_at) : "N/A"}
                   </h6>
                 </div>
               </div>
@@ -325,7 +323,7 @@ export const AuditLogOpenPage = () => {
                     <td>
                       <strong>
                         {selectedObj.created_at
-                          ? formatDate(selectedObj.created_at, "DD/MM/YYYY HH:mm:ss")
+                          ? formatDateTime(selectedObj.created_at)
                           : "N/A"}
                       </strong>
                     </td>

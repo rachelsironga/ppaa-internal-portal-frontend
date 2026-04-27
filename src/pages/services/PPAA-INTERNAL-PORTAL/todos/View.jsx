@@ -7,6 +7,18 @@ import { formatDate } from "../../../../helpers/DateFormater";
 import TodoModal from "./Modal";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
+const TASK_TITLE_TABLE_MAX_CHARS = 110;
+
+function truncateTaskTitle(title) {
+  const full = (title || "").trim();
+  if (!full) return { display: "—", full: "" };
+  if (full.length <= TASK_TITLE_TABLE_MAX_CHARS) return { display: full, full };
+  return {
+    display: `${full.slice(0, Math.max(0, TASK_TITLE_TABLE_MAX_CHARS - 1))}…`,
+    full,
+  };
+}
+
 export const TodoPage = () => {
   const [selectedObj, setSelectedObj] = useState(null);
   const [tableRefresh, setTableRefresh] = useState(0);
@@ -59,27 +71,45 @@ export const TodoPage = () => {
       <PaginatedTable
         fetchPath="/internal-portal/todos"
         title="Todo List"
+        tableLayoutFixed
         columns={[
           {
             key: "SN",
             label: "SN",
-            style: { width: "80px" },
-            className: "text-center",
+            style: { width: "64px", minWidth: "64px", maxWidth: "64px" },
+            className: "text-center align-middle",
           },
           {
             key: "title",
             label: "Task Title",
-            render: (row) => (
-              <span className="text-bold">
-                {row.title}
-              </span>
-            ),
+            className: "align-middle",
+            style: {
+              width: "auto",
+              minWidth: "320px",
+              maxWidth: "560px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              verticalAlign: "middle",
+            },
+            render: (row) => {
+              const { display, full } = truncateTaskTitle(row.title);
+              return (
+                <span
+                  className="text-bold d-block text-truncate"
+                  style={{ maxWidth: "100%" }}
+                  title={full || undefined}
+                >
+                  {display}
+                </span>
+              );
+            },
           },
           {
             key: "status",
             label: "Status",
-            style: { width: "130px" },
-            className: "text-center",
+            style: { width: "118px", minWidth: "118px", maxWidth: "118px" },
+            className: "text-center align-middle",
             render: (row) => (
               <span className={getStatusBadge(row.status)}>
                 {getStatusLabel(row.status)}
@@ -89,8 +119,8 @@ export const TodoPage = () => {
           {
             key: "priority",
             label: "Priority",
-            style: { width: "120px" },
-            className: "text-center",
+            style: { width: "108px", minWidth: "108px", maxWidth: "108px" },
+            className: "text-center align-middle",
             render: (row) => (
               <span className={getPriorityBadge(row.priority)}>
                 {getPriorityLabel(row.priority)}
@@ -98,18 +128,10 @@ export const TodoPage = () => {
             ),
           },
           {
-            key: "department",
-            label: "Department",
-            style: { width: "180px" },
-            render: (row) => (
-              <span>{row.department?.name || "-"}</span>
-            ),
-          },
-          {
             key: "start_date",
             label: "Start Date",
-            style: { width: "150px" },
-            className: "text-center",
+            style: { width: "128px", minWidth: "128px", maxWidth: "128px", whiteSpace: "nowrap" },
+            className: "text-center align-middle",
             render: (row) => (
               <span className="text-purple">
                 {row.start_date
@@ -121,8 +143,8 @@ export const TodoPage = () => {
           {
             key: "due_date",
             label: "Due Date",
-            style: { width: "150px" },
-            className: "text-center",
+            style: { width: "128px", minWidth: "128px", maxWidth: "128px", whiteSpace: "nowrap" },
+            className: "text-center align-middle",
             render: (row) => (
               <span className="text-purple">
                 {row.due_date
@@ -134,19 +156,21 @@ export const TodoPage = () => {
           {
             key: "actions",
             label: "Actions",
-            className: "text-center",
-            style: { width: "120px" },
-            render: (row) => (
+            className: "text-center align-middle",
+            style: { width: "108px", minWidth: "108px", maxWidth: "108px" },
+            render: (row) =>
               hasAccess(user, ["can_view_todo"]) ? (
-              <button
-                className="btn btn-sm btn-outline-primary text-center"
-                onClick={() => {
-                  navigate(`/ppaa-internal-portal/todos/open/${row.uid}`);
-                }}
-              >
-                <i className="bx bx-show"></i>&nbsp; View
-              </button>
-            ) : null),
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary text-center text-nowrap"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/ppaa-internal-portal/todos/open/${row.uid}`);
+                  }}
+                >
+                  <i className="bx bx-show"></i>&nbsp; View
+                </button>
+              ) : null,
           },
         ]}
         buttons={[
