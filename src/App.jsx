@@ -7,7 +7,8 @@ import { Provider } from "react-redux";
 import store, { persistor } from "./redux/store";
 import { PersistGate } from "redux-persist/integration/react";
 import { ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
+import { InternalPortalI18nProvider } from "./contexts/InternalPortalI18nContext.jsx";
 
 
 function App() {
@@ -37,17 +38,19 @@ function App() {
 
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
-          {isAuthPath ? (
-            <AppRoutes>
-              <Blank />
-            </AppRoutes>
-          ) : (
-            <ProtectedRoute>
-              <Layout isService={isService}>
-                <AppRoutes />
-              </Layout>
-            </ProtectedRoute>
-          )}
+          <InternalPortalI18nProvider>
+            {isAuthPath ? (
+              <AppRoutes>
+                <Blank />
+              </AppRoutes>
+            ) : (
+              <ProtectedRoute>
+                <Layout isService={isService}>
+                  <AppRoutes />
+                </Layout>
+              </ProtectedRoute>
+            )}
+          </InternalPortalI18nProvider>
         </PersistGate>
       </Provider>
     </>

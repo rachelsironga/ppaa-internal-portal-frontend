@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 
 import servicesConfig from "../data/servicesConfig";
 import { hasPermission, hasAnyVisibleItem, isStaffOnly, isAllowedRouteForStaffOnly } from "../utils/permissions";
+import { useInternalPortalI18n } from "../contexts/InternalPortalI18nContext.jsx";
 
 // KEEPING YOUR ORIGINAL UI EXACTLY THE SAME
 
@@ -14,6 +15,8 @@ const Sidebar = ({ isService = false }) => {
   const staffOnly = isStaffOnly(userRoles);
 
   const location = useLocation();
+  const { translateHeader, translateMenuItem, t } = useInternalPortalI18n();
+  const isInternalPortalPath = location.pathname.startsWith("/ppaa-internal-portal");
 
   const [activeService, setActiveService] = useState(null);
   const [activeServiceName, setActiveServiceName] = useState("");
@@ -85,9 +88,10 @@ const Sidebar = ({ isService = false }) => {
 
         {activeService && (
           <h5 className="text-bold">
-            {activeServiceName || activeService
-              .replace(/-/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase())}
+            {activeService === "internal-portal" && isInternalPortalPath
+              ? t("service.internalPortal")
+              : activeServiceName ||
+                activeService.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
           </h5>
         )}
       </div>
@@ -142,7 +146,11 @@ const Sidebar = ({ isService = false }) => {
                     user
                   ) && (
                     <li className="menu-header small text-uppercase">
-                      <span className="menu-header-text">{section.header}</span>
+                      <span className="menu-header-text">
+                        {isInternalPortalPath
+                          ? translateHeader(section.header, section.header)
+                          : section.header}
+                      </span>
                     </li>
                   )}
 
@@ -165,6 +173,7 @@ const Sidebar = ({ isService = false }) => {
                       userPermissions={userPermissions}
                       userRoles={userRoles}
                       staffOnly={staffOnly}
+                      translateMenuItem={isInternalPortalPath ? translateMenuItem : null}
                     />
                   ))}
               </React.Fragment>
@@ -177,9 +186,19 @@ const Sidebar = ({ isService = false }) => {
 };
 
 // KEEP YOUR ORIGINAL MENU ITEM UI
+const MAONI_EXECUTIVE_DASHBOARD_PATH = "/ppaa-maoni/dashboard";
+
+/** Opened a suggestion from Executive Dashboard (MaoniDashboardPage passes this in navigate state). */
+const isMaoniExecutiveDashboardSidebarContext = (location) =>
+  location?.state?.fromDashboard === true &&
+  typeof location.pathname === "string" &&
+  location.pathname.startsWith("/ppaa-maoni/suggestions/") &&
+  location.pathname !== "/ppaa-maoni/suggestions/new";
+
 const MenuItem = (item) => {
-  const { user, userPermissions, userRoles, submenu, staffOnly, isMain } = item;
+  const { user, userPermissions, userRoles, submenu, staffOnly, isMain, translateMenuItem } = item;
   const location = useLocation();
+  const label = translateMenuItem ? translateMenuItem(item.link, item.text) : item.text;
 
   // Filter submenu items - for staff-only, only show allowed routes
   let filteredSubmenu = submenu
@@ -271,6 +290,15 @@ const MenuItem = (item) => {
     }
   }
 
+  // PPAA Maoni: keep "Executive Dashboard" highlighted when reviewing a suggestion opened from that dashboard.
+  if (
+    !hasSubmenu &&
+    (item.link || "").split("?")[0] === MAONI_EXECUTIVE_DASHBOARD_PATH &&
+    isMaoniExecutiveDashboardSidebarContext(location)
+  ) {
+    isActive = true;
+  }
+
   // Handle empty links for parent items with submenus (submenu shown only after click)
   const linkTo = item.link || "#";
   const isParentWithSubmenu = hasSubmenu && (!item.link || item.link === "");
@@ -295,7 +323,7 @@ const MenuItem = (item) => {
           aria-expanded={hasSubmenu && (isActive || isSubmenuActive)}
         >
           <i className={`menu-icon tf-icons ${item.icon}`}></i>
-          <div>{item.text}</div>
+          <div>{label}</div>
 
           {item.available === false && (
             <div className="badge bg-label-primary fs-tiny rounded-pill ms-auto">
@@ -314,7 +342,7 @@ const MenuItem = (item) => {
           target={item.link && item.link.includes("http") ? "_blank" : undefined}
         >
           <i className={`menu-icon tf-icons ${item.icon}`}></i>
-          <div>{item.text}</div>
+          <div>{label}</div>
 
           {item.available === false && (
             <div className="badge bg-label-primary fs-tiny rounded-pill ms-auto">
@@ -334,6 +362,7 @@ const MenuItem = (item) => {
               userPermissions={userPermissions}
               userRoles={userRoles}
               staffOnly={staffOnly}
+              translateMenuItem={translateMenuItem}
             />
           ))}
         </ul>

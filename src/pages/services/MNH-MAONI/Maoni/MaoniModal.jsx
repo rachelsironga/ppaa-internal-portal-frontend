@@ -110,6 +110,9 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
       .min(10, "Title must be at least 10 characters")
       .max(200, "Title cannot exceed 200 characters"),
     category: Yup.string().required("Please select a category"),
+    department_uid: Yup.string()
+      .trim()
+      .required("Please select which department your suggestion is for"),
     description: Yup.string()
       .required("Description is required")
       .min(
@@ -427,7 +430,8 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                       <div className="col-md-6">
                         <label htmlFor="department_uid" className="form-label">
                           <i className="bx bx-buildings me-1"></i>
-                          Which department?
+                          Which department?{" "}
+                          <span className="text-danger">*</span>
                         </label>
                         <Field
                           as="select"
@@ -435,7 +439,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                           name="department_uid"
                           className="form-select"
                         >
-                          <option value="">Select department (Optional)</option>
+                          <option value="">Select department</option>
                           {departments.map((dept) => (
                             <option key={dept.uid} value={dept.uid}>
                               {dept.name}{" "}
@@ -446,6 +450,11 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                         <small className="form-text text-muted">
                           This helps route your suggestion.
                         </small>
+                        <ErrorMessage
+                          name="department_uid"
+                          component="div"
+                          className="text-danger small mt-1"
+                        />
                       </div>
                     </div>
 

@@ -4,6 +4,11 @@ import servicesList from "../data/servicesList.json";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasPermission } from "../utils/permissions";
+import { isMaoniDepartmentHandler } from "../utils/maoniRoles";
+import {
+  pathIsUnderMaintenanceApp,
+  maintenanceScreenPath,
+} from "../utils/maintenanceRedirects";
 import {
   Search,
   Grid,
@@ -120,8 +125,20 @@ export const Services = () => {
     }
 
     // For internal routes, navigate directly
-    if (target.startsWith('/')) {
-      navigate(target);
+    if (target.startsWith("/")) {
+      let destination = target;
+      if (pathIsUnderMaintenanceApp(destination)) {
+        navigate(maintenanceScreenPath());
+        return;
+      }
+      // Department-only Maoni handlers: open PPAA Maoni on Handler Dashboard (sidebar default), not My Maoni root.
+      if (
+        (destination === "/ppaa-maoni" || destination === "/ppaa-maoni/") &&
+        isMaoniDepartmentHandler(user)
+      ) {
+        destination = "/ppaa-maoni/handler-dashboard";
+      }
+      navigate(destination);
       return;
     }
 

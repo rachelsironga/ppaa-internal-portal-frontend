@@ -108,6 +108,7 @@ export const isAllowedRouteForStaffOnly = (pathname) => {
     const allowedPaths = [
         '/',
         '/services',
+        '/maintenance',
         '/ppaa-internal-portal',
         '/ppaa-internal-portal/account/settings',
         '/ppaa-internal-portal/account/notifications',
@@ -137,6 +138,10 @@ export const isAllowedRouteForStaffOnly = (pathname) => {
         }
         // Allow all Reports Management routes
         if (path === '/report-management' && pathname.startsWith('/report-management')) {
+            return true;
+        }
+        // Help Desk (under maintenance / placeholder)
+        if (pathname === '/help-desk' || pathname.startsWith('/help-desk/')) {
             return true;
         }
         return false;

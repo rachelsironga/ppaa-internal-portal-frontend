@@ -1,13 +1,29 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import "animate.css";
 import { formatDate } from "../../../../helpers/DateFormater";
 import Swal from "sweetalert2";
-import { getSuggestions, getDepartments } from "../../PPAA-MAONI/Queries";
+import { getAllSuggestions, getDepartments } from "../../PPAA-MAONI/Queries";
+import {
+  buildMonthlyTrend,
+  getDashboardRange,
+  inDashboardRange,
+  suggestionActivityDate,
+  toLocalDateString,
+} from "./maoniDashboardDateRange";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { isMaoniReviewer } from "../../../../utils/maoniRoles";
+import { isMaoniAdmin } from "../../../../utils/maoniRoles";
+import MaoniThreadAttentionBanner from "../../../../components/maoni/MaoniThreadAttentionBanner";
+import {
+  buildMaoniReviewerAttentionSummary,
+  maoniSuggestionNeedsReviewerAttention,
+} from "../../../../utils/maoniThreadAttention";
+import {
+  maoniUnderHandlerReviewBadgeClasses,
+  getMaoniUnderHandlerReviewBadgeStyle,
+} from "../../../../utils/maoniUnderHandlerReviewBadge";
 
 // Chart components (using simple div-based charts for demo)
 const BarChart = ({ data, labels, colors, height = 200 }) => {
@@ -160,10 +176,28 @@ export const MaoniDashboardPage = () => {
     end: new Date().toISOString().slice(0, 10),
   });
 
-  const isAdmin =
-    user?.groups?.some((role) => String(role).toLowerCase() === "admin") ||
-    user?.is_superuser;
-  const canAccessDashboard = Boolean(isMaoniReviewer(user) || isAdmin);
+  const isAdmin = isMaoniAdmin(user);
+  const userRoles = (user?.groups || []).map((g) => String(g).toLowerCase().trim());
+  const hasReviewerDashboardRole =
+    userRoles.includes("maoni_reviewer") ||
+    userRoles.includes("maoni_reviewe") ||
+    userRoles.includes("ppaa_maoni_reviewer") ||
+    userRoles.includes("hr");
+  const canAccessDashboard = Boolean(
+    isAdmin || user?.is_superuser || hasReviewerDashboardRole
+  );
+
+  const normalizeWorkflowStatus = (status) => {
+    const raw = String(status || "").toUpperCase();
+    const legacy = {
+      PENDING_REVIEW: "UNDER_HANDLER_REVIEW",
+      UNDER_CONSIDERATION: "ESCALATED_TO_REVIEWER",
+      APPROVED: "CLOSED_APPROVED",
+      IMPLEMENTED: "CLOSED_APPROVED",
+      REJECTED: "CLOSED_REJECTED",
+    };
+    return legacy[raw] || raw;
+  };
 
   const [loading, setLoading] = useState(true);
   const [allSuggestionsRaw, setAllSuggestionsRaw] = useState([]);
@@ -254,14 +288,6 @@ export const MaoniDashboardPage = () => {
   const [reportIncludeRecommendations, setReportIncludeRecommendations] = useState(true);
   const [lastReportGenerated, setLastReportGenerated] = useState(null);
 
-  // Format a Date as YYYY-MM-DD in local time (so date inputs show correct range)
-  const toLocalDateString = (d) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
-
   // When returning from suggestion detail (Back to list), open the requested tab (e.g. contributions)
   useEffect(() => {
     const tab = location?.state?.activeTab;
@@ -297,19 +323,21 @@ export const MaoniDashboardPage = () => {
     // For "custom" and "all" we do NOT override the inputs.
   }, [timeRange]);
 
-  // Access control: PPAA_Maoni_Reviewer / Maoni_Admin / admin / superuser
+  // Access control: Executive dashboard is reviewer/admin only.
   useEffect(() => {
     if (!user) return;
     if (canAccessDashboard) return;
+    if (userRoles.includes("maoni_handler")) {
+      navigate("/ppaa-maoni/handler-dashboard", { replace: true });
+      return;
+    }
     Swal.fire({
       icon: "warning",
       title: "Access Denied",
       text: "You don't have permission to access the Maoni Management Dashboard.",
       confirmButtonText: "Go Back",
-    }).then(() => {
-      navigate(-1);
-    });
-  }, [user, canAccessDashboard, navigate]);
+    }).then(() => navigate(-1));
+  }, [user, userRoles, canAccessDashboard, navigate]);
 
   // Helper: extract array from API response (handles { status, message, data: [] } and other shapes)
   const extractList = (res) => {
@@ -331,7 +359,7 @@ export const MaoniDashboardPage = () => {
       let suggestions = [];
       let depts = [];
       try {
-        const suggestionsRes = await getSuggestions(1, 1000);
+        const suggestionsRes = await getAllSuggestions();
         suggestions = extractList(suggestionsRes);
         setAllSuggestionsRaw(suggestions);
       } catch (e) {
@@ -372,59 +400,40 @@ export const MaoniDashboardPage = () => {
       return Number.isNaN(d.getTime()) ? null : d;
     };
 
-    const getRange = () => {
-      if (timeRange === "all") {
-        return { start: null, end: null };
-      }
-      if (timeRange === "custom") {
-        const start = parseDate(customDateRange.start);
-        const end = parseDate(customDateRange.end);
-        if (!start || !end) return { start: null, end: null };
-        const endPlus = new Date(end);
-        endPlus.setHours(23, 59, 59, 999);
-        return { start, end: endPlus };
-      }
-      if (timeRange === "year") {
-        return { start: new Date(now.getFullYear(), 0, 1), end: now };
-      }
-      if (timeRange === "quarter") {
-        const q = Math.floor(now.getMonth() / 3);
-        return { start: new Date(now.getFullYear(), q * 3, 1), end: now };
-      }
-      if (timeRange === "month") {
-        return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: now };
-      }
-      return { start: null, end: null };
-    };
-
-    const { start: rangeStart, end: rangeEnd } = getRange();
-    const inRange = (s) => {
-      if (!rangeStart || !rangeEnd) return true;
-      const d = parseDate(s.created_at || s.submitted_at || s.updated_at);
-      if (!d) return false;
-      return d >= rangeStart && d <= rangeEnd;
-    };
-    const isNotDraft = (s) => String(s.status || "").toUpperCase() !== "DRAFT";
+    const { start: rangeStart, end: rangeEnd } = getDashboardRange(
+      timeRange,
+      customDateRange,
+      now
+    );
+    const inRange = (s) => inDashboardRange(s, rangeStart, rangeEnd);
+    const isNotDraft = (s) => normalizeWorkflowStatus(s.status) !== "DRAFT";
 
     // Exclude drafts from dashboard: leads/admins do not see draft suggestions
     const scoped = suggestions.filter(inRange).filter(isNotDraft);
 
     // Basic stats (all scoped are non-draft)
     const total = scoped.length;
-    const submitted = scoped.filter(
-      (s) => String(s.status || "").toUpperCase() === "SUBMITTED"
-    ).length;
+    const submitted = scoped.filter((s) => {
+      const st = normalizeWorkflowStatus(s.status);
+      return (
+        st === "SUBMITTED" ||
+        st === "UNDER_HANDLER_REVIEW" ||
+        st === "ESCALATED_TO_REVIEWER" ||
+        st === "RETURNED_TO_HANDLER" ||
+        st === "HANDLER_RESPONDED_TO_REVIEWER"
+      );
+    }).length;
     const drafts = 0;
 
     const contributorIds = new Set(
       scoped.map((s) => s.submitted_by_id).filter((x) => x != null)
     );
 
-    // New this month: non-draft only, created within current month
+    // New this month: within current KPI set (scoped), activity in current calendar month
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const newThisMonth = suggestions.filter((s) => {
-      const d = new Date(s.created_at || s.submitted_at || s.updated_at || 0);
-      return d >= monthStart && isNotDraft(s);
+    const newThisMonth = scoped.filter((s) => {
+      const d = suggestionActivityDate(s);
+      return d && d >= monthStart && d <= now;
     }).length;
 
     setDashboardStats((prev) => ({
@@ -477,22 +486,9 @@ export const MaoniDashboardPage = () => {
       data: topDepts.map(([, v]) => v),
     }));
 
-    // Contribution trend: last 6 months
-    const monthLabels = [];
-    const monthCounts = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const label = d.toLocaleString(undefined, { month: "short" });
-      monthLabels.push(label);
-      const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const count = scoped.filter((s) => {
-        const created = new Date(s.created_at || s.submitted_at || s.updated_at || 0);
-        return created >= d && created < next;
-      }).length;
-      monthCounts.push(count);
-    }
-    setContributionTrend({ labels: monthLabels, data: monthCounts });
-    setMonthlyEngagement({ labels: monthLabels, data: monthCounts });
+    const trend = buildMonthlyTrend(scoped, rangeStart, rangeEnd, now);
+    setContributionTrend({ labels: trend.labels, data: trend.data });
+    setMonthlyEngagement({ labels: trend.labels, data: trend.data });
 
     // Contributions table data (map + sort)
     const mapped = scoped
@@ -526,8 +522,8 @@ export const MaoniDashboardPage = () => {
       const entry = deptAgg.get(key) || { name: key, contributions: 0, submitted: 0, drafts: 0 };
       entry.contributions += 1;
       const st = String(s.status || "").toUpperCase();
-      if (st === "SUBMITTED") entry.submitted += 1;
       if (st === "DRAFT") entry.drafts += 1;
+      else entry.submitted += 1;
       deptAgg.set(key, entry);
     }
     const deptRows = Array.from(deptAgg.values())
@@ -555,8 +551,8 @@ export const MaoniDashboardPage = () => {
       };
       entry.contributions += 1;
       const st = String(s.status || "").toUpperCase();
-      if (st === "SUBMITTED") entry.submitted += 1;
       if (st === "DRAFT") entry.drafts += 1;
+      else entry.submitted += 1;
       const d = parseDate(s.created_at || s.submitted_at || s.updated_at);
       if (d && (!entry.lastContribution || d > entry.lastContribution)) {
         entry.lastContribution = d;
@@ -582,7 +578,7 @@ export const MaoniDashboardPage = () => {
 
     // Moderation queue (latest submitted, top 5 by newest)
     const moderation = scoped
-      .filter((s) => String(s.status || "").toUpperCase() === "SUBMITTED")
+      .filter((s) => normalizeWorkflowStatus(s.status) === "UNDER_HANDLER_REVIEW")
       .slice()
       .sort(
         (a, b) =>
@@ -655,10 +651,21 @@ export const MaoniDashboardPage = () => {
   });
 
   const getStatusBadgeClass = (status) => {
-    const s = String(status || "").toLowerCase();
+    const s = String(normalizeWorkflowStatus(status) || "").toLowerCase();
     switch (s) {
       case "submitted":
         return "bg-primary-subtle text-primary border-primary";
+      case "under_handler_review":
+        return maoniUnderHandlerReviewBadgeClasses;
+      case "returned_to_handler":
+      case "handler_responded_to_reviewer":
+        return "bg-warning-subtle text-warning border-warning";
+      case "escalated_to_reviewer":
+        return "bg-info-subtle text-info border-info";
+      case "closed_approved":
+        return "bg-success-subtle text-success border-success";
+      case "closed_rejected":
+        return "bg-danger-subtle text-danger border-danger";
       case "draft":
         return "bg-warning-subtle text-warning border-warning";
       default:
@@ -666,11 +673,33 @@ export const MaoniDashboardPage = () => {
     }
   };
 
+  const getStatusBadgeStyle = (status) => {
+    const s = String(normalizeWorkflowStatus(status) || "").toLowerCase();
+    if (s === "under_handler_review") {
+      return getMaoniUnderHandlerReviewBadgeStyle();
+    }
+    return undefined;
+  };
+
   const getStatusText = (status) => {
-    const s = String(status || "").toLowerCase();
+    const s = String(normalizeWorkflowStatus(status) || "").toLowerCase();
     switch (s) {
       case "submitted":
         return "Submitted";
+      case "under_handler_review":
+        return "Under Handler Review";
+      case "escalated_to_reviewer":
+        return "Escalated to Reviewer";
+      case "returned_to_handler":
+        return "Returned to Handler";
+      case "handler_responded_to_reviewer":
+        return "Handler Responded to Reviewer";
+      case "handler_responded_to_contributor":
+        return "Handler Responded to Contributor";
+      case "closed_approved":
+        return "Closed - Approved";
+      case "closed_rejected":
+        return "Closed - Rejected";
       case "draft":
         return "Draft";
       default:
@@ -1088,6 +1117,89 @@ export const MaoniDashboardPage = () => {
     });
   };
 
+  const currentUserId = user?.id ?? user?.user_id ?? user?.pk ?? null;
+
+  const reviewerAttentionItems = useMemo(() => {
+    if (currentUserId == null || !canAccessDashboard) return [];
+    const raw = allSuggestionsRaw || [];
+    return raw
+      .filter((s) => maoniSuggestionNeedsReviewerAttention(s, currentUserId))
+      .sort(
+        (a, b) =>
+          new Date(b.last_comment_at || b.updated_at || 0) -
+          new Date(a.last_comment_at || a.updated_at || 0)
+      );
+  }, [allSuggestionsRaw, currentUserId, canAccessDashboard]);
+
+  const reviewerAttentionSig = useMemo(
+    () =>
+      reviewerAttentionItems
+        .map((s) => `${String(s.uid)}:${String(s.last_comment_at || "")}:${String(s.updated_at || "")}`)
+        .join("|"),
+    [reviewerAttentionItems]
+  );
+
+  const reviewerAttentionInitRef = useRef(false);
+  const reviewerAttentionPrevSigRef = useRef("");
+
+  useEffect(() => {
+    if (!canAccessDashboard || loading) return;
+    if (!reviewerAttentionInitRef.current) {
+      reviewerAttentionInitRef.current = true;
+      reviewerAttentionPrevSigRef.current = reviewerAttentionSig;
+      return;
+    }
+    if (
+      reviewerAttentionItems.length > 0 &&
+      reviewerAttentionSig !== reviewerAttentionPrevSigRef.current
+    ) {
+      const n = reviewerAttentionItems.length;
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "info",
+        title: n === 1 ? "New Maoni message for you" : `${n} new Maoni messages`,
+        text: "Someone posted in a suggestion that needs your review.",
+        showConfirmButton: true,
+        confirmButtonText: "Open latest",
+        showCancelButton: true,
+        cancelButtonText: "Dismiss",
+        timer: 20000,
+        timerProgressBar: true,
+      }).then((res) => {
+        if (!res.isConfirmed) return;
+        const uid = reviewerAttentionItems[0]?.uid;
+        if (uid) {
+          navigate(`/ppaa-maoni/suggestions/${uid}`, {
+            state: { fromDashboard: true, returnTab: activeTab },
+          });
+        }
+      });
+    }
+    reviewerAttentionPrevSigRef.current = reviewerAttentionSig;
+  }, [
+    reviewerAttentionSig,
+    reviewerAttentionItems,
+    canAccessDashboard,
+    loading,
+    navigate,
+    activeTab,
+  ]);
+
+  useEffect(() => {
+    if (!canAccessDashboard) return;
+    const id = window.setInterval(async () => {
+      try {
+        const suggestionsRes = await getAllSuggestions();
+        const list = extractList(suggestionsRes);
+        setAllSuggestionsRaw(list);
+      } catch {
+        /* keep existing data */
+      }
+    }, 90_000);
+    return () => window.clearInterval(id);
+  }, [canAccessDashboard]);
+
   // ✅ Important: do NOT return early before hooks above have been declared.
   // Access control: Maoni leads, admins, superusers
   if (!canAccessDashboard) {
@@ -1235,6 +1347,28 @@ export const MaoniDashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {reviewerAttentionItems.length > 0 && (
+        <div className="row mb-3">
+          <div className="col-12">
+            <MaoniThreadAttentionBanner
+              items={reviewerAttentionItems}
+              onOpenSuggestion={(uid) =>
+                navigate(`/ppaa-maoni/suggestions/${uid}`, {
+                  state: { fromDashboard: true, returnTab: activeTab },
+                })
+              }
+              title="New messages for your review"
+              summary={buildMaoniReviewerAttentionSummary(reviewerAttentionItems.length)}
+              overflowNote={
+                reviewerAttentionItems.length > 6
+                  ? `+${reviewerAttentionItems.length - 6} more — open All Contributions or the suggestions list.`
+                  : undefined
+              }
+            />
+          </div>
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="row mb-4">
@@ -1535,6 +1669,7 @@ export const MaoniDashboardPage = () => {
                                 className={`badge ${getStatusBadgeClass(
                                   contribution.status
                                 )}`}
+                                style={getStatusBadgeStyle(contribution.status)}
                               >
                                 {getStatusText(contribution.status)}
                               </span>
@@ -2005,6 +2140,7 @@ export const MaoniDashboardPage = () => {
                               className={`badge ${getStatusBadgeClass(
                                 contribution.status
                               )}`}
+                              style={getStatusBadgeStyle(contribution.status)}
                             >
                               {getStatusText(contribution.status)}
                             </span>

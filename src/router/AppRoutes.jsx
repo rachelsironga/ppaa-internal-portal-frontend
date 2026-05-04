@@ -15,8 +15,6 @@ import { maoniRoutes } from "./maoniRoutes";
 import { trainingRoutes } from "./trainingRoutes";
 import { externalReferralRoutes } from "./externalReferralRoutes";
 import { ppaaInternalPortalRoutes } from "./ppaaInternalPortal";
-import { performanceDashboardRoutes } from "./performanceDashboardRoutes";
-import { reportManagementRoutes } from "./reportManagementRoutes";
 
 const AppRoutes = () => {
   return (
@@ -46,11 +44,41 @@ const AppRoutes = () => {
       {/* MAONI Routes */}
       {maoniRoutes}
 
-      {/* Performance Dashboard Routes */}
-      {performanceDashboardRoutes}
+      {/* Dedicated maintenance screen (e.g. from Services home cards) */}
+      <Route
+        path="/maintenance"
+        element={
+          <ProtectedRoute>
+            <MaintenancePage />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* PPAA Reports Routes */}
-      {reportManagementRoutes}
+      {/* Strategic Performance, Reports Management, Help Desk — under development */}
+      <Route
+        path="/performance-dashboard/*"
+        element={
+          <ProtectedRoute>
+            <MaintenancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/report-management/*"
+        element={
+          <ProtectedRoute>
+            <MaintenancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/help-desk/*"
+        element={
+          <ProtectedRoute>
+            <MaintenancePage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ICT Assets Routes */}
       {/* {ictAssetsRoutes} */}

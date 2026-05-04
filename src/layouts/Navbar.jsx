@@ -7,6 +7,10 @@ import React, { useState, useEffect, useRef } from "react";
 import servicesList from "../data/servicesList.json";
 import { isStaffOnly, isAllowedRouteForStaffOnly } from "../utils/permissions";
 import {
+  pathIsUnderMaintenanceApp,
+  maintenanceScreenPath,
+} from "../utils/maintenanceRedirects";
+import {
   Search,
   Bell,
   User,
@@ -36,6 +40,7 @@ import {
   readPortalThemeIsDark,
   PORTAL_THEME_STORAGE_KEY,
 } from "../helpers/portalTheme";
+import { InternalPortalLanguageToggle } from "../components/portal/InternalPortalLanguageToggle.jsx";
 
 const Navbar = ({ isService = false, activeService = "" }) => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -170,10 +175,13 @@ const Navbar = ({ isService = false, activeService = "" }) => {
   };
 
   const handleServiceClick = (service) => {
-    navigate(
+    const raw =
       service.link ||
-        `/dashboard/${service.text.toLowerCase().replace(/\s+/g, "-")}`
-    );
+      `/dashboard/${service.text.toLowerCase().replace(/\s+/g, "-")}`;
+    const dest = pathIsUnderMaintenanceApp(raw)
+      ? maintenanceScreenPath()
+      : raw;
+    navigate(dest);
     setShowDropdown(false);
   };
 
@@ -202,6 +210,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             justify-content: space-between;
             max-width: 100%;
             margin: 0;
+            min-width: 0;
           }
           
           /* Left Section - Controls */
@@ -209,6 +218,8 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             display: flex;
             align-items: center;
             gap: 20px;
+            min-width: 0;
+            flex: 1 1 auto;
           }
           
           #${navbarId} .mnh-mobile-menu-btn {
@@ -574,6 +585,15 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             display: flex;
             align-items: center;
             gap: 16px;
+            flex-shrink: 0;
+          }
+          
+          #${navbarId} .portal-nav-theme {
+            flex-shrink: 0;
+          }
+          
+          #${navbarId} .internal-portal-lang-toggle {
+            flex-shrink: 0;
           }
           
           /* User Profile Compact */
@@ -947,6 +967,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                   className="portal-nav-theme d-flex align-items-center gap-1 me-1 flex-nowrap"
                   aria-label="Portal appearance"
                 >
+                  <InternalPortalLanguageToggle className="me-1" />
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary d-none d-md-flex"

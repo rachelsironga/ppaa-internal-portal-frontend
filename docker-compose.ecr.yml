@@ -1,0 +1,9 @@
+# Optional: Public ECR mirrors (same images as Hub). Use when Docker Hub is slow or IPv6 to
+# registry-1.docker.io fails, and your network resolves public.ecr.aws.
+# docker compose -f docker-compose.yml -f docker-compose.ecr.yml up --build
+services:
+  frontend:
+    build:
+      args:
+        NODE_IMAGE: public.ecr.aws/docker/library/node:18-alpine
+        NGINX_IMAGE: public.ecr.aws/docker/library/nginx:alpine

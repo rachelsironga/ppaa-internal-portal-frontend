@@ -24,7 +24,7 @@
         "available": true,
         "link": "/ppaa-internal-portal/account/settings",
         "permission": [],
-        "role": ["admin", "staff", "content_editor", "ICT", "ppaa_maoni_reviewer", "maoni_admin"]
+        "role": ["admin", "staff", "content_editor", "ICT", "maoni_reviewer", "maoni_handler", "maoni_reviewe", "ppaa_maoni_reviewer", "maoni_admin"]
       }
     ]
   },

@@ -2,6 +2,7 @@ import api from "../../../api";
 import { API_BASE_URL } from "../../../Costants";
 
 const API_URL = `${API_BASE_URL}/api/maoni/suggestions`;
+const MAONI_SETTINGS_API_URL = `${API_BASE_URL}/api/maoni/settings/`;
 
 /**
  * List Maoni suggestions.
@@ -21,6 +22,47 @@ export const getSuggestions = async (page = 1, pageSize = 10, { onlyMine = false
     console.error("Error fetching suggestions:", error);
     throw error;
   }
+};
+
+const extractSuggestionsList = (res) => {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.data?.data)) return res.data.data;
+  if (Array.isArray(res?.data?.results)) return res.data.results;
+  if (Array.isArray(res?.results)) return res.results;
+  return [];
+};
+
+/**
+ * Fetch all Maoni suggestions across paginated API responses (page_size capped at 500 server-side).
+ */
+export const getAllSuggestions = async ({ onlyMine = false, pageSize = 500 } = {}) => {
+  const safePageSize = Math.min(500, Math.max(1, Number(pageSize) || 500));
+  let page = 1;
+  let merged = [];
+
+  while (page <= 200) {
+    const res = await getSuggestions(page, safePageSize, { onlyMine });
+    const rows = extractSuggestionsList(res);
+    merged = merged.concat(rows);
+
+    const pagination = res?.pagination || res?.data?.pagination || {};
+    const total = Number(pagination?.total);
+    if (Number.isFinite(total) && total >= 0) {
+      if (merged.length >= total) break;
+    } else if (rows.length < safePageSize) {
+      break;
+    }
+    page += 1;
+  }
+
+  return {
+    status: 8000,
+    message: "Success",
+    data: merged,
+    pagination: { total: merged.length, page: 1, page_size: merged.length },
+  };
 };
 
 /**
@@ -65,12 +107,16 @@ export const updateSuggestion = async (uid, data) => {
 /**
  * Reply to a suggestion or another reply
  */
-export const replyToSuggestion = async (uid, comment, parentCommentUid = null) => {
+export const replyToSuggestion = async (uid, comment, parentCommentUid = null, options = {}) => {
   try {
-    const response = await api.post(`${API_URL}/${uid}/reply/`, {
+    const payload = {
       comment,
       parent_comment_uid: parentCommentUid,
-    });
+    };
+    if (options.threadScope === "STAFF") {
+      payload.thread_scope = "STAFF";
+    }
+    const response = await api.post(`${API_URL}/${uid}/reply/`, payload);
     return response.data;
   } catch (error) {
     console.error("Error replying to suggestion:", error);
@@ -154,5 +200,31 @@ export const getDepartments = async () => {
       message: error.response?.data?.message || "Failed to fetch departments",
       data: []
     };
+  }
+};
+
+/**
+ * Get Maoni workflow settings (e.g., escalation days).
+ */
+export const getMaoniSettings = async () => {
+  try {
+    const response = await api.get(MAONI_SETTINGS_API_URL);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Maoni settings:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update Maoni workflow settings (admin/reviewer roles only).
+ */
+export const updateMaoniSettings = async (data) => {
+  try {
+    const response = await api.put(MAONI_SETTINGS_API_URL, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating Maoni settings:", error);
+    throw error;
   }
 };

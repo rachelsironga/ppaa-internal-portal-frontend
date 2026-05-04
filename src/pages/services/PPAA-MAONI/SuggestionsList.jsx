@@ -1,12 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { getSuggestions, getSuggestion } from "./Queries";
+import { getSuggestions, getSuggestion, getAllSuggestions } from "./Queries";
 import { formatDate } from "../../../helpers/DateFormater";
 import LinearIndeterminate from "../../../LinearIndeterminate";
+import MaoniPortalBreadcrumb from "../../../layouts/MaoniPortalBreadcrumb";
 import SuggestionForm from "./SuggestionForm";
-import { isMaoniReviewer } from "../../../utils/maoniRoles";
+import { isMaoniDepartmentHandler, isMaoniReviewer } from "../../../utils/maoniRoles";
+import {
+  maoniUnderHandlerReviewBadgeClasses,
+  getMaoniUnderHandlerReviewBadgeStyle,
+} from "../../../utils/maoniUnderHandlerReviewBadge";
+
+const maoniSeenUpdatedKey = (uid) => `maoni_suggestion_last_seen_updated_${uid}`;
+
+/** True when this suggestion was updated after the contributor last opened its detail page. */
+const suggestionHasNewActivityForContributor = (suggestion, userId) => {
+  if (!suggestion?.uid || userId == null) return false;
+  if (String(suggestion.submitted_by_id ?? "") !== String(userId)) return false;
+  try {
+    const seen = localStorage.getItem(maoniSeenUpdatedKey(suggestion.uid));
+    const cur = String(suggestion.updated_at || suggestion.created_at || "");
+    if (!cur) return false;
+    if (!seen) return Number(suggestion.comment_count || 0) > 0;
+    return cur > seen;
+  } catch {
+    return false;
+  }
+};
 
 const SuggestionsList = () => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -25,10 +47,35 @@ const SuggestionsList = () => {
   const isMaoniReviewerUser =
     isMaoniReviewer(user) || user?.is_superuser;
 
+  const handlerDepartmentUid = useMemo(() => {
+    if (!isMaoniDepartmentHandler(user)) return null;
+    return (
+      user?.department?.uid ||
+      user?.department_uid ||
+      user?.position?.department_uid ||
+      user?.current_department_uid ||
+      null
+    );
+  }, [user]);
+
+  const hasDepartmentListScope = Boolean(handlerDepartmentUid);
+
   const draftOnly = location?.state?.filter === "drafts";
   const filterUserId = location?.state?.userId || null;
   const filterUserName = location?.state?.userName || null;
   const submittedOnly = Boolean(location?.state?.submittedOnly);
+
+  const normalizeWorkflowStatus = (status) => {
+    const raw = String(status || "").toUpperCase();
+    const legacy = {
+      PENDING_REVIEW: "UNDER_HANDLER_REVIEW",
+      UNDER_CONSIDERATION: "ESCALATED_TO_REVIEWER",
+      APPROVED: "CLOSED_APPROVED",
+      IMPLEMENTED: "CLOSED_APPROVED",
+      REJECTED: "CLOSED_REJECTED",
+    };
+    return legacy[raw] || raw;
+  };
 
   // Debounce search input so we don't re-fetch on every keystroke
   useEffect(() => {
@@ -39,7 +86,7 @@ const SuggestionsList = () => {
   // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [draftOnly, filterUserId, submittedOnly]);
+  }, [draftOnly, filterUserId, submittedOnly, hasDepartmentListScope, handlerDepartmentUid]);
 
   // Reset to page 1 when search changes
   useEffect(() => {
@@ -48,7 +95,7 @@ const SuggestionsList = () => {
 
   useEffect(() => {
     fetchSuggestions();
-  }, [currentPage, draftOnly, debouncedSearch, filterUserId, submittedOnly]);
+  }, [currentPage, draftOnly, debouncedSearch, filterUserId, submittedOnly, hasDepartmentListScope, handlerDepartmentUid]);
 
   // Show success modal after creating a suggestion, then clear navigation state.
   useEffect(() => {
@@ -69,12 +116,19 @@ const SuggestionsList = () => {
     try {
       setLoading(true);
 
+      if (isMaoniDepartmentHandler(user) && !handlerDepartmentUid) {
+        setSuggestions([]);
+        setTotalPages(1);
+        setTotalCount(0);
+        return;
+      }
+
       const pageSize = 10;
       const query = (debouncedSearch || "").trim().toLowerCase();
       const hasSearchQuery = query.length > 0;
 
       const hasUserFilter = Boolean(filterUserId);
-      
+
       const matchesQuery = (s) => {
         if (!hasSearchQuery) return true;
         const haystack = [
@@ -91,81 +145,75 @@ const SuggestionsList = () => {
         return haystack.includes(query);
       };
 
-      // If we are searching OR we are in drafts view, do client-side filtering + pagination.
-      // (Backend doesn't support search filter, and drafts view needs filtering.)
-      if (draftOnly || hasSearchQuery || hasUserFilter || submittedOnly) {
-        // Fetch a large batch for client-side filtering/pagination
-        const batchSize = hasSearchQuery ? 500 : 500;
-        const response = await getSuggestions(1, batchSize);
-        if (response.status === 8000 || response.status === 200) {
-          const data = Array.isArray(response.data) ? response.data : [];
+      const applyDepartmentScope = (rows) => {
+        if (!hasDepartmentListScope || !handlerDepartmentUid) return rows;
+        return rows.filter(
+          (s) =>
+            s.department_uid != null &&
+            String(s.department_uid).trim() !== "" &&
+            String(s.department_uid) === String(handlerDepartmentUid)
+        );
+      };
 
-          let base = data;
+      const needsClientMode =
+        draftOnly ||
+        hasSearchQuery ||
+        hasUserFilter ||
+        submittedOnly ||
+        hasDepartmentListScope;
 
-          // Filter for drafts if in draft-only mode
-          if (draftOnly) {
-            base = base.filter((s) => (s.status || "").toLowerCase() === "draft");
-          }
-
-          // Filter for submitted only if requested
-          if (submittedOnly) {
-            base = base.filter((s) => (s.status || "").toLowerCase() === "submitted");
-          }
-
-          // Filter by user id (Maoni lead / Admin use-case from dashboard)
-          if (hasUserFilter) {
-            base = base.filter(
-              (s) => String(s.submitted_by_id) === String(filterUserId)
-            );
-          }
-
-          // Apply search filter
-          const filtered = base.filter(matchesQuery);
-
-          // Client-side pagination
-          // Page 1: startIndex = 0, endIndex = 10 → items 0-9 (first 10)
-          // Page 2: startIndex = 10, endIndex = 20 → items 10-19 (next 10)
-          // Page 3: startIndex = 20, endIndex = 30 → items 20-29 (next 10)
-          const startIndex = (currentPage - 1) * pageSize;
-          const endIndex = startIndex + pageSize;
-          const pageItems = filtered.slice(startIndex, endIndex);
-
-          setSuggestions(pageItems);
-          setTotalPages(Math.ceil(filtered.length / pageSize) || 1);
-          setTotalCount(filtered.length);
-          
-          // Debug logging
-          console.log(`Page ${currentPage}: Showing items ${startIndex + 1}-${Math.min(endIndex, filtered.length)} of ${filtered.length}`);
-          console.log(`Items on this page: ${pageItems.length} (expected ${pageSize})`);
+      if (needsClientMode) {
+        let data = [];
+        if (hasDepartmentListScope) {
+          const res = await getAllSuggestions();
+          data = Array.isArray(res?.data) ? res.data : [];
         } else {
-          setSuggestions([]);
-          setTotalPages(1);
-          setTotalCount(0);
+          const batchSize = 500;
+          const response = await getSuggestions(1, batchSize);
+          if (response.status === 8000 || response.status === 200) {
+            data = Array.isArray(response.data) ? response.data : [];
+          }
         }
+
+        let base = applyDepartmentScope(data);
+
+        if (draftOnly) {
+          base = base.filter((s) => normalizeWorkflowStatus(s.status) === "DRAFT");
+        } else if (submittedOnly) {
+          base = base.filter((s) => normalizeWorkflowStatus(s.status) !== "DRAFT");
+        } else {
+          base = base.filter((s) => normalizeWorkflowStatus(s.status) !== "DRAFT");
+        }
+
+        if (hasUserFilter) {
+          base = base.filter((s) => String(s.submitted_by_id) === String(filterUserId));
+        }
+
+        const filtered = base.filter(matchesQuery);
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageItems = filtered.slice(startIndex, endIndex);
+
+        setSuggestions(pageItems);
+        setTotalPages(Math.ceil(filtered.length / pageSize) || 1);
+        setTotalCount(filtered.length);
         return;
       }
 
-      // Normal view with no search and no draft filter: use server-side pagination
-      // This ensures each page fetches the correct 10 items from the server
-      // Page 1 → items 1-10, Page 2 → items 11-20, Page 3 → items 21-30, etc.
       const response = await getSuggestions(currentPage, pageSize);
       if (response.status === 8000 || response.status === 200) {
         const data = response.data || [];
         const pagination = response.pagination || {};
 
         if (Array.isArray(data)) {
-          // Ensure we only show exactly pageSize items (10)
           const pageItems = data.slice(0, pageSize);
-          
+
           setSuggestions(pageItems);
           const total = pagination.total || data.length;
           const size = pagination.page_size || pageSize;
           setTotalPages(Math.ceil(total / size) || 1);
           setTotalCount(total);
-          
-          // Debug logging
-          console.log(`Page ${currentPage}: Showing ${pageItems.length} items (expected ${pageSize})`);
-          console.log(`Total items: ${total}, Total pages: ${Math.ceil(total / size)}`);
         }
       }
     } catch (error) {
@@ -191,40 +239,57 @@ const SuggestionsList = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    const statusLower = status?.toLowerCase();
+    const statusLower = normalizeWorkflowStatus(status).toLowerCase();
     switch (statusLower) {
       case "submitted":
         return "bg-primary-subtle text-primary";
       case "draft":
         return "bg-warning-subtle text-warning";
-      case "pending_review":
+      case "under_handler_review":
+        return maoniUnderHandlerReviewBadgeClasses;
+      case "returned_to_handler":
+      case "handler_responded_to_reviewer":
         return "bg-warning-subtle text-warning";
-      case "under_consideration":
+      case "escalated_to_reviewer":
         return "bg-info-subtle text-info";
-      case "approved":
+      case "closed_approved":
         return "bg-success-subtle text-success";
-      case "rejected":
+      case "closed_rejected":
         return "bg-danger-subtle text-danger";
       default:
         return "bg-secondary-subtle text-secondary";
     }
   };
 
+  const getStatusBadgeStyle = (status) => {
+    const statusLower = normalizeWorkflowStatus(status).toLowerCase();
+    if (statusLower === "under_handler_review") {
+      return getMaoniUnderHandlerReviewBadgeStyle();
+    }
+    return undefined;
+  };
+
   const getStatusText = (status) => {
-    const statusLower = status?.toLowerCase();
+    const statusLower = normalizeWorkflowStatus(status).toLowerCase();
     switch (statusLower) {
       case "submitted":
         return "SUBMITTED";
       case "draft":
         return "DRAFT";
-      case "pending_review":
-        return "PENDING REVIEW";
-      case "under_consideration":
-        return "UNDER CONSIDERATION";
-      case "approved":
-        return "APPROVED";
-      case "rejected":
-        return "REJECTED";
+      case "under_handler_review":
+        return "UNDER HANDLER REVIEW";
+      case "escalated_to_reviewer":
+        return "ESCALATED TO REVIEWER";
+      case "returned_to_handler":
+        return "RETURNED TO HANDLER";
+      case "handler_responded_to_reviewer":
+        return "HANDLER RESPONDED TO REVIEWER";
+      case "handler_responded_to_contributor":
+        return "HANDLER RESPONDED TO CONTRIBUTOR";
+      case "closed_approved":
+        return "CLOSED APPROVED";
+      case "closed_rejected":
+        return "CLOSED REJECTED";
       default:
         return status || "";
     }
@@ -291,9 +356,15 @@ const SuggestionsList = () => {
     return <LinearIndeterminate />;
   }
 
+  const goBackFromList = () => {
+    navigate(-1);
+  };
+
   return (
     <>
       <div className="w-100 py-4">
+        <MaoniPortalBreadcrumb onBack={goBackFromList} tailLabel="List" />
+
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 className="mb-1">Suggestions</h2>
@@ -302,6 +373,10 @@ const SuggestionsList = () => {
                 ? "Your draft suggestions"
                 : filterUserId
                 ? `Submitted suggestions by ${filterUserName || "selected user"}`
+                : isMaoniDepartmentHandler(user) && !handlerDepartmentUid
+                ? "Assign a department to your profile to see suggestions for your queue"
+                : hasDepartmentListScope
+                ? "Suggestions submitted to your department only"
                 : isMaoniReviewerUser
                 ? "All submitted suggestions"
                 : "Your submitted suggestions"}
@@ -400,14 +475,27 @@ const SuggestionsList = () => {
                         <h5 className="card-title mb-0 suggestion-title">
                           {suggestion.title}
                         </h5>
-                        <span
-                          className={`badge ${getStatusBadgeClass(
-                            suggestion.status
-                          )} text-uppercase`}
-                          style={{ letterSpacing: "0.02em" }}
-                        >
-                          {getStatusText(suggestion.status)}
-                        </span>
+                        <div className="d-flex flex-wrap align-items-center gap-1 justify-content-end">
+                          {suggestionHasNewActivityForContributor(suggestion, user?.id) && (
+                            <span
+                              className="badge rounded-pill bg-danger"
+                              title="New message or update since you last opened this suggestion"
+                            >
+                              New
+                            </span>
+                          )}
+                          <span
+                            className={`badge ${getStatusBadgeClass(
+                              suggestion.status
+                            )} text-uppercase`}
+                            style={{
+                              letterSpacing: "0.02em",
+                              ...getStatusBadgeStyle(suggestion.status),
+                            }}
+                          >
+                            {getStatusText(suggestion.status)}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Description */}

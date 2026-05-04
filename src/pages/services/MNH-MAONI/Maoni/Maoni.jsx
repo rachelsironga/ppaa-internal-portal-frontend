@@ -7,19 +7,28 @@ import MaoniModal from "./MaoniModal";
 import { MaoniContext } from "../../../../utils/context";
 import { getSuggestions, getDepartments, getSuggestion } from "../../PPAA-MAONI/Queries";
 import Swal from "sweetalert2";
-import { isMaoniReviewer } from "../../../../utils/maoniRoles";
+import {
+  getNormalizedGroupSlugs,
+  isMaoniHandler,
+  isMaoniReviewer,
+} from "../../../../utils/maoniRoles";
 
 export const Maoni = () => {
   const user = useSelector((state) => state.userReducer?.data);
   const navigate = useNavigate();
 
-  const userRoles =
-    user?.groups?.map((r) => String(r).toLowerCase()) || [];
+  const userRoles = getNormalizedGroupSlugs(user);
   const isStaff = userRoles.includes("staff");
   const isMaoniReviewerUser = isMaoniReviewer(user);
+  const isMaoniHandlerUser = isMaoniHandler(user);
   const isAdmin = userRoles.includes("admin");
+  const hasReviewerDashboardRole =
+    userRoles.includes("maoni_reviewer") ||
+    userRoles.includes("maoni_reviewe") ||
+    userRoles.includes("ppaa_maoni_reviewer") ||
+    userRoles.includes("hr");
   const canAccessMaoni = Boolean(
-    isStaff || isMaoniReviewerUser || isAdmin || user?.is_superuser
+    isStaff || isMaoniReviewerUser || isMaoniHandlerUser || isAdmin || user?.is_superuser
   );
 
   // User's personal maoni stats
@@ -35,7 +44,7 @@ export const Maoni = () => {
   const [selectedMaoni, setSelectedMaoni] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Restrict /ppaa-maoni to staff / PPAA_Maoni_Reviewer / Admin / Superuser
+  // Restrict /ppaa-maoni to staff / Maoni_Reviewer / Admin / Superuser
   useEffect(() => {
     if (!user) return;
     if (canAccessMaoni) return;
@@ -48,6 +57,16 @@ export const Maoni = () => {
       navigate(-1);
     });
   }, [user, canAccessMaoni, navigate]);
+
+  // Default landing:
+  // - Explicit reviewer/superuser roles -> Executive Dashboard
+  // - Maoni admin/handler/staff can access /ppaa-maoni from sidebar "Maoni" tab
+  useEffect(() => {
+    if (!user) return;
+    if (hasReviewerDashboardRole || user?.is_superuser) {
+      navigate("/ppaa-maoni/dashboard", { replace: true });
+    }
+  }, [user, hasReviewerDashboardRole, navigate]);
 
   const handleFetchData = useCallback(async () => {
     try {
@@ -116,25 +135,69 @@ export const Maoni = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = myRecentMaoni.slice(indexOfFirstItem, indexOfLastItem);
 
+  const normalizeWorkflowStatus = (status) => {
+    const raw = String(status || "").toUpperCase();
+    const legacy = {
+      PENDING_REVIEW: "UNDER_HANDLER_REVIEW",
+      UNDER_CONSIDERATION: "ESCALATED_TO_REVIEWER",
+      APPROVED: "CLOSED_APPROVED",
+      IMPLEMENTED: "CLOSED_APPROVED",
+      REJECTED: "CLOSED_REJECTED",
+    };
+    return legacy[raw] || raw;
+  };
+
   const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "submitted":
-        return "bg-primary-subtle text-primary";
-      case "draft":
-        return "bg-warning-subtle text-warning";
+    const s = normalizeWorkflowStatus(status);
+    // Use text-* (not *-emphasis): vendor core.css omits emphasis utilities but .badge defaults to white text.
+    const pill = "rounded-pill px-2 py-1 small fw-semibold border";
+    switch (s) {
+      case "DRAFT":
+        return `${pill} bg-warning-subtle text-dark border-warning`;
+      case "SUBMITTED":
+        return `${pill} bg-primary-subtle text-primary border-primary`;
+      case "UNDER_HANDLER_REVIEW":
+        return `${pill} bg-success-subtle text-success border-success`;
+      case "ESCALATED_TO_REVIEWER":
+        return `${pill} bg-info-subtle text-info border-info`;
+      case "RETURNED_TO_HANDLER":
+        return `${pill} bg-secondary-subtle text-dark border-secondary`;
+      case "HANDLER_RESPONDED_TO_REVIEWER":
+        return `${pill} bg-primary text-white border-primary`;
+      case "HANDLER_RESPONDED_TO_CONTRIBUTOR":
+        return `${pill} bg-dark-subtle text-dark border-dark`;
+      case "CLOSED_APPROVED":
+        return `${pill} bg-success text-white border-success`;
+      case "CLOSED_REJECTED":
+        return `${pill} bg-danger-subtle text-danger border-danger`;
       default:
-        return "bg-secondary-subtle text-secondary";
+        return `${pill} bg-secondary-subtle text-secondary border-secondary`;
     }
   };
 
   const getStatusText = (status) => {
-    switch (status) {
-      case "submitted":
-        return "Submitted";
-      case "draft":
+    const s = normalizeWorkflowStatus(status);
+    switch (s) {
+      case "DRAFT":
         return "Draft";
+      case "SUBMITTED":
+        return "Submitted";
+      case "UNDER_HANDLER_REVIEW":
+        return "In progress";
+      case "ESCALATED_TO_REVIEWER":
+        return "Escalated to reviewer";
+      case "RETURNED_TO_HANDLER":
+        return "Returned to handler";
+      case "HANDLER_RESPONDED_TO_REVIEWER":
+        return "Handler → reviewer";
+      case "HANDLER_RESPONDED_TO_CONTRIBUTOR":
+        return "Handler → contributor";
+      case "CLOSED_APPROVED":
+        return "Closed — approved";
+      case "CLOSED_REJECTED":
+        return "Closed — rejected";
       default:
-        return status;
+        return String(s).replaceAll("_", " ");
     }
   };
 

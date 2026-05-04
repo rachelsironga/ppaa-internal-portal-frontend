@@ -21,6 +21,9 @@
     "role": [
       "admin",
       "staff",
+      "maoni_reviewer",
+      "maoni_handler",
+      "maoni_reviewe",
       "ppaa_maoni_reviewer",
       "maoni_admin",
       "hr"

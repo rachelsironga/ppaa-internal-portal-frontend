@@ -1,11 +1,8 @@
-# Override bases in `.env` (DOCKER_NODE_IMAGE / DOCKER_NGINX_IMAGE) or pass --build-arg.
-# Defaults target AWS Public ECR (Docker Official Images mirror) so builds work when
-# registry-1.docker.io / auth.docker.io do not resolve. Use Hub explicitly if you prefer:
-#   DOCKER_NODE_IMAGE=node:18-alpine
-#   DOCKER_NGINX_IMAGE=nginx:alpine
+# Override via compose build.args / .env (DOCKER_NODE_IMAGE / DOCKER_NGINX_IMAGE) or --build-arg.
+# Defaults use mirror.gcr.io (Google mirror of Docker Official Images). Set DOCKER_* to ECR or Hub if needed.
 
-ARG NODE_IMAGE=public.ecr.aws/docker/library/node:18-alpine
-ARG NGINX_IMAGE=public.ecr.aws/docker/library/nginx:alpine
+ARG NODE_IMAGE=mirror.gcr.io/library/node:18-alpine
+ARG NGINX_IMAGE=mirror.gcr.io/library/nginx:alpine
 
 # ---- Stage 1: Build the React app ----
 FROM ${NODE_IMAGE} AS builder

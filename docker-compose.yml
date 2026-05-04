@@ -1,16 +1,15 @@
-# SPA is served by nginx on host port 8091 → open http://localhost:8091
+# SPA: map host port (e.g. 8091) in your stack; LAN default http://192.168.1.4:8091 (see backend network_defaults / .env.example)
 # (Port 8000 is the Django API, not this container.)
 services:
   frontend:
     image: ppaa-portal-frontend
-    container_name: frontend-container
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        # Default: AWS Public ECR mirror of Docker Official Images (avoids docker.io when Hub/DNS fails).
-        NODE_IMAGE: ${DOCKER_NODE_IMAGE:-public.ecr.aws/docker/library/node:18-alpine}
-        NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-public.ecr.aws/docker/library/nginx:alpine}
+        # Default: mirror.gcr.io (Google mirror). Override if DNS blocks gcr, e.g. public.ecr.aws/... or node:18-alpine
+        NODE_IMAGE: ${DOCKER_NODE_IMAGE:-mirror.gcr.io/library/node:18-alpine}
+        NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-mirror.gcr.io/library/nginx:alpine}
     # Image already contains /usr/share/nginx/html from build; no bind mount needed to serve.
     ports:
       - "3000:80"

@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { createSuggestion, updateSuggestion, getCategories, getDepartments } from "./Queries";
 import LinearIndeterminate from "../../../LinearIndeterminate";
+import MaoniPortalBreadcrumb from "../../../layouts/MaoniPortalBreadcrumb";
 
 const SuggestionForm = ({ initialData = null, isEditMode = false, onSuccess = null }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isStandaloneNewPage =
+    !onSuccess && location.pathname === "/ppaa-maoni/suggestions/new";
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [categories, setCategories] = useState([]);
@@ -271,11 +275,19 @@ const SuggestionForm = ({ initialData = null, isEditMode = false, onSuccess = nu
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title.trim() || !formData.description.trim() || !formData.category) {
+    const deptTrim = String(formData.department_uid || "").trim();
+    if (
+      !formData.title.trim() ||
+      !formData.description.trim() ||
+      !formData.category ||
+      !deptTrim
+    ) {
       Swal.fire({
         icon: "warning",
         title: "Validation Error",
-        text: "Please fill in all required fields",
+        text: !deptTrim
+          ? "Please select which department your suggestion is for."
+          : "Please fill in all required fields",
       });
       return;
     }
@@ -354,6 +366,12 @@ const SuggestionForm = ({ initialData = null, isEditMode = false, onSuccess = nu
 
   return (
     <div className="py-4">
+      {isStandaloneNewPage && (
+        <MaoniPortalBreadcrumb
+          onBack={() => navigate("/ppaa-maoni/suggestions")}
+          tailLabel="New"
+        />
+      )}
       {/* Reassuring Message - match Maoni modal style */}
       <div className="row mb-4">
         <div className="col-12">
@@ -482,13 +500,13 @@ const SuggestionForm = ({ initialData = null, isEditMode = false, onSuccess = nu
                     )}
                   </div>
 
-                  {/* Department (Optional) */}
+                  {/* Department (required for submit) */}
                   <div className="col-md-6">
                     <label
                       htmlFor="department"
                       className="form-label fw-bold d-flex align-items-center"
                     >
-                      Which department?
+                      Which department? <span className="text-danger">*</span>
                     </label>
                     <select
                       className="form-select form-select-lg"
@@ -501,8 +519,9 @@ const SuggestionForm = ({ initialData = null, isEditMode = false, onSuccess = nu
                         })
                       }
                       disabled={loadingData}
+                      required
                     >
-                      <option value="">Select department (Optional)</option>
+                      <option value="">Select department</option>
                       {departments.length > 0 ? (
                         departments.map((dept) => (
                           <option key={dept.uid} value={dept.uid}>

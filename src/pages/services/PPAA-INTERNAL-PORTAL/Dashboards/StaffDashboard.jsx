@@ -33,25 +33,27 @@ import {
 } from "../events/eventDisplay";
 import { getUserFormalFullName } from "../../../../utils/userDisplayName";
 import { refreshCurrentUser } from "../../../../redux/actions/authentication/refreshUserAction";
-import { hasAccess } from "../../../../hooks/AccessHandler";
 import { PrFlyersGallery } from "../../../../components/portal/PrFlyersGallery.jsx";
+import { useInternalPortalI18n } from "../../../../contexts/InternalPortalI18nContext.jsx";
+import { INTERNAL_PORTAL_TRANSLATIONS } from "../../../../i18n/internalPortalTranslations";
+import { InternalPortalLanguageToggle } from "../../../../components/portal/InternalPortalLanguageToggle.jsx";
 
 // Simple Calendar Component
 const SimpleCalendar = ({ events = [], onEventClick }) => {
+  const { locale, t } = useInternalPortalI18n();
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  
+
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const pp =
+    (INTERNAL_PORTAL_TRANSLATIONS[locale] || INTERNAL_PORTAL_TRANSLATIONS.en)
+      .publicPortal;
+  const monthNames = pp.calendarMonths;
+  const dayNames = pp.calendarDays;
   
   const getEventsForDate = (day) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -105,7 +107,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
         <div className="text-center py-5">
           <i className="bx bx-calendar-x fs-1 mb-3" style={{ color: "#00f2fe", opacity: 0.5 }}></i>
           <p className="text-muted mb-0" style={{ fontSize: "0.95rem" }}>
-            No active events present
+            {t("publicPortal.noEvents")}
           </p>
         </div>
       ) : (
@@ -155,7 +157,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                                   color: "#00f2fe",
                                   marginTop: "2px"
                                 }}
-                                title="Event end date"
+                                title={t("publicPortal.eventEndDate")}
                               ></i>
                             )}
                           </div>
@@ -186,7 +188,11 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                                 );
                               })}
                               {dayEvents.length > 2 && (
-                                <small className="text-muted">+{dayEvents.length - 2} more</small>
+                                <small className="text-muted">
+                                  {t("publicPortal.moreCount", {
+                                    n: dayEvents.length - 2,
+                                  })}
+                                </small>
                               )}
                             </div>
                           )}
@@ -206,6 +212,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
 };
 
 export const StaffDashboard = () => {
+  const { t } = useInternalPortalI18n();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.userReducer?.data);
   const welcomeFormalName = useMemo(() => getUserFormalFullName(user), [user]);
@@ -553,15 +560,18 @@ export const StaffDashboard = () => {
     return (
       <div className="portal-surface-scope text-center py-5">
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+          <span className="visually-hidden">{t("dashboard.loadingTitle")}</span>
         </div>
-        <p className="mt-2 text-muted">Loading dashboard data...</p>
+        <p className="mt-2 text-muted">{t("dashboard.loadingLead")}</p>
       </div>
     );
   }
 
   return (
     <div className="portal-surface-scope">
+      <div className="d-flex justify-content-end align-items-center mb-2 mb-md-3">
+        <InternalPortalLanguageToggle showLabel />
+      </div>
       {/* Welcome Section — shared styles: portalWelcomeHero.css */}
       <div className="row g-3 g-lg-4 mb-4 align-items-stretch">
         <div className="col-12 col-lg-8 order-0">
@@ -572,14 +582,13 @@ export const StaffDashboard = () => {
                   <h5 className="card-title internal-portal-welcome__title mb-2 mb-sm-3 animate__animated animate__fadeInDown">
                     <i className="bx bx-smile me-2" aria-hidden="true"></i>
                     {welcomeFormalName ? (
-                      <>Welcome, {welcomeFormalName}!</>
+                      <>{t("dashboard.welcomeNamed", { name: welcomeFormalName })}</>
                     ) : (
-                      <>Welcome to the Internal Portal!</>
+                      <>{t("dashboard.welcomeGeneric")}</>
                     )}
                   </h5>
                   <p className="mb-0 internal-portal-welcome__lead animate__animated animate__fadeIn animate__slow">
-                    Here&apos;s an overview of Internal Portal activities including
-                    announcements, documents, events, FAQs, flyers & posters gallery, and quick links.
+                    {t("dashboard.welcomeLead")}
                   </p>
                 </div>
                 <div className="col-12 col-sm-5 col-lg-4">
@@ -611,7 +620,7 @@ export const StaffDashboard = () => {
               <div className="card-body d-flex align-items-center justify-content-center" style={{ minHeight: "200px" }}>
                 <div className="text-center text-muted">
                   <i className="bx bx-info-circle fs-1 mb-2"></i>
-                  <p>No items to display</p>
+                  <p>{t("dashboard.carouselEmpty")}</p>
                 </div>
               </div>
             ) : (
@@ -665,7 +674,9 @@ export const StaffDashboard = () => {
                         <>
                           <div className="d-flex align-items-center gap-2 mb-2">
                             <i className="bx bx-check-square" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
-                            <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Active Todo</h6>
+                            <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
+                              {t("publicPortal.activeTodo")}
+                            </h6>
                           </div>
                           <h5
                             className="mb-2 fw-bold text-break"
@@ -675,9 +686,13 @@ export const StaffDashboard = () => {
                           </h5>
                           <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
                             <span className={getTodoStatusBadge(data.status)}>
-                              {data.status === 'PENDING' ? 'Pending' : 
-                               data.status === 'IN_PROGRESS' ? 'In Progress' : 
-                               data.status}
+                              {data.status === "PENDING"
+                                ? t("publicPortal.pending")
+                                : data.status === "IN_PROGRESS"
+                                  ? t("publicPortal.inProgress")
+                                  : data.status === "COMPLETED"
+                                    ? t("publicPortal.completed")
+                                    : data.status}
                             </span>
                             <span className={getTodoPriorityBadge(data.priority)}>
                               {data.priority}
@@ -687,13 +702,15 @@ export const StaffDashboard = () => {
                             {data.start_date && (
                               <small className="d-flex align-items-center" style={{ color: "#4facfe", fontWeight: "500" }}>
                                 <i className="bx bx-time me-1"></i>
-                                Start: {formatTodoDate(data.start_date)}
+                                {t("publicPortal.start")}{" "}
+                                {formatTodoDate(data.start_date)}
                               </small>
                             )}
                             {data.due_date && (
                               <small className="d-flex align-items-center" style={{ color: "#ff6b6b", fontWeight: "500" }}>
                                 <i className="bx bx-calendar-check me-1"></i>
-                                Due: {formatTodoDate(data.due_date)}
+                                {t("publicPortal.due")}{" "}
+                                {formatTodoDate(data.due_date)}
                               </small>
                             )}
                           </div>
@@ -706,7 +723,7 @@ export const StaffDashboard = () => {
                               style={{ color: "#4facfe", fontSize: "1.5rem" }}
                             />
                             <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
-                              Event
+                              {t("publicPortal.event")}
                             </h6>
                             {data.event_type && (
                               <span
@@ -734,7 +751,9 @@ export const StaffDashboard = () => {
                             {data.start_date && (
                               <small className="d-flex align-items-center mb-0" style={{ color: "#198754" }}>
                                 <i className="bx bx-calendar-event me-1" style={{ color: "#198754" }} />
-                                <span className="fw-semibold me-1">Start:</span>
+                                <span className="fw-semibold me-1">
+                                  {t("publicPortal.start")}
+                                </span>
                                 <span>{formatDate(data.start_date)}</span>
                               </small>
                             )}
@@ -742,7 +761,7 @@ export const StaffDashboard = () => {
                               <small className="d-flex align-items-center mb-0" style={{ color: "#c62828" }}>
                                 <i className="bx bx-calendar-check me-1" style={{ color: "#dc3545" }} />
                                 <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
-                                  End:
+                                  {t("publicPortal.end")}
                                 </span>
                                 <span style={{ color: "#c62828" }}>{formatDate(data.end_date)}</span>
                               </small>
@@ -753,11 +772,13 @@ export const StaffDashboard = () => {
                         <>
                           <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
                             <i className="bx bx-bullhorn" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
-                            <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Announcement</h6>
+                            <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
+                              {t("publicPortal.announcement")}
+                            </h6>
                             {data.is_pinned && <i className="bx bx-pin text-warning"></i>}
                             {isPortalAnnouncementNew(data.created_at) && (
                               <span className="badge rounded-pill portal-announcement-new-badge">
-                                NEW
+                                {t("publicPortal.labelNew")}
                               </span>
                             )}
                           </div>
@@ -793,7 +814,9 @@ export const StaffDashboard = () => {
                                     className="bx bx-calendar-event me-1"
                                     style={{ color: "#198754" }}
                                   ></i>
-                                  <span className="fw-semibold me-1">Start:</span>
+                                  <span className="fw-semibold me-1">
+                                    {t("publicPortal.start")}
+                                  </span>
                                   <span>{formatDate(data.start_date || data.created_at)}</span>
                                 </small>
                                 <span
@@ -812,7 +835,7 @@ export const StaffDashboard = () => {
                                     style={{ color: "#dc3545" }}
                                   ></i>
                                   <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
-                                    End:
+                                    {t("publicPortal.end")}
                                   </span>
                                   <span style={{ color: "#c62828" }}>
                                     {data.end_date ? formatDate(data.end_date) : "—"}
@@ -841,14 +864,17 @@ export const StaffDashboard = () => {
                     <div
                       className="d-flex gap-0 align-items-center justify-content-center flex-nowrap"
                       role="tablist"
-                      aria-label="Highlight slides"
+                      aria-label={t("publicPortal.highlightSlides")}
                     >
                       {combinedItems.map((_, index) => (
                         <button
                           key={index}
                           type="button"
                           className={`portal-highlight-dot-btn ${index === currentIndex ? "is-active" : ""}`}
-                          aria-label={`Show highlight ${index + 1} of ${combinedItems.length}`}
+                          aria-label={t("publicPortal.showSlide", {
+                            i: index + 1,
+                            total: combinedItems.length,
+                          })}
                           aria-selected={index === currentIndex}
                           role="tab"
                           onClick={() => setCurrentIndex(index)}
@@ -900,9 +926,15 @@ export const StaffDashboard = () => {
             }}>
               <h5 className="mb-0">
                 <i className="bx bx-calendar me-2" style={{ color: "#00f2fe" }}></i>
-                <span style={{ color: "#00f2fe" }}>Events Calendar</span>
+                <span style={{ color: "#00f2fe" }}>
+                  {t("publicPortal.eventsCalendar")}
+                </span>
               </h5>
-              <div {...provided.dragHandleProps} style={{ cursor: 'grab', padding: '5px' }} title="Drag to rearrange">
+              <div
+                {...provided.dragHandleProps}
+                style={{ cursor: "grab", padding: "5px" }}
+                title={t("publicPortal.dragToRearrange")}
+              >
                 <i className="bx bx-menu" style={{ color: "#00f2fe", fontSize: "1.5rem" }}></i>
               </div>
             </div>
@@ -921,25 +953,7 @@ export const StaffDashboard = () => {
 
         {/* PR flyers & posters — same row as Events */}
         <div className="col-12 col-lg-4 d-flex">
-          <PrFlyersGallery
-            flyers={prFlyers}
-            headerRight={
-              hasAccess(user, [
-                "can_add_pr_flyer",
-                "can_edit_pr_flyer",
-                "can_delete_pr_flyer",
-              ]) ? (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => navigate("/ppaa-internal-portal/pr-flyers")}
-                >
-                  <i className="bx bx-edit-alt me-1"></i>
-                  Manage
-                </button>
-              ) : null
-            }
-          />
+          <PrFlyersGallery flyers={prFlyers} />
         </div>
       </div>
                         </div>
@@ -974,9 +988,15 @@ export const StaffDashboard = () => {
             }}>
               <h5 className="mb-0">
                 <i className="bx bx-check-square me-2" style={{ color: "#00853f" }}></i>
-                <span style={{ color: "#00853f" }}>Active Todo List</span>
+                <span style={{ color: "#00853f" }}>
+                  {t("publicPortal.activeTodoList")}
+                </span>
               </h5>
-              <div {...provided.dragHandleProps} style={{ cursor: 'grab', padding: '5px' }}>
+              <div
+                {...provided.dragHandleProps}
+                style={{ cursor: "grab", padding: "5px" }}
+                title={t("publicPortal.dragToRearrange")}
+              >
                 <i className="bx bx-menu" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
               </div>
             </div>
@@ -984,7 +1004,7 @@ export const StaffDashboard = () => {
               {todos.length === 0 ? (
                 <div className="text-center py-4 text-muted">
                   <i className="bx bx-info-circle fs-1 mb-2"></i>
-                  <p>No Active Todo List at the moment</p>
+                  <p>{t("publicPortal.noTodos")}</p>
                 </div>
               ) : (
                 <>
@@ -1025,9 +1045,13 @@ export const StaffDashboard = () => {
                             <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
                               <h6 className="mb-0 text-break">{todo.title}</h6>
                               <span className={`${getTodoStatusBadge(todo.status)} flex-shrink-0`}>
-                                {todo.status === 'PENDING' ? 'Pending' : 
-                                 todo.status === 'IN_PROGRESS' ? 'In Progress' : 
-                                 todo.status}
+                                {todo.status === "PENDING"
+                                  ? t("publicPortal.pending")
+                                  : todo.status === "IN_PROGRESS"
+                                    ? t("publicPortal.inProgress")
+                                    : todo.status === "COMPLETED"
+                                      ? t("publicPortal.completed")
+                                      : todo.status}
                               </span>
                               <span className={`${getTodoPriorityBadge(todo.priority)} flex-shrink-0`}>
                                 {todo.priority}
@@ -1049,7 +1073,8 @@ export const StaffDashboard = () => {
                                   }}
                                 >
                                   <i className="bx bx-time me-1"></i>
-                                  Start: {formatTodoDate(todo.start_date)}
+                                  {t("publicPortal.start")}{" "}
+                                  {formatTodoDate(todo.start_date)}
                                 </small>
                               )}
                               {todo.due_date && (
@@ -1061,7 +1086,8 @@ export const StaffDashboard = () => {
                                   }}
                                 >
                                   <i className="bx bx-calendar-check me-1"></i>
-                                  Due: {formatTodoDate(todo.due_date)}
+                                  {t("publicPortal.due")}{" "}
+                                  {formatTodoDate(todo.due_date)}
                                 </small>
                               )}
                             </div>
@@ -1084,7 +1110,7 @@ export const StaffDashboard = () => {
                           onClick={() => setTodoOffset(Math.max(0, todoOffset - 3))}
                         >
                           <i className="bx bx-chevron-left me-1"></i>
-                          Previous
+                          {t("publicPortal.previous")}
                       </button>
                       )}
                       {todoOffset === 0 && <div></div>}
@@ -1100,7 +1126,9 @@ export const StaffDashboard = () => {
                           onClick={() => setTodoOffset(Math.min(todos.length - 3, todoOffset + 3))}
                         >
                           <i className="bx bx-chevron-right me-1"></i>
-                          See More ({todos.length - todoOffset - 3} more)
+                          {t("publicPortal.seeMore", {
+                            n: todos.length - todoOffset - 3,
+                          })}
                       </button>
                       )}
                       {todoOffset + 3 >= todos.length && todoOffset > 0 && (
@@ -1134,9 +1162,15 @@ export const StaffDashboard = () => {
             }}>
               <h5 className="mb-0">
                 <i className="bx bx-bullhorn me-2" style={{ color: "#00853f" }}></i>
-                <span style={{ color: "#00853f" }}>Recent Announcements</span>
+                <span style={{ color: "#00853f" }}>
+                  {t("publicPortal.recentAnnouncements")}
+                </span>
               </h5>
-              <div {...provided.dragHandleProps} style={{ cursor: 'grab', padding: '5px' }}>
+              <div
+                {...provided.dragHandleProps}
+                style={{ cursor: "grab", padding: "5px" }}
+                title={t("publicPortal.dragToRearrange")}
+              >
                 <i className="bx bx-menu" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
               </div>
             </div>
@@ -1144,7 +1178,7 @@ export const StaffDashboard = () => {
               {announcements.length === 0 ? (
                 <div className="text-center py-4 text-muted">
                   <i className="bx bx-info-circle fs-1 mb-2"></i>
-                  <p>No announcements available</p>
+                  <p>{t("publicPortal.noAnnouncements")}</p>
                 </div>
               ) : (
                 <>
@@ -1200,7 +1234,7 @@ export const StaffDashboard = () => {
                                 </h6>
                                 {isPortalAnnouncementNew(announcement.created_at) && (
                                   <span className="badge rounded-pill portal-announcement-new-badge">
-                                    NEW
+                                    {t("publicPortal.labelNew")}
                                   </span>
                                 )}
                       </div>
@@ -1221,7 +1255,9 @@ export const StaffDashboard = () => {
                                     className="bx bx-calendar-event me-1"
                                     style={{ color: "#198754" }}
                                   ></i>
-                                  <span className="fw-semibold me-1">Start:</span>
+                                  <span className="fw-semibold me-1">
+                                    {t("publicPortal.start")}
+                                  </span>
                                   <span>
                                     {formatDate(
                                       announcement.start_date || announcement.created_at
@@ -1244,7 +1280,7 @@ export const StaffDashboard = () => {
                                     style={{ color: "#dc3545" }}
                                   ></i>
                                   <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
-                                    End:
+                                    {t("publicPortal.end")}
                                   </span>
                                   <span style={{ color: "#c62828" }}>
                                     {announcement.end_date
@@ -1287,7 +1323,7 @@ export const StaffDashboard = () => {
                           onClick={() => setAnnouncementOffset(Math.max(0, announcementOffset - 3))}
                         >
                           <i className="bx bx-chevron-left me-1"></i>
-                          Previous
+                          {t("publicPortal.previous")}
                       </button>
                       )}
                       {announcementOffset === 0 && <div></div>}
@@ -1303,7 +1339,9 @@ export const StaffDashboard = () => {
                           onClick={() => setAnnouncementOffset(Math.min(announcements.length - 3, announcementOffset + 3))}
                         >
                           <i className="bx bx-chevron-right me-1"></i>
-                          See More ({announcements.length - announcementOffset - 3} more)
+                          {t("publicPortal.seeMore", {
+                            n: announcements.length - announcementOffset - 3,
+                          })}
                         </button>
                       )}
                       {announcementOffset + 3 >= announcements.length && announcementOffset > 0 && (
@@ -1361,10 +1399,16 @@ export const StaffDashboard = () => {
             }}>
               <h5 className="mb-0 d-flex align-items-center flex-wrap gap-2">
                 <i className="bx bx-library me-2" style={{ color: "#17a2b8" }}></i>
-                <span style={{ color: "#17a2b8" }}>Documents & FAQs</span>
+                <span style={{ color: "#17a2b8" }}>
+                  {t("publicPortal.documentsFaqs")}
+                </span>
               </h5>
               <div className="d-flex align-items-center flex-wrap gap-2 ms-auto">
-                <div className="btn-group btn-group-sm" role="group" aria-label="Documents or FAQs">
+                <div
+                  className="btn-group btn-group-sm"
+                  role="group"
+                  aria-label={t("publicPortal.documentsFaqs")}
+                >
                   <button
                     type="button"
                     className={`btn ${docsLibraryTab === "documents" ? "" : "btn-outline-secondary"}`}
@@ -1376,7 +1420,7 @@ export const StaffDashboard = () => {
                     onClick={() => setDocsLibraryTab("documents")}
                   >
                     <i className="bx bx-folder me-1"></i>
-                    Documents
+                    {t("publicPortal.documentsTab")}
                   </button>
                   <button
                     type="button"
@@ -1392,7 +1436,7 @@ export const StaffDashboard = () => {
                     }}
                   >
                     <i className="bx bx-help-circle me-1"></i>
-                    FAQs
+                    {t("publicPortal.faqsTab")}
                   </button>
                 </div>
                 {docsLibraryTab === "documents" && selectedCategory && (
@@ -1405,10 +1449,14 @@ export const StaffDashboard = () => {
                     }}
                   >
                     <i className="bx bx-arrow-back me-1"></i>
-                    Back to Categories
+                    {t("publicPortal.backToCategories")}
                   </button>
                 )}
-                <div {...provided.dragHandleProps} style={{ cursor: 'grab', padding: '5px' }}>
+                <div
+                  {...provided.dragHandleProps}
+                  style={{ cursor: "grab", padding: "5px" }}
+                  title={t("publicPortal.dragToRearrange")}
+                >
                   <i className="bx bx-menu" style={{ color: "#17a2b8", fontSize: "1.5rem" }}></i>
                 </div>
               </div>
@@ -1423,13 +1471,13 @@ export const StaffDashboard = () => {
                     <input
                       type="search"
                       className="form-control"
-                      placeholder="Search FAQs in this panel…"
+                      placeholder={t("publicPortal.searchFaqsPlaceholder")}
                       value={libraryFaqSearch}
                       onChange={(e) => {
                         setLibraryFaqSearch(e.target.value);
                         setLibraryFaqOffset(0);
                       }}
-                      aria-label="Search FAQs"
+                      aria-label={t("publicPortal.searchFaqsAria")}
                     />
                   </div>
                   {(() => {
@@ -1447,8 +1495,8 @@ export const StaffDashboard = () => {
                           <i className="bx bx-info-circle fs-1 mb-2"></i>
                           <p className="mb-0">
                             {libraryFaqSearch.trim()
-                              ? "No FAQs match your search."
-                              : "No FAQs available."}
+                              ? t("publicPortal.noFaqMatch")
+                              : t("publicPortal.noFaqsAvailable")}
                           </p>
                         </div>
                       );
@@ -1498,7 +1546,7 @@ export const StaffDashboard = () => {
                               }
                             >
                               <i className="bx bx-chevron-left me-1"></i>
-                              Previous
+                              {t("publicPortal.previous")}
                             </button>
                             <button
                               type="button"
@@ -1513,7 +1561,7 @@ export const StaffDashboard = () => {
                                 )
                               }
                             >
-                              Next
+                              {t("publicPortal.next")}
                               <i className="bx bx-chevron-right ms-1"></i>
                             </button>
                           </div>
@@ -1534,7 +1582,8 @@ export const StaffDashboard = () => {
                 // Group documents by category
                 const documentsByCategory = {};
                 documents.forEach(doc => {
-                  const categoryName = doc.category?.name || "Uncategorized";
+                  const categoryName =
+                    doc.category?.name || t("publicPortal.uncategorized");
                   if (!documentsByCategory[categoryName]) {
                     documentsByCategory[categoryName] = [];
                   }
@@ -1547,7 +1596,7 @@ export const StaffDashboard = () => {
                   return (
                     <div className="text-center py-4 text-muted">
                       <i className="bx bx-info-circle fs-1 mb-2"></i>
-                      <p>No documents available</p>
+                      <p>{t("publicPortal.noDocuments")}</p>
                     </div>
                   );
                 }
@@ -1591,7 +1640,13 @@ export const StaffDashboard = () => {
                                     {categoryName}
                                   </h6>
                                   <p className="text-muted mb-0 small">
-                                    {categoryDocs.length} {categoryDocs.length === 1 ? 'document' : 'documents'}
+                                    {categoryDocs.length === 1
+                                      ? t("publicPortal.docCountOne", {
+                                          n: categoryDocs.length,
+                                        })
+                                      : t("publicPortal.docCountMany", {
+                                          n: categoryDocs.length,
+                                        })}
                                   </p>
                                 </div>
                               </div>
@@ -1610,7 +1665,15 @@ export const StaffDashboard = () => {
                     <div className="px-3 pt-3 pb-2 border-bottom bg-light portal-docs-category-toolbar">
                       <h6 className="mb-0 fw-bold">
                         <i className="bx bx-folder me-2" style={{ color: "#17a2b8" }}></i>
-                        {selectedCategory} ({categoryDocuments.length} {categoryDocuments.length === 1 ? 'document' : 'documents'})
+                        {selectedCategory} (
+                        {categoryDocuments.length === 1
+                          ? t("publicPortal.docCountOne", {
+                              n: categoryDocuments.length,
+                            })
+                          : t("publicPortal.docCountMany", {
+                              n: categoryDocuments.length,
+                            })}
+                        )
                       </h6>
                     </div>
                     <div 
@@ -1681,15 +1744,15 @@ export const StaffDashboard = () => {
                                     );
                                   } catch {
                                     showToast(
-                                      "Download failed. Re-upload the file if this is an old document.",
+                                      t("publicPortal.downloadFailedDocument"),
                                       "danger",
-                                      "Download"
+                                      t("publicPortal.download")
                                     );
                                   }
                                 }}
                               >
                                 <i className="bx bx-download me-1"></i>
-                                Download
+                                {t("publicPortal.download")}
                               </button>
                             ) : (
                               <button
@@ -1705,7 +1768,7 @@ export const StaffDashboard = () => {
                                 }}
                               >
                                 <i className="bx bx-download me-1"></i>
-                                No File Available
+                                {t("publicPortal.noFileAvailable")}
                               </button>
                             )}
                       </div>
@@ -1726,7 +1789,7 @@ export const StaffDashboard = () => {
                             onClick={() => setDocumentOffset(Math.max(0, documentOffset - 5))}
                           >
                             <i className="bx bx-chevron-left me-1"></i>
-                            Previous
+                            {t("publicPortal.previous")}
                           </button>
                         )}
                         {documentOffset === 0 && <div></div>}
@@ -1742,7 +1805,9 @@ export const StaffDashboard = () => {
                             onClick={() => setDocumentOffset(Math.min(categoryDocuments.length - 5, documentOffset + 5))}
                           >
                             <i className="bx bx-chevron-right me-1"></i>
-                            See More ({categoryDocuments.length - documentOffset - 5} more)
+                            {t("publicPortal.seeMore", {
+                              n: categoryDocuments.length - documentOffset - 5,
+                            })}
                           </button>
                         )}
                         {documentOffset + 5 >= categoryDocuments.length && documentOffset > 0 && (
@@ -1780,9 +1845,15 @@ export const StaffDashboard = () => {
             }}>
               <h5 className="mb-0">
                 <i className="bx bx-link me-2" style={{ color: "#ff6b6b" }}></i>
-                <span style={{ color: "#ff6b6b" }}>Quick Links</span>
+                <span style={{ color: "#ff6b6b" }}>
+                  {t("publicPortal.quickLinks")}
+                </span>
               </h5>
-              <div {...provided.dragHandleProps} style={{ cursor: 'grab', padding: '5px' }}>
+              <div
+                {...provided.dragHandleProps}
+                style={{ cursor: "grab", padding: "5px" }}
+                title={t("publicPortal.dragToRearrange")}
+              >
                 <i className="bx bx-menu" style={{ color: "#ff6b6b", fontSize: "1.5rem" }}></i>
               </div>
             </div>
@@ -1793,7 +1864,7 @@ export const StaffDashboard = () => {
               {quickLinks.length === 0 ? (
                 <div className="text-center py-4 text-muted">
                   <i className="bx bx-info-circle fs-1 mb-2"></i>
-                  <p>No quick links available</p>
+                  <p>{t("publicPortal.noQuickLinks")}</p>
                 </div>
               ) : (
                 <div className="row g-3 justify-content-start">
@@ -1889,7 +1960,7 @@ export const StaffDashboard = () => {
                               {link.total_clicks > 0 && (
                                 <small className="d-block mt-2" style={{ color: `${colorScheme.text}80` }}>
                                   <i className="bx bx-mouse-alt me-1"></i>
-                                  {link.total_clicks} clicks
+                                  {t("publicPortal.clicks", { n: link.total_clicks })}
                                 </small>
                               )}
                             </div>
@@ -1930,13 +2001,13 @@ export const StaffDashboard = () => {
             <div className="modal-header border-bottom portal-faq-modal-header">
               <h5 className="modal-title fw-bold text-white" id="faqViewModalLabel">
                 <i className="bx bx-help-circle me-2" aria-hidden></i>
-                FAQ
+                {t("publicPortal.faqTitle")}
               </h5>
               <button
                 type="button"
                 className="btn-close portal-faq-modal-close"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedFaq(null)}
               ></button>
             </div>
@@ -1952,7 +2023,7 @@ export const StaffDashboard = () => {
                     <div className="d-flex flex-wrap align-items-center gap-2">
                       <span className="badge portal-faq-modal-badge">
                         <i className="bx bx-message-rounded-dots me-1"></i>
-                        Answer
+                        {t("publicPortal.answer")}
                       </span>
                     </div>
                   </div>
@@ -1964,7 +2035,7 @@ export const StaffDashboard = () => {
                         {selectedFaq.answer}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No answer has been added for this FAQ yet.</p>
+                      <p className="mb-0 text-muted">{t("publicPortal.noFaqAnswer")}</p>
                     )}
                   </div>
                 </>
@@ -1977,7 +2048,7 @@ export const StaffDashboard = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedFaq(null)}
               >
-                Close
+                {t("publicPortal.close")}
                       </button>
              
             </div>
@@ -1998,13 +2069,13 @@ export const StaffDashboard = () => {
             <div className="modal-header border-bottom" style={{ backgroundColor: "#00853f", color: "white" }}>
               <h5 className="modal-title fw-bold text-white" id="announcementViewModalLabel">
                 <i className="bx bx-bullhorn me-2"></i>
-                Announcement
+                {t("publicPortal.announcementModalTitle")}
               </h5>
                     <button
                       type="button"
                 className="btn-close btn-close-white"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedAnnouncement(null)}
               ></button>
             </div>
@@ -2021,14 +2092,16 @@ export const StaffDashboard = () => {
                       {selectedAnnouncement.is_pinned && (
                         <span className="badge bg-warning text-dark">
                           <i className="bx bx-pin me-1"></i>
-                          Pinned
+                          {t("publicPortal.pinned")}
                         </span>
                       )}
 
                       {selectedAnnouncement.priority && (
                         <span className={`badge ${getPriorityColor(selectedAnnouncement.priority)}`}>
                           <i className="bx bx-flag me-1"></i>
-                          Priority: {selectedAnnouncement.priority}
+                          {t("publicPortal.priorityPrefix", {
+                            priority: selectedAnnouncement.priority,
+                          })}
                         </span>
                       )}
 
@@ -2043,7 +2116,9 @@ export const StaffDashboard = () => {
                       {selectedAnnouncement.end_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-calendar-check me-1"></i>
-                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>Until</span>{" "}
+                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>
+                            {t("publicPortal.until")}
+                          </span>{" "}
                           {formatDate(selectedAnnouncement.end_date, "DD/MM/YYYY")}
                         </span>
                       )}
@@ -2060,7 +2135,7 @@ export const StaffDashboard = () => {
                         {selectedAnnouncement.content}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No message provided for this announcement.</p>
+                      <p className="mb-0 text-muted">{t("publicPortal.noAnnouncementBody")}</p>
                     )}
                   </div>
 
@@ -2083,7 +2158,9 @@ export const StaffDashboard = () => {
                             </div>
 
                             <div>
-                              <div className="text-muted small">Open or download the attached file</div>
+                              <div className="text-muted small">
+                                {t("publicPortal.openDownloadHint")}
+                              </div>
                             </div>
                           </div>
 
@@ -2099,15 +2176,15 @@ export const StaffDashboard = () => {
                                 );
                               } catch {
                                 showToast(
-                                  "Download failed. Sign in again or re-upload the attachment.",
+                                  t("publicPortal.downloadFailedAnnouncement"),
                                   "danger",
-                                  "Download"
+                                  t("publicPortal.download")
                                 );
                               }
                             }}
                           >
                             <i className="bx bx-download me-1"></i>
-                            Download
+                            {t("publicPortal.download")}
                           </button>
                         </div>
                       </div>
@@ -2123,7 +2200,7 @@ export const StaffDashboard = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedAnnouncement(null)}
               >
-                Close
+                {t("publicPortal.close")}
                     </button>
               </div>
             </div>
@@ -2146,13 +2223,13 @@ export const StaffDashboard = () => {
             >
               <h5 className="modal-title fw-bold text-dark" id="todoViewModalLabel">
                 <i className="bx bx-check-square me-2"></i>
-                Todo
+                {t("publicPortal.todoTitle")}
               </h5>
               <button
                 type="button"
                 className={portalDark ? "btn-close btn-close-white" : "btn-close"}
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedTodo(null)}
               ></button>
       </div>
@@ -2169,11 +2246,13 @@ export const StaffDashboard = () => {
                       {selectedTodo.status && (
                         <span className={getTodoStatusBadge(selectedTodo.status)}>
                           <i className="bx bx-badge-check me-1"></i>
-                          Status:{" "}
+                          {t("publicPortal.statusLabel")}:{" "}
                           {selectedTodo.status === "PENDING"
-                            ? "Pending"
+                            ? t("publicPortal.pending")
                             : selectedTodo.status === "IN_PROGRESS"
-                            ? "In Progress"
+                            ? t("publicPortal.inProgress")
+                            : selectedTodo.status === "COMPLETED"
+                            ? t("publicPortal.completed")
                             : selectedTodo.status}
                   </span>
                       )}
@@ -2181,7 +2260,9 @@ export const StaffDashboard = () => {
                       {selectedTodo.priority && (
                         <span className={getTodoPriorityBadge(selectedTodo.priority)}>
                           <i className="bx bx-flag me-1"></i>
-                          Priority: {selectedTodo.priority}
+                          {t("publicPortal.priorityPrefix", {
+                            priority: selectedTodo.priority,
+                          })}
                         </span>
                       )}
 
@@ -2195,21 +2276,23 @@ export const StaffDashboard = () => {
                           }}
                         >
                           <i className="bx bx-building me-1"></i>
-                          Department: {selectedTodo.department.name}
+                          {t("publicPortal.departmentLabel")}: {selectedTodo.department.name}
                     </span>
                       )}
 
                       {selectedTodo.start_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-time me-1"></i>
-                          Start: {formatTodoDate(selectedTodo.start_date)}
+                          {t("publicPortal.start")} {formatTodoDate(selectedTodo.start_date)}
                         </span>
                       )}
 
                       {selectedTodo.due_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-calendar-check me-1"></i>
-                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>Due</span>:{" "}
+                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>
+                            {t("publicPortal.due")}
+                          </span>{" "}
                           {formatTodoDate(selectedTodo.due_date)}
                         </span>
                       )}
@@ -2226,7 +2309,7 @@ export const StaffDashboard = () => {
                         {selectedTodo.description}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No details provided for this todo.</p>
+                      <p className="mb-0 text-muted">{t("publicPortal.todoNoDetails")}</p>
                     )}
             </div>
                 </>
@@ -2239,7 +2322,7 @@ export const StaffDashboard = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedTodo(null)}
               >
-                Close
+                {t("publicPortal.close")}
                     </button>
             </div>
           </div>
@@ -2259,13 +2342,13 @@ export const StaffDashboard = () => {
             <div className="modal-header border-bottom" style={{ backgroundColor: "#00f2fe", color: "white" }}>
               <h5 className="modal-title fw-bold text-white" id="eventViewModalLabel">
                 <i className="bx bx-calendar me-2"></i>
-                Event
+                {t("publicPortal.event")}
               </h5>
               <button
                 type="button"
                 className="btn-close btn-close-white"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedEvent(null)}
               ></button>
             </div>
@@ -2298,7 +2381,7 @@ export const StaffDashboard = () => {
                           }}
                         >
                           <i className="bx bx-map me-1" style={{ color: "#00853f" }}></i>
-                          Location: {selectedEvent.location}
+                          {t("publicPortal.locationLabel")}: {selectedEvent.location}
                     </span>
                       )}
 
@@ -2313,7 +2396,9 @@ export const StaffDashboard = () => {
                       {selectedEvent.end_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-calendar-check me-1"></i>
-                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>Until</span>{" "}
+                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>
+                            {t("publicPortal.until")}
+                          </span>{" "}
                           {formatDate(selectedEvent.end_date, "DD/MM/YYYY HH:mm")}
                         </span>
                       )}
@@ -2330,7 +2415,7 @@ export const StaffDashboard = () => {
                         {selectedEvent.description}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No details provided for this event.</p>
+                      <p className="mb-0 text-muted">{t("publicPortal.eventNoDetails")}</p>
                     )}
                   </div>
                 </>
@@ -2343,7 +2428,7 @@ export const StaffDashboard = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedEvent(null)}
               >
-                Close
+                {t("publicPortal.close")}
                     </button>
             </div>
           </div>

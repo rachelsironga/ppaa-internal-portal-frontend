@@ -30,6 +30,9 @@ import {
 } from "./pages/services/PPAA-INTERNAL-PORTAL/events/eventDisplay";
 import { getUserFormalFullName } from "./utils/userDisplayName";
 import { PrFlyersGallery } from "./components/portal/PrFlyersGallery.jsx";
+import { InternalPortalLanguageToggle } from "./components/portal/InternalPortalLanguageToggle.jsx";
+import { useInternalPortalI18n } from "./contexts/InternalPortalI18nContext.jsx";
+import { INTERNAL_PORTAL_TRANSLATIONS } from "./i18n/internalPortalTranslations";
 
 const PUBLIC_DASHBOARD_CACHE_KEY = "publicPortalDashboardCache";
 const PUBLIC_DASHBOARD_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -64,20 +67,20 @@ const SectionReveal = ({ children, className = "", style = {}, as: Tag = "div", 
 
 // Simple Calendar Component
 const SimpleCalendar = ({ events = [], onEventClick }) => {
+  const { locale, t } = useInternalPortalI18n();
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  
+
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const pp =
+    (INTERNAL_PORTAL_TRANSLATIONS[locale] || INTERNAL_PORTAL_TRANSLATIONS.en)
+      .publicPortal;
+  const monthNames = pp.calendarMonths;
+  const dayNames = pp.calendarDays;
   
   const getEventsForDate = (day) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -131,7 +134,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
         <div className="text-center py-5">
           <i className="bx bx-calendar-x fs-1 mb-3" style={{ color: "#00f2fe", opacity: 0.5 }}></i>
           <p className="text-muted mb-0" style={{ fontSize: "0.95rem" }}>
-            No active events present
+            {t("publicPortal.noEvents")}
           </p>
         </div>
       ) : (
@@ -181,7 +184,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                                   color: "#00f2fe",
                                   marginTop: "2px"
                                 }}
-                                title="Event end date"
+                                title={t("publicPortal.eventEndDate")}
                               ></i>
                             )}
                           </div>
@@ -212,7 +215,11 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                                 );
                               })}
                               {dayEvents.length > 2 && (
-                                <small className="text-muted">+{dayEvents.length - 2} more</small>
+                                <small className="text-muted">
+                                  {t("publicPortal.moreCount", {
+                                    n: dayEvents.length - 2,
+                                  })}
+                                </small>
                               )}
                             </div>
                           )}
@@ -232,6 +239,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
 };
 
 const PortalPage = () => {
+  const { t, locale } = useInternalPortalI18n();
   const [data, setData] = useState(null);
   const [quickLinkLogoErrors, setQuickLinkLogoErrors] = useState({});
   const [loading, setLoading] = useState(true);
@@ -283,20 +291,23 @@ const PortalPage = () => {
     const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
     if (!hasContent || !showPopupCard) return;
     lastPopupShownAt.current = Date.now();
-    const t = window.setTimeout(() => setShowPopupCard(false), SHOW_DURATION_MS);
-    return () => clearTimeout(t);
+    const hidePopupTimer = window.setTimeout(
+      () => setShowPopupCard(false),
+      SHOW_DURATION_MS
+    );
+    return () => clearTimeout(hidePopupTimer);
   }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
 
   // When card is hidden: show again after 4 min (every 5 min) only if user is actively on the page (tab visible)
   useEffect(() => {
     const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
     if (!hasContent || showPopupCard) return;
-    const t = window.setTimeout(() => {
+    const showPopupTimer = window.setTimeout(() => {
       if (document.visibilityState === "visible") {
         setShowPopupCard(true);
       }
     }, HIDE_DURATION_MS);
-    return () => clearTimeout(t);
+    return () => clearTimeout(showPopupTimer);
   }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
 
   // When user returns to the tab: reopen card if it's been 5+ min since last show and they're actively on the page
@@ -387,7 +398,7 @@ const PortalPage = () => {
         }
       } catch (err) {
         console.error("Failed to load public dashboard:", err);
-        setError("Failed to load portal data. Please try again later.");
+        setError("loadError");
       } finally {
         setLoading(false);
       }
@@ -624,13 +635,17 @@ const PortalPage = () => {
     return () => clearInterval(interval);
   }, [combinedItems.length]);
 
-  // Time-based greeting
+  // Time-based greeting (depends on locale so it updates when language changes)
   const timeGreeting = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return { greeting: "Good morning", sub: "Here's what's new today." };
-    if (hour < 17) return { greeting: "Good afternoon", sub: "Here's what's new today." };
-    return { greeting: "Good evening", sub: "Here's what's new today." };
-  }, []);
+    const greeting =
+      hour < 12
+        ? t("publicPortal.morning")
+        : hour < 17
+          ? t("publicPortal.afternoon")
+          : t("publicPortal.evening");
+    return { greeting, sub: "" };
+  }, [t, locale]);
 
   // Next upcoming event for countdown
   const nextEventCountdown = useMemo(() => {
@@ -643,12 +658,22 @@ const PortalPage = () => {
     const diffMs = start - now;
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    let text = "Starts soon";
-    if (diffDays > 0) text = `Starts in ${diffDays} ${diffDays === 1 ? "day" : "days"}`;
-    else if (diffDays === 0 && diffHours > 0) text = `Starts in ${diffHours} ${diffHours === 1 ? "hour" : "hours"}`;
-    else if (diffDays === 0 && diffHours <= 0) text = "Starting today";
+    let text = t("publicPortal.eventSoon");
+    if (diffDays > 0) {
+      text =
+        diffDays === 1
+          ? t("publicPortal.eventDaysOne")
+          : t("publicPortal.eventDaysMany", { n: diffDays });
+    } else if (diffDays === 0 && diffHours > 0) {
+      text =
+        diffHours === 1
+          ? t("publicPortal.eventHoursOne")
+          : t("publicPortal.eventHoursMany", { n: diffHours });
+    } else if (diffDays === 0 && diffHours <= 0) {
+      text = t("publicPortal.eventStartingToday");
+    }
     return { event: upcoming, text };
-  }, [events]);
+  }, [events, t, locale]);
 
   if (loading) {
     return (
@@ -661,7 +686,7 @@ const PortalPage = () => {
       >
         <div className="text-center">
           <div className="spinner-border text-light mb-3" role="status" />
-          <p className="mb-0">Loading portal data...</p>
+          <p className="mb-0">{t("publicPortal.loading")}</p>
         </div>
       </div>
     );
@@ -853,7 +878,7 @@ const PortalPage = () => {
           color: "var(--portal-nav-text, inherit)",
         }}
       >
-        <div className="container-fluid">
+        <div className="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2">
           <div className="d-flex align-items-center gap-3">
             <img
               src="/assets/img/nembo.jpg"
@@ -884,13 +909,18 @@ const PortalPage = () => {
               style={{ borderRadius: 8, objectFit: "cover" }}
             />
           </div>
-          <div className="ms-auto d-flex align-items-center gap-3">
+          <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-shrink-0">
+            <InternalPortalLanguageToggle className="flex-shrink-0" />
             {/* Dark/Light theme toggle */}
             <button
               type="button"
               className="btn btn-sm btn-outline-secondary"
               onClick={() => setIsDarkTheme(prev => !prev)}
-              title={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
+              title={
+                isDarkTheme
+                  ? t("publicPortal.themeToLight")
+                  : t("publicPortal.themeToDark")
+              }
               style={{
                 borderRadius: "50%",
                 width: "36px",
@@ -900,7 +930,11 @@ const PortalPage = () => {
                 alignItems: "center",
                 justifyContent: "center",
               }}
-              aria-label={isDarkTheme ? "Light mode" : "Dark mode"}
+              aria-label={
+                isDarkTheme
+                  ? t("publicPortal.ariaLightMode")
+                  : t("publicPortal.ariaDarkMode")
+              }
             >
               <i className={isDarkTheme ? "bx bx-sun" : "bx bx-moon"} style={{ fontSize: "1.1rem" }} />
             </button>
@@ -909,7 +943,7 @@ const PortalPage = () => {
               <button
                 className="btn btn-sm btn-outline-secondary"
                 onClick={decreaseFontSize}
-                title="Decrease text size"
+                title={t("publicPortal.decreaseText")}
                 style={{
                   borderRadius: "50%",
                   width: "36px",
@@ -936,7 +970,7 @@ const PortalPage = () => {
               <button
                 className="btn btn-sm btn-outline-secondary"
                 onClick={increaseFontSize}
-                title="Increase text size"
+                title={t("publicPortal.increaseText")}
                 style={{
                   borderRadius: "50%",
                   width: "36px",
@@ -952,13 +986,13 @@ const PortalPage = () => {
               <button
                 className="btn btn-sm btn-outline-secondary"
                 onClick={resetFontSize}
-                title="Reset to default size"
+                title={t("publicPortal.resetTextSizeTitle")}
                 style={{
                   padding: "0.25rem 0.5rem",
                   fontSize: "0.75rem",
                 }}
               >
-                Reset
+                {t("publicPortal.reset")}
               </button>
             </div>
             <button
@@ -971,7 +1005,7 @@ const PortalPage = () => {
               onClick={() => navigate("/auth/login")}
             >
               <i className="bx bx-log-in me-2" />
-              Login
+              {t("publicPortal.login")}
             </button>
           </div>
         </div>
@@ -1002,14 +1036,17 @@ const PortalPage = () => {
                         <h5 className="card-title internal-portal-welcome__title mb-2 mb-sm-3 animate__animated animate__fadeInDown">
                           <i className="bx bx-smile me-2" aria-hidden="true"></i>
                           {welcomeFormalName ? (
-                            <>Welcome, {welcomeFormalName}!</>
+                            <>
+                              {t("dashboard.welcomeNamed", {
+                                name: welcomeFormalName,
+                              })}
+                            </>
                           ) : (
-                            <>Welcome to the Internal Portal!</>
+                            <>{t("dashboard.welcomeGeneric")}</>
                           )}
                         </h5>
                         <p className="mb-0 internal-portal-welcome__lead animate__animated animate__fadeIn animate__slow">
-                          Here&apos;s an overview of Internal Portal activities including
-                          announcements, documents, events, FAQs, flyers & posters gallery, and quick links.
+                          {t("dashboard.welcomeLead")}
                         </p>
                         <button
                           type="button"
@@ -1018,18 +1055,19 @@ const PortalPage = () => {
                           onClick={() => navigate("/ppaa-internal-portal")}
                         >
                           <i className="bx bx-grid-alt me-2" />
-                          Open internal portal dashboard
+                          {t("publicPortal.openInternalDashboard")}
                         </button>
                       </>
                     ) : (
                       <>
                         <h5 className="card-title internal-portal-welcome__title mb-2 mb-sm-3 animate__animated animate__fadeInDown portal-greeting-heading">
                           <i className="bx bx-smile me-2" aria-hidden="true"></i>
-                          {timeGreeting.greeting}, welcome to PPAA Internal Portal
+                          {t("publicPortal.welcomeLine", {
+                            greeting: timeGreeting.greeting,
+                          })}
                         </h5>
                         <p className="mb-0 internal-portal-welcome__lead mb-3 mb-sm-4 animate__animated animate__fadeIn animate__slow">
-                          Here&apos;s an overview of Internal Portal activities including
-                          announcements, documents, events, FAQs, flyers & posters gallery, and quick links.
+                          {t("dashboard.welcomeLead")}
                         </p>
                         <button
                           type="button"
@@ -1038,7 +1076,7 @@ const PortalPage = () => {
                           onClick={() => navigate("/auth/login")}
                         >
                           <i className="bx bx-log-in me-2" />
-                          Login to Internal Portal
+                          {t("publicPortal.loginToPortal")}
                         </button>
                       </>
                     )}
@@ -1047,7 +1085,7 @@ const PortalPage = () => {
                     <div className="d-flex justify-content-center justify-content-sm-end align-items-end pt-2 pt-sm-0 welcome-illustration-wrap">
                       <img
                         className="img-fluid welcome-illustration animate__animated animate__fadeIn animate__delay-1s"
-                        aria-label="Dashboard illustration"
+                        aria-label={t("publicPortal.dashboardIllustration")}
                         src="/assets/img/illustrations/man-with-laptop-light.png"
                         alt=""
                         data-app-dark-img="illustrations/man-with-laptop-dark.png"
@@ -1074,7 +1112,7 @@ const PortalPage = () => {
                 <div className="card-body d-flex align-items-center justify-content-center" style={{ minHeight: "200px" }}>
                   <div className="text-center text-muted">
                     <i className="bx bx-info-circle fs-1 mb-2"></i>
-                    <p>No items to display</p>
+                    <p>{t("dashboard.carouselEmpty")}</p>
                   </div>
                 </div>
               ) : (
@@ -1152,7 +1190,9 @@ const PortalPage = () => {
                           <>
                             <div className="d-flex align-items-center gap-2 mb-2">
                               <i className="bx bx-check-square" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
-                              <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Active Todo</h6>
+                              <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
+                                {t("publicPortal.activeTodo")}
+                              </h6>
                             </div>
                             <h5
                               className="mb-2 fw-bold text-break portal-dashboard-title"
@@ -1162,9 +1202,13 @@ const PortalPage = () => {
                             </h5>
                             <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
                               <span className={getTodoStatusBadge(data.status)}>
-                                {data.status === 'PENDING' ? 'Pending' : 
-                                 data.status === 'IN_PROGRESS' ? 'In Progress' : 
-                                 data.status}
+                                {data.status === "PENDING"
+                                  ? t("publicPortal.pending")
+                                  : data.status === "IN_PROGRESS"
+                                    ? t("publicPortal.inProgress")
+                                    : data.status === "COMPLETED"
+                                      ? t("publicPortal.completed")
+                                      : data.status}
                               </span>
                               <span className={getTodoPriorityBadge(data.priority)}>
                                 {data.priority}
@@ -1174,13 +1218,15 @@ const PortalPage = () => {
                               {data.start_date && (
                                 <small className="d-flex align-items-center" style={{ color: "#4facfe", fontWeight: "500" }}>
                                   <i className="bx bx-time me-1"></i>
-                                  Start: {formatTodoDate(data.start_date)}
+                                  {t("publicPortal.start")}{" "}
+                                  {formatTodoDate(data.start_date)}
                                 </small>
                               )}
                               {data.due_date && (
                                 <small className="d-flex align-items-center" style={{ color: "#ff6b6b", fontWeight: "500" }}>
                                   <i className="bx bx-calendar-check me-1"></i>
-                                  Due: {formatTodoDate(data.due_date)}
+                                  {t("publicPortal.due")}{" "}
+                                  {formatTodoDate(data.due_date)}
                                 </small>
                               )}
                             </div>
@@ -1193,7 +1239,7 @@ const PortalPage = () => {
                                 style={{ color: "#4facfe", fontSize: "1.5rem" }}
                               />
                               <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
-                                Event
+                                {t("publicPortal.event")}
                               </h6>
                               {data.event_type && (
                                 <span
@@ -1224,7 +1270,9 @@ const PortalPage = () => {
                               {data.start_date && (
                                 <small className="d-flex align-items-center mb-0" style={{ color: "#198754" }}>
                                   <i className="bx bx-calendar-event me-1" style={{ color: "#198754" }} />
-                                  <span className="fw-semibold me-1">Start:</span>
+                                  <span className="fw-semibold me-1">
+                                    {t("publicPortal.start")}
+                                  </span>
                                   <span>{formatDate(data.start_date)}</span>
                                 </small>
                               )}
@@ -1232,7 +1280,7 @@ const PortalPage = () => {
                                 <small className="d-flex align-items-center mb-0" style={{ color: "#c62828" }}>
                                   <i className="bx bx-calendar-check me-1" style={{ color: "#dc3545" }} />
                                   <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
-                                    End:
+                                    {t("publicPortal.end")}
                                   </span>
                                   <span style={{ color: "#c62828" }}>{formatDate(data.end_date)}</span>
                                 </small>
@@ -1243,11 +1291,13 @@ const PortalPage = () => {
                           <>
                             <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
                               <i className="bx bx-bullhorn" style={{ color: "#00853f", fontSize: "1.5rem" }}></i>
-                              <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>Announcement</h6>
+                              <h6 className="mb-0 fw-bold" style={{ color: "#00853f" }}>
+                                {t("publicPortal.announcement")}
+                              </h6>
                               {data.is_pinned && <i className="bx bx-pin text-warning"></i>}
                               {isPortalAnnouncementNew(data.created_at) && (
                                 <span className="badge rounded-pill portal-announcement-new-badge">
-                                  NEW
+                                  {t("publicPortal.labelNew")}
                                 </span>
                               )}
                             </div>
@@ -1283,7 +1333,9 @@ const PortalPage = () => {
                                       className="bx bx-calendar-event me-1"
                                       style={{ color: "#198754" }}
                                     ></i>
-                                    <span className="fw-semibold me-1">Start:</span>
+                                    <span className="fw-semibold me-1">
+                                      {t("publicPortal.start")}
+                                    </span>
                                     <span>{formatDate(data.start_date || data.created_at)}</span>
                                   </small>
                                   <span
@@ -1302,7 +1354,7 @@ const PortalPage = () => {
                                       style={{ color: "#dc3545" }}
                                     ></i>
                                     <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
-                                      End:
+                                      {t("publicPortal.end")}
                                     </span>
                                     <span style={{ color: "#c62828" }}>
                                       {data.end_date ? formatDate(data.end_date) : "—"}
@@ -1330,14 +1382,17 @@ const PortalPage = () => {
                       <div
                         className="d-flex gap-0 align-items-center justify-content-center flex-nowrap"
                         role="tablist"
-                        aria-label="Highlight slides"
+                        aria-label={t("publicPortal.highlightSlides")}
                       >
                         {combinedItems.map((_, index) => (
                           <button
                             key={index}
                             type="button"
                             className={`portal-highlight-dot-btn ${index === currentIndex ? "is-active" : ""}`}
-                            aria-label={`Show highlight ${index + 1} of ${combinedItems.length}`}
+                            aria-label={t("publicPortal.showSlide", {
+                              i: index + 1,
+                              total: combinedItems.length,
+                            })}
                             aria-selected={index === currentIndex}
                             role="tab"
                             onClick={() => setCurrentIndex(index)}
@@ -1374,7 +1429,9 @@ const PortalPage = () => {
                     className="bx bx-calendar me-2"
                     style={{ color: "#00f2fe" }}
                   ></i>
-                  <span style={{ color: "#00f2fe" }}>Events Calendar</span>
+                  <span style={{ color: "#00f2fe" }}>
+                    {t("publicPortal.eventsCalendar")}
+                  </span>
                 </h5>
               </div>
               {nextEventCountdown && (
@@ -1386,7 +1443,9 @@ const PortalPage = () => {
                   }}
                 >
                   <div>
-                    <strong style={{ color: "#00f2fe" }}>Next up:</strong>{" "}
+                    <strong style={{ color: "#00f2fe" }}>
+                      {t("publicPortal.nextUp")}
+                    </strong>{" "}
                     <span>{nextEventCountdown.event.title}</span>
                     <small className="text-muted ms-2">
                       {formatDate(nextEventCountdown.event.start_date, "DD/MM/YYYY HH:mm")}
@@ -1434,14 +1493,16 @@ const PortalPage = () => {
                     className="bx bx-check-square me-2"
                     style={{ color: "#00853f" }}
                   ></i>
-                  <span style={{ color: "#00853f" }}>Active Todo List</span>
+                  <span style={{ color: "#00853f" }}>
+                    {t("publicPortal.activeTodoList")}
+                  </span>
                 </h5>
               </div>
               <div className="card-body p-0">
                 {todosData.length === 0 ? (
                   <div className="text-center py-4 text-muted">
                     <i className="bx bx-info-circle fs-1 mb-2"></i>
-                    <p>No Active Todo List at the moment</p>
+                    <p>{t("publicPortal.noTodos")}</p>
                   </div>
                 ) : (
                   <>
@@ -1489,10 +1550,12 @@ const PortalPage = () => {
                                   <h6 className="mb-0 text-break">{todo.title}</h6>
                                   <span className={`${getTodoStatusBadge(todo.status)} flex-shrink-0`}>
                                     {todo.status === "PENDING"
-                                      ? "Pending"
+                                      ? t("publicPortal.pending")
                                       : todo.status === "IN_PROGRESS"
-                                      ? "In Progress"
-                                      : todo.status}
+                                        ? t("publicPortal.inProgress")
+                                        : todo.status === "COMPLETED"
+                                          ? t("publicPortal.completed")
+                                          : todo.status}
                                   </span>
                                   <span className={`${getTodoPriorityBadge(todo.priority)} flex-shrink-0`}>
                                     {todo.priority}
@@ -1514,7 +1577,8 @@ const PortalPage = () => {
                                       }}
                                     >
                                       <i className="bx bx-time me-1"></i>
-                                      Start: {formatTodoDate(todo.start_date)}
+                                      {t("publicPortal.start")}{" "}
+                                      {formatTodoDate(todo.start_date)}
                                     </small>
                                   )}
                                   {todo.due_date && (
@@ -1526,7 +1590,8 @@ const PortalPage = () => {
                                       }}
                                     >
                                       <i className="bx bx-calendar-check me-1"></i>
-                                      Due: {formatTodoDate(todo.due_date)}
+                                      {t("publicPortal.due")}{" "}
+                                      {formatTodoDate(todo.due_date)}
                                     </small>
                                   )}
                                 </div>
@@ -1551,7 +1616,7 @@ const PortalPage = () => {
                             }
                           >
                             <i className="bx bx-chevron-left me-1"></i>
-                            Previous
+                            {t("publicPortal.previous")}
                           </button>
                         )}
                         {todoOffset === 0 && <div></div>}
@@ -1571,7 +1636,9 @@ const PortalPage = () => {
                             }
                           >
                             <i className="bx bx-chevron-right me-1"></i>
-                            See More ({todosData.length - todoOffset - 3} more)
+                            {t("publicPortal.seeMore", {
+                              n: todosData.length - todoOffset - 3,
+                            })}
                           </button>
                         )}
                         {todoOffset + 3 >= todosData.length &&
@@ -1614,14 +1681,16 @@ const PortalPage = () => {
                     className="bx bx-bullhorn me-2"
                     style={{ color: "#00853f" }}
                   ></i>
-                  <span style={{ color: "#00853f" }}>Recent Announcements</span>
+                  <span style={{ color: "#00853f" }}>
+                    {t("publicPortal.recentAnnouncements")}
+                  </span>
                 </h5>
               </div>
               <div className="card-body p-3">
                 {announcementsData.length === 0 ? (
                   <div className="text-center py-4 text-muted">
                     <i className="bx bx-info-circle fs-1 mb-2"></i>
-                    <p className="mb-0">No announcements available</p>
+                    <p className="mb-0">{t("publicPortal.noAnnouncements")}</p>
                   </div>
                 ) : (
                   <>
@@ -1679,7 +1748,7 @@ const PortalPage = () => {
                                     announcement.created_at
                                   ) && (
                                     <span className="badge rounded-pill portal-announcement-new-badge">
-                                      NEW
+                                      {t("publicPortal.labelNew")}
                                     </span>
                                   )}
                                 </div>
@@ -1709,7 +1778,9 @@ const PortalPage = () => {
                                       className="bx bx-calendar-event me-1"
                                       style={{ color: "#198754" }}
                                     ></i>
-                                    <span className="fw-semibold me-1">Start:</span>
+                                    <span className="fw-semibold me-1">
+                                      {t("publicPortal.start")}
+                                    </span>
                                     <span>
                                       {formatDate(
                                         announcement.start_date ||
@@ -1733,7 +1804,7 @@ const PortalPage = () => {
                                       style={{ color: "#dc3545" }}
                                     ></i>
                                     <span className="fw-semibold me-1" style={{ color: "#b71c1c" }}>
-                                      End:
+                                      {t("publicPortal.end")}
                                     </span>
                                     <span style={{ color: "#c62828" }}>
                                       {announcement.end_date
@@ -1782,7 +1853,7 @@ const PortalPage = () => {
                             onClick={() => setAnnouncementOffset(Math.max(0, announcementOffset - 3))}
                           >
                             <i className="bx bx-chevron-left me-1"></i>
-                            Previous
+                            {t("publicPortal.previous")}
                           </button>
                         )}
                         {announcementOffset === 0 && <div></div>}
@@ -1798,7 +1869,9 @@ const PortalPage = () => {
                             onClick={() => setAnnouncementOffset(Math.min(announcementsData.length - 3, announcementOffset + 3))}
                           >
                             <i className="bx bx-chevron-right me-1"></i>
-                            See More ({announcementsData.length - announcementOffset - 3} more)
+                            {t("publicPortal.seeMore", {
+                              n: announcementsData.length - announcementOffset - 3,
+                            })}
                           </button>
                         )}
                         {announcementOffset + 3 >= announcementsData.length && announcementOffset > 0 && (
@@ -1841,10 +1914,16 @@ const PortalPage = () => {
               >
                 <h5 className="mb-0 d-flex align-items-center flex-wrap gap-2">
                   <i className="bx bx-library me-2" style={{ color: "#17a2b8" }}></i>
-                  <span style={{ color: "#17a2b8" }}>Documents & FAQs</span>
+                  <span style={{ color: "#17a2b8" }}>
+                    {t("publicPortal.documentsFaqs")}
+                  </span>
                 </h5>
                 <div className="d-flex align-items-center flex-wrap gap-2 ms-auto">
-                  <div className="btn-group btn-group-sm" role="group" aria-label="Documents or FAQs">
+                  <div
+                    className="btn-group btn-group-sm"
+                    role="group"
+                    aria-label={t("publicPortal.documentsFaqs")}
+                  >
                     <button
                       type="button"
                       className={`btn ${docsLibraryTab === "documents" ? "" : "btn-outline-secondary"}`}
@@ -1856,7 +1935,7 @@ const PortalPage = () => {
                       onClick={() => setDocsLibraryTab("documents")}
                     >
                       <i className="bx bx-folder me-1"></i>
-                      Documents
+                      {t("publicPortal.documentsTab")}
                     </button>
                     <button
                       type="button"
@@ -1872,7 +1951,7 @@ const PortalPage = () => {
                       }}
                     >
                       <i className="bx bx-help-circle me-1"></i>
-                      FAQs
+                      {t("publicPortal.faqsTab")}
                     </button>
                   </div>
                   {docsLibraryTab === "documents" && selectedCategory && (
@@ -1884,7 +1963,7 @@ const PortalPage = () => {
                       }}
                     >
                       <i className="bx bx-arrow-back me-1"></i>
-                      Back to Categories
+                      {t("publicPortal.backToCategories")}
                     </button>
                   )}
                 </div>
@@ -1899,13 +1978,13 @@ const PortalPage = () => {
                       <input
                         type="search"
                         className="form-control"
-                        placeholder="Search FAQs in this panel…"
+                        placeholder={t("publicPortal.searchFaqsPlaceholder")}
                         value={libraryFaqSearch}
                         onChange={(e) => {
                           setLibraryFaqSearch(e.target.value);
                           setLibraryFaqOffset(0);
                         }}
-                        aria-label="Search FAQs"
+                        aria-label={t("publicPortal.searchFaqsAria")}
                       />
                     </div>
                     {(() => {
@@ -1923,8 +2002,8 @@ const PortalPage = () => {
                             <i className="bx bx-info-circle fs-1 mb-2"></i>
                             <p className="mb-0">
                               {libraryFaqSearch.trim()
-                                ? "No FAQs match your search."
-                                : "No FAQs available."}
+                                ? t("publicPortal.noFaqMatch")
+                                : t("publicPortal.noFaqsAvailable")}
                             </p>
                           </div>
                         );
@@ -1974,7 +2053,7 @@ const PortalPage = () => {
                                 }
                               >
                                 <i className="bx bx-chevron-left me-1"></i>
-                                Previous
+                                {t("publicPortal.previous")}
                               </button>
                               <button
                                 type="button"
@@ -1989,7 +2068,7 @@ const PortalPage = () => {
                                   )
                                 }
                               >
-                                Next
+                                {t("publicPortal.next")}
                                 <i className="bx bx-chevron-right ms-1"></i>
                               </button>
                             </div>
@@ -2010,7 +2089,8 @@ const PortalPage = () => {
                   // Group documents by category
                   const documentsByCategory = {};
                   documents.forEach(doc => {
-                    const categoryName = doc.category?.name || "Uncategorized";
+                    const categoryName =
+                      doc.category?.name || t("publicPortal.uncategorized");
                     if (!documentsByCategory[categoryName]) {
                       documentsByCategory[categoryName] = [];
                     }
@@ -2023,7 +2103,7 @@ const PortalPage = () => {
                     return (
                       <div className="text-center py-4 text-muted">
                         <i className="bx bx-info-circle fs-1 mb-2"></i>
-                        <p>No documents available</p>
+                        <p>{t("publicPortal.noDocuments")}</p>
                       </div>
                     );
                   }
@@ -2068,7 +2148,13 @@ const PortalPage = () => {
                                       {categoryName}
                                     </h6>
                                     <p className="text-muted mb-0 small">
-                                      {categoryDocs.length} {categoryDocs.length === 1 ? 'document' : 'documents'}
+                                      {categoryDocs.length === 1
+                                        ? t("publicPortal.docCountOne", {
+                                            n: categoryDocs.length,
+                                          })
+                                        : t("publicPortal.docCountMany", {
+                                            n: categoryDocs.length,
+                                          })}
                                     </p>
                                   </div>
                                 </div>
@@ -2091,12 +2177,14 @@ const PortalPage = () => {
                               {showAllDocumentCategories ? (
                                 <>
                                   <i className="bx bx-chevron-up me-1"></i>
-                                  Show less
+                                  {t("publicPortal.showLess")}
                                 </>
                               ) : (
                                 <>
                                   <i className="bx bx-chevron-down me-1"></i>
-                                  See all ({categories.length} categories)
+                                  {t("publicPortal.seeAllCategories", {
+                                    n: categories.length,
+                                  })}
                                 </>
                               )}
                             </button>
@@ -2114,7 +2202,16 @@ const PortalPage = () => {
                       <div className="px-3 pt-3 pb-2 border-bottom bg-light">
                         <h6 className="mb-0 fw-bold">
                           <i className="bx bx-folder me-2" style={{ color: "#17a2b8" }}></i>
-                          {selectedCategory} ({categoryDocuments.length} {categoryDocuments.length === 1 ? 'document' : 'documents'})
+                          {selectedCategory}{" "}
+                          (
+                          {categoryDocuments.length === 1
+                            ? t("publicPortal.docCountOne", {
+                                n: categoryDocuments.length,
+                              })
+                            : t("publicPortal.docCountMany", {
+                                n: categoryDocuments.length,
+                              })}
+                          )
                         </h6>
                       </div>
                       <div 
@@ -2188,7 +2285,7 @@ const PortalPage = () => {
                                   }}
                                 >
                                   <i className="bx bx-download me-1"></i>
-                                  Download
+                                  {t("publicPortal.download")}
                                 </button>
                               ) : (
                                 <button
@@ -2204,7 +2301,7 @@ const PortalPage = () => {
                                   }}
                                 >
                                   <i className="bx bx-download me-1"></i>
-                                  No File Available
+                                  {t("publicPortal.noFileAvailable")}
                                 </button>
                               )}
                             </div>
@@ -2251,7 +2348,9 @@ const PortalPage = () => {
                     className="bx bx-link me-2"
                     style={{ color: "#ff6b6b" }}
                   ></i>
-                  <span style={{ color: "#ff6b6b" }}>Quick Links</span>
+                  <span style={{ color: "#ff6b6b" }}>
+                    {t("publicPortal.quickLinks")}
+                  </span>
                 </h5>
               </div>
               <div
@@ -2264,7 +2363,7 @@ const PortalPage = () => {
                 {quickLinks.length === 0 ? (
                   <div className="text-center py-4 text-muted">
                     <i className="bx bx-info-circle fs-1 mb-2"></i>
-                    <p className="mb-0">No quick links available</p>
+                    <p className="mb-0">{t("publicPortal.noQuickLinks")}</p>
                   </div>
                 ) : (
                   <div className="row g-3 justify-content-start">
@@ -2362,7 +2461,9 @@ const PortalPage = () => {
                                 {link.total_clicks > 0 && (
                                   <small className="d-block mt-2" style={{ color: `${colorScheme.text}80` }}>
                                     <i className="bx bx-mouse-alt me-1"></i>
-                                    {link.total_clicks} clicks
+                                    {t("publicPortal.clicks", {
+                                      n: link.total_clicks,
+                                    })}
                                   </small>
                                 )}
                               </div>
@@ -2401,7 +2502,7 @@ const PortalPage = () => {
           type="button"
           className="portal-back-to-top"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Back to top"
+          aria-label={t("publicPortal.backToTop")}
         >
           <i className="bx bx-chevron-up" />
         </button>
@@ -2420,13 +2521,13 @@ const PortalPage = () => {
             <div className="modal-header border-bottom portal-faq-modal-header">
               <h5 className="modal-title fw-bold text-white" id="faqViewModalLabel">
                 <i className="bx bx-help-circle me-2" aria-hidden></i>
-                FAQ
+                {t("publicPortal.faqTitle")}
               </h5>
               <button
                 type="button"
                 className="btn-close portal-faq-modal-close"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedFaq(null)}
               ></button>
             </div>
@@ -2441,7 +2542,7 @@ const PortalPage = () => {
                     <div className="d-flex flex-wrap align-items-center gap-2">
                       <span className="badge portal-faq-modal-badge">
                         <i className="bx bx-message-rounded-dots me-1"></i>
-                        Answer
+                        {t("publicPortal.answer")}
                       </span>
                     </div>
                   </div>
@@ -2452,7 +2553,9 @@ const PortalPage = () => {
                         {selectedFaq.answer}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No answer has been added for this FAQ yet.</p>
+                      <p className="mb-0 text-muted">
+                        {t("publicPortal.noFaqAnswer")}
+                      </p>
                     )}
                   </div>
                 </>
@@ -2465,7 +2568,7 @@ const PortalPage = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedFaq(null)}
               >
-                Close
+                {t("publicPortal.close")}
               </button>
             </div>
           </div>
@@ -2485,13 +2588,13 @@ const PortalPage = () => {
             <div className="modal-header border-bottom" style={{ backgroundColor: "#00853f", color: "white" }}>
               <h5 className="modal-title fw-bold text-white" id="announcementViewModalLabel">
                 <i className="bx bx-bullhorn me-2"></i>
-                Announcement
+                {t("publicPortal.announcementModalTitle")}
               </h5>
               <button
                 type="button"
                 className="btn-close btn-close-white"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedAnnouncement(null)}
               ></button>
             </div>
@@ -2508,14 +2611,16 @@ const PortalPage = () => {
                       {selectedAnnouncement.is_pinned && (
                         <span className="badge bg-warning text-dark">
                           <i className="bx bx-pin me-1"></i>
-                          Pinned
+                          {t("publicPortal.pinned")}
                         </span>
                       )}
 
                       {selectedAnnouncement.priority && (
                         <span className={`badge ${getPriorityColor(selectedAnnouncement.priority)}`}>
                           <i className="bx bx-flag me-1"></i>
-                          Priority: {selectedAnnouncement.priority}
+                          {t("publicPortal.priorityPrefix", {
+                            priority: selectedAnnouncement.priority,
+                          })}
                         </span>
                       )}
 
@@ -2530,7 +2635,9 @@ const PortalPage = () => {
                       {selectedAnnouncement.end_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-calendar-check me-1"></i>
-                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>Until</span>{" "}
+                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>
+                            {t("publicPortal.until")}
+                          </span>{" "}
                           {formatDate(selectedAnnouncement.end_date, "DD/MM/YYYY")}
                         </span>
                       )}
@@ -2544,7 +2651,9 @@ const PortalPage = () => {
                         {selectedAnnouncement.content}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No message provided for this announcement.</p>
+                      <p className="mb-0 text-muted">
+                        {t("publicPortal.noAnnouncementBody")}
+                      </p>
                     )}
                   </div>
 
@@ -2567,7 +2676,9 @@ const PortalPage = () => {
                             </div>
 
                             <div>
-                              <div className="text-muted small">Open or download the attached file (sign in may be required)</div>
+                              <div className="text-muted small">
+                                {t("publicPortal.openDownloadHint")}
+                              </div>
                             </div>
                           </div>
 
@@ -2591,7 +2702,7 @@ const PortalPage = () => {
                             }}
                           >
                             <i className="bx bx-download me-1"></i>
-                            Download
+                            {t("publicPortal.download")}
                           </button>
                         </div>
                       </div>
@@ -2607,7 +2718,7 @@ const PortalPage = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedAnnouncement(null)}
               >
-                Close
+                {t("publicPortal.close")}
               </button>
             </div>
           </div>
@@ -2627,13 +2738,13 @@ const PortalPage = () => {
             <div className="modal-header border-bottom portal-todo-modal-header" style={{ backgroundColor: "#a8edea", color: "#333" }}>
               <h5 className="modal-title fw-bold text-dark" id="todoViewModalLabel">
                 <i className="bx bx-check-square me-2"></i>
-                Todo
+                {t("publicPortal.todoTitle")}
               </h5>
               <button
                 type="button"
                 className="btn-close"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedTodo(null)}
               ></button>
             </div>
@@ -2650,19 +2761,23 @@ const PortalPage = () => {
                       {selectedTodo.status && (
                         <span className={getTodoStatusBadge(selectedTodo.status)}>
                           <i className="bx bx-badge-check me-1"></i>
-                          Status:{" "}
+                          {t("publicPortal.statusLabel")}:{" "}
                           {selectedTodo.status === "PENDING"
-                            ? "Pending"
+                            ? t("publicPortal.pending")
                             : selectedTodo.status === "IN_PROGRESS"
-                            ? "In Progress"
-                            : selectedTodo.status}
+                              ? t("publicPortal.inProgress")
+                              : selectedTodo.status === "COMPLETED"
+                                ? t("publicPortal.completed")
+                                : selectedTodo.status}
                         </span>
                       )}
 
                       {selectedTodo.priority && (
                         <span className={getTodoPriorityBadge(selectedTodo.priority)}>
                           <i className="bx bx-flag me-1"></i>
-                          Priority: {selectedTodo.priority}
+                          {t("publicPortal.priorityPrefix", {
+                            priority: selectedTodo.priority,
+                          })}
                         </span>
                       )}
 
@@ -2676,21 +2791,25 @@ const PortalPage = () => {
                           }}
                         >
                           <i className="bx bx-building me-1"></i>
-                          Department: {selectedTodo.department.name}
+                          {t("publicPortal.departmentLabel")}:{" "}
+                          {selectedTodo.department.name}
                         </span>
                       )}
 
                       {selectedTodo.start_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-time me-1"></i>
-                          Start: {formatTodoDate(selectedTodo.start_date)}
+                          {t("publicPortal.start")}{" "}
+                          {formatTodoDate(selectedTodo.start_date)}
                         </span>
                       )}
 
                       {selectedTodo.due_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-calendar-check me-1"></i>
-                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>Due</span>:{" "}
+                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>
+                            {t("publicPortal.due")}
+                          </span>{" "}
                           {formatTodoDate(selectedTodo.due_date)}
                         </span>
                       )}
@@ -2704,7 +2823,9 @@ const PortalPage = () => {
                         {selectedTodo.description}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No details provided for this todo.</p>
+                      <p className="mb-0 text-muted">
+                        {t("publicPortal.todoNoDetails")}
+                      </p>
                     )}
                   </div>
                 </>
@@ -2717,7 +2838,7 @@ const PortalPage = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedTodo(null)}
               >
-                Close
+                {t("publicPortal.close")}
               </button>
             </div>
           </div>
@@ -2737,13 +2858,13 @@ const PortalPage = () => {
             <div className="modal-header border-bottom" style={{ backgroundColor: "#00f2fe", color: "white" }}>
               <h5 className="modal-title fw-bold text-white" id="eventViewModalLabel">
                 <i className="bx bx-calendar me-2"></i>
-                Event
+                {t("publicPortal.event")}
               </h5>
               <button
                 type="button"
                 className="btn-close btn-close-white"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={t("publicPortal.close")}
                 onClick={() => setSelectedEvent(null)}
               ></button>
             </div>
@@ -2769,7 +2890,7 @@ const PortalPage = () => {
                       {selectedEvent.location && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-map me-1"></i>
-                          Location: {selectedEvent.location}
+                          {t("publicPortal.locationLabel")}: {selectedEvent.location}
                         </span>
                       )}
 
@@ -2784,7 +2905,9 @@ const PortalPage = () => {
                       {selectedEvent.end_date && (
                         <span className="badge bg-light text-dark">
                           <i className="bx bx-calendar-check me-1"></i>
-                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>Until</span>{" "}
+                          <span style={{ color: "#ff6b6b", fontWeight: 700 }}>
+                            {t("publicPortal.until")}
+                          </span>{" "}
                           {formatDate(selectedEvent.end_date, "DD/MM/YYYY HH:mm")}
                         </span>
                       )}
@@ -2798,7 +2921,9 @@ const PortalPage = () => {
                         {selectedEvent.description}
                       </p>
                     ) : (
-                      <p className="mb-0 text-muted">No details provided for this event.</p>
+                      <p className="mb-0 text-muted">
+                        {t("publicPortal.eventNoDetails")}
+                      </p>
                     )}
                   </div>
                 </>
@@ -2811,7 +2936,7 @@ const PortalPage = () => {
                 data-bs-dismiss="modal"
                 onClick={() => setSelectedEvent(null)}
               >
-                Close
+                {t("publicPortal.close")}
               </button>
             </div>
           </div>

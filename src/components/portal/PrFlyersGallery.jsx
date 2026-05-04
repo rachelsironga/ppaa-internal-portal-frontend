@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import "./portalPrFlyersGallery.css";
+import { useInternalPortalI18n } from "../../contexts/InternalPortalI18nContext.jsx";
 import {
   prFlyerVideoEmbedSrc,
   prFlyerVideoProviderLabel,
 } from "../../utils/prFlyerVideo";
 
 function FlyerCard({ flyer, onOpen }) {
+  const { t } = useInternalPortalI18n();
   const title = (flyer.title || "").trim();
   const caption = (flyer.caption || "").trim();
   const alt = title || "Flyer or poster image";
@@ -56,12 +58,12 @@ function FlyerCard({ flyer, onOpen }) {
             {hasVideo ? (
               <>
                 <i className="bx bx-play-circle" style={{ fontSize: "0.95rem" }} />
-                Play
+                {t("publicPortal.play")}
               </>
             ) : (
               <>
                 <i className="bx bx-expand-alt" style={{ fontSize: "0.85rem" }} />
-                Open
+                {t("publicPortal.open")}
               </>
             )}
           </span>
@@ -82,7 +84,9 @@ function FlyerCard({ flyer, onOpen }) {
         </div>
       ) : (
         <div className="pr-flyer-card__meta py-2">
-          <span className="text-muted small">{hasVideo ? "Video" : "Poster"}</span>
+          <span className="text-muted small">
+            {hasVideo ? t("publicPortal.video") : t("publicPortal.poster")}
+          </span>
         </div>
       )}
     </div>
@@ -98,6 +102,7 @@ function FlyerCard({ flyer, onOpen }) {
  * @param {boolean} [compact] - single-column grid for narrow column beside Events/FAQs
  */
 export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = false, compact = false }) {
+  const { t } = useInternalPortalI18n();
   const list = Array.isArray(flyers) ? flyers : [];
   const useMarquee = list.length > 1;
   const marqueeDurationSec = Math.min(90, Math.max(24, list.length * 14));
@@ -141,7 +146,8 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
     else inst.hide();
   }, [lightboxFlyer]);
 
-  const lbTitle = (lightboxFlyer?.title || "").trim() || "Poster";
+  const lbTitle =
+    (lightboxFlyer?.title || "").trim() || t("publicPortal.lightboxPoster");
   const lbCaption = (lightboxFlyer?.caption || "").trim();
   const lbVideo = (lightboxFlyer?.video_url || "").trim();
   const lbProvider = prFlyerVideoProviderLabel(lbVideo);
@@ -169,10 +175,10 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
           </span>
           <div className="min-w-0">
             <h5 className="mb-0 pr-flyers-gallery__title-text" style={{ color: "#00853f", fontWeight: 700 }}>
-              Flyers & posters gallery
+              {t("publicPortal.prFlyersTitle")}
             </h5>
             <p className="mb-0 text-muted small pr-flyers-gallery__subtitle">
-              Posters, images, and linked YouTube or Instagram videos from PR.
+              {t("publicPortal.prFlyersSubtitle")}
             </p>
           </div>
         </div>
@@ -184,16 +190,18 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
             <div className="pr-flyers-gallery__empty-icon">
               <i className="bx bx-image" aria-hidden />
             </div>
-            <div className="pr-flyers-gallery__empty-title">No gallery items yet</div>
+            <div className="pr-flyers-gallery__empty-title">
+              {t("publicPortal.prFlyersEmptyTitle")}
+            </div>
             <p className="pr-flyers-gallery__empty-lead mb-0">
-              When PR adds flyers, posters, or video links, they will appear here. Check back soon.
+              {t("publicPortal.prFlyersEmptyLead")}
             </p>
           </div>
         ) : useMarquee ? (
           <div
             className="pr-flyers-gallery__marquee flex-grow-1"
             role="region"
-            aria-label="Flyers and posters, auto-scrolling. Hover to pause."
+            aria-label={t("publicPortal.prFlyersMarqueeAria")}
           >
             <div
               className="pr-flyers-gallery__marquee-track"

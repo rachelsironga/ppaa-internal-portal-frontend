@@ -12,12 +12,20 @@
       },
  
       {
-        "text": "Dashboard",
+        "text": "Executive Dashboard",
         "icon": "bx bx-home",
         "available": true,
         "link": "/ppaa-maoni/dashboard",
         "permission": [],
-        "role": ["admin", "ppaa_maoni_reviewer", "maoni_admin"]
+        "role": ["admin", "maoni_reviewer", "maoni_admin"]
+      },
+      {
+        "text": "Handler Dashboard",
+        "icon": "bx bx-analyse",
+        "available": true,
+        "link": "/ppaa-maoni/handler-dashboard",
+        "permission": [],
+        "role": ["admin", "maoni_handler", "maoni_admin"]
       },
       {
         "text": "Maoni",
@@ -25,9 +33,35 @@
         "available": true,
         "link": "/ppaa-maoni",
         "permission": [],
-        "role": ["admin", "staff", "ppaa_maoni_reviewer", "maoni_admin"]
+        "role": ["admin", "staff", "maoni_handler", "maoni_admin", "maoni_reviewer","maoni_contributer"]
+      },
+      {
+        "text": "Profile",
+        "icon": "bx bx-user",
+        "available": true,
+        "link": "/ppaa-maoni/profile",
+        "permission": [],
+        "role": ["admin", "staff", "maoni_handler", "maoni_admin", "maoni_reviewer", "maoni_contributer"]
+      }
+
+  
+    
+    ]
+  },
+
+  {
+    "header": "SETUP & CONFIGURATION",
+    "items": [
+      {
+        "text": "Maoni Escalation Days",
+        "icon": "bx bx-calendar",
+        "available": true,
+        "link": "/ppaa-maoni/maoni-escalation-settings",
+        "permission": ["can_view_maoni_escalation_days","can_add_maoni_escalation_days","can_delete_maoni_escalation_days"],
+        "role": ["admin", "maoni_admin"]
       }
     ]
   }
+
 
 ]
