@@ -2,7 +2,6 @@ import { API_BASE_URL } from "../../../../Costants";
 import api from "../../../../api";
 
 const DEPARTMENTS_API_URL = `${API_BASE_URL}/api/departments`;
-const DIRECTORIES_API_URL = `${API_BASE_URL}/api/directory`;
 
 const config = {
     headers: {
@@ -52,18 +51,3 @@ export const deleteDepartment = async (uid) => {
     }
 };
 
-export const getDirectories = async ({
-    search = "",
-    pagination = {},
-}) => {
-    try {
-        const response = await api.get(
-            `${DIRECTORIES_API_URL}${search !== "" ? `?search=${search}` : ""}`,
-            setConfig(pagination)
-        );
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching directories:", error);
-        throw error;
-    }
-};

@@ -1,2 +1,1 @@
-export { signup } from './authentication';
-export { login } from './authentication';
+export { signup, login, refreshCurrentUser } from "./authentication";

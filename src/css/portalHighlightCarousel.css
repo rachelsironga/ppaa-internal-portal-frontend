@@ -1,0 +1,59 @@
+/* Dashboard welcome highlight carousel dots — StaffDashboard + PortalPage */
+.portal-highlight-carousel-dots .portal-highlight-dot-btn {
+  min-width: 22px;
+  min-height: 32px;
+}
+
+.portal-highlight-carousel-dots .d-flex {
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.portal-highlight-dot-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.portal-highlight-dot-btn:focus-visible {
+  outline: 2px solid #00853f;
+  outline-offset: 2px;
+}
+
+.portal-highlight-dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #cbd5e1;
+}
+
+.portal-highlight-dot-btn.is-active .portal-highlight-dot {
+  background-color: #00853f;
+  transform: scale(1.15);
+}
+
+[data-portal-theme="dark"] .portal-highlight-dot {
+  background-color: #64748b;
+}
+
+[data-portal-theme="dark"] .portal-highlight-dot-btn.is-active .portal-highlight-dot {
+  background-color: #818cf8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-highlight-dot-btn.is-active .portal-highlight-dot {
+    transform: none;
+  }
+}

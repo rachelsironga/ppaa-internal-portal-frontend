@@ -1,0 +1,97 @@
+[
+  {
+    "header": "",
+    "items": [
+      {
+        "text": "Services",
+        "icon": "bx bxl-microsoft",
+        "available": true,
+        "link": "/services",
+        "permission": [],
+        "role": ["staff", "admin", "RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "RMS_DEPT_REPORTER"]
+      },
+      {
+        "id": "rms-dashboard",
+        "text": "Dashboard",
+        "icon": "bx bx-home-alt",
+        "available": true,
+        "link": "/report-management/dashboard",
+        "permission": ["view_rmsreport"],
+        "role": ["RMS_DEPT_REPORTER", "RMS_SYS_ADMIN", "admin"]
+      },
+      {
+        "id": "rms-ed-dashboard",
+        "text": "ES Dashboard",
+        "icon": "bx bx-analyse",
+        "available": true,
+        "link": "/report-management/dashboard/ed",
+        "permission": ["view_rmsreport"],
+        "role": ["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "admin"]
+      }
+    ]
+  },
+  {
+    "header": "REPORTS",
+    "items": [
+      {
+        "id": "rms-reports",
+        "text": "Reports",
+        "icon": "bx bx-file-blank",
+        "available": true,
+        "link": "/report-management/reports",
+        "permission": ["view_rmsreport"],
+        "role": ["RMS_REPORT_MANAGER", "RMS_SYS_ADMIN", "RMS_DEPT_REPORTER", "admin"]
+      },
+      {
+        "id": "rms-audit",
+        "text": "Audit Trail",
+        "icon": "bx bx-list-check",
+        "available": true,
+        "link": "/report-management/audit-trail",
+        "permission": ["view_rmsreport"],
+        "role": ["RMS_SYS_ADMIN", "admin"]
+      }
+    ]
+  },
+  {
+    "header": "SETUP",
+    "items": [
+      {
+        "id": "rms-financial-years",
+        "text": "Financial Years",
+        "icon": "bx bx-calendar",
+        "available": true,
+        "link": "/report-management/setup/financial-years",
+        "permission": ["view_rmsreport"],
+        "role": ["RMS_SYS_ADMIN", "admin"]
+      },
+      {
+        "id": "rms-stakeholders",
+        "text": "Stakeholders",
+        "icon": "bx bx-group",
+        "available": true,
+        "link": "/report-management/setup/stakeholders",
+        "permission": ["view_rmsstakeholder"],
+        "role": ["RMS_SYS_ADMIN", "admin"]
+      },
+      {
+        "id": "rms-report-categories",
+        "text": "Report Categories",
+        "icon": "bx bx-category",
+        "available": true,
+        "link": "/report-management/setup/report-categories",
+        "permission": ["view_rmsreportcategory"],
+        "role": ["RMS_SYS_ADMIN", "admin"]
+      },
+      {
+        "id": "rms-report-types",
+        "text": "Report Types",
+        "icon": "bx bx-detail",
+        "available": true,
+        "link": "/report-management/setup/report-types",
+        "permission": ["view_rmsreporttype"],
+        "role": ["RMS_SYS_ADMIN", "admin"]
+      }
+    ]
+  }
+]

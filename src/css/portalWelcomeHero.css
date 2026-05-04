@@ -1,0 +1,80 @@
+/* Shared welcome hero: StaffDashboard + Portal home (Internal Portal overview). */
+
+.staff-dashboard-welcome-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #0d5c36 0%, #00853f 38%, #3da66a 72%, #7ec9a8 100%);
+  box-shadow: 0 12px 40px rgba(0, 133, 63, 0.22);
+}
+
+.staff-dashboard-welcome-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    transparent 42%,
+    rgba(0, 0, 0, 0.06) 100%
+  );
+  pointer-events: none;
+}
+
+.staff-dashboard-welcome-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* Bootstrap `.card-title` sets --bs-card-title-color (#566a7f), which beats parent
+   `text-white` and makes headlines nearly invisible on this green gradient. */
+.staff-dashboard-welcome-hero .card-title.internal-portal-welcome__title {
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 2px 14px rgba(0, 0, 0, 0.12);
+}
+
+.staff-dashboard-welcome-hero .internal-portal-welcome__lead {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
+.welcome-illustration-wrap {
+  position: relative;
+}
+
+.welcome-illustration {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: clamp(104px, 36vw, 148px);
+  object-fit: contain;
+  filter: brightness(1.08);
+  animation: portalWelcomeHeroFloat 5s ease-in-out infinite;
+}
+
+@media (min-width: 576px) {
+  .welcome-illustration {
+    max-height: clamp(128px, 24vw, 168px);
+  }
+}
+
+@media (min-width: 992px) {
+  .welcome-illustration {
+    max-height: 200px;
+  }
+}
+
+@keyframes portalWelcomeHeroFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}

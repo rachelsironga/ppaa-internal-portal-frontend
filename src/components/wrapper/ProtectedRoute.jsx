@@ -7,11 +7,13 @@ import LinearIndeterminate from "../../LinearIndeterminate";
 import { logout } from "../../redux/actions/authentication/logoutAction";
 import { jwtDecode } from "jwt-decode";
 import Swal from "sweetalert2";
+import { isStaffOnly, isAllowedRouteForStaffOnly } from "../../utils/permissions";
 
 function ProtectedRoute({
   children,
   requiredPermissions = [],
   requiredRoles = [],
+  excludeRoles = [],
 }) {
   const [isAuthorized, setIsAuthorized] = useState(null);
   const location = useLocation();
@@ -87,26 +89,81 @@ function ProtectedRoute({
   // ✅ If user is logged in, now check permissions and roles
   const userPermissions = user?.user_permissions || [];
   const userRoles = user?.groups || [];
+  const normalizedUserRoles = userRoles.map((r) => String(r)?.toLowerCase());
+  const isPortalAdmin =
+    user?.is_superuser || normalizedUserRoles.includes("admin");
+  const isSpismAdmin = normalizedUserRoles.includes("spism_admin");
 
-  const hasRequiredPermissions =
-    !requiredPermissions.length ||
-    requiredPermissions.some((perm) => userPermissions.includes(perm));
+  const blockedByExcludedRole =
+    !isPortalAdmin &&
+    !isSpismAdmin &&
+    Array.isArray(excludeRoles) &&
+    excludeRoles.length > 0 &&
+    excludeRoles.some((role) =>
+      normalizedUserRoles.includes(String(role).toLowerCase().trim())
+    );
 
-  const hasRequiredRoles =
-    !requiredRoles.length ||
-    requiredRoles.some((role) => userRoles.includes(role));
+  // Check if user is staff-only (has only 'staff' role and no other roles)
+  const staffOnly = isStaffOnly(userRoles);
 
-  if (!hasRequiredPermissions || !hasRequiredRoles) {
+  // If user is staff-only, restrict them to allowed routes only
+  if (staffOnly && !isAllowedRouteForStaffOnly(location.pathname)) {
     Swal.fire({
       title: "Access Denied",
-      text: "You don’t have permission to access this page.",
+      text: "You don't have permission to access this page. Staff members can only access the Dashboard, Profile, and Services pages.",
       icon: "warning",
       allowOutsideClick: false,
       allowEscapeKey: false,
       allowEnterKey: false,
-      confirmButtonText: "Go to Dashboard",
+      confirmButtonText: "Go to Services",
     }).then(() => {
-      window.location.href = "/";
+      window.location.href = "/services";
+    });
+
+    return null;
+  }
+
+  if (blockedByExcludedRole) {
+    Swal.fire({
+      title: "Access Denied",
+      text: "This page is not available for your role.",
+      icon: "warning",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      allowEnterKey: false,
+      confirmButtonText: "Go to Services",
+    }).then(() => {
+      window.location.href = "/services";
+    });
+
+    return null;
+  }
+
+  // Regular permission and role checks (skip for staff-only on allowed routes)
+  // Align with hasPermission in utils/permissions.js: portal admin bypasses restrictions
+  const hasRequiredPermissions =
+    isPortalAdmin ||
+    !requiredPermissions.length ||
+    requiredPermissions.some((perm) => userPermissions.includes(perm));
+
+  const hasRequiredRoles =
+    isPortalAdmin ||
+    !requiredRoles.length ||
+    requiredRoles.some((role) =>
+      normalizedUserRoles.includes(String(role).toLowerCase())
+    );
+
+  if (!hasRequiredPermissions || !hasRequiredRoles) {
+    Swal.fire({
+      title: "Access Denied",
+      text: "You don't have permission to access this page.",
+      icon: "warning",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      allowEnterKey: false,
+      confirmButtonText: "Go to Services",
+    }).then(() => {
+      window.location.href = "/services";
     });
 
     return null;

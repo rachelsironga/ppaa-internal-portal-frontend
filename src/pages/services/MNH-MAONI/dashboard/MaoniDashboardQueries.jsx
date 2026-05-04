@@ -3,140 +3,151 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import "animate.css";
 import { formatDate } from "../../../../helpers/DateFormater";
+import { getSuggestions } from "../../PPAA-MAONI/Queries";
+
+const extractList = (res) => {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (res.data !== undefined && Array.isArray(res.data)) return res.data;
+  if (res.data && Array.isArray(res.data.data)) return res.data.data;
+  if (res.data && Array.isArray(res.data.results)) return res.data.results;
+  if (res.results !== undefined && Array.isArray(res.results)) return res.results;
+  return [];
+};
+
+const CATEGORY_COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#6b7280"];
 
 export const MaoniDashboardPage = () => {
   const user = useSelector((state) => state.userReducer?.data);
   const navigate = useNavigate();
-  const [timeRange, setTimeRange] = useState("month"); // month, quarter, year
+  const [timeRange, setTimeRange] = useState("month");
   const [activeTab, setActiveTab] = useState("overview");
+  const [loading, setLoading] = useState(true);
 
-  // Dashboard statistics
+  // Dashboard statistics (from API)
   const [dashboardStats, setDashboardStats] = useState({
-    totalContributions: 156,
-    newThisMonth: 24,
-    pendingReview: 18,
-    implemented: 32,
-    underConsideration: 42,
-    rejected: 28,
-    uniqueContributors: 67,
-    avgResponseTime: "2.5", // days
+    totalContributions: 0,
+    newThisMonth: 0,
+    pendingReview: 0,
+    implemented: 0,
+    underConsideration: 0,
+    rejected: 0,
+    uniqueContributors: 0,
+    avgResponseTime: "—",
   });
 
-  // Category breakdown
-  const [categoryBreakdown, setCategoryBreakdown] = useState([
-    { name: "HR Processes", count: 38, color: "#4f46e5", percentage: 24.4 },
-    {
-      name: "ICT Infrastructure",
-      count: 29,
-      color: "#10b981",
-      percentage: 18.6,
-    },
-    { name: "Work Environment", count: 26, color: "#f59e0b", percentage: 16.7 },
-    { name: "Administration", count: 22, color: "#ef4444", percentage: 14.1 },
-    { name: "Employee Welfare", count: 19, color: "#8b5cf6", percentage: 12.2 },
-    { name: "Other", count: 22, color: "#6b7280", percentage: 14.1 },
-  ]);
+  // Category breakdown (from API)
+  const [categoryBreakdown, setCategoryBreakdown] = useState([]);
 
-  // Recent contributions (all users)
-  const [recentContributions, setRecentContributions] = useState([
-    {
-      id: 1,
-      title: "Implement Flexible Working Hours",
-      category: "Work Policy",
-      status: "pending_review",
-      date: "2024-01-15",
-      submittedBy: "anonymous",
-      votes: 45,
-      comments: 18,
-      priority: "high",
-      lastAction: "2 days ago",
-      department: "Multiple",
-    },
-    {
-      id: 2,
-      title: "Upgrade Office Wi-Fi Infrastructure",
-      category: "ICT Infrastructure",
-      status: "under_review",
-      date: "2024-01-14",
-      submittedBy: "anonymous",
-      votes: 28,
-      comments: 9,
-      priority: "high",
-      lastAction: "1 day ago",
-      department: "ICT",
-    },
-    {
-      id: 3,
-      title: "Improve Onboarding Process",
-      category: "HR Processes",
-      status: "implemented",
-      date: "2024-01-10",
-      submittedBy: "anonymous",
-      votes: 32,
-      comments: 15,
-      priority: "medium",
-      lastAction: "1 week ago",
-      department: "HR",
-    },
-    {
-      id: 4,
-      title: "Implement Paperless Office",
-      category: "Administration",
-      status: "under_consideration",
-      date: "2024-01-08",
-      submittedBy: "anonymous",
-      votes: 41,
-      comments: 22,
-      priority: "medium",
-      lastAction: "3 days ago",
-      department: "Admin",
-    },
-    {
-      id: 5,
-      title: "Enhance Cybersecurity Training",
-      category: "ICT Security",
-      status: "pending_review",
-      date: "2024-01-05",
-      submittedBy: "anonymous",
-      votes: 19,
-      comments: 7,
-      priority: "high",
-      lastAction: "Just now",
-      department: "ICT",
-    },
-    {
-      id: 6,
-      title: "Improve Cafeteria Food Options",
-      category: "Employee Welfare",
-      status: "rejected",
-      date: "2024-01-03",
-      submittedBy: "anonymous",
-      votes: 56,
-      comments: 31,
-      priority: "low",
-      lastAction: "2 weeks ago",
-      department: "HR",
-      rejectionReason: "Budget constraints for this quarter",
-    },
-  ]);
+  // Recent contributions (from API)
+  const [recentContributions, setRecentContributions] = useState([]);
 
-  // Top contributors (anonymous identifiers)
-  const [topContributors, setTopContributors] = useState([
-    { id: "user_001", contributions: 14, implemented: 3, active: true },
-    { id: "user_002", contributions: 12, implemented: 2, active: true },
-    { id: "user_003", contributions: 9, implemented: 1, active: true },
-    { id: "user_004", contributions: 8, implemented: 0, active: false },
-    { id: "user_005", contributions: 7, implemented: 2, active: true },
-  ]);
+  // Top contributors (from API)
+  const [topContributors, setTopContributors] = useState([]);
 
-  // Department statistics
-  const [departmentStats, setDepartmentStats] = useState([
-    { name: "ICT Department", contributions: 42, implemented: 8, pending: 12 },
-    { name: "HR Department", contributions: 38, implemented: 10, pending: 8 },
-    { name: "Finance", contributions: 24, implemented: 6, pending: 4 },
-    { name: "Operations", contributions: 22, implemented: 3, pending: 7 },
-    { name: "Administration", contributions: 19, implemented: 5, pending: 2 },
-  ]);
+  // Department statistics (from API)
+  const [departmentStats, setDepartmentStats] = useState([]);
+
+  // Fetch suggestions from API and derive stats
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await getSuggestions(1, 1000);
+        const list = extractList(res);
+        if (cancelled) return;
+        const nonDraft = list.filter((s) => String(s.status || "").toUpperCase() !== "DRAFT");
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const newThisMonth = nonDraft.filter((s) => {
+          const d = new Date(s.created_at || s.submitted_at || s.updated_at || 0);
+          return d >= monthStart;
+        }).length;
+        const contributorIds = new Set(nonDraft.map((s) => s.submitted_by_id).filter((x) => x != null));
+
+        setDashboardStats({
+          totalContributions: nonDraft.length,
+          newThisMonth,
+          pendingReview: nonDraft.filter((s) => String(s.status || "").toUpperCase() === "SUBMITTED").length,
+          implemented: 0,
+          underConsideration: 0,
+          rejected: 0,
+          uniqueContributors: contributorIds.size,
+          avgResponseTime: "—",
+        });
+
+        const byCategory = new Map();
+        nonDraft.forEach((s) => {
+          const name = s.category_name || "Uncategorized";
+          byCategory.set(name, (byCategory.get(name) || 0) + 1);
+        });
+        const total = nonDraft.length;
+        const categories = Array.from(byCategory.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([name], i) => ({
+            name,
+            count: byCategory.get(name),
+            color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+            percentage: total > 0 ? parseFloat(((byCategory.get(name) / total) * 100).toFixed(1)) : 0,
+          }));
+        setCategoryBreakdown(categories);
+
+        const mapped = nonDraft
+          .slice()
+          .sort((a, b) => new Date(b.created_at || b.submitted_at) - new Date(a.created_at || a.submitted_at))
+          .map((s) => ({
+            id: s.uid,
+            title: s.title,
+            category: s.category_name || "Uncategorized",
+            status: String(s.status || "").toLowerCase(),
+            date: s.submitted_at || s.created_at,
+            submittedBy: s.submitted_by_name || "Anonymous",
+            votes: 0,
+            comments: s.comment_count || 0,
+            priority: String(s.priority || "MEDIUM").toLowerCase(),
+            lastAction: s.updated_at ? formatDate(s.updated_at, "DD/MM/YYYY") : "—",
+            department: s.department_uid ? "—" : "—",
+          }));
+        setRecentContributions(mapped);
+
+        const byUser = new Map();
+        nonDraft.forEach((s) => {
+          const id = s.submitted_by_id != null ? String(s.submitted_by_id) : "anonymous";
+          const entry = byUser.get(id) || { id, contributions: 0, implemented: 0, active: true };
+          entry.contributions += 1;
+          byUser.set(id, entry);
+        });
+        setTopContributors(
+          Array.from(byUser.values())
+            .sort((a, b) => b.contributions - a.contributions)
+            .slice(0, 5)
+        );
+
+        const byDept = new Map();
+        nonDraft.forEach((s) => {
+          const name = s.department_uid ? "Department" : "—";
+          const entry = byDept.get(name) || { name, contributions: 0, implemented: 0, pending: 0 };
+          entry.contributions += 1;
+          if (String(s.status || "").toUpperCase() === "SUBMITTED") entry.pending += 1;
+          byDept.set(name, entry);
+        });
+        setDepartmentStats(
+          Array.from(byDept.values()).sort((a, b) => b.contributions - a.contributions)
+        );
+      } catch (e) {
+        console.error("Failed to load Maoni suggestions:", e);
+        if (!cancelled) {
+          setRecentContributions([]);
+          setDashboardStats((prev) => ({ ...prev, totalContributions: 0, uniqueContributors: 0 }));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   // Status breakdown for chart
   const statusBreakdown = {
@@ -147,13 +158,15 @@ export const MaoniDashboardPage = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    switch (status) {
+    const s = (status || "").toLowerCase();
+    switch (s) {
       case "implemented":
         return "bg-success-subtle text-success border-success";
       case "under_review":
       case "under_consideration":
         return "bg-primary-subtle text-primary border-primary";
       case "pending_review":
+      case "submitted":
         return "bg-warning-subtle text-warning border-warning";
       case "rejected":
         return "bg-danger-subtle text-danger border-danger";
@@ -163,7 +176,8 @@ export const MaoniDashboardPage = () => {
   };
 
   const getStatusText = (status) => {
-    switch (status) {
+    const s = (status || "").toLowerCase();
+    switch (s) {
       case "implemented":
         return "Implemented";
       case "under_review":
@@ -171,11 +185,14 @@ export const MaoniDashboardPage = () => {
       case "under_consideration":
         return "Under Consideration";
       case "pending_review":
-        return "Pending Review";
+      case "submitted":
+        return "Submitted";
       case "rejected":
         return "Rejected";
+      case "draft":
+        return "Draft";
       default:
-        return status.replace("_", " ").toUpperCase();
+        return (status || "").replace("_", " ").toUpperCase() || "—";
     }
   };
 
@@ -214,8 +231,22 @@ export const MaoniDashboardPage = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="w-100 py-4">
+        <div className="card border-0 shadow-sm">
+          <div className="card-body p-5 text-center">
+            <i className="bx bx-loader-circle bx-spin fs-1 text-primary mb-3"></i>
+            <h5 className="mb-1">Loading dashboard...</h5>
+            <p className="text-muted mb-0">Fetching Maoni suggestions from the system.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container-fluid py-4">
+    <div className="w-100 py-4">
       {/* Dashboard Header */}
       <div className="row align-items-center mb-6">
         <div className="col-lg-8 col-md-6 mb-4 mb-md-0">
@@ -897,7 +928,7 @@ export const MaoniDashboardPage = () => {
                     </thead>
                     <tbody>
                       {recentContributions
-                        .filter((c) => c.status === "pending_review")
+                        .filter((c) => c.status === "pending_review" || c.status === "submitted")
                         .map((contribution) => (
                           <tr key={contribution.id}>
                             <td>

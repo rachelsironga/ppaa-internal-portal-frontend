@@ -7,7 +7,12 @@ import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { createUpdateData, fetchData } from "../../../../utils/GlobalQueries";
+import {
+  getDepartments,
+  getCategories,
+  createSuggestion,
+  updateSuggestion,
+} from "../../PPAA-MAONI/Queries";
 
 const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -17,43 +22,86 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
     useContext(MaoniContext);
 
   const [categories, setCategories] = useState([]);
-  const [directories, setDirectories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [departments, setDepartments] = useState([]);
 
-  // Fetch categories and directories on modal open
+  // Fetch categories and departments on modal open
   useEffect(() => {
     fetchCategories();
-    fetchDirectories();
+    fetchDepartments();
   }, []);
 
   const fetchCategories = async () => {
     try {
-      const result = await fetchData({ url: "/maoni/categories" });
-      if (result?.data) {
-        setCategories(result.data);
+      const result = await getCategories();
+      const cats = Array.isArray(result?.data) ? result.data : [];
+      setCategories(cats);
+      if (cats.length === 0 && result?.message) {
+        console.warn("Maoni categories:", result.message);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
+      setCategories([]);
     }
   };
 
-  const fetchDirectories = async () => {
+  const fetchDepartments = async () => {
     try {
-      const result = await fetchData({ url: "/maoni/directories" });
-      if (result?.data) {
-        setDirectories(result.data);
+      const departmentsRes = await getDepartments();
+      // Handle departments response - same format as SuggestionForm
+      console.log("Departments response:", departmentsRes);
+      if (departmentsRes.status === 8000 || departmentsRes.status === 200) {
+        const deptData = departmentsRes.data || [];
+        console.log("Setting departments:", deptData);
+        setDepartments(Array.isArray(deptData) ? deptData : []);
+      } else {
+        // Try to handle different response formats
+        console.warn("Departments response format unexpected:", departmentsRes);
+        if (Array.isArray(departmentsRes)) {
+          setDepartments(departmentsRes);
+        } else if (departmentsRes?.data) {
+          const deptData = Array.isArray(departmentsRes.data) ? departmentsRes.data : [];
+          setDepartments(deptData);
+        } else {
+          console.warn("No departments data found in response");
+          setDepartments([]);
+        }
       }
     } catch (error) {
-      console.error("Error fetching directories:", error);
+      console.error("Error fetching departments:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      // Set empty array on error to prevent form from breaking
+      setDepartments([]);
     }
   };
 
-  const initialValues = {
+  const baseInitialValues = {
     title: "",
-    category_id: "",
-    directory_id: "",
+    category: "",
     description: "",
     status: "DRAFT",
+    department_uid: "",
+    priority: "MEDIUM",
+  };
+
+  const getInitialValues = () => {
+    if (selectedMaoni) {
+      const rawCategory = selectedMaoni.category;
+      const categoryId =
+        rawCategory && typeof rawCategory === "object"
+          ? rawCategory.id ?? rawCategory.uid
+          : rawCategory;
+
+      return {
+        title: selectedMaoni.title || "",
+        category: categoryId != null ? String(categoryId) : "",
+        description: selectedMaoni.description || "",
+        status: (selectedMaoni.status || "DRAFT").toUpperCase(),
+        department_uid: selectedMaoni.department_uid || "",
+        priority: selectedMaoni.priority || "MEDIUM",
+      };
+    }
+    return baseInitialValues;
   };
 
   const validationSchema = Yup.object().shape({
@@ -61,7 +109,10 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
       .required("Title is required")
       .min(10, "Title must be at least 10 characters")
       .max(200, "Title cannot exceed 200 characters"),
-    category_id: Yup.string().required("Please select a category"),
+    category: Yup.string().required("Please select a category"),
+    department_uid: Yup.string()
+      .trim()
+      .required("Please select which department your suggestion is for"),
     description: Yup.string()
       .required("Description is required")
       .min(
@@ -89,7 +140,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
         `,
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#fff",
         confirmButtonText: "Submit Suggestion",
         cancelButtonText: "Review Again",
@@ -111,30 +162,31 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
         return;
       }
 
-      const formData = new FormData();
-
-      // Append essential form values
-      formData.append("title", values.title);
-      formData.append("category_id", values.category_id);
-      formData.append("description", values.description);
-      formData.append("status", "SUBMITTED");
-
-      // Auto-set anonymous visibility
-      formData.append("visibility", "ANONYMOUS");
-
-      // Only append directory if it's selected
-      if (values.directory_id) {
-        formData.append("directory_id", values.directory_id);
-      }
+      const payload = {
+        title: values.title,
+        // backend expects numeric PK for category
+        category: values.category ? Number(values.category) : null,
+        description: values.description,
+        status: "SUBMITTED",
+        department_uid: values.department_uid || "",
+        priority: values.priority || "MEDIUM",
+      };
 
       setSubmitting(true);
-      const result = await createUpdateData({
-        url: "/maoni",
-        formData: formData,
-      });
+      const isEdit = Boolean(selectedMaoni?.uid);
+      const result = isEdit
+        ? await updateSuggestion(selectedMaoni.uid, payload)
+        : await createSuggestion(payload);
 
       if (result?.status === 200 || result?.status === 8000) {
-        Swal.fire({
+        // Close modal and reset before showing success message
+        handleClose();
+        resetForm();
+        setSelectedCategory("");
+        if (typeof setSelectedMaoni === "function") setSelectedMaoni(null);
+        if (typeof handleFetchData === "function") handleFetchData();
+
+        await Swal.fire({
           title: "Thank You for Your Contribution!",
           html: `
             <div class="text-center">
@@ -148,11 +200,6 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
           `,
           icon: "success",
           confirmButtonText: "Done",
-        }).then(() => {
-          handleClose();
-          resetForm();
-          setSelectedCategory("");
-          if (typeof handleFetchData === "function") handleFetchData();
         });
       } else if (result?.status === 8001) {
         // validation errors from backend
@@ -175,22 +222,19 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
 
   const handleSaveDraft = async (values) => {
     try {
-      const formData = new FormData();
+      const payload = {
+        title: values.title,
+        category: values.category ? Number(values.category) : null,
+        description: values.description,
+        status: "DRAFT",
+        department_uid: values.department_uid || "",
+        priority: values.priority || "MEDIUM",
+      };
 
-      formData.append("title", values.title);
-      formData.append("category_id", values.category_id);
-      formData.append("description", values.description);
-      formData.append("status", "DRAFT");
-      formData.append("visibility", "ANONYMOUS");
-
-      if (values.directory_id) {
-        formData.append("directory_id", values.directory_id);
-      }
-
-      const result = await createUpdateData({
-        url: "/maoni",
-        formData: formData,
-      });
+      const isEdit = Boolean(selectedMaoni?.uid);
+      const result = isEdit
+        ? await updateSuggestion(selectedMaoni.uid, payload)
+        : await createSuggestion(payload);
 
       if (result?.status === 200 || result?.status === 8000) {
         Swal.fire(
@@ -199,6 +243,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
           "success"
         );
         handleClose();
+        if (typeof setSelectedMaoni === "function") setSelectedMaoni(null);
         if (typeof handleFetchData === "function") handleFetchData();
       } else {
         showToast(result?.message || "Failed to save draft", "error");
@@ -227,11 +272,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
     ],
   };
 
-  // Check if selected category requires directory selection
-  const requiresDirectory = (categoryName) => {
-    const lowerName = categoryName?.toLowerCase() || "";
-    return !(lowerName.includes("general") || lowerName.includes("other"));
-  };
+  // Department selection and priority handled via PPAA Maoni fields as well
 
   return (
     <>
@@ -262,7 +303,8 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
             </div>
 
             <Formik
-              initialValues={initialValues}
+              initialValues={getInitialValues()}
+              enableReinitialize
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
             >
@@ -330,87 +372,110 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                       </div>
                     </div>
 
-                    {/* Category & Directory in same row */}
+                    {/* Category & Department in same row */}
                     <div className="row mb-3">
                       <div className="col-md-6">
-                        <label htmlFor="category_id" className="form-label">
+                        <label htmlFor="category" className="form-label">
                           <i className="bx bx-category me-1"></i>
                           What area does this concern? *
                         </label>
                         <Field
                           as="select"
-                          id="category_id"
-                          name="category_id"
+                          id="category"
+                          name="category"
                           className="form-select"
                           onChange={(e) => {
                             const categoryId = e.target.value;
                             const category = categories.find(
-                              (c) => c.uid === categoryId
+                              (c) =>
+                                String(c.id ?? c.uid) === String(categoryId)
                             );
                             setSelectedCategory(category?.name || "");
-                            setFieldValue("category_id", categoryId);
-                            // Reset directory if category changes
-                            if (!requiresDirectory(category?.name)) {
-                              setFieldValue("directory_id", "");
-                            }
+                            setFieldValue("category", categoryId);
                           }}
                         >
                           <option value="">Select area of concern</option>
-                          {categories.map((category) => (
-                            <option key={category.uid} value={category.uid}>
-                              {category.name}
-                            </option>
-                          ))}
+                          {categories.map((category) => {
+                            const optVal =
+                              category.id != null
+                                ? String(category.id)
+                                : String(category.uid ?? "");
+                            return (
+                              <option
+                                key={category.uid ?? category.id}
+                                value={optVal}
+                              >
+                                {category.name}
+                              </option>
+                            );
+                          })}
                         </Field>
+                        {categories.length === 0 && (
+                          <small className="text-danger d-block mt-1">
+                            <i className="bx bx-error-circle me-1"></i>
+                            No categories available. Enable{" "}
+                            <code className="small">microservices.maoni</code>{" "}
+                            and run{" "}
+                            <code className="small">python manage.py migrate maoni</code>
+                            .
+                          </small>
+                        )}
                         <ErrorMessage
-                          name="category_id"
+                          name="category"
                           component="div"
                           className="text-danger small mt-1"
                         />
                       </div>
 
-                      {/* Directory - Conditional */}
                       <div className="col-md-6">
-                        {requiresDirectory(selectedCategory) ? (
-                          <>
-                            <label
-                              htmlFor="directory_id"
-                              className="form-label"
-                            >
-                              <i className="bx bx-building me-1"></i>
-                              Which department?
-                            </label>
-                            <Field
-                              as="select"
-                              id="directory_id"
-                              name="directory_id"
-                              className="form-select"
-                            >
-                              <option value="">
-                                Select department (Optional)
-                              </option>
-                              {directories.map((directory) => (
-                                <option
-                                  key={directory.uid}
-                                  value={directory.uid}
-                                >
-                                  {directory.name}
-                                </option>
-                              ))}
-                            </Field>
-                            <small className="text-muted">
-                              This helps route your suggestion
-                            </small>
-                          </>
-                        ) : (
-                          <div className="mt-4 pt-3 text-center">
-                            <i className="bx bx-check-circle text-success fs-4 mb-2"></i>
-                            <p className="small text-muted mb-0">
-                              General suggestion -<br />
-                              no department selection needed
-                            </p>
-                          </div>
-                        )}
+                        <label htmlFor="department_uid" className="form-label">
+                          <i className="bx bx-buildings me-1"></i>
+                          Which department?{" "}
+                          <span className="text-danger">*</span>
+                        </label>
+                        <Field
+                          as="select"
+                          id="department_uid"
+                          name="department_uid"
+                          className="form-select"
+                        >
+                          <option value="">Select department</option>
+                          {departments.map((dept) => (
+                            <option key={dept.uid} value={dept.uid}>
+                              {dept.name}{" "}
+                              {dept.code ? `(${dept.code})` : ""}
+                            </option>
+                          ))}
+                        </Field>
+                        <small className="form-text text-muted">
+                          This helps route your suggestion.
+                        </small>
+                        <ErrorMessage
+                          name="department_uid"
+                          component="div"
+                          className="text-danger small mt-1"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Priority */}
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <label htmlFor="priority" className="form-label">
+                          <i className="bx bx-flag me-1"></i>
+                          Priority
+                        </label>
+                        <Field
+                          as="select"
+                          id="priority"
+                          name="priority"
+                          className="form-select"
+                        >
+                          <option value="LOW">Low</option>
+                          <option value="MEDIUM">Medium</option>
+                          <option value="HIGH">High</option>
+                          <option value="URGENT">Urgent</option>
+                        </Field>
                       </div>
                     </div>
 
@@ -494,7 +559,7 @@ const MaoniModal = ({ onClose, loadOnlyModal = false }) => {
                               isSubmitting ||
                               !values.title ||
                               !values.description ||
-                              !values.category_id
+                              !values.category
                             }
                           >
                             <i className="bx bx-save me-1"></i>

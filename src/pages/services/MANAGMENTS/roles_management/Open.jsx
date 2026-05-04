@@ -87,7 +87,7 @@ export const OpenRolesManagementPage = () => {
             page_size: 10,
             paginated: true,
             user: selectedUser,
-            role: selectedObj?.id,
+            role: selectedObj?.uid,
           },
         });
         if (result.status === 200 || result.status === 8000) {
@@ -150,7 +150,7 @@ export const OpenRolesManagementPage = () => {
               <center>
                 <ReactLoading
                   type={"cylon"}
-                  color={"#696cff"}
+                  color={"#00853f"}
                   height={"30px"}
                   width={"50px"}
                 />
@@ -242,7 +242,7 @@ export const OpenRolesManagementPage = () => {
                 <center>
                   <ReactLoading
                     type={"cylon"}
-                    color={"#696cff"}
+                    color={"#00853f"}
                     height={"30px"}
                     width={"50px"}
                   />
@@ -253,7 +253,7 @@ export const OpenRolesManagementPage = () => {
               </div>
             ) : (
               <PaginatedTable
-                fetchPath={`/system/roles-users?role_id=${selectedObj?.id}`}
+                fetchPath={`/system/roles-users?role_id=${selectedObj?.uid}`}
                 filters={[]}
                 title="List Of Users"
                 columns={[
@@ -301,12 +301,12 @@ export const OpenRolesManagementPage = () => {
                     ),
                   },
                   {
-                    key: "granted_user_pf_number",
-                    label: "PF-Number",
+                    key: "granted_user_check_number",
+                    label: "Check-Number",
                     className: "cursor-pointer",
                     style: { width: "150px" },
                     render: (row) => (
-                      <span className="text-bold">{row.pf_number}</span>
+                      <span className="text-bold">{row.check_number}</span>
                     ),
                   },
                   {
@@ -383,7 +383,7 @@ export const OpenRolesManagementPage = () => {
                 <center>
                   <ReactLoading
                     type={"cylon"}
-                    color={"#696cff"}
+                    color={"#00853f"}
                     height={"30px"}
                     width={"50px"}
                   />
@@ -432,7 +432,7 @@ export const OpenRolesManagementPage = () => {
                         <i
                           className="bx bx-check-shield me-2"
                           style={{
-                            color: "#696cff",
+                            color: "#00853f",
                             fontSize: "1.1em",
                           }}
                         ></i>

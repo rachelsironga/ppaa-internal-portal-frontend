@@ -214,7 +214,7 @@ export const SoftwareInstallationViewPage = () => {
                 <div className="card">
                     <div className="card-body">
                         <center>
-                            <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+                            <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
                             <h6 className="text-muted mt-2">Loading Installation Details...</h6>
                         </center>
                     </div>

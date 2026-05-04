@@ -1,0 +1,457 @@
+/* PR flyers & posters — shared internal + public portal gallery */
+
+.pr-flyers-gallery {
+  border-top: 4px solid #3da66a;
+  border-radius: 0.85rem;
+  overflow: hidden;
+}
+
+.pr-flyers-gallery.portal-card-lift {
+  border-radius: 0.85rem;
+}
+
+.pr-flyers-gallery__header {
+  background: linear-gradient(135deg, rgba(61, 166, 106, 0.14) 0%, rgba(0, 133, 63, 0.1) 100%);
+}
+
+.pr-flyers-gallery__body {
+  background: linear-gradient(180deg, rgba(248, 250, 249, 0.95) 0%, rgba(255, 255, 255, 1) 28%);
+}
+
+/* Single flyer: one card, full width of gallery body */
+.pr-flyers-gallery__single {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  min-height: clamp(268px, 42vw, 400px);
+}
+
+.pr-flyers-gallery__single .pr-flyer-card {
+  width: 100%;
+  max-width: 280px;
+  min-height: clamp(268px, 42vw, 400px);
+}
+
+/* Horizontal marquee when multiple flyers */
+.pr-flyers-gallery__marquee {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 0;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 2%,
+    #000 98%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 2%,
+    #000 98%,
+    transparent 100%
+  );
+}
+
+.pr-flyers-gallery__marquee-track {
+  display: flex;
+  width: max-content;
+  animation: pr-flyers-marquee-scroll var(--pr-marquee-sec, 36s) linear infinite;
+}
+
+.pr-flyers-gallery__marquee:hover .pr-flyers-gallery__marquee-track,
+.pr-flyers-gallery__marquee:focus-within .pr-flyers-gallery__marquee-track {
+  animation-play-state: paused;
+}
+
+.pr-flyers-gallery__marquee-group {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.85rem;
+  padding-right: 0.85rem;
+}
+
+@media (min-width: 576px) {
+  .pr-flyers-gallery__marquee-group {
+    gap: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.pr-flyers-gallery__marquee-slot {
+  flex: 0 0 auto;
+  width: clamp(158px, 38vw, 220px);
+  display: flex;
+  align-self: stretch;
+  min-height: clamp(268px, 42vw, 400px);
+}
+
+@media (min-width: 992px) {
+  .pr-flyers-gallery__marquee-slot {
+    width: clamp(176px, 22vw, 240px);
+  }
+}
+
+@keyframes pr-flyers-marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pr-flyers-gallery__marquee {
+    mask-image: none;
+    -webkit-mask-image: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+
+  .pr-flyers-gallery__marquee-track {
+    animation: none !important;
+    flex-wrap: nowrap;
+    width: max-content;
+  }
+
+  .pr-flyers-gallery__marquee-group--clone {
+    display: none;
+  }
+
+  .pr-flyers-gallery__marquee-slot {
+    scroll-snap-align: start;
+  }
+}
+
+.pr-flyer-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(0, 133, 63, 0.14);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.pr-flyer-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 32px rgba(0, 133, 63, 0.16);
+  border-color: rgba(0, 133, 63, 0.32);
+}
+
+.pr-flyer-card:focus-visible {
+  outline: 3px solid rgba(0, 133, 63, 0.45);
+  outline-offset: 2px;
+}
+
+.pr-flyer-card__media {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: clamp(168px, 32vw, 260px);
+  overflow: hidden;
+  background: linear-gradient(160deg, #f4faf7 0%, #e8f2ec 50%, #eef5f0 100%);
+}
+
+.pr-flyer-card__media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.pr-flyer-card__video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #1b4332;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pr-flyer-card__video-placeholder i {
+  font-size: 2.75rem;
+  opacity: 0.88;
+}
+
+.pr-flyer-card__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.65rem;
+  background: linear-gradient(to top, rgba(0, 40, 24, 0.55) 0%, transparent 52%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.pr-flyer-card:hover .pr-flyer-card__overlay,
+.pr-flyer-card:focus-visible .pr-flyer-card__overlay {
+  opacity: 1;
+}
+
+.pr-flyer-card__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: rgba(0, 133, 63, 0.92);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pr-flyer-card__meta {
+  padding: 0.5rem 0.65rem 0.65rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fff;
+  flex: 0 0 auto;
+}
+
+.pr-flyer-card__title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a3328;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pr-flyer-card__caption {
+  font-size: 0.72rem;
+  color: #5c6f66;
+  margin-top: 0.2rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.pr-flyers-gallery__empty {
+  text-align: center;
+  padding: 2.25rem 1rem;
+  color: #6b7c74;
+}
+
+.pr-flyers-gallery__empty-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(61, 166, 106, 0.12), rgba(0, 133, 63, 0.08));
+  color: #3da66a;
+  font-size: 1.65rem;
+}
+
+.pr-flyers-gallery__empty-title {
+  font-weight: 600;
+  color: #3d5249;
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.pr-flyers-gallery__empty-lead {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+  max-width: 26rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Sidebar column beside Events: narrower marquee cards */
+.pr-flyers-gallery--narrow .pr-flyers-gallery__marquee-slot {
+  width: clamp(140px, 72%, 200px);
+  min-height: clamp(240px, 48vw, 320px);
+}
+
+.pr-flyers-gallery--narrow .pr-flyer-card__media {
+  min-height: clamp(148px, 38vw, 220px);
+}
+
+.pr-flyers-gallery--narrow .pr-flyers-gallery__single .pr-flyer-card {
+  max-width: 100%;
+}
+
+.pr-flyers-gallery--narrow .pr-flyers-gallery__title-text {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.pr-flyers-gallery__subtitle {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  margin-top: 0.2rem;
+  max-width: 36rem;
+}
+
+.pr-flyers-gallery--narrow .pr-flyers-gallery__subtitle {
+  font-size: 0.75rem;
+  max-width: none;
+}
+
+.pr-flyers-gallery--narrow .pr-flyers-gallery__header {
+  padding-top: 0.65rem !important;
+  padding-bottom: 0.65rem !important;
+}
+
+.pr-flyers-gallery--narrow .pr-flyers-gallery__body {
+  padding: 0.75rem !important;
+}
+
+/* Lightbox: no Bootstrap backdrop — use shadow so the dialog still reads as “floating” */
+.pr-flyer-lightbox-modal__content {
+  box-shadow: 0 1.25rem 3rem rgba(15, 24, 36, 0.22), 0 0.35rem 0.85rem rgba(15, 24, 36, 0.12);
+  max-height: min(92dvh, calc(100vh - 2rem));
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Avoid theme fade scale(0.8) on this dialog — scaling often makes large images look soft */
+.pr-flyer-lightbox-modal.modal.fade .pr-flyer-lightbox-modal__dialog {
+  transform: translateY(-12px);
+  transition: transform 0.15s ease-out;
+}
+
+.pr-flyer-lightbox-modal.modal.show .pr-flyer-lightbox-modal__dialog {
+  transform: none;
+}
+
+.pr-flyer-lightbox-modal .pr-flyer-lightbox-modal__dialog {
+  max-height: min(94dvh, calc(100vh - 2rem));
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pr-flyer-lightbox-modal .pr-flyer-lightbox-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pr-flyer-lightbox-modal__media {
+  display: block;
+  width: 100%;
+}
+
+/* Natural size up to dialog width; body scrolls for very tall posters — no max-height here */
+.pr-flyer-lightbox-modal__img {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  image-rendering: auto;
+}
+
+.pr-flyer-lightbox-modal__iframe-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  background: #0a0a0a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pr-flyer-lightbox-modal__iframe-wrap--instagram {
+  aspect-ratio: auto;
+  min-height: min(70vh, 620px);
+  max-height: 78vh;
+}
+
+.pr-flyer-lightbox-modal__iframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.pr-flyer-lightbox-modal__iframe-wrap--instagram .pr-flyer-lightbox-modal__iframe {
+  position: relative;
+  min-height: min(68vh, 600px);
+  height: 100%;
+}
+
+/* Public portal dark theme — flyers card */
+[data-portal-theme="dark"] .pr-flyers-gallery {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(71, 85, 105, 0.45);
+}
+
+[data-portal-theme="dark"] .pr-flyers-gallery__header {
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.75) 0%, rgba(30, 41, 59, 0.85) 100%);
+}
+
+[data-portal-theme="dark"] .pr-flyers-gallery__title-text {
+  color: #86efac !important;
+}
+
+[data-portal-theme="dark"] .pr-flyers-gallery__subtitle {
+  color: #94a3b8 !important;
+}
+
+[data-portal-theme="dark"] .pr-flyers-gallery__body {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.55) 100%);
+}
+
+[data-portal-theme="dark"] .pr-flyer-card {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(71, 85, 105, 0.5);
+}
+
+[data-portal-theme="dark"] .pr-flyer-card__video-placeholder {
+  color: #86efac;
+}
+
+[data-portal-theme="dark"] .pr-flyer-card__title {
+  color: #e2e8f0 !important;
+}
+
+[data-portal-theme="dark"] .pr-flyer-card__caption {
+  color: #94a3b8 !important;
+}
+
+[data-portal-theme="dark"] .pr-flyers-gallery__empty-title {
+  color: #e2e8f0 !important;
+}
+
+[data-portal-theme="dark"] .pr-flyers-gallery__empty-lead {
+  color: #94a3b8 !important;
+}

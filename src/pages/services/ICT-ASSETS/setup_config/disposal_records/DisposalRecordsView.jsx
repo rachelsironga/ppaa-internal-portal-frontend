@@ -476,7 +476,7 @@ export const DisposalRecordsView = () => {
                 <div className="card">
                     <div className="card-body">
                         <center>
-                            <ReactLoading type={"cylon"} color={"#696cff"} height={"30px"} width={"50px"} />
+                            <ReactLoading type={"cylon"} color={"#00853f"} height={"30px"} width={"50px"} />
                             <h6 className="text-muted mt-2">Loading Disposal Record Details...</h6>
                         </center>
                     </div>
@@ -1185,7 +1185,7 @@ export const DisposalRecordsView = () => {
                                 <h5 className="mb-3 fw-semibold">Maintenance Records</h5>
                                 {loadingMaintenance ? (
                                     <div className="text-center py-4">
-                                        <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                        <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                         <p className="text-muted mt-2">Loading maintenance records...</p>
                                     </div>
                                 ) : maintenanceRecords.length === 0 ? (
@@ -1252,7 +1252,7 @@ export const DisposalRecordsView = () => {
                                 {/* Quick Stats Cards */}
                                 <div className="row mb-4 g-3">
                                     <div className="col-md-6">
-                                        <div className="card border shadow-sm h-100" style={{ borderLeft: '4px solid #696cff !important' }}>
+                                        <div className="card border shadow-sm h-100" style={{ borderLeft: '4px solid #00853f !important' }}>
                                             <div className="card-body py-3">
                                                 <div className="d-flex align-items-center">
                                                     <div className="avatar avatar-sm me-3" style={{ width: '40px', height: '40px' }}>
@@ -1324,14 +1324,14 @@ export const DisposalRecordsView = () => {
                                                 top: '20px', 
                                                 bottom: '20px', 
                                                 width: '3px', 
-                                                background: 'linear-gradient(180deg, #696cff 0%, #71dd37 50%, #e0e0e0 100%)',
+                                                background: 'linear-gradient(180deg, #00853f 0%, #71dd37 50%, #e0e0e0 100%)',
                                                 borderRadius: '3px'
                                             }}
                                         ></div>
 
                                         {loadingAudit ? (
                                             <div className="text-center py-5">
-                                                <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                                <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                                 <p className="text-muted mt-2">Loading activity history...</p>
                                             </div>
                                         ) : auditTrail.length === 0 ? (
@@ -1352,7 +1352,7 @@ export const DisposalRecordsView = () => {
                                                     const actionConfig = {
                                                         'Approved': { color: 'success', icon: 'bx-check-circle', bg: '#71dd37' },
                                                         'Rejected': { color: 'danger', icon: 'bx-x-circle', bg: '#ff3e1d' },
-                                                        'Created': { color: 'primary', icon: 'bx-plus-circle', bg: '#696cff' },
+                                                        'Created': { color: 'primary', icon: 'bx-plus-circle', bg: '#00853f' },
                                                         'Updated': { color: 'info', icon: 'bx-edit', bg: '#03c3ec' },
                                                         'Deleted': { color: 'warning', icon: 'bx-trash', bg: '#ffab00' },
                                                         'Resubmitted': { color: 'info', icon: 'bx-revision', bg: '#03c3ec' },
@@ -1468,14 +1468,14 @@ export const DisposalRecordsView = () => {
                                             top: '0', 
                                             bottom: '60px', 
                                             width: '3px', 
-                                            background: 'linear-gradient(180deg, #696cff 0%, #8592ff 50%, #e0e0e0 100%)',
+                                            background: 'linear-gradient(180deg, #00853f 0%, #8592ff 50%, #e0e0e0 100%)',
                                             borderRadius: '3px'
                                         }}
                                     ></div>
 
                                     {loadingConversations ? (
                                         <div className="text-center py-5">
-                                            <ReactLoading type={"cylon"} color={"#696cff"} height={30} width={50} />
+                                            <ReactLoading type={"cylon"} color={"#00853f"} height={30} width={50} />
                                             <p className="text-muted mt-2">Loading conversation history...</p>
                 </div>
                                     ) : conversations.length === 0 ? (
@@ -1554,7 +1554,7 @@ export const DisposalRecordsView = () => {
                                                                 background: isResubmission ? '#03c3ec' : 
                                                                            isRejectionNote ? '#ff3e1d' : 
                                                                            isCancellation ? '#8592a3' :
-                                                                           isCurrentUser ? '#696cff' : '#a8aaae',
+                                                                           isCurrentUser ? '#00853f' : '#a8aaae',
                                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                                                                 zIndex: 1
                                                             }}

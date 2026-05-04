@@ -34,7 +34,7 @@ const PaginatedTable = ({
   const [error, setError] = React.useState(false);
   const pageSizeData = [10, 25, 50, 100];
   const [searchQuery, setSearchQuery] = useState("");
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedFilters, setSelectedFilters] = useState(filterSelected);
   const [selectedFilterGroups, setSelectedFilterGroups] = useState(
     () =>
@@ -67,7 +67,7 @@ const PaginatedTable = ({
           page: currentPage,
           page_size: pageSize,
           paginated: true,
-          search: searchQuery,
+          search: debouncedSearch,
           filters: selectedFilters.join(","),
           ...formattedFilterGroups,
         },
@@ -100,15 +100,14 @@ const PaginatedTable = ({
     }
   }, [isRefresh]);
 
-  // Fetch data on initial load and when dependencies change
   useEffect(() => {
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    const timeout = setTimeout(() => {
-      handleFetchData();
-    }, 1500);
-    setDebounceTimeout(timeout);
-    return () => clearTimeout(timeout);
-  }, [searchQuery, pageSize, currentPage, selectedFilters, selectedFilterGroups]);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    handleFetchData();
+  }, [debouncedSearch, pageSize, currentPage, selectedFilters, selectedFilterGroups]);
 
   // Handle group filter change
   const handleGroupFilterChange = (group, selected) => {
@@ -309,7 +308,7 @@ const PaginatedTable = ({
                         <center>
                           <ReactLoading
                             type={"cylon"}
-                            color={"#696cff"}
+                            color={"#00853f"}
                             height={"30px"}
                             width={"50px"}
                           />

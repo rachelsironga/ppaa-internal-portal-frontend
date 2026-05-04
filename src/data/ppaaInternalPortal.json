@@ -1,0 +1,174 @@
+[
+  {
+    "header": "",
+    "items": [
+      {
+        "text": "Services",
+        "icon": "bx bxl-microsoft",
+        "available": true,
+        "link": "/services",
+        "permission": [],
+        "role": ["staff", "admin", "content_editor", "ICT", "PR_Gallery_Manager"]
+      },
+      {
+        "text": "Dashboard",
+        "icon": "bx bx-home",
+        "available": true,
+        "link": "/ppaa-internal-portal",
+        "permission": [],
+        "role": ["admin", "staff", "content_editor", "ICT", "PR_Gallery_Manager"]
+      },
+      {
+        "text": "Profile",
+        "icon": "bx bx-user",
+        "available": true,
+        "link": "/ppaa-internal-portal/account/settings",
+        "permission": [],
+        "role": ["admin", "staff", "content_editor", "ICT", "PR_Gallery_Manager"]
+      }
+    ]
+  },
+  {
+    "header": "CONTENT MANAGEMENT",
+    "items": [
+      {
+        "text": "Documents",
+        "icon": "bx bx-file",
+        "available": true,
+        "link": "/ppaa-internal-portal/documents",
+        "permission": ["can_view_document"],
+        "role": ["admin", "content_editor", "ICT"]
+      },
+      {
+        "text": "Events",
+        "icon": "bx bx-calendar-event",
+        "available": true,
+        "link": "/ppaa-internal-portal/events",
+        "permission": ["can_view_event"],
+        "role": ["admin", "content_editor", "ICT"]
+      },
+      {
+        "text": "Flyers & posters gallery",
+        "icon": "bx bx-image",
+        "available": true,
+        "link": "/ppaa-internal-portal/pr-flyers",
+        "permission": [
+          "can_view_pr_flyer",
+          "can_add_pr_flyer",
+          "can_edit_pr_flyer",
+          "can_delete_pr_flyer"
+        ],
+        "role": ["admin", "content_editor", "ICT", "staff", "PR_Gallery_Manager"]
+      },
+      {
+        "text": "FAQs",
+        "icon": "bx bx-help-circle",
+        "available": true,
+        "link": "/ppaa-internal-portal/faqs",
+        "permission": ["can_view_faq"],
+        "role": ["admin", "content_editor", "ICT"]
+      },
+      {
+        "text": "Announcements",
+        "icon": "bx bx-comment-detail",
+        "available": true,
+        "link": "/ppaa-internal-portal/announcements",
+        "permission": ["can_view_announcement"],
+        "role": ["admin", "ICT", "content_editor"]
+      },
+      {
+        "text": "Todo List",
+        "icon": "bx bx-task",
+        "available": true,
+        "link": "/ppaa-internal-portal/todos",
+        "permission": ["can_view_todo"],
+        "role": ["admin", "ICT", "content_editor"]
+      },
+      {
+        "text": "Quick Links",
+        "icon": "bx bx-link",
+        "available": true,
+        "link": "/ppaa-internal-portal/quick-links",
+        "permission": ["can_view_quick_link"],
+        "role": ["admin", "ICT", "content_editor"]
+      },
+      {
+        "text": "Popup Card",
+        "icon": "bx bx-window-open",
+        "available": true,
+        "link": "/ppaa-internal-portal/popup-cards",
+        "permission": ["can_view_popup_card"],
+        "role": ["admin", "ICT", "content_editor"]
+      }
+    ]
+  },
+  {
+    "header": "SETTINGS",
+    "items": [
+      {
+        "text": "Departments",
+        "icon": "bx bx-layer",
+        "available": true,
+        "link": "/ppaa-internal-portal/departments",
+        "permission": ["can_view_department"],
+        "role": ["admin", "ICT", "content_editor"]
+      },
+      {
+        "text": "Position/Designation",
+        "icon": "bx bx-briefcase",
+        "available": true,
+        "link": "/ppaa-internal-portal/positional-levels",
+        "permission": ["can_view_department"],
+        "role": ["admin", "ICT", "content_editor"]
+      },
+      {
+        "text": "Document Categories",
+        "icon": "bx bx-bookmarks",
+        "available": true,
+        "link": "/ppaa-internal-portal/document-categories",
+        "permission": ["can_view_document"],
+        "role": ["admin", "ICT", "content_editor"]
+      }
+    ]
+  },
+
+  {
+    "header": "ADMINISTRATIONS",
+    "items": [
+      {
+        "text": "User Management",
+        "icon": "bx bx-group",
+        "available": true,
+        "link": "",
+        "permission": [],
+        "role": ["Admin", "admin"],
+        "submenu": [
+          {
+            "text": "Users",
+            "icon": "bx bx-group",
+            "available": true,
+            "link": "/ppaa-internal-portal/users",
+            "permission": [],
+            "role": ["admin"]
+          },
+          {
+            "text": "Roles & Permissions",
+            "icon": "bx bx-detail",
+            "available": true,
+            "link": "/ppaa-internal-portal/roles-managements",
+            "permission": [],
+            "role": ["admin"]
+          }
+        ]
+      },
+      {
+        "text": "System Logs",
+        "icon": "bx bx-file-blank",
+        "available": true,
+        "link": "/ppaa-internal-portal/audit-logs",
+        "permission": ["can_view_audit_log"],
+        "role": ["admin", "ICT"]
+      }
+    ]
+  }
+]

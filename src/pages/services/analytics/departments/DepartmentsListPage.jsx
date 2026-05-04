@@ -99,18 +99,6 @@ export const DepartmentsListPage = () => {
                         ),
                     },
                     {
-                        key: "directory",
-                        label: "Directory",
-                        className: "text-center",
-                        style: { width: "150px" },
-                        render: (row) => (
-                            <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
-                                <i className="bx bx-folder me-1"></i>
-                                {row.directory?.name || "N/A"}
-                            </span>
-                        ),
-                    },
-                    {
                         key: "is_active",
                         label: "Status",
                         className: "text-center",

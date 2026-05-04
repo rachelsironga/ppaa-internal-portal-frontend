@@ -1,0 +1,238 @@
+[
+  {
+    "items": [
+      {
+        "text": "Services",
+        "icon": "bx bxl-microsoft",
+        "available": true,
+        "link": "/services",
+        "permission": [],
+        "role": ["staff", "admin"]
+      },
+      {
+        "id": "spism-dashboard",
+        "text": "Dashboard",
+        "icon": "bx bx-home-alt",
+        "available": true,
+        "link": "/performance-dashboard",
+        "permission": ["can_view_spism_dashboard"],
+        "role": [],
+        "excludeRoles": ["spism_approver"],
+        "isMain": true
+      },
+      {
+        "id": "spism-viewer-dashboard",
+        "text": "Viewer Dashboard",
+        "icon": "bx bx-show-alt",
+        "available": true,
+        "link": "/performance-dashboard/viewer-dashboard",
+        "permission": ["can_view_spism_reports"],
+        "role": [],
+        "excludeRoles": [
+          "spism_approver",
+          "spism_planning_officer",
+          "spims_planning_officer",
+          "spism_planning_office",
+          "spims_planning_office"
+        ]
+      },
+      {
+        "id": "spism-es-dashboard",
+        "text": "Approver Dashboard",
+        "icon": "bx bx-analyse",
+        "available": true,
+        "link": "/performance-dashboard/es-dashboard",
+        "permission": ["can_view_spism_analytics"],
+        "role": []
+      },
+      {
+        "id": "spism-profile",
+        "text": "Profile",
+        "icon": "bx bx-user",
+        "available": true,
+        "link": "/performance-dashboard/profile",
+        "permission": [],
+        "role": [
+          "SPISM_Admin",
+          "SPISM_Viewer",
+          "SPISM_Approver",
+          "SPISM_Dept_Head",
+          "SPISM_Planning_Officer",
+          "SPIMS_Planning_Officer"
+        ]
+      }
+    ]
+  },
+  {
+    "header": " SPISM",
+    "items": [
+      {
+        "id": "spism-planning",
+        "text": "Planning",
+        "icon": "bx bx-planet",
+        "available": true,
+        "link": "",
+        "permission": [
+          "can_view_spism_objective",
+          "can_view_spism_target",
+          "can_view_spism_kpi_actual"
+        ],
+        "role": [],
+        "submenu": [
+          {
+            "text": "Objectives",
+            "icon": "bx bx-target-lock",
+            "link": "/performance-dashboard/objectives",
+            "permission": ["can_view_spism_objective"],
+            "role": []
+          },
+          {
+            "text": "Targets (KPI)",
+            "icon": "bx bx-bullseye",
+            "link": "/performance-dashboard/targets",
+            "permission": ["can_view_spism_target"],
+            "role": []
+          },
+          {
+            "text": "KPI actuals",
+            "icon": "bx bx-bar-chart-alt",
+            "link": "/performance-dashboard/kpi-actuals",
+            "permission": ["can_view_spism_kpi_actual"],
+            "role": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "items": [
+      {
+        "id": "spism-implementation",
+        "text": "Implementation",
+        "icon": "bx bx-calendar-check",
+        "available": true,
+        "link": "",
+        "permission": ["can_view_spism_implementation", "can_view_spism_activity"],
+        "role": [],
+        "submenu": [
+          {
+            "text": "Submit implementation",
+            "icon": "bx bx-check-double",
+            "link": "/performance-dashboard/implementation",
+            "permission": ["can_view_spism_implementation"],
+            "role": []
+          },
+          {
+            "text": "Activities",
+            "icon": "bx bx-list-ul",
+            "link": "/performance-dashboard/activities",
+            "permission": ["can_view_spism_activity"],
+            "role": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "items": [
+      {
+        "id": "spism-approval",
+        "text": "Approval",
+        "icon": "bx bx-check-shield",
+        "available": true,
+        "link": "",
+        "permission": ["can_view_spism_approval"],
+        "role": [],
+        "submenu": [
+          {
+            "text": "Pending Approvals",
+            "icon": "bx bx-time-five",
+            "link": "/performance-dashboard/approval",
+            "permission": ["can_view_spism_approval"],
+            "role": []
+          },
+          {
+            "text": "Implementation approvals",
+            "icon": "bx bx-check-double",
+            "link": "/performance-dashboard/approval?type=implementation",
+            "permission": ["can_view_spism_approval"],
+            "role": []
+          },
+          {
+            "text": "Returned Items",
+            "icon": "bx bx-undo",
+            "link": "/performance-dashboard/returned",
+            "permission": ["can_view_spism_approval"],
+            "role": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "items": [
+      {
+        "id": "spism-reports",
+        "text": "Reports",
+        "icon": "bx bx-file-blank",
+        "available": true,
+        "link": "/performance-dashboard/reports",
+        "permission": ["can_view_spism_reports"],
+        "role": []
+      }
+    ]
+  },
+  {
+    "header": "AUDIT & LOGS",
+    "items": [
+      {
+        "text": "Audit Trail",
+        "icon": "bx bx-list-check",
+        "available": true,
+        "link": "/performance-dashboard/audit-logs",
+        "permission": ["can_view_spism_audit_log"],
+        "role": [],
+        "excludeRoles": ["spism_approver"]
+      }
+    ]
+  },
+  {
+    "header": "SETUP & CONFIGURATION",
+    "items": [
+      {
+        "text": "Financial Years",
+        "icon": "bx bx-calendar",
+        "available": true,
+        "link": "/performance-dashboard/setup/financial-years",
+        "permission": ["can_view_spism_setup"],
+        "role": [],
+        "excludeRoles": [
+          "spism_planning_officer",
+          "spims_planning_officer",
+          "spism_planning_office",
+          "spims_planning_office",
+          "spism_dept_head",
+          "spism_contributor",
+          "spism_approver"
+        ]
+      },
+      {
+        "text": "Alerts & Notifications",
+        "icon": "bx bx-bell",
+        "available": true,
+        "link": "/performance-dashboard/notifications",
+        "permission": ["can_view_spism_setup"],
+        "role": [],
+        "excludeRoles": [
+          "spism_planning_officer",
+          "spims_planning_officer",
+          "spism_planning_office",
+          "spims_planning_office",
+          "spism_dept_head",
+          "spism_contributor",
+          "spism_approver"
+        ]
+      }
+    ]
+  }
+]

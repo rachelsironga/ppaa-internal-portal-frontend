@@ -78,7 +78,7 @@ export const AttendanceListPage = () => {
                 text: `Process the attendance report for: ${formatDate(attendance.date)}?`,
                 icon: "question",
                 showCancelButton: true,
-                confirmButtonColor: "#696cff",
+                confirmButtonColor: "#00853f",
                 cancelButtonColor: "#aaa",
                 confirmButtonText: "Yes, process it!",
             });

@@ -28,12 +28,22 @@ export const fetchData = async ({
   }
 
   try {
+    // Ensure URL starts with / if not a full path
+    const formattedUrl = url.startsWith("/") ? url : `/${url}`;
+    const fullUrl = `${isFullPath ? API_BASE_URL : API_URL}${formattedUrl}${uid ? `/${uid}` : ""}`;
+    
     const response = await api.get(
-      `${isFullPath ? API_BASE_URL : API_URL}${url}${uid ? `/${uid}` : ""}`,
+      fullUrl,
       uid ? {} : setConfig(filter)
     );
     return response.data;
   } catch (error) {
+    // Log error for debugging
+    console.error("fetchData error:", {
+      url: `${isFullPath ? API_BASE_URL : API_URL}${url}${uid ? `/${uid}` : ""}`,
+      error: error.response?.data || error.message,
+      status: error.response?.status,
+    });
     throw error;
   }
 };

@@ -163,7 +163,7 @@ export const ViewAssetType = () => {
                                 <center>
                                     <ReactLoading
                                         type={"cylon"}
-                                        color={"#696cff"}
+                                        color={"#00853f"}
                                         height={"30px"}
                                         width={"50px"}
                                     />
@@ -231,7 +231,7 @@ export const ViewAssetType = () => {
                         <div className="d-flex justify-content-center align-items-center py-4">
                             <ReactLoading
                                 type={"cylon"}
-                                color={"#696cff"}
+                                color={"#00853f"}
                                 height={"30px"}
                                 width={"50px"}
                             />

@@ -1,0 +1,271 @@
+/**
+ * Dark theme for dashboard “surfaces” (public portal main + staff internal portal).
+ * Scope cards/tiles with class `portal-surface-scope` on a wrapper.
+ * Layout shell when `internal-portal-route` is on `.layout-wrapper`.
+ */
+
+[data-portal-theme="dark"] {
+  --portal-nav-bg: #1e293b;
+  --portal-nav-text: #e2e8f0;
+  --portal-body-bg: rgba(15, 23, 42, 0.92);
+  --portal-body-text: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .text-muted {
+  color: #94a3b8 !important;
+}
+
+[data-portal-theme="dark"] .portal-surface-scope .card {
+  background: rgba(30, 41, 59, 0.72) !important;
+  border-color: rgba(71, 85, 105, 0.55) !important;
+  color: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .portal-surface-scope .card.text-white,
+[data-portal-theme="dark"] .staff-dashboard-welcome-hero {
+  color: #fff;
+}
+
+[data-portal-theme="dark"] .portal-surface-scope .list-group-item {
+  background: rgba(30, 41, 59, 0.45) !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+  color: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .portal-surface-scope .badge.bg-light.text-dark {
+  background-color: rgba(51, 65, 85, 0.9) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(100, 116, 139, 0.5);
+}
+
+[data-portal-theme="dark"] .portal-dashboard-card-header {
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .portal-next-up-strip {
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.35) 0%, rgba(30, 58, 95, 0.45) 100%) !important;
+  border-left-color: #2dd4bf !important;
+}
+
+[data-portal-theme="dark"] .portal-next-up-strip .badge.bg-primary {
+  background-color: #0d9488 !important;
+  color: #ecfdf5 !important;
+}
+
+[data-portal-theme="dark"] .portal-tile-surface {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.88) 100%) !important;
+}
+
+[data-portal-theme="dark"] .portal-dashboard-title {
+  color: #f1f5f9 !important;
+}
+
+[data-portal-theme="dark"] .portal-quick-links-body {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(51, 65, 85, 0.35) 100%) !important;
+}
+
+[data-portal-theme="dark"] .portal-docs-category-toolbar {
+  background-color: rgba(30, 41, 59, 0.92) !important;
+  border-bottom-color: rgba(71, 85, 105, 0.55) !important;
+  color: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .portal-modal-muted-panel {
+  background-color: rgba(30, 41, 59, 0.75) !important;
+  border-color: rgba(71, 85, 105, 0.55) !important;
+  color: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .portal-modal-muted-panel .card {
+  background: rgba(15, 23, 42, 0.55) !important;
+}
+
+[data-portal-theme="dark"] .calendar-container .table {
+  color: #e2e8f0;
+  --bs-table-bg: rgba(30, 41, 59, 0.35);
+  --bs-table-color: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .calendar-container .table-bordered > :not(caption) > * > * {
+  border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+[data-portal-theme="dark"] .calendar-container .bg-primary-subtle {
+  background-color: rgba(13, 148, 136, 0.28) !important;
+}
+
+[data-portal-theme="dark"] .calendar-container h6 {
+  color: #e2e8f0 !important;
+}
+
+[data-portal-theme="dark"] .calendar-container .btn-outline-primary {
+  color: #5eead4 !important;
+  border-color: rgba(45, 212, 191, 0.65) !important;
+}
+
+[data-portal-theme="dark"] .calendar-container .btn-outline-primary:hover {
+  background: rgba(45, 212, 191, 0.15) !important;
+  color: #ccfbf1 !important;
+}
+
+[data-portal-theme="dark"] .portal-nav-theme .btn-outline-secondary {
+  color: #cbd5e1 !important;
+  border-color: #64748b !important;
+}
+
+[data-portal-theme="dark"] .portal-nav-theme .btn-outline-secondary:hover {
+  background: rgba(51, 65, 85, 0.6) !important;
+  color: #f8fafc !important;
+}
+
+[data-portal-theme="dark"] .form-control,
+[data-portal-theme="dark"] .input-group-text {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .portal-highlight-title {
+  color: #f1f5f9;
+}
+
+[data-portal-theme="dark"] .portal-highlight-sub {
+  color: #cbd5e1;
+}
+
+[data-portal-theme="dark"] .modal-content {
+  background: rgba(30, 41, 59, 0.96);
+  color: #e2e8f0;
+  border-color: rgba(71, 85, 105, 0.5);
+}
+
+[data-portal-theme="dark"] .modal-body .border,
+[data-portal-theme="dark"] .modal-footer {
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .modal-header.border-bottom {
+  border-bottom-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .modal-body .text-dark {
+  color: #e2e8f0 !important;
+}
+
+[data-portal-theme="dark"] .portal-todo-modal-header {
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.88) 0%, rgba(30, 58, 95, 0.92) 100%) !important;
+  color: #ecfdf5 !important;
+}
+
+[data-portal-theme="dark"] .portal-todo-modal-header .modal-title,
+[data-portal-theme="dark"] .portal-todo-modal-header .text-dark {
+  color: #ecfdf5 !important;
+}
+
+[data-portal-theme="dark"] .staff-dashboard-welcome-hero .btn-light {
+  background: rgba(248, 250, 252, 0.96) !important;
+  color: #0f172a !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+[data-portal-theme="dark"] .portal-surface-scope .border-top {
+  border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+/* —— Authenticated internal portal: menu + main column —— */
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .layout-page {
+  background-color: #0f172a !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .content-wrapper {
+  background-color: transparent !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .layout-navbar-fixed .layout-page:before {
+  background: rgba(15, 23, 42, 0.75) !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route #layout-menu.bg-menu-theme {
+  background-color: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-link,
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-horizontal-prev,
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-horizontal-next {
+  color: #cbd5e1 !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-link:hover,
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-link:focus {
+  color: #f1f5f9 !important;
+  background-color: rgba(51, 65, 85, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-link.active,
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-item.active > .menu-link:not(.menu-toggle) {
+  color: #86efac !important;
+  background-color: rgba(15, 118, 110, 0.25) !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-header,
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-text {
+  color: #94a3b8 !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .bg-menu-theme .menu-inner-shadow {
+  background: linear-gradient(#1e293b 41%, rgba(30, 41, 59, 0.2) 95%, rgba(30, 41, 59, 0)) !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .ppaa-navbar-main {
+  background: #1e293b !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.55) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-quick-access-btn {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-notification-btn {
+  color: #cbd5e1 !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-user-name {
+  color: #f1f5f9 !important;
+}
+
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-user-designation {
+  color: #94a3b8 !important;
+}
+
+/* Daily motivation popout (PortalPage) — dark panel */
+[data-portal-theme="dark"] .portal-daily-motivation-popout .daily-motivation-card {
+  background: linear-gradient(165deg, #1e293b 0%, #0f172a 55%, #0c1220 100%) !important;
+  border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+[data-portal-theme="dark"] .daily-motivation-card__body .daily-motivation-caption {
+  color: #86efac !important;
+}
+
+[data-portal-theme="dark"] .daily-motivation-card__body .daily-motivation-message {
+  color: #cbd5e1 !important;
+}
+
+[data-portal-theme="dark"] .daily-motivation-card__body .daily-motivation-quote-wrap {
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.14) 0%, transparent 100%) !important;
+  border-left-color: rgba(52, 211, 153, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .daily-motivation-card__body .daily-motivation-quote {
+  color: #f1f5f9 !important;
+}
+
+[data-portal-theme="dark"] .daily-motivation-card__body .daily-motivation-hint {
+  color: #94a3b8 !important;
+}

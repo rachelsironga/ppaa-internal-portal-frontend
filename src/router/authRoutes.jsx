@@ -3,6 +3,7 @@ import LoginPage from "../pages/authentication/LoginPage";
 import NewUserPage from "../pages/authentication/NewUserPage";
 import { ForgotPasswordPage } from "../pages/authentication/ForgotPasswordPage";
 import RegisterPage from "../pages/authentication/RegisterPage";
+import PortalPage from "../PortalPage";
 
 function RegisterAndLogout() {
   localStorage.clear();
@@ -10,6 +11,7 @@ function RegisterAndLogout() {
 }
 export const authRoutes = (
   <>
+    <Route path="/public/login" element={<PortalPage />} />
     <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterAndLogout />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />

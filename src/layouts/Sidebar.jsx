@@ -3,7 +3,8 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import servicesConfig from "../data/servicesConfig";
-import { hasPermission, hasAnyVisibleItem } from "../utils/permissions";
+import { hasPermission, hasAnyVisibleItem, isStaffOnly, isAllowedRouteForStaffOnly } from "../utils/permissions";
+import { useInternalPortalI18n } from "../contexts/InternalPortalI18nContext.jsx";
 
 // KEEPING YOUR ORIGINAL UI EXACTLY THE SAME
 
@@ -11,10 +12,14 @@ const Sidebar = ({ isService = false }) => {
   const user = useSelector((state) => state.userReducer?.data);
   const userPermissions = user?.user_permissions;
   const userRoles = user?.groups;
+  const staffOnly = isStaffOnly(userRoles);
 
   const location = useLocation();
+  const { translateHeader, translateMenuItem, t } = useInternalPortalI18n();
+  const isInternalPortalPath = location.pathname.startsWith("/ppaa-internal-portal");
 
   const [activeService, setActiveService] = useState(null);
+  const [activeServiceName, setActiveServiceName] = useState("");
   const [currentMenu, setCurrentMenu] = useState([]);
 
   // Detect service by URL
@@ -25,12 +30,36 @@ const Sidebar = ({ isService = false }) => {
 
     if (service) {
       setActiveService(service.id);
+      setActiveServiceName(service.name || "");
       setCurrentMenu(service.menu);
     } else {
       setActiveService("");
+      setActiveServiceName("");
       setCurrentMenu(servicesConfig[servicesConfig.length - 1].menu);
     }
   }, [location.pathname]);
+
+  // Auto-open parent menu items when submenu items are active
+  useEffect(() => {
+    const openActiveParentMenus = () => {
+      const activeSubmenuLinks = document.querySelectorAll('.menu-sub .menu-link.active');
+      activeSubmenuLinks.forEach((activeLink) => {
+        const parentMenuItem = activeLink.closest('.menu-sub')?.parentElement;
+        if (parentMenuItem && parentMenuItem.classList.contains('menu-item')) {
+          parentMenuItem.classList.add('open');
+          // Also open any parent of this parent if it exists
+          const grandParent = parentMenuItem.closest('.menu-sub')?.parentElement;
+          if (grandParent && grandParent.classList.contains('menu-item')) {
+            grandParent.classList.add('open');
+          }
+        }
+      });
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(openActiveParentMenus, 100);
+    return () => clearTimeout(timer);
+  }, [currentMenu, location.pathname]);
 
   return (
     <aside
@@ -38,13 +67,13 @@ const Sidebar = ({ isService = false }) => {
       className="layout-menu menu-vertical menu bg-menu-theme"
     >
       <div className="app-brand demo">
-        <Link to="/" className="app-brand-link">
+        <Link to="/services" className="app-brand-link">
           <span className="app-brand-logo demo">
             <img src="/assets/img/nembo.jpg" width="70" height="70" />
           </span>
           <span style={{ width: "70px" }}></span>
           <span className="app-brand-logo demo">
-            <img src="/assets/img/mnhlogo.png" width="70" height="70" />
+            <img src="/assets/img/ppaa-bg.png" width="70" height="70" />
           </span>
         </Link>
         <a className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -54,14 +83,15 @@ const Sidebar = ({ isService = false }) => {
 
       <div style={{ textAlign: "center" }}>
         <span className="app-brand-text demo menu-text fw-bold ms-2">
-          MNH-CONNECT
+         PPAA-PORTAL
         </span>
 
         {activeService && (
           <h5 className="text-bold">
-            {activeService
-              .replace(/-/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase())}
+            {activeService === "internal-portal" && isInternalPortalPath
+              ? t("service.internalPortal")
+              : activeServiceName ||
+                activeService.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
           </h5>
         )}
       </div>
@@ -87,38 +117,68 @@ const Sidebar = ({ isService = false }) => {
           </>
         ) : (
           // Dynamic Service Menu
-          currentMenu.map((section, sectionIndex) => (
-            <React.Fragment key={"header-" + sectionIndex}>
-              {section.header &&
-                hasAnyVisibleItem(
-                  section.items,
-                  userPermissions,
-                  userRoles
-                ) && (
-                  <li className="menu-header small text-uppercase">
-                    <span className="menu-header-text">{section.header}</span>
-                  </li>
-                )}
+          currentMenu.map((section, sectionIndex) => {
+            // For staff-only users, filter items to only show allowed routes
+            const filteredItems = staffOnly
+              ? section.items.filter((item) => {
+                  // Check if item link is allowed for staff-only users
+                  if (item.link && isAllowedRouteForStaffOnly(item.link)) {
+                    return true;
+                  }
+                  // Check submenu items
+                  if (item.submenu) {
+                    const hasAllowedSubmenu = item.submenu.some((sub) =>
+                      sub.link && isAllowedRouteForStaffOnly(sub.link)
+                    );
+                    return hasAllowedSubmenu;
+                  }
+                  return false;
+                })
+              : section.items;
 
-              {section.items
-                .filter((item) =>
-                  hasPermission(
-                    item.permission,
-                    item.role,
+            return (
+              <React.Fragment key={"header-" + sectionIndex}>
+                {section.header &&
+                  hasAnyVisibleItem(
+                    filteredItems,
                     userPermissions,
-                    userRoles
+                    userRoles,
+                    user
+                  ) && (
+                    <li className="menu-header small text-uppercase">
+                      <span className="menu-header-text">
+                        {isInternalPortalPath
+                          ? translateHeader(section.header, section.header)
+                          : section.header}
+                      </span>
+                    </li>
+                  )}
+
+                {filteredItems
+                  .filter((item) =>
+                    hasPermission(
+                      item.permission,
+                      item.role,
+                      userPermissions,
+                      userRoles,
+                      user,
+                      item.excludeRoles
+                    )
                   )
-                )
-                .map((item, itemIndex) => (
-                  <MenuItem
-                    key={item.id || itemIndex}
-                    {...item}
-                    userPermissions={userPermissions}
-                    userRoles={userRoles}
-                  />
-                ))}
-            </React.Fragment>
-          ))
+                  .map((item, itemIndex) => (
+                    <MenuItem
+                      key={item.id || itemIndex}
+                      {...item}
+                      user={user}
+                      userPermissions={userPermissions}
+                      userRoles={userRoles}
+                      staffOnly={staffOnly}
+                      translateMenuItem={isInternalPortalPath ? translateMenuItem : null}
+                    />
+                  ))}
+              </React.Fragment>
+            );
+          })
         )}
       </ul>
     </aside>
@@ -126,49 +186,171 @@ const Sidebar = ({ isService = false }) => {
 };
 
 // KEEP YOUR ORIGINAL MENU ITEM UI
-const MenuItem = (item) => {
-  const { userPermissions, userRoles, submenu } = item;
-  const location = useLocation();
+const MAONI_EXECUTIVE_DASHBOARD_PATH = "/ppaa-maoni/dashboard";
 
-  const filteredSubmenu = submenu
-    ? submenu.filter((subitem) =>
-        hasPermission(
+/** Opened a suggestion from Executive Dashboard (MaoniDashboardPage passes this in navigate state). */
+const isMaoniExecutiveDashboardSidebarContext = (location) =>
+  location?.state?.fromDashboard === true &&
+  typeof location.pathname === "string" &&
+  location.pathname.startsWith("/ppaa-maoni/suggestions/") &&
+  location.pathname !== "/ppaa-maoni/suggestions/new";
+
+const MenuItem = (item) => {
+  const { user, userPermissions, userRoles, submenu, staffOnly, isMain, translateMenuItem } = item;
+  const location = useLocation();
+  const label = translateMenuItem ? translateMenuItem(item.link, item.text) : item.text;
+
+  // Filter submenu items - for staff-only, only show allowed routes
+  let filteredSubmenu = submenu
+    ? submenu.filter((subitem) => {
+        // First check permission
+        const hasPerm = hasPermission(
           subitem.permission,
           subitem.role,
           userPermissions,
-          userRoles
-        )
-      )
+          userRoles,
+          user,
+          subitem.excludeRoles
+        );
+        
+        if (!hasPerm) return false;
+        
+        // If staff-only, also check if route is allowed
+        if (staffOnly && subitem.link) {
+          return isAllowedRouteForStaffOnly(subitem.link);
+        }
+        
+        return true;
+      })
     : [];
 
-  if (submenu && filteredSubmenu.length === 0) return null;
+  // Check if parent item itself is visible
+  const isParentVisible = hasPermission(
+    item.permission,
+    item.role,
+    userPermissions,
+    userRoles,
+    user,
+    item.excludeRoles
+  );
 
-  const isActive =
-    location.pathname === item.link ||
-    location.pathname.startsWith(item.link + "/open/");
+  // If parent has submenu but no visible submenu items, still show parent if it's visible
+  if (submenu && filteredSubmenu.length === 0 && !isParentVisible) return null;
 
   const hasSubmenu = filteredSubmenu.length > 0;
+  
+  // Check if any submenu item is active (supports query-string links like ?type=implementation)
+  const isSubmenuActive =
+    hasSubmenu &&
+    filteredSubmenu.some((sub) => {
+      const fullLink = sub.link || "";
+      const [basePath, queryString] = fullLink.split("?");
+      const pathMatches =
+        location.pathname === fullLink ||
+        location.pathname === basePath ||
+        location.pathname.startsWith(basePath + "/open/");
+
+      if (!pathMatches) return false;
+
+      if (!queryString) {
+        // No query part on the link; treat as active ONLY when there is no explicit type param
+        const currentSearch = (location.search || "").replace(/^\?/, "");
+        return !currentSearch.includes("type=");
+      }
+
+      // When the submenu link has a query (e.g. ?type=implementation),
+      // ensure the current location.search contains that query fragment
+      const currentSearch = (location.search || "").replace(/^\?/, "");
+      return currentSearch.includes(queryString);
+    });
+
+  // For parent items with submenu, check if link is empty or if submenu is active
+  let isActive;
+  if (hasSubmenu) {
+    isActive = isSubmenuActive;
+  } else {
+    const fullLink = item.link || "";
+    const [basePath, queryString] = fullLink.split("?");
+    const pathMatches =
+      location.pathname === fullLink ||
+      location.pathname === basePath ||
+      location.pathname.startsWith(basePath + "/open/");
+
+    if (!pathMatches) {
+      isActive = false;
+    } else if (!queryString) {
+      // No query part on the link; treat as active ONLY when there is no explicit type param
+      const currentSearch = (location.search || "").replace(/^\?/, "");
+      isActive = !currentSearch.includes("type=");
+    } else {
+      // When the link has a query (e.g. ?type=implementation),
+      // ensure the current location.search contains that query fragment
+      const currentSearch = (location.search || "").replace(/^\?/, "");
+      isActive = currentSearch.includes(queryString);
+    }
+  }
+
+  // PPAA Maoni: keep "Executive Dashboard" highlighted when reviewing a suggestion opened from that dashboard.
+  if (
+    !hasSubmenu &&
+    (item.link || "").split("?")[0] === MAONI_EXECUTIVE_DASHBOARD_PATH &&
+    isMaoniExecutiveDashboardSidebarContext(location)
+  ) {
+    isActive = true;
+  }
+
+  // Handle empty links for parent items with submenus (submenu shown only after click)
+  const linkTo = item.link || "#";
+  const isParentWithSubmenu = hasSubmenu && (!item.link || item.link === "");
 
   return (
     <li
       className={`menu-item ${isActive ? "active" : ""} ${
-        hasSubmenu && isActive ? "open" : ""
-      }`}
+        hasSubmenu && (isActive || isSubmenuActive) ? "open" : ""
+      } ${isMain ? "menu-item-main" : ""}`}
     >
-      <NavLink
-        to={item.link}
-        className={`menu-link ${hasSubmenu ? "menu-toggle" : ""}`}
-        target={item.link.includes("http") ? "_blank" : undefined}
-      >
-        <i className={`menu-icon tf-icons ${item.icon}`}></i>
-        <div>{item.text}</div>
+      {isParentWithSubmenu ? (
+        <a
+          href="#"
+          className="menu-link menu-toggle"
+          onClick={(e) => {
+            e.preventDefault();
+            const menuItem = e.currentTarget.closest(".menu-item");
+            if (menuItem) {
+              menuItem.classList.toggle("open");
+            }
+          }}
+          aria-expanded={hasSubmenu && (isActive || isSubmenuActive)}
+        >
+          <i className={`menu-icon tf-icons ${item.icon}`}></i>
+          <div>{label}</div>
 
-        {item.available === false && (
-          <div className="badge bg-label-primary fs-tiny rounded-pill ms-auto">
-            Pro
-          </div>
-        )}
-      </NavLink>
+          {item.available === false && (
+            <div className="badge bg-label-primary fs-tiny rounded-pill ms-auto">
+              Pro
+            </div>
+          )}
+        </a>
+      ) : (
+        <NavLink
+          to={linkTo}
+          className={() =>
+            `menu-link ${hasSubmenu ? "menu-toggle" : ""} ${
+              isMain ? "menu-link-main" : ""
+            } ${isActive ? "active" : ""}`
+          }
+          target={item.link && item.link.includes("http") ? "_blank" : undefined}
+        >
+          <i className={`menu-icon tf-icons ${item.icon}`}></i>
+          <div>{label}</div>
+
+          {item.available === false && (
+            <div className="badge bg-label-primary fs-tiny rounded-pill ms-auto">
+              Pro
+            </div>
+          )}
+        </NavLink>
+      )}
 
       {hasSubmenu && (
         <ul className="menu-sub">
@@ -176,8 +358,11 @@ const MenuItem = (item) => {
             <MenuItem
               key={sub.id || `${item.id}-${i}`}
               {...sub}
+              user={user}
               userPermissions={userPermissions}
               userRoles={userRoles}
+              staffOnly={staffOnly}
+              translateMenuItem={translateMenuItem}
             />
           ))}
         </ul>

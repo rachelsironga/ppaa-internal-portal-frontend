@@ -1,91 +1,132 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import "animate.css";
 import { formatDate } from "../../../../helpers/DateFormater";
 import MaoniModal from "./MaoniModal";
 import { MaoniContext } from "../../../../utils/context";
+import { getSuggestions, getDepartments, getSuggestion } from "../../PPAA-MAONI/Queries";
+import Swal from "sweetalert2";
+import {
+  getNormalizedGroupSlugs,
+  isMaoniHandler,
+  isMaoniReviewer,
+} from "../../../../utils/maoniRoles";
 
 export const Maoni = () => {
   const user = useSelector((state) => state.userReducer?.data);
   const navigate = useNavigate();
 
+  const userRoles = getNormalizedGroupSlugs(user);
+  const isStaff = userRoles.includes("staff");
+  const isMaoniReviewerUser = isMaoniReviewer(user);
+  const isMaoniHandlerUser = isMaoniHandler(user);
+  const isAdmin = userRoles.includes("admin");
+  const hasReviewerDashboardRole =
+    userRoles.includes("maoni_reviewer") ||
+    userRoles.includes("maoni_reviewe") ||
+    userRoles.includes("ppaa_maoni_reviewer") ||
+    userRoles.includes("hr");
+  const canAccessMaoni = Boolean(
+    isStaff || isMaoniReviewerUser || isMaoniHandlerUser || isAdmin || user?.is_superuser
+  );
+
   // User's personal maoni stats
   const [myMaoniStats, setMyMaoniStats] = useState({
-    total: 14,
-    drafts: 3,
-    submitted: 11,
+    total: 0,
+    drafts: 0,
+    submitted: 0,
   });
 
   // User's recent maoni (only their own)
-  const [myRecentMaoni, setMyRecentMaoni] = useState([
-    {
-      id: 1,
-      title: "Improve Employee Onboarding Process",
-      category: "HR Process",
-      status: "draft",
-      date: "2024-01-15",
-      directory: "Human Resources",
-      description:
-        "Suggesting a more structured onboarding program with mentorship pairing...",
-    },
-    {
-      id: 2,
-      title: "Upgrade Office Wi-Fi Infrastructure",
-      category: "ICT Infrastructure",
-      status: "submitted",
-      date: "2024-01-14",
-      directory: "Information and Communication Technology",
-      description:
-        "The current Wi-Fi setup is outdated and often unreliable...",
-      submittedDate: "2024-01-14",
-    },
-    {
-      id: 3,
-      title: "Implement Paperless Office System",
-      category: "Digital Transformation",
-      status: "submitted",
-      date: "2024-01-10",
-      directory: "Administration",
-      description:
-        "Transition to digital documentation to reduce paper waste...",
-      submittedDate: "2024-01-10",
-    },
-    {
-      id: 4,
-      title: "Improve Cafeteria Food Quality",
-      category: "Employee Welfare",
-      status: "draft",
-      date: "2024-01-08",
-      directory: "Human Resources",
-      description:
-        "Better meal options and healthier food choices in the cafeteria...",
-    },
-    {
-      id: 5,
-      title: "Enhance Cybersecurity Training",
-      category: "ICT Security",
-      status: "submitted",
-      date: "2024-01-05",
-      directory: "Information and Communication Technology",
-      description: "Regular cybersecurity awareness training for all staff...",
-      submittedDate: "2024-01-05",
-    },
-    {
-      id: 6,
-      title: "Flexible Working Hours Implementation",
-      category: "Work Policy",
-      status: "submitted",
-      date: "2024-01-03",
-      directory: "Human Resources",
-      description:
-        "Allow flexible start and end times for better work-life balance...",
-      submittedDate: "2024-01-03",
-    },
-  ]);
-
-  // Pagination state
+  const [myRecentMaoni, setMyRecentMaoni] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMaoni, setSelectedMaoni] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Restrict /ppaa-maoni to staff / Maoni_Reviewer / Admin / Superuser
+  useEffect(() => {
+    if (!user) return;
+    if (canAccessMaoni) return;
+    Swal.fire({
+      icon: "warning",
+      title: "Access Denied",
+      text: "You don't have permission to access this Maoni dashboard.",
+      confirmButtonText: "Go Back",
+    }).then(() => {
+      navigate(-1);
+    });
+  }, [user, canAccessMaoni, navigate]);
+
+  // Default landing:
+  // - Explicit reviewer/superuser roles -> Executive Dashboard
+  // - Maoni admin/handler/staff can access /ppaa-maoni from sidebar "Maoni" tab
+  useEffect(() => {
+    if (!user) return;
+    if (hasReviewerDashboardRole || user?.is_superuser) {
+      navigate("/ppaa-maoni/dashboard", { replace: true });
+    }
+  }, [user, hasReviewerDashboardRole, navigate]);
+
+  const handleFetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [suggestionsRes, departmentsRes] = await Promise.all([
+        // Personal "My Maoni" — reviewers/admins still only their own rows here (see dashboard for all).
+        getSuggestions(1, 100, { onlyMine: true }),
+        getDepartments(),
+      ]);
+
+      const suggestions =
+        suggestionsRes?.data && Array.isArray(suggestionsRes.data)
+          ? suggestionsRes.data
+          : [];
+      const departments =
+        departmentsRes?.data && Array.isArray(departmentsRes.data)
+          ? departmentsRes.data
+          : [];
+
+      const deptByUid = new Map(departments.map((d) => [d.uid, d]));
+
+      const mapped = suggestions.map((s) => {
+        const status = (s.status || "").toLowerCase();
+        const dept = s.department_uid ? deptByUid.get(s.department_uid) : null;
+        return {
+          id: s.uid,
+          uid: s.uid,
+          title: s.title,
+          category: (s.category_name || "GENERAL").toUpperCase(),
+          status:
+            status === "submitted"
+              ? "submitted"
+              : status === "draft"
+              ? "draft"
+              : status,
+          date: s.submitted_at || s.created_at,
+          directory: dept?.name || "—",
+          description: s.description || "",
+          comment_count: s.comment_count || 0,
+        };
+      });
+
+      const drafts = mapped.filter((m) => m.status === "draft").length;
+      const submitted = mapped.filter((m) => m.status === "submitted").length;
+      setMyMaoniStats({ total: mapped.length, drafts, submitted });
+      setMyRecentMaoni(mapped);
+    } catch (e) {
+      console.error("Failed to load Maoni suggestions:", e);
+      setMyRecentMaoni([]);
+      setMyMaoniStats({ total: 0, drafts: 0, submitted: 0 });
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!canAccessMaoni) return;
+    handleFetchData();
+  }, [handleFetchData, canAccessMaoni]);
+
   const itemsPerPage = 3;
   const totalPages = Math.ceil(myRecentMaoni.length / itemsPerPage);
 
@@ -94,39 +135,128 @@ export const Maoni = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = myRecentMaoni.slice(indexOfFirstItem, indexOfLastItem);
 
+  const normalizeWorkflowStatus = (status) => {
+    const raw = String(status || "").toUpperCase();
+    const legacy = {
+      PENDING_REVIEW: "UNDER_HANDLER_REVIEW",
+      UNDER_CONSIDERATION: "ESCALATED_TO_REVIEWER",
+      APPROVED: "CLOSED_APPROVED",
+      IMPLEMENTED: "CLOSED_APPROVED",
+      REJECTED: "CLOSED_REJECTED",
+    };
+    return legacy[raw] || raw;
+  };
+
   const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "submitted":
-        return "bg-primary-subtle text-primary";
-      case "draft":
-        return "bg-warning-subtle text-warning";
+    const s = normalizeWorkflowStatus(status);
+    // Use text-* (not *-emphasis): vendor core.css omits emphasis utilities but .badge defaults to white text.
+    const pill = "rounded-pill px-2 py-1 small fw-semibold border";
+    switch (s) {
+      case "DRAFT":
+        return `${pill} bg-warning-subtle text-dark border-warning`;
+      case "SUBMITTED":
+        return `${pill} bg-primary-subtle text-primary border-primary`;
+      case "UNDER_HANDLER_REVIEW":
+        return `${pill} bg-success-subtle text-success border-success`;
+      case "ESCALATED_TO_REVIEWER":
+        return `${pill} bg-info-subtle text-info border-info`;
+      case "RETURNED_TO_HANDLER":
+        return `${pill} bg-secondary-subtle text-dark border-secondary`;
+      case "HANDLER_RESPONDED_TO_REVIEWER":
+        return `${pill} bg-primary text-white border-primary`;
+      case "HANDLER_RESPONDED_TO_CONTRIBUTOR":
+        return `${pill} bg-dark-subtle text-dark border-dark`;
+      case "CLOSED_APPROVED":
+        return `${pill} bg-success text-white border-success`;
+      case "CLOSED_REJECTED":
+        return `${pill} bg-danger-subtle text-danger border-danger`;
       default:
-        return "bg-secondary-subtle text-secondary";
+        return `${pill} bg-secondary-subtle text-secondary border-secondary`;
     }
   };
 
   const getStatusText = (status) => {
-    switch (status) {
-      case "submitted":
-        return "Submitted";
-      case "draft":
+    const s = normalizeWorkflowStatus(status);
+    switch (s) {
+      case "DRAFT":
         return "Draft";
+      case "SUBMITTED":
+        return "Submitted";
+      case "UNDER_HANDLER_REVIEW":
+        return "In progress";
+      case "ESCALATED_TO_REVIEWER":
+        return "Escalated to reviewer";
+      case "RETURNED_TO_HANDLER":
+        return "Returned to handler";
+      case "HANDLER_RESPONDED_TO_REVIEWER":
+        return "Handler → reviewer";
+      case "HANDLER_RESPONDED_TO_CONTRIBUTOR":
+        return "Handler → contributor";
+      case "CLOSED_APPROVED":
+        return "Closed — approved";
+      case "CLOSED_REJECTED":
+        return "Closed — rejected";
       default:
-        return status;
+        return String(s).replaceAll("_", " ");
     }
+  };
+
+  // Strip HTML tags from text
+  const stripHtml = (html) => {
+    if (!html) return "";
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
+
+  const truncateWords = (text, maxWords = 22) => {
+    // First strip HTML tags, then truncate
+    const textWithoutHtml = stripHtml(text || "");
+    const clean = textWithoutHtml.trim();
+    if (!clean) return "";
+    const words = clean.split(/\s+/).filter(Boolean);
+    if (words.length <= maxWords) return clean;
+    return `${words.slice(0, maxWords).join(" ")}...`;
   };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
 
+  const openMaoniModal = () => {
+    const modalElement = document.getElementById("maoniModal");
+    if (modalElement && window.bootstrap?.Modal) {
+      const modalInstance =
+        window.bootstrap.Modal.getOrCreateInstance(modalElement);
+      modalInstance.show();
+    }
+  };
+
+  const openMaoniModalForEdit = async (maoni) => {
+    try {
+      const res = await getSuggestion(maoni.uid || maoni.id);
+      const data = res.data || res;
+      setSelectedMaoni(data);
+      openMaoniModal();
+    } catch (e) {
+      console.error("Failed to load suggestion for editing:", e);
+    }
+  };
+
+  if (!canAccessMaoni) {
+    return null;
+  }
+
   return (
     <MaoniContext.Provider
       value={{
         myMaoniStats,
+        handleFetchData,
+        selectedMaoni,
+        setSelectedMaoni,
       }}
     >
-      <div className="container-fluid py-4">
+      <div className="w-100 py-4">
         {/* Header Section */}
         <div className="row align-items-center mb-6">
           <div className="col-lg-8 col-md-6 mb-4 mb-md-0">
@@ -162,7 +292,19 @@ export const Maoni = () => {
         {/* My Stats Overview */}
         <div className="row mb-5 g-4">
           <div className="col-md-4">
-            <div className="card card-hover border-0 shadow-sm h-100">
+            <div
+              className="card card-hover border-0 shadow-sm h-100"
+              style={{ cursor: "pointer" }}
+              onClick={() =>
+                navigate("/ppaa-maoni/suggestions", {
+                  state: {
+                    filter: "drafts",
+                    userId: user?.id,
+                    userName: user?.full_name || user?.username || undefined,
+                  },
+                })
+              }
+            >
               <div className="card-body">
                 <div className="d-flex justify-content-between align-items-start mb-3">
                   <div>
@@ -239,20 +381,41 @@ export const Maoni = () => {
               </div>
 
               <div className="card-body p-0">
-                {currentItems.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-5">
+                    <i className="bx bx-loader-circle bx-spin fs-1 text-primary mb-3"></i>
+                    <p className="text-muted mb-0">Loading your suggestions...</p>
+                  </div>
+                ) : currentItems.length === 0 ? (
                   <div className="text-center py-5">
                     <i className="bx bx-message-rounded-detail fs-1 text-muted mb-3"></i>
                     <h5>No contributions yet</h5>
                     <p className="text-muted mb-4">
                       Start by sharing your first suggestion
                     </p>
+                    <div className="d-flex justify-content-center">
                     <button
-                      onClick={() => navigate("/mnh-connect/maoni/new")}
-                      className="btn btn-primary"
-                    >
-                      <i className="bx bx-plus me-2"></i>
+                        aria-label="Click me"
+                        type="button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#maoniModal"
+                        className="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center p-3 border-dashed text-center"
+                        style={{ maxWidth: 420 }}
+                      >
+                        <div className="p-2 bg-primary-subtle rounded-circle me-3">
+                          <i className="bx bx-plus text-primary"></i>
+                        </div>
+                        <div>
+                          <div className="fw-medium">
                       Create First Contribution
+                          </div>
+                          <small className="text-muted">
+                            Share your improvement idea
+                          </small>
+                        </div>
                     </button>
+                    </div>
+         
                   </div>
                 ) : (
                   <div className="list-group list-group-flush">
@@ -260,9 +423,7 @@ export const Maoni = () => {
                       <div
                         key={maoni.id}
                         className="list-group-item list-group-item-action border-0 px-4 py-4 hover-bg"
-                        onClick={() =>
-                          navigate(`/mnh-connect/maoni/${maoni.id}`)
-                        }
+                        onClick={() => navigate(`/ppaa-maoni/suggestions/${maoni.uid || maoni.id}`)}
                         style={{ cursor: "pointer" }}
                       >
                         <div className="d-flex justify-content-between align-items-start mb-2">
@@ -289,14 +450,25 @@ export const Maoni = () => {
                         <h6 className="mb-2 text-primary-hover">
                           {maoni.title}
                         </h6>
-                        <p className="text-muted mb-3">{maoni.description}</p>
+                        <p className="text-muted mb-3" >
+                          {truncateWords(maoni.description, 22)}
+                        </p>
 
                         <div className="d-flex justify-content-between align-items-center">
-                          <div>
+                          <div className="d-flex align-items-center gap-3">
                             <small className="text-muted">
                               <i className="bx bx-folder me-1"></i>
                               {maoni.directory}
                             </small>
+                            {maoni.comment_count > 0 && (
+                              <span
+                                className="badge bg-info-subtle text-info d-flex align-items-center"
+                                style={{ fontSize: "0.75rem" }}
+                              >
+                                <i className="bx bx-message-rounded me-1"></i>
+                                {maoni.comment_count} {maoni.comment_count === 1 ? "reply" : "replies"}
+                              </span>
+                            )}
                           </div>
 
                           <div className="d-flex gap-2">
@@ -304,20 +476,35 @@ export const Maoni = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(
-                                    `/mnh-connect/maoni/edit/${maoni.id}`
-                                  );
+                                  openMaoniModalForEdit(maoni);
                                 }}
-                                className="btn btn-sm btn-warning"
+                                className="btn btn-sm btn-warning fw-semibold d-flex align-items-center"
+                                style={{
+                                  background: "linear-gradient(135deg, #ffc107 0%, #ff9800 100%)",
+                                  border: "none",
+                                  color: "#000",
+                                  boxShadow: "0 2px 8px rgba(255, 193, 7, 0.3)",
+                                  transition: "all 0.3s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-2px)";
+                                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(255, 193, 7, 0.4)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0)";
+                                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(255, 193, 7, 0.3)";
+                                }}
                               >
-                                <i className="bx bx-edit me-1"></i>
-                                Continue
+                                <i className="bx bx-edit-alt me-2"></i>
+                                Continue Editing
                               </button>
                             )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/mnh-connect/maoni/${maoni.id}`);
+                                navigate(
+                                  `/ppaa-maoni/suggestions/${maoni.uid || maoni.id}`
+                                );
                               }}
                               className="btn btn-sm btn-outline-primary"
                             >
@@ -396,10 +583,16 @@ export const Maoni = () => {
                 </div>
               )}
 
+              {myMaoniStats.total > itemsPerPage && (
               <div className="card-footer bg-white border-0 pt-3 pb-4">
                 <button
                   onClick={() =>
-                    navigate("/mnh-connect/maoni/my-contributions")
+                      navigate("/ppaa-maoni/suggestions", {
+                        state: {
+                          userId: user?.id,
+                          userName: user?.full_name || user?.username || undefined,
+                        },
+                      })
                   }
                   className="btn btn-outline-primary w-100"
                 >
@@ -407,6 +600,7 @@ export const Maoni = () => {
                   View All My Contributions
                 </button>
               </div>
+              )}
             </div>
           </div>
 
@@ -440,7 +634,15 @@ export const Maoni = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate("/mnh-connect/maoni/my-drafts")}
+                    onClick={() =>
+                      navigate("/ppaa-maoni/suggestions", {
+                        state: {
+                          filter: "drafts",
+                          userId: user?.id,
+                          userName: user?.full_name || user?.username || undefined,
+                        },
+                      })
+                    }
                     className="btn btn-outline-warning d-flex align-items-center justify-content-start p-3 text-start"
                   >
                     <div className="p-2 bg-warning-subtle rounded-circle me-3">
@@ -455,7 +657,15 @@ export const Maoni = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate("/mnh-connect/maoni/my-submitted")}
+                    onClick={() =>
+                      navigate("/ppaa-maoni/suggestions", {
+                        state: {
+                          userId: user?.id,
+                          userName: user?.full_name || user?.username || undefined,
+                          submittedOnly: true,
+                        },
+                      })
+                    }
                     className="btn btn-outline-success d-flex align-items-center justify-content-start p-3 text-start"
                   >
                     <div className="p-2 bg-success-subtle rounded-circle me-3">
@@ -538,8 +748,12 @@ export const Maoni = () => {
                 </p>
               </div>
               <button
-                onClick={() => navigate("/mnh-connect/maoni/new")}
-                className="btn btn-primary btn-lg px-5"
+                aria-label="Click me"
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#maoniModal"
+                className="btn btn-outline-primary w-100 d-inline-flex align-items-center justify-content-center p-3 border-dashed text-center"
+                style={{ maxWidth: 420 }}
               >
                 <i className="bx bx-plus me-2"></i>
                 Create First Suggestion
@@ -616,8 +830,8 @@ export const Maoni = () => {
       {/* Modal */}
       <MaoniModal
         onClose={() => {
-          // Optional: refresh data or perform any cleanup
-          if (typeof handleFetchData === "function") handleFetchData();
+          // Refresh dashboard list after closing modal (create/update)
+          handleFetchData();
         }}
       />
     </MaoniContext.Provider>

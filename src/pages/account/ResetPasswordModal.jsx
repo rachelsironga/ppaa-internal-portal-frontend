@@ -51,6 +51,7 @@ const ResetPasswordModal = () => {
     values,
     { setSubmitting, resetForm, setErrors }
   ) => {
+    let successHandled = false;
     try {
       setShowConfirmPassword(false);
       setShowNewPassword(false);
@@ -72,7 +73,12 @@ const ResetPasswordModal = () => {
         isFullPath: true,
       });
 
-      if (result.status === 200 || result.status === 8000) {
+      const ok =
+        result?.status === 200 ||
+        result?.status === 8000 ||
+        (result?.data != null && result?.message != null);
+      if (ok) {
+        successHandled = true;
         showToast("Password Changed", "success", "Complete");
         // refresh user data if returned
         if (result.data) {
@@ -80,7 +86,14 @@ const ResetPasswordModal = () => {
         }
         handleClose();
         resetForm();
-        if (typeof handleFetchData === "function") handleFetchData();
+        // Refetch in background; don't let refetch failure show a second (error) toast
+        if (typeof handleFetchData === "function") {
+          try {
+            await Promise.resolve(handleFetchData());
+          } catch (refetchErr) {
+            console.warn("Refetch after password change failed:", refetchErr);
+          }
+        }
       } else if (result.status === 8002) {
         // validation errors from backend - keep modal open
         const apiErrors = result.data || {};
@@ -99,18 +112,18 @@ const ResetPasswordModal = () => {
       }
     } catch (error) {
       console.error("Reset password error:", error);
-      // try to extract server validation/errors if available
-      const apiErrData = error?.response?.data || null;
-      if (apiErrData) {
-        setErrors(apiErrData);
-        setOtherError(apiErrData);
+      if (!successHandled) {
+        const apiErrData = error?.response?.data ?? null;
+        if (apiErrData) {
+          setErrors(apiErrData);
+          setOtherError(apiErrData);
+        }
+        showToast(
+          "Unable to reset password. Please try again or contact support.",
+          "error",
+          "Failed"
+        );
       }
-      showToast(
-        "Unable to reset password. Please try again or contact support.",
-        "error",
-        "Failed"
-      );
-      // do NOT close modal or reset form on exception
     } finally {
       setSubmitting(false);
     }

@@ -1,0 +1,258 @@
+/* Recent FAQs + FAQ modal — minimal, readable (PPAA green accent) */
+
+.portal-faq-panel {
+  border-top: 3px solid #00853f;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.portal-faq-header {
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.portal-faq-title-icon {
+  color: #00853f !important;
+}
+
+.portal-faq-title-text {
+  color: #212529 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+}
+
+.portal-faq-search-addon {
+  background-color: #fff !important;
+  border-color: #dee2e6 !important;
+  color: #6c757d !important;
+}
+
+.portal-faq-search-input {
+  border-color: #dee2e6 !important;
+  background-color: #fff !important;
+}
+
+.portal-faq-search-input:focus {
+  border-color: #00853f !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 133, 63, 0.12) !important;
+}
+
+.portal-faq-item-card {
+  border: 1px solid #e9ecef !important;
+  border-radius: 0.5rem !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+
+.portal-faq-item-card:hover {
+  border-color: #ced4da !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+  transform: translateY(-1px);
+}
+
+.portal-faq-question-icon {
+  color: #00853f !important;
+  opacity: 0.9;
+}
+
+.portal-faq-question-text {
+  color: #212529 !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+.portal-faq-snippet {
+  color: #495057 !important;
+  line-height: 1.5 !important;
+}
+
+.portal-faq-nav-btn {
+  background: #fff !important;
+  color: #00853f !important;
+  font-weight: 500 !important;
+  border: 1px solid #00853f !important;
+}
+
+.portal-faq-nav-btn:hover {
+  background: rgba(0, 133, 63, 0.06) !important;
+  color: #006b34 !important;
+  border-color: #006b34 !important;
+}
+
+/* FAQ view modal */
+.portal-faq-modal-content {
+  border: 1px solid #e9ecef !important;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+}
+
+.portal-faq-modal-header {
+  position: relative;
+  background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%) !important;
+  color: #fff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
+  padding-right: 3.5rem !important;
+}
+
+.portal-faq-modal-header .modal-title {
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+.portal-faq-modal-header .modal-title .bx {
+  color: #fff !important;
+  opacity: 0.95;
+}
+
+/*
+  Theme core.css offsets .modal .btn-close and uses a white tile; btn-close-white adds a filter
+  that washes out the X on pale/green mixes. Use a white disc + crisp black × (no filter).
+*/
+.portal-faq-modal-content .modal-header.portal-faq-modal-header .btn-close {
+  --bs-btn-close-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%230d0d0d'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e");
+  position: absolute !important;
+  top: 50% !important;
+  right: 1rem !important;
+  transform: translateY(-50%) !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  padding: 0 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  background-color: #ffffff !important;
+  background-image: var(--bs-btn-close-bg) !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 0.85em auto !important;
+  border: 1px solid rgba(0, 0, 0, 0.14) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18) !important;
+}
+
+.portal-faq-modal-content .modal-header.portal-faq-modal-header .btn-close:hover,
+.portal-faq-modal-content .modal-header.portal-faq-modal-header .btn-close:focus,
+.portal-faq-modal-content .modal-header.portal-faq-modal-header .btn-close:active {
+  transform: translateY(-50%) !important;
+  opacity: 1 !important;
+  outline: none !important;
+  background-color: #f3f4f6 !important;
+  border-color: rgba(0, 0, 0, 0.22) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.22) !important;
+}
+
+.portal-faq-modal-body {
+  background: #fff !important;
+}
+
+.portal-faq-modal-question {
+  color: #212529 !important;
+}
+
+.portal-faq-modal-badge {
+  background-color: rgba(0, 133, 63, 0.08) !important;
+  color: #006b34 !important;
+  border: 1px solid rgba(0, 133, 63, 0.2) !important;
+  font-weight: 500 !important;
+}
+
+.portal-faq-modal-answer {
+  background: #f8f9fa !important;
+  border: 1px solid #e9ecef !important;
+  color: #212529 !important;
+  border-radius: 0.5rem !important;
+}
+
+.portal-faq-modal-footer {
+  background: #fff !important;
+  border-top: 1px solid #e9ecef !important;
+}
+
+/* —— Public portal dark theme —— */
+[data-portal-theme="dark"] .portal-faq-panel {
+  background: rgba(30, 41, 59, 0.72) !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-header {
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%) !important;
+  border-bottom-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-title-text {
+  color: #e2e8f0 !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-search-addon {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-search-input {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-item-card {
+  background: rgba(15, 23, 42, 0.55) !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-item-card:hover {
+  border-color: #64748b !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-question-text {
+  color: #f1f5f9 !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-snippet {
+  color: #94a3b8 !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-nav-btn {
+  background: rgba(30, 41, 59, 0.85) !important;
+  color: #86efac !important;
+  border-color: rgba(52, 211, 153, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-modal-content {
+  border-color: rgba(71, 85, 105, 0.5) !important;
+  background: rgba(30, 41, 59, 0.96) !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-modal-body {
+  background: rgba(30, 41, 59, 0.92) !important;
+  color: #e2e8f0;
+}
+
+[data-portal-theme="dark"] .portal-faq-modal-question {
+  color: #f1f5f9 !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-modal-answer {
+  background: rgba(15, 23, 42, 0.65) !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-modal-footer {
+  background: rgba(30, 41, 59, 0.95) !important;
+  border-top-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+[data-portal-theme="dark"] .portal-faq-modal-content .modal-header.portal-faq-modal-header .btn-close {
+  background-color: rgba(248, 250, 252, 0.95) !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+}

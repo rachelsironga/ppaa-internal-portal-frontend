@@ -1,6 +1,5 @@
 import axios from "axios";
 import { ACCESS_TOKEN, API_BASE_URL, REFRESH_TOKEN } from "./Costants";
-import { jwtDecode } from "jwt-decode";
 import showLoginDialog from "./pages/authentication/loginModal";
 import Swal from "sweetalert2";
 
@@ -19,7 +18,13 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(ACCESS_TOKEN);
     config.headers.Accept = "application/json";
-    if (token) {
+    const u = config.url || "";
+    const publicAuthPath =
+      u.includes("/user/login") ||
+      u.includes("/user/register") ||
+      u.includes("/user/new_login") ||
+      u.includes("/user/forgot-password");
+    if (token && !publicAuthPath) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -39,8 +44,10 @@ api.interceptors.response.use(
     if (
       originalRequest?.url?.includes("/user/login") ||
       originalRequest?.url?.includes("/user/register") ||
+      originalRequest?.url?.includes("/user/new_login") ||
       originalRequest?.url?.includes("/user/refresh") ||
       originalRequest?.url?.includes("/user/logout") ||
+      originalRequest?.url?.includes("/user/forgot-password") ||
       originalRequest?.url?.includes("/token/")
     ) {
       return Promise.reject(error);
@@ -66,7 +73,7 @@ api.interceptors.response.use(
         if (!isRefreshing) {
           console.log("----------->Token refresh initiated.");
           isRefreshing = true;
-          refreshPromise = checkAuthStatus()
+          refreshPromise = refreshToken()
             .then((ok) => ok)
             .finally(() => {
               isRefreshing = false;
@@ -208,28 +215,6 @@ api.interceptors.response.use(
 // );
 
 
-
-const checkAuthStatus = async () => {
-  const accessToken = localStorage.getItem(ACCESS_TOKEN);
-
-  if (!accessToken) {
-    logout();
-    return false;
-  }
-
-  try {
-    const decoded = jwtDecode(accessToken);
-    const tokenExpiration = decoded.exp;
-    const now = Date.now() / 1000;
-
-    if (tokenExpiration < now) await refreshToken();
-
-    return true;
-  } catch (error) {
-    logout();
-    return false;
-  }
-};
 
 const refreshToken = async () => {
   const refreshToken = localStorage.getItem(REFRESH_TOKEN);

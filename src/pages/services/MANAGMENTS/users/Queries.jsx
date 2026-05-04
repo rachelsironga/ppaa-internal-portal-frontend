@@ -1,8 +1,5 @@
-import axios from "axios";
 import { API_BASE_URL } from "../../../../Costants";
 import api from "../../../../api";
-
-const API_URL = `${API_BASE_URL}/user/setup`;
 
 const config = {
     headers: {
@@ -44,12 +41,12 @@ export const createUpdateUser = async (userData) => {
     }
 };
 
-export const deleteUser = async (id) => {
+export const deleteUser = async (guid) => {
     try {
-        const response = await axios.delete(`${API_URL}/${id}`);
+        const response = await api.delete(`${API_BASE_URL}/user/setup/${guid}`);
         return response.data;
     } catch (error) {
-        console.error("Error deleting directory:", error);
+        console.error("Error deleting user:", error);
         throw error;
     }
 };
@@ -93,6 +90,23 @@ export const createUpdatePositions = async (positionData) => {
         return response.data;
     } catch (error) {
         console.error(`Error while changing Position:`, error);
+        throw error;
+    }
+};
+
+export const getUserStatistics = async () => {
+    try {
+        // Fetch all users with a large page size to get counts
+        const response = await api.get(
+            `${API_BASE_URL}/user/setup`,
+            {
+                headers: { "Content-Type": "application/json" },
+                params: { page: 1, page_size: 10000 } // Large page size to get all users
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching user statistics:", error);
         throw error;
     }
 };

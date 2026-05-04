@@ -86,8 +86,8 @@ const DualListSelect = ({
     setLoadingLeftOnline(true);
     try {
       const results = await searchMethod(searchValue);
-      // Expecting results as array of { value, label }
-      setOnlineLeftOptions(results || []);
+      // Parent may set state only; accept explicit return array too
+      setOnlineLeftOptions(Array.isArray(results) ? results : []);
     } catch (err) {
       setOnlineLeftOptions([]);
     } finally {
@@ -120,6 +120,8 @@ const DualListSelect = ({
     setSelectedRight([]);
   }, [clearTrigger]);
 
+  const normRight = normalize(rightOptions);
+
   return (
     <div className="row">
       <div className="col-sm-5">
@@ -145,6 +147,7 @@ const DualListSelect = ({
 
       <div className="col-sm-2 text-center d-flex flex-column justify-content-center">
         <button
+          type="button"
           className="btn btn-success btn-sm mb-3"
           onClick={handleAssign}
           title="Assign selected items"
@@ -153,6 +156,7 @@ const DualListSelect = ({
           <i className="bx bx-right-arrow-alt"></i>
         </button>
         <button
+          type="button"
           className="btn btn-danger btn-sm"
           onClick={handleRemove}
           title="Remove selected items"
@@ -171,9 +175,13 @@ const DualListSelect = ({
           menuIsOpen
           closeMenuOnSelect={false}
           className="select2-selection fetched-select2"
-          options={rightOptions}
-          value={selectedRight}
-          onChange={setSelectedRight}
+          options={normRight}
+          value={normalize(selectedRight)}
+          onChange={(selected) =>
+            setSelectedRight(normalize(selected || []))
+          }
+          getOptionValue={(o) => o.value}
+          getOptionLabel={(o) => o.label}
           styles={selectStyles}
           placeholder="Selected items..."
         />

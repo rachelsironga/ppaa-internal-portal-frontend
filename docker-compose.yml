@@ -1,20 +1,22 @@
+# SPA: map host port (e.g. 8091) in your stack; LAN default http://192.168.1.4:8091 (see backend network_defaults / .env.example)
+# (Port 8000 is the Django API, not this container.)
 services:
   frontend:
-    image: mnh-connect-frontend
-    container_name: frontend-container
+    image: ppaa-portal-frontend
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - ./:/app
-      - /app/node_modules
-    networks:
-      - mnh-network
+      args:
+        # Default: mirror.gcr.io (Google mirror). Override if DNS blocks gcr, e.g. public.ecr.aws/... or node:18-alpine
+        NODE_IMAGE: ${DOCKER_NODE_IMAGE:-mirror.gcr.io/library/node:18-alpine}
+        NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-mirror.gcr.io/library/nginx:alpine}
+    # Image already contains /usr/share/nginx/html from build; no bind mount needed to serve.
     ports:
-      - "8091:80"
+      - "3000:80"
     restart: unless-stopped
 
-
 networks:
-  mnh-network:
+  ppaa-network:
     external: true
+
+

@@ -3,6 +3,8 @@ import React from "react";
 import { createRoot } from "react-dom/client"; // Import createRoot
 import { Provider, useSelector } from "react-redux";
 import store from "../../redux/store";
+import { API_BASE_URL } from "../../Costants";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../Costants";
 
 const showLoginDialog = () => {
     return new Promise((resolve, reject) => {
@@ -48,8 +50,6 @@ const showLoginDialog = () => {
                 if (loading) return;
                 setLoading(true);
 
-
-
                 try {
                     const username = user?.data?.username;
                     if (!username) {
@@ -69,9 +69,9 @@ const showLoginDialog = () => {
                     });
                     setLoading(false);
 
-                    if (response.status === 200) {
-                        localStorage.setItem("accessToken", response.data.data.access_token);
-                        localStorage.setItem("refreshToken", response.data.data.refresh_token);
+                    if (response.status === 200 || response.data.status === 8000) {
+                        localStorage.setItem(ACCESS_TOKEN, response.data.data.access_token);
+                        localStorage.setItem(REFRESH_TOKEN, response.data.data.refresh_token);
                         closeModal();
                         resolve(true);
                     } else {

@@ -32,7 +32,7 @@ export const ClinicImportModal = () => {
                 text: "You're about to import clinics from the Excel file. Do you want to proceed?",
                 icon: "info",
                 showCancelButton: true,
-                confirmButtonColor: "#696cff",
+                confirmButtonColor: "#00853f",
                 cancelButtonColor: "#aaa",
                 confirmButtonText: "Confirm Import",
             });

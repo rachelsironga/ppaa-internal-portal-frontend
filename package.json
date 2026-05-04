@@ -1,5 +1,5 @@
 {
-  "name": "e_approval",
+  "name": "ppaa_internal_portal",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -23,6 +23,8 @@
     "dompurify": "^3.3.0",
     "formik": "^2.4.6",
     "framer-motion": "^12.23.26",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.3",
     "jwt-decode": "^4.0.0",
     "localforage": "^1.10.0",
     "lodash.debounce": "^4.0.8",
@@ -46,6 +48,7 @@
     "react-super-responsive-table": "^6.0.2",
     "react-toastify": "^11.0.5",
     "reactstrap": "^9.2.3",
+    "recharts": "^3.7.0",
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
     "redux-thunk": "^3.1.0",

@@ -1,62 +1,39 @@
-import eApprovalMenu from "./eApprovalMenu.json";
-import ictAssetsMenu from "./ictAssetsMenu.json";
-import oxygenMenu from "./oxygeServiceMenu.json";
-import defaultMenu from "./defaultMenu.json";
-import analyticsMenu from "./analyticsMenu.json";
+import ppaaInternalPortalMenu from "./ppaaInternalPortal.json";
 import maoniMenu from "./maoniMenu.json";
-import externalReferralMenu from "./externalReferralMenu.json";
-
-import trainingMenu from "./trainingMenu.json";
+import performanceDashboardMenu from "./performanceDashboardMenu.json";
+import reportManagementMenu from "./reportManagementMenu.json";
 
 // Add new services here without touching Sidebar.js
 const servicesConfig = [
     {
-        id: "e-approval",
-        name: "E-Approval",
-        link: "/mnh-connect",
-        menu: eApprovalMenu
+        id: "internal-portal",
+        name: "Internal Portal",
+        link: "/ppaa-internal-portal",
+        menu: ppaaInternalPortalMenu
     },
     {
-        id: "ict-assets",
-        name: "ICT Assets",
-        link: "/ict-assets",
-        menu: ictAssetsMenu
-    },
-    {
-        id: "oxygen-management",
-        name: "Oxygen Management",
-        link: "/oxygen-management",
-        menu: oxygenMenu
-    },
-    {
-        id: "hospital-analytics",
-        name: "Hospital Analytics",
-        link: "/analytics",
-        menu: analyticsMenu
-    },
-    {
-        id: "mnh-maoni",
-        name: "MNH Maoni",
-        link: "/mnh-maoni",
+        id: "ppaa-maoni",
+        name: "PPAA Maoni",
+        link: "/ppaa-maoni",
         menu: maoniMenu
     },
     {
-        id: "external-referral",
-        name: "External Referral",
-        link: "/external-referral",
-        menu: externalReferralMenu
+        id: "performance-dashboard",
+        name: "Strategic Performance",
+        link: "/performance-dashboard",
+        menu: performanceDashboardMenu
     },
     {
-        id: "training",
-        name: "Training Management",
-        link: "/training",
-        menu: trainingMenu
+        id: "report-management",
+        name: "Reports Management",
+        link: "/report-management",
+        menu: reportManagementMenu
     },
     {
-        id: "default-menu",
-        name: "MNH Connect",
-        link: "/default",
-        menu: defaultMenu
+        id: "help-desk",
+        name: "Help Desk",
+        link: "/help-desk",
+        menu: []
     }
 ];
 

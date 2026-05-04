@@ -300,7 +300,7 @@ const ReferralModal = ({ referral = null, onSuccess, onClose }) => {
                         {/* Loading State */}
                         {loading && (
                             <div className="text-center py-5">
-                                <ReactLoading type="cylon" color="#696cff" height={50} width={50} className="mx-auto" />
+                                <ReactLoading type="cylon" color="#00853f" height={50} width={50} className="mx-auto" />
                                 <p className="text-muted mt-3">Searching for patient...</p>
                             </div>
                         )}

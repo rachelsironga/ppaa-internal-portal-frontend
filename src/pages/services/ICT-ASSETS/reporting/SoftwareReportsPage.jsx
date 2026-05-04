@@ -1001,7 +1001,7 @@ const ExpiringReport = ({ data }) => {
 const LicenseDistributionChart = ({ data }) => {
     const total = data.reduce((sum, item) => sum + item.count, 0);
     const colors = [
-        "#696cff",
+        "#00853f",
         "#71dd37",
         "#ffab00",
         "#03c3ec",

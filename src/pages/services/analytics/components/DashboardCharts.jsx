@@ -34,7 +34,7 @@ export const StatCard = ({ title, value, icon, color, subtitle, percentage }) =>
 
 export const DoughnutChart = ({ data, labelKey = 'name', valueKey = 'value' }) => {
     const total = data.reduce((sum, item) => sum + (item[valueKey] || 0), 0);
-    const colors = ['#696cff', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3'];
+    const colors = ['#00853f', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3'];
 
     return (
         <div className="doughnut-chart">
@@ -293,7 +293,7 @@ export const PaymentDistributionChart = ({ data }) => {
         );
     }
 
-    const colors = ['#696cff', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3', '#233446'];
+    const colors = ['#00853f', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3', '#233446'];
 
     return (
         <div className="payment-distribution">
@@ -333,7 +333,7 @@ export const PaymentDistributionChart = ({ data }) => {
 
 export const PieChart = ({ data, labelKey = 'name', valueKey = 'value' }) => {
     const total = data.reduce((sum, item) => sum + (item[valueKey] || 0), 0);
-    const colors = ['#696cff', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3', '#233446'];
+    const colors = ['#00853f', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3', '#233446'];
 
     if (total === 0) {
         return (
@@ -522,7 +522,7 @@ export const HistogramChart = ({ data, labelKey = 'name', valueKey = 'value', co
     }
 
     const maxValue = Math.max(...data.map(item => item[valueKey] || 0));
-    const colors = ['#696cff', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3', '#233446', '#9055fd', '#28c76f', '#ea5455'];
+    const colors = ['#00853f', '#71dd37', '#ffab00', '#03c3ec', '#ff3e1d', '#8592a3', '#233446', '#9055fd', '#28c76f', '#ea5455'];
 
     return (
         <div className="histogram-chart">
@@ -630,7 +630,7 @@ export const GrowthHistogramChart = ({ data, labelKey = 'name', currentKey = 'cu
                                     style={{
                                         flex: 1,
                                         height: `${Math.max(currHeight * 1.6, 4)}px`,
-                                        backgroundColor: '#696cff',
+                                        backgroundColor: '#00853f',
                                         minHeight: '4px',
                                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                         cursor: 'pointer'

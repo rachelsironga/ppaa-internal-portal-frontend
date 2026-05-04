@@ -1,5 +1,11 @@
+# Override via compose build.args / .env (DOCKER_NODE_IMAGE / DOCKER_NGINX_IMAGE) or --build-arg.
+# Defaults use mirror.gcr.io (Google mirror of Docker Official Images). Set DOCKER_* to ECR or Hub if needed.
+
+ARG NODE_IMAGE=mirror.gcr.io/library/node:18-alpine
+ARG NGINX_IMAGE=mirror.gcr.io/library/nginx:alpine
+
 # ---- Stage 1: Build the React app ----
-FROM node:18-alpine AS builder
+FROM ${NODE_IMAGE} AS builder
 
 WORKDIR /app
 
@@ -12,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # ---- Stage 2: Serve with Nginx ----
-FROM nginx:alpine
+FROM ${NGINX_IMAGE}
 
 # Remove default nginx html
 RUN rm -rf /usr/share/nginx/html/*
@@ -27,4 +33,3 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
-

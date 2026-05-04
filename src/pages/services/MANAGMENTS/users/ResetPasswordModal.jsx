@@ -7,7 +7,6 @@ import { DirectoryContext } from "../../../../utils/context";
 import { createUpdateDepartment } from "../department/Queries";
 import Select from "react-select";
 import { hasAccess } from "../../../../hooks/AccessHandler";
-import FormikSelect from "../../../../components/ui-templates/form-components/FormikSelect";
 import { useSelector } from "react-redux";
 
 export const ResetPasswordModal = () => {
@@ -200,7 +199,6 @@ export const ResetPasswordModal = () => {
 
 export const DirectoryDepartmentModal = () => {
   const {
-    selectedObj,
     setTableRefresh,
     selectedDepartment,
     setSelectedDepartment,
@@ -212,13 +210,11 @@ export const DirectoryDepartmentModal = () => {
     code: selectedDepartment?.code || "",
     description: selectedDepartment?.description || "",
     is_active: selectedDepartment?.is_active ?? true,
-    directory_uid: selectedObj?.uid || "",
   };
 
   const validationSchema = Yup.object().shape({
     name: Yup.string().required("Name is required"),
     code: Yup.string().required("Code is required"),
-    directory_uid: Yup.string().required("Directory is required"),
   });
 
   const handleSubmit = async (
@@ -228,11 +224,9 @@ export const DirectoryDepartmentModal = () => {
     try {
       if (
         !hasAccess(user, [
-          "view_directory",
-          "can_add_directory",
-          "can_update_directory",
-          "add_directory",
-          "change_directory",
+          "add_department",
+          "can_add_department",
+          "can_delete_department",
         ])
       ) {
         showToast(
@@ -293,7 +287,7 @@ export const DirectoryDepartmentModal = () => {
         data-bs-toggle="modal"
         data-bs-target="#viewCreateDataModal"
       >
-        <i className="bx bx-edit-alt me-1"></i> Add Directory's Department
+        <i className="bx bx-edit-alt me-1"></i> Add Department
       </button>
 
       <div
@@ -323,33 +317,9 @@ export const DirectoryDepartmentModal = () => {
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
             >
-              {({ isSubmitting, values, setFieldValue }) => (
+              {({ isSubmitting }) => (
                 <Form>
                   <div className="modal-body">
-                    <div className="row">
-                      <FormikSelect
-                        name="directory_uid"
-                        label="Directory"
-                        url="/directory"
-                        containerClass="col-md-12 mb-3"
-                        filters={{
-                          page: 1,
-                          page_size: 10,
-                          paginated: true,
-                        }}
-                        mapOption={(item) => ({
-                          value: item.uid,
-                          label: `${item.name}`,
-                          name: `${item.name}`,
-                          code: `${item.code}`,
-                        })}
-                        placeholder="Search Directory ..."
-                        debounceMs={500}
-                        minChars={3}
-                        isReadOnly={false}
-                      />
-                    </div>
-
                     <div className="row">
                       <div className="col mb-3">
                         <label htmlFor="nameLarge" className="form-label">

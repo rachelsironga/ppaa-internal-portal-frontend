@@ -11,6 +11,7 @@ import "react-form-wizard-component/dist/style.css";
 export const UserModal = ({ loadOnlyModal = false }) => {
   const { selectedObj, setSelectedObj, tableRefresh, setTableRefresh } =
     useContext(UsersContext);
+  const editSuccessRef = useRef(false);
 
   //for Wizard tab validation & Control
   const [errors, setOtherError] = useState({});
@@ -24,14 +25,21 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     .toISOString()
     .split("T")[0];
 
+  const existingUserId = selectedObj?.guid || selectedObj?.uid || "";
+  const isEditingUser = Boolean(existingUserId);
+  const rawDob = selectedObj?.dob;
+  const dobForInput =
+    rawDob != null && String(rawDob).trim() !== ""
+      ? String(rawDob).slice(0, 10)
+      : defaultDobISO;
+
   const initialValues = {
-    user_guid: selectedObj?.guid || "",
-    pf_number: selectedObj?.pf_number || "",
+    user_guid: existingUserId,
     check_number: selectedObj?.check_number || "",
     first_name: selectedObj?.first_name || "",
     middle_name: selectedObj?.middle_name || "",
     last_name: selectedObj?.last_name || "",
-    dob: selectedObj?.dob || defaultDobISO,
+    dob: dobForInput,
     sex: selectedObj?.sex || "",
 
     email: selectedObj?.email || "",
@@ -41,7 +49,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   };
 
   const validationSchema = Yup.object().shape({
-    pf_number: Yup.string().required("pf number is required"),
     check_number: Yup.string().required("check number is required"),
     first_name: Yup.string().required("first name is required"),
     middle_name: Yup.string().required("middle name is required"),
@@ -64,18 +71,31 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      if (selectedObj) {
-        values.user_guid = selectedObj.guid;
+      const userGuid =
+        selectedObj?.guid ??
+        selectedObj?.uid ??
+        values.user_guid ??
+        "";
+      const isEdit = Boolean(String(userGuid || "").trim());
+      const payload = { ...values };
+      if (isEdit) {
+        const gid = String(userGuid).trim();
+        payload.user_guid = gid;
+        payload.guid = gid;
       } else {
-        delete values.user_guid;
+        delete payload.user_guid;
+        delete payload.guid;
       }
       setSubmitting(true);
-      const result = await createUpdateUser(values);
+      const result = await createUpdateUser(payload);
 
       if (result.status === 200 || result.status === 8000) {
         showToast("Data Saved Successfuly", "success", "Complete");
         if (!selectedObj) {
           resetForm();
+        } else {
+          editSuccessRef.current = true;
+          if (result.data) setSelectedObj(result.data);
         }
         handleClose();
         setTableRefresh((prev) => prev + 1);
@@ -99,8 +119,12 @@ export const UserModal = ({ loadOnlyModal = false }) => {
 
   //for closing modal
   const handleClose = () => {
-    console.log("Modal closed");
-    setSelectedObj(null);
+    // User detail page (Open.jsx) keeps `selectedObj` as the viewed user; do not
+    // clear it on modal close or the page shows "Error Loading User".
+    if (!loadOnlyModal && !editSuccessRef.current) {
+      setSelectedObj(null);
+    }
+    editSuccessRef.current = false;
     setIsFirstTabChange(true);
     const modalElement = document.getElementById("viewCreateUserModal");
     const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -111,7 +135,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   const validateTab = async (values, setFieldError, setTouched) => {
     try {
       if (tabIndex === 1) {
-        await validationSchema.validateAt("pf_number", values);
         await validationSchema.validateAt("check_number", values);
         await validationSchema.validateAt("first_name", values);
         await validationSchema.validateAt("middle_name", values);
@@ -199,17 +222,25 @@ export const UserModal = ({ loadOnlyModal = false }) => {
       >
         <div className="modal-dialog modal-lg" role="document">
           <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="exampleModalLabel3">
-                Create New User{" "}
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={handleClose}
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
+            <div className="modal-header flex-column align-items-stretch gap-1">
+              <div className="d-flex w-100 align-items-center justify-content-between">
+                <h5 className="modal-title mb-0" id="exampleModalLabel3">
+                  {isEditingUser ? "Edit User" : "Create New User"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleClose}
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              {isEditingUser && (
+                <p className="text-muted small mb-0 pe-4">
+                  Update this user&apos;s profile. The same wizard is used as for
+                  create, but your changes apply to the existing account.
+                </p>
+              )}
             </div>
             <Formik
               enableReinitialize
@@ -228,9 +259,10 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                 setTouched,
               }) => (
                 <Form>
+                  <Field type="hidden" name="user_guid" />
                   <FormWizard
                     shape="circle"
-                    color="#696cff"
+                    color="#00853f"
                     stepSize="xs"
                     onTabChange={({ prevIndex, nextIndex }) => {
                       setTabIndex(nextIndex);
@@ -292,7 +324,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                           </>
                         ) : (
                           <>
-                            <i className="bx bx-save"></i> &nbsp;Save User
+                            <i className="bx bx-save"></i> &nbsp;
+                            {isEditingUser ? "Save changes" : "Save User"}
                           </>
                         )}
                       </button>
@@ -305,23 +338,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                     >
                       {/* Tab 1 content */}
                       <div className="row text-start">
-                        <div className="col-md-6 mb-3">
-                          <label htmlFor="pfNumberLarge" className="form-label">
-                            PF-Number
-                          </label>
-                          <Field
-                            type="text"
-                            name="pf_number"
-                            id="pfNumberLarge"
-                            className="form-control"
-                            placeholder="Enter PF-Number"
-                          />
-                          <ErrorMessage
-                            name="pf_number"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
                         <div className="col-md-6 mb-3">
                           <label
                             htmlFor="checkNumberLarge"

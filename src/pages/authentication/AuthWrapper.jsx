@@ -9,7 +9,7 @@ export const AuthWrapper = ({ children, maxWidth }) => {
           position: "relative",
           width: "100%",
           height: "100vh",
-          backgroundImage: `linear-gradient(rgba(20, 1, 1, 0.59), rgba(32, 2, 2, 0.65)), url('/assets/img/hospital-mohimbili.jpg')`,
+          backgroundImage: `linear-gradient(rgba(20, 1, 1, 0.59), rgba(32, 2, 2, 0.65)), url('/assets/img/ppaa_bckround image.jpg')`,
           backgroundSize: "110%", // starting slightly zoomed in
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -53,12 +53,12 @@ export const AuthWrapper = ({ children, maxWidth }) => {
                           height={"70px"}
                         />
                       </span>
-                      <span className="app-brand-text demo text-body fw-bold">
-                        MNH-CONNECT
+                      <span className="app-brand-text demo text-body fw-bold " style={{ textTransform: 'uppercase' }}>
+                        PPAA PORTAL
                       </span>
                       <span className="app-brand-logo demo">
                         <img
-                          src="/assets/img/mnhlogo.png"
+                          src="/assets/img/logo.png"
                           alt="sneat-logo"
                           width={"70px"}
                           height={"70px"}

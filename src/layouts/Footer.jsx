@@ -5,9 +5,9 @@ const Footer = () => {
         <div className="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
           <div className="container mb-2 mb-md-0 p-2 text-center">
             <p className="mb-0">
-              Copyright © {new Date().getFullYear()} Muhimbili National
-              Hospital. All Rights Reserved. Designed by the Directorate of ICT.
-              Content Managed by Muhimbili National Hospital
+              Copyright © {new Date().getFullYear()} Public Procurement Appeal Authority
+               . All Rights Reserved. Designed by the Department of Information Technology.
+              Content Managed by Public Procurement Appeal Authority
             </p>
           </div>
           {/* <div className="d-none d-lg-inline-block">

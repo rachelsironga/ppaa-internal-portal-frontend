@@ -41,7 +41,7 @@ export const DirectoryImportModal = ({ loadOnlyModal = false }) => {
         text: "Your About to Import Directory and Departments. Do you want to proceed?",
         icon: "info",
         showCancelButton: true,
-        confirmButtonColor: "#696cff",
+        confirmButtonColor: "#00853f",
         cancelButtonColor: "#aaa",
         confirmButtonText: "Confirm Save",
         customClass: {
