@@ -104,12 +104,6 @@ const Navbar = ({ isService = false, activeService = "" }) => {
     if (pathname.startsWith('/performance-dashboard')) {
       return '/performance-dashboard/profile';
     }
-    if (pathname.startsWith('/ict-assets')) {
-      return '/ict-assets/account/settings';
-    }
-    if (pathname.startsWith('/training')) {
-      return '/training/account/settings';
-    }
     // Default to ppaa-internal-portal
     return '/ppaa-internal-portal/account/settings';
   };
@@ -204,7 +198,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             z-index: 1030;
           }
           
-          #${navbarId} .mnh-nav-content {
+          #${navbarId} .ppaa-nav-content {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -214,7 +208,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           /* Left Section - Controls */
-          #${navbarId} .mnh-nav-controls {
+          #${navbarId} .ppaa-nav-controls {
             display: flex;
             align-items: center;
             gap: 20px;
@@ -222,7 +216,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             flex: 1 1 auto;
           }
           
-          #${navbarId} .mnh-mobile-menu-btn {
+          #${navbarId} .ppaa-mobile-menu-btn {
             background: none;
             border: none;
             color: #5a6a85;
@@ -236,17 +230,17 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: all 0.2s ease;
           }
           
-          #${navbarId} .mnh-mobile-menu-btn:hover {
+          #${navbarId} .ppaa-mobile-menu-btn:hover {
             background: rgba(0, 133, 63, 0.08);
             color: #00853f;
           }
           
           /* Quick Access Button */
-          #${navbarId} .mnh-quick-access-container {
+          #${navbarId} .ppaa-quick-access-container {
             position: relative;
           }
           
-          #${navbarId} .mnh-quick-access-btn {
+          #${navbarId} .ppaa-quick-access-btn {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border: 1.5px solid rgba(0, 133, 63, 0.28);
             border-radius: 12px;
@@ -263,14 +257,14 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             box-shadow: 0 2px 8px rgba(0, 133, 63, 0.08);
           }
           
-          #${navbarId} .mnh-quick-access-btn:hover {
+          #${navbarId} .ppaa-quick-access-btn:hover {
             background: linear-gradient(135deg, #f0faf4 0%, #e8f5e9 100%);
             border-color: rgba(0, 133, 63, 0.5);
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 133, 63, 0.14);
           }
           
-          #${navbarId} .mnh-quick-access-btn:active {
+          #${navbarId} .ppaa-quick-access-btn:active {
             transform: translateY(0);
           }
           
@@ -301,7 +295,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             }
           }
           
-          #${servicesDropdownId} .mnh-dropdown-header {
+          #${servicesDropdownId} .ppaa-dropdown-header {
             padding: 20px;
             background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 38%, #00853f 100%);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -309,7 +303,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             overflow: hidden;
           }
           
-          #${servicesDropdownId} .mnh-dropdown-header::before {
+          #${servicesDropdownId} .ppaa-dropdown-header::before {
             content: '';
             position: absolute;
             top: 0;
@@ -325,7 +319,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             100% { transform: translateX(100%); }
           }
           
-          #${servicesDropdownId} .mnh-dropdown-title {
+          #${servicesDropdownId} .ppaa-dropdown-title {
             font-size: 16px;
             font-weight: 700;
             color: white;
@@ -334,24 +328,24 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             position: relative;
           }
           
-          #${servicesDropdownId} .mnh-dropdown-subtitle {
+          #${servicesDropdownId} .ppaa-dropdown-subtitle {
             font-size: 12px;
             color: rgba(255, 255, 255, 0.95);
             position: relative;
           }
           
-          #${servicesDropdownId} .mnh-search-container {
+          #${servicesDropdownId} .ppaa-search-container {
             padding: 20px;
             background: linear-gradient(135deg, #f8fafc 0%, #ecf8ed 100%);
             border-bottom: 1px solid rgba(0, 133, 63, 0.1);
             position: relative;
           }
           
-          #${servicesDropdownId} .mnh-search-input-wrapper {
+          #${servicesDropdownId} .ppaa-search-input-wrapper {
             position: relative;
           }
           
-          #${servicesDropdownId} .mnh-search-input {
+          #${servicesDropdownId} .ppaa-search-input {
             width: 100%;
             padding: 12px 16px 12px 45px;
             background: white;
@@ -363,14 +357,14 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             box-shadow: 0 2px 10px rgba(0, 133, 63, 0.06);
           }
           
-          #${servicesDropdownId} .mnh-search-input:focus {
+          #${servicesDropdownId} .ppaa-search-input:focus {
             outline: none;
             border-color: #00853f;
             box-shadow: 0 0 0 3px rgba(0, 133, 63, 0.18), 0 4px 20px rgba(0, 133, 63, 0.15);
             transform: scale(1.02);
           }
           
-          #${servicesDropdownId} .mnh-search-icon {
+          #${servicesDropdownId} .ppaa-search-icon {
             position: absolute;
             left: 16px;
             top: 50%;
@@ -380,12 +374,12 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: all 0.3s ease;
           }
           
-          #${servicesDropdownId} .mnh-search-input:focus + .mnh-search-icon {
+          #${servicesDropdownId} .ppaa-search-input:focus + .ppaa-search-icon {
             color: #006b34;
             transform: translateY(-50%) scale(1.1);
           }
           
-          #${servicesDropdownId} .mnh-services-grid {
+          #${servicesDropdownId} .ppaa-services-grid {
             max-height: 320px;
             overflow-y: auto;
             padding: 16px;
@@ -395,7 +389,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             background: linear-gradient(135deg, #fafcfb 0%, #f4faf5 100%);
           }
           
-          #${servicesDropdownId} .mnh-service-item {
+          #${servicesDropdownId} .ppaa-service-item {
             background: white;
             border: 2px solid transparent;
             border-radius: 14px;
@@ -410,7 +404,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
           }
           
-          #${servicesDropdownId} .mnh-service-item::before {
+          #${servicesDropdownId} .ppaa-service-item::before {
             content: '';
             position: absolute;
             top: 0;
@@ -422,22 +416,22 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: opacity 0.3s ease;
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover {
+          #${servicesDropdownId} .ppaa-service-item:hover {
             transform: translateY(-4px) scale(1.02);
             border-image: linear-gradient(135deg, #b9d9b7, #3da66a, #00853f) 1;
             box-shadow: 0 12px 30px rgba(0, 133, 63, 0.15), 0 0 20px rgba(61, 166, 106, 0.12);
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover::before {
+          #${servicesDropdownId} .ppaa-service-item:hover::before {
             opacity: 1;
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-icon {
+          #${servicesDropdownId} .ppaa-service-item:hover .ppaa-service-icon {
             background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 45%, #00853f 100%);
             transform: rotate(12deg) scale(1.15);
           }
           
-          #${servicesDropdownId} .mnh-service-icon {
+          #${servicesDropdownId} .ppaa-service-icon {
             width: 40px;
             height: 40px;
             border-radius: 12px;
@@ -451,7 +445,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             overflow: hidden;
           }
           
-          #${servicesDropdownId} .mnh-service-icon::after {
+          #${servicesDropdownId} .ppaa-service-icon::after {
             content: '';
             position: absolute;
             top: -50%;
@@ -464,12 +458,12 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             opacity: 0;
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-icon::after {
+          #${servicesDropdownId} .ppaa-service-item:hover .ppaa-service-icon::after {
             opacity: 1;
             transform: rotate(45deg) translate(50%, 50%);
           }
           
-          #${servicesDropdownId} .mnh-service-icon i {
+          #${servicesDropdownId} .ppaa-service-icon i {
             font-size: 18px;
             background: linear-gradient(135deg, #5aaf78 0%, #00853f 100%);
             -webkit-background-clip: text;
@@ -480,18 +474,18 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             z-index: 1;
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-icon i {
+          #${servicesDropdownId} .ppaa-service-item:hover .ppaa-service-icon i {
             -webkit-text-fill-color: white;
             background: none;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
           }
           
-          #${servicesDropdownId} .mnh-service-content {
+          #${servicesDropdownId} .ppaa-service-content {
             flex: 1;
             min-width: 0;
           }
           
-          #${servicesDropdownId} .mnh-service-name {
+          #${servicesDropdownId} .ppaa-service-name {
             font-size: 14px;
             font-weight: 700;
             color: #1e293b;
@@ -503,12 +497,12 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             background-clip: text;
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-name {
+          #${servicesDropdownId} .ppaa-service-item:hover .ppaa-service-name {
             -webkit-text-fill-color: #00853f;
             background: none;
           }
           
-          #${servicesDropdownId} .mnh-service-category {
+          #${servicesDropdownId} .ppaa-service-category {
             font-size: 11px;
             color: #64748b;
             font-weight: 500;
@@ -525,20 +519,20 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
           
-          #${servicesDropdownId} .mnh-service-item:hover .mnh-service-arrow {
+          #${servicesDropdownId} .ppaa-service-item:hover .ppaa-service-arrow {
             opacity: 1;
             color: #00853f;
             transform: translateX(0);
           }
           
-          #${servicesDropdownId} .mnh-dropdown-footer {
+          #${servicesDropdownId} .ppaa-dropdown-footer {
             padding: 20px;
             background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
             border-top: 1px solid rgba(255, 255, 255, 0.2);
             text-align: center;
           }
           
-          #${servicesDropdownId} .mnh-view-all-btn {
+          #${servicesDropdownId} .ppaa-view-all-btn {
             width: 100%;
             background: rgba(255, 255, 255, 0.95);
             border: none;
@@ -558,14 +552,14 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             overflow: hidden;
           }
           
-          #${servicesDropdownId} .mnh-view-all-btn:hover {
+          #${servicesDropdownId} .ppaa-view-all-btn:hover {
             background: white;
             color: #006b34;
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 133, 63, 0.2);
           }
           
-          #${servicesDropdownId} .mnh-view-all-btn::before {
+          #${servicesDropdownId} .ppaa-view-all-btn::before {
             content: '';
             position: absolute;
             top: 0;
@@ -576,12 +570,12 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: left 0.6s ease;
           }
           
-          #${servicesDropdownId} .mnh-view-all-btn:hover::before {
+          #${servicesDropdownId} .ppaa-view-all-btn:hover::before {
             left: 100%;
           }
           
           /* Right Section - User Info */
-          #${navbarId} .mnh-nav-right {
+          #${navbarId} .ppaa-nav-right {
             display: flex;
             align-items: center;
             gap: 16px;
@@ -597,7 +591,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           /* User Profile Compact */
-          #${navbarId} .mnh-user-profile-compact {
+          #${navbarId} .ppaa-user-profile-compact {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -610,14 +604,14 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             border: 1.5px solid rgba(0, 133, 63, 0.2);
           }
           
-          #${navbarId} .mnh-user-profile-compact:hover {
+          #${navbarId} .ppaa-user-profile-compact:hover {
             background: linear-gradient(135deg, #ecf8ed 0%, #d4eed8 100%);
             border-color: rgba(0, 133, 63, 0.45);
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(0, 133, 63, 0.12);
           }
           
-          #${navbarId} .mnh-user-avatar {
+          #${navbarId} .ppaa-user-avatar {
             width: 38px;
             height: 38px;
             border-radius: 10px;
@@ -633,24 +627,24 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: all 0.3s ease;
           }
           
-          #${navbarId} .mnh-user-profile-compact:hover .mnh-user-avatar {
+          #${navbarId} .ppaa-user-profile-compact:hover .ppaa-user-avatar {
             transform: rotate(8deg) scale(1.1);
             box-shadow: 0 6px 20px rgba(0, 133, 63, 0.38);
           }
           
-          #${navbarId} .mnh-user-avatar img {
+          #${navbarId} .ppaa-user-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
           }
           
-          #${navbarId} .mnh-user-info-compact {
+          #${navbarId} .ppaa-user-info-compact {
             display: flex;
             flex-direction: column;
             gap: 2px;
           }
           
-          #${navbarId} .mnh-user-name {
+          #${navbarId} .ppaa-user-name {
             font-size: 13px;
             font-weight: 700;
             color: #1e293b;
@@ -663,7 +657,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
 
           }
           
-          #${navbarId} .mnh-user-designation {
+          #${navbarId} .ppaa-user-designation {
             font-size: 11.5px;
             text-transform: uppercase;
             color: #64748b;
@@ -674,18 +668,18 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             background-clip: text;
           }
           
-          #${navbarId} .mnh-user-chevron {
+          #${navbarId} .ppaa-user-chevron {
             color: #94a3b8;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
           
-          #${navbarId} .mnh-user-profile-compact.active .mnh-user-chevron {
+          #${navbarId} .ppaa-user-profile-compact.active .ppaa-user-chevron {
             transform: rotate(180deg);
             color: #00853f;
           }
           
           /* Notification Button */
-          #${navbarId} .mnh-notification-btn {
+          #${navbarId} .ppaa-notification-btn {
             position: relative;
             background: none;
             border: none;
@@ -702,7 +696,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             border: 1.5px solid rgba(0, 133, 63, 0.15);
           }
           
-          #${navbarId} .mnh-notification-btn:hover {
+          #${navbarId} .ppaa-notification-btn:hover {
             background: linear-gradient(135deg, #ecf8ed 0%, #d4eed8 100%);
             border-color: rgba(0, 133, 63, 0.4);
             color: #00853f;
@@ -710,7 +704,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             box-shadow: 0 6px 20px rgba(0, 133, 63, 0.12);
           }
           
-          #${navbarId} .mnh-notification-badge {
+          #${navbarId} .ppaa-notification-badge {
             position: absolute;
             top: 8px;
             right: 8px;
@@ -729,7 +723,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           /* Active Service Badge */
-          #${navbarId} .mnh-active-service-badge {
+          #${navbarId} .ppaa-active-service-badge {
             background: linear-gradient(135deg, #b9d9b7 0%, #3da66a 42%, #00853f 100%);
             color: white;
             padding: 4px 12px;
@@ -747,23 +741,23 @@ const Navbar = ({ isService = false, activeService = "" }) => {
           }
           
           /* Scrollbar Styling */
-          #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar {
+          #${servicesDropdownId} .ppaa-services-grid::-webkit-scrollbar {
             width: 6px;
           }
           
-          #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar-track {
+          #${servicesDropdownId} .ppaa-services-grid::-webkit-scrollbar-track {
             background: rgba(0, 133, 63, 0.06);
             border-radius: 3px;
           }
           
-          #${servicesDropdownId} .mnh-services-grid::-webkit-scrollbar-thumb {
+          #${servicesDropdownId} .ppaa-services-grid::-webkit-scrollbar-thumb {
             background: linear-gradient(135deg, #7bc49a 0%, #00853f 100%);
             border-radius: 3px;
           }
 
 
 
-           #${navbarId} .mnh-sidebar-toggle-btn {
+           #${navbarId} .ppaa-sidebar-toggle-btn {
             background: none;
             border: none;
             color: #5a6a85;
@@ -777,18 +771,18 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             transition: all 0.2s ease;
           }
           
-          #${navbarId} .mnh-sidebar-toggle-btn:hover {
+          #${navbarId} .ppaa-sidebar-toggle-btn:hover {
             background: rgba(0, 133, 63, 0.08);
             color: #00853f;
           }
           
-          #${navbarId} .mnh-sidebar-toggle-btn i {
+          #${navbarId} .ppaa-sidebar-toggle-btn i {
             font-size: 20px;
             transition: transform 0.3s ease;
           }
           
           /* When sidebar is collapsed, rotate the icon */
-          body.menu-collapsed #${navbarId} .mnh-sidebar-toggle-btn i {
+          body.menu-collapsed #${navbarId} .ppaa-sidebar-toggle-btn i {
             transform: rotate(180deg);
           }
           
@@ -798,11 +792,11 @@ const Navbar = ({ isService = false, activeService = "" }) => {
               padding: 10px 16px;
             }
             
-            #${navbarId} .mnh-nav-controls {
+            #${navbarId} .ppaa-nav-controls {
               gap: 12px;
             }
             
-            #${navbarId} .mnh-quick-access-btn {
+            #${navbarId} .ppaa-quick-access-btn {
               padding: 8px 12px;
               font-size: 13px;
             }
@@ -817,15 +811,15 @@ const Navbar = ({ isService = false, activeService = "" }) => {
               width: 380px;
             }
             
-            #${navbarId} .mnh-user-name {
+            #${navbarId} .ppaa-user-name {
               display: none;
             }
             
-            #${navbarId} .mnh-user-designation {
+            #${navbarId} .ppaa-user-designation {
               display: none;
             }
             
-            #${navbarId} .mnh-user-profile-compact {
+            #${navbarId} .ppaa-user-profile-compact {
               padding: 6px;
             }
           }
@@ -845,11 +839,11 @@ const Navbar = ({ isService = false, activeService = "" }) => {
               width: 280px;
             }
             
-            #${navbarId} .mnh-quick-access-btn span:first-child {
+            #${navbarId} .ppaa-quick-access-btn span:first-child {
               display: none;
             }
             
-            #${navbarId} .mnh-quick-access-btn {
+            #${navbarId} .ppaa-quick-access-btn {
               padding: 8px;
             }
           }
@@ -858,24 +852,24 @@ const Navbar = ({ isService = false, activeService = "" }) => {
 
       <div id={navbarId}>
         <nav className="ppaa-navbar-main navbar-detached  container-fluid">
-          <div className="mnh-nav-content">
+          <div className="ppaa-nav-content">
             {/* Left Section - Controls */}
-            <div className="mnh-nav-controls">
+            <div className="ppaa-nav-controls">
               {/* Mobile Menu Button */}
-              <button className="mnh-mobile-menu-btn d-xl-none layout-menu-toggle menu-link text-large ms-auto d-block">
+              <button className="ppaa-mobile-menu-btn d-xl-none layout-menu-toggle menu-link text-large ms-auto d-block">
                 <Menu size={20} />
               </button>
 
               {/* Quick Access Services */}
-              <div className="mnh-quick-access-container" ref={dropdownRef}>
+              <div className="ppaa-quick-access-container" ref={dropdownRef}>
                 <button
-                  className="mnh-quick-access-btn"
+                  className="ppaa-quick-access-btn"
                   onClick={() => setShowDropdown(!showDropdown)}
                 >
                   <Grid3x3 size={18} />
                   <span>Services</span>
                   {activeService && (
-                    <span className="mnh-active-service-badge">
+                    <span className="ppaa-active-service-badge">
                       {activeService
                         .split("-")
                         .map(
@@ -884,28 +878,28 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                         .join(" ")}
                     </span>
                   )}
-                  <ChevronDown size={14} className="mnh-user-chevron" />
+                  <ChevronDown size={14} className="ppaa-user-chevron" />
                 </button>
 
                 {/* Services Dropdown */}
                 {showDropdown && (
                   <div id={servicesDropdownId}>
-                    <div className="mnh-dropdown-header">
-                      <div className="mnh-dropdown-title">
+                    <div className="ppaa-dropdown-header">
+                      <div className="ppaa-dropdown-title">
                         Quick Access Services
                       </div>
-                      <div className="mnh-dropdown-subtitle">
+                      <div className="ppaa-dropdown-subtitle">
                         Select a service to navigate instantly
                       </div>
                     </div>
 
-                    <div className="mnh-search-container">
-                      <div className="mnh-search-input-wrapper">
-                        <Search className="mnh-search-icon" size={16} />
+                    <div className="ppaa-search-container">
+                      <div className="ppaa-search-input-wrapper">
+                        <Search className="ppaa-search-icon" size={16} />
                         <input
                           ref={searchRef}
                           type="text"
-                          className="mnh-search-input"
+                          className="ppaa-search-input"
                           placeholder="Search services..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
@@ -913,39 +907,39 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                       </div>
                     </div>
 
-                    <div className="mnh-services-grid">
+                    <div className="ppaa-services-grid">
                       {filteredServices.map((service, idx) => (
                         <div
                           key={idx}
-                          className="mnh-service-item"
+                          className="ppaa-service-item"
                           onClick={() => handleServiceClick(service)}
                           onMouseEnter={() => setHoveredService(idx)}
                           onMouseLeave={() => setHoveredService(null)}
                         >
-                          <div className="mnh-service-icon">
+                          <div className="ppaa-service-icon">
                             <i className={service.icon}></i>
                           </div>
-                          <div className="mnh-service-content">
-                            <div className="mnh-service-name">
+                          <div className="ppaa-service-content">
+                            <div className="ppaa-service-name">
                               {service.text}
                             </div>
                             {service.category && (
-                              <div className="mnh-service-category">
+                              <div className="ppaa-service-category">
                                 {service.category}
                               </div>
                             )}
                           </div>
                           <ChevronRight
-                            className="mnh-service-arrow"
+                            className="ppaa-service-arrow"
                             size={16}
                           />
                         </div>
                       ))}
                     </div>
 
-                    <div className="mnh-dropdown-footer">
+                    <div className="ppaa-dropdown-footer">
                       <button
-                        className="mnh-view-all-btn"
+                        className="ppaa-view-all-btn"
                         onClick={() => {
                           navigate("/services");
                           setShowDropdown(false);
@@ -961,7 +955,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
             </div>
 
             {/* Right Section - User Info */}
-            <div className="mnh-nav-right">
+            <div className="ppaa-nav-right">
               {location.pathname.startsWith("/ppaa-internal-portal") ? (
                 <div
                   className="portal-nav-theme d-flex align-items-center gap-1 me-1 flex-nowrap"
@@ -1051,29 +1045,29 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                 </div>
               ) : null}
               {/* Notifications */}
-              <button className="mnh-notification-btn">
+              <button className="ppaa-notification-btn">
                 <Bell size={20} />
-                <span className="mnh-notification-badge"></span>
+                <span className="ppaa-notification-badge"></span>
               </button>
 
               {/* User Profile */}
               <div className="profile-dropdown-container" ref={profileRef}>
                 <div
-                  className={`mnh-user-profile-compact ${
+                  className={`ppaa-user-profile-compact ${
                     showProfileDropdown ? "active" : ""
                   }`}
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                 >
-                  <div className="mnh-user-avatar">
+                  <div className="ppaa-user-avatar">
                     {user && user.photo && user.photo.trim() !== "" ? (
                       <img src={user.photo} alt={displayName} />
                     ) : (
                       <User size={20} />
                     )}
                   </div>
-                  <div className="mnh-user-info-compact">
-                    <div className="mnh-user-name">{displayName}</div>
-                    <div className="mnh-user-designation">
+                  <div className="ppaa-user-info-compact">
+                    <div className="ppaa-user-name">{displayName}</div>
+                    <div className="ppaa-user-designation">
                       {(() => {
                         const level =
                           user?.position?.level_name ||
@@ -1085,7 +1079,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
                       })()}
                     </div>
                   </div>
-                  <ChevronDown size={14} className="mnh-user-chevron" />
+                  <ChevronDown size={14} className="ppaa-user-chevron" />
                 </div>
 
                 {/* Profile Dropdown (Kept minimal to avoid CSS conflicts) */}

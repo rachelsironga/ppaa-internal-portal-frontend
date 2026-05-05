@@ -1,16 +1,38 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "animate.css";
 import { formatDate } from "../../../../helpers/DateFormater";
+import Swal from "sweetalert2";
+import { getAllSuggestions, getDepartments } from "../../PPAA-MAONI/Queries";
+import {
+  buildMonthlyTrend,
+  getDashboardRange,
+  inDashboardRange,
+  suggestionActivityDate,
+  toLocalDateString,
+} from "./maoniDashboardDateRange";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { isMaoniAdmin } from "../../../../utils/maoniRoles";
+import MaoniThreadAttentionBanner from "../../../../components/maoni/MaoniThreadAttentionBanner";
+import {
+  buildMaoniReviewerAttentionSummary,
+  maoniSuggestionNeedsReviewerAttention,
+} from "../../../../utils/maoniThreadAttention";
+import {
+  maoniUnderHandlerReviewBadgeClasses,
+  getMaoniUnderHandlerReviewBadgeStyle,
+} from "../../../../utils/maoniUnderHandlerReviewBadge";
 
 // Chart components (using simple div-based charts for demo)
 const BarChart = ({ data, labels, colors, height = 200 }) => {
-  const maxValue = Math.max(...data);
+  const safeData = Array.isArray(data) ? data : [];
+  const maxValue = safeData.length ? Math.max(...safeData) : 0;
 
   return (
     <div className="d-flex align-items-end" style={{ height: `${height}px` }}>
-      {data.map((value, index) => (
+      {safeData.map((value, index) => (
         <div
           key={index}
           className="d-flex flex-column align-items-center mx-1"
@@ -20,7 +42,7 @@ const BarChart = ({ data, labels, colors, height = 200 }) => {
             className="rounded-top"
             style={{
               width: "80%",
-              height: `${(value / maxValue) * 100}%`,
+              height: `${maxValue > 0 ? (value / maxValue) * 100 : 0}%`,
               backgroundColor: colors[index % colors.length],
               minHeight: "10px",
             }}
@@ -43,7 +65,8 @@ const BarChart = ({ data, labels, colors, height = 200 }) => {
 };
 
 const PieChart = ({ data, labels, colors, size = 150 }) => {
-  const total = data.reduce((sum, value) => sum + value, 0);
+  const safeData = Array.isArray(data) ? data : [];
+  const total = safeData.reduce((sum, value) => sum + (Number(value) || 0), 0);
   let cumulativePercent = 0;
 
   return (
@@ -52,7 +75,17 @@ const PieChart = ({ data, labels, colors, size = 150 }) => {
       style={{ width: `${size}px`, height: `${size}px` }}
     >
       <svg width={size} height={size} viewBox="0 0 100 100">
-        {data.map((value, index) => {
+        {total <= 0 ? (
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            fill="transparent"
+            stroke="#e9ecef"
+            strokeWidth="40"
+          />
+        ) : (
+          safeData.map((value, index) => {
           const percent = (value / total) * 100;
           const startPercent = cumulativePercent;
           cumulativePercent += percent;
@@ -71,7 +104,8 @@ const PieChart = ({ data, labels, colors, size = 150 }) => {
               transform="rotate(-90 50 50)"
             />
           );
-        })}
+          })
+        )}
       </svg>
       <div className="position-absolute top-50 start-50 translate-middle text-center">
         <div className="fw-bold">{total}</div>
@@ -82,14 +116,15 @@ const PieChart = ({ data, labels, colors, size = 150 }) => {
 };
 
 const LineChart = ({ data, labels, color = "#0d6efd", height = 200 }) => {
-  const maxValue = Math.max(...data);
-  const pointCount = data.length;
-  const pointWidth = 100 / (pointCount - 1);
+  const safeData = Array.isArray(data) ? data : [];
+  const maxValue = safeData.length ? Math.max(...safeData) : 0;
+  const pointCount = safeData.length;
+  const pointWidth = pointCount > 1 ? 100 / (pointCount - 1) : 0;
 
-  const points = data
+  const points = safeData
     .map((value, index) => {
       const x = index * pointWidth;
-      const y = 100 - (value / maxValue) * 100;
+      const y = maxValue > 0 ? 100 - (value / maxValue) * 100 : 100;
       return `${x},${y}`;
     })
     .join(" ");
@@ -102,10 +137,17 @@ const LineChart = ({ data, labels, color = "#0d6efd", height = 200 }) => {
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
       >
-        <polyline fill="none" stroke={color} strokeWidth="2" points={points} />
-        {data.map((value, index) => {
+        {pointCount > 1 && (
+          <polyline
+            fill="none"
+            stroke={color}
+            strokeWidth="2"
+            points={points}
+          />
+        )}
+        {safeData.map((value, index) => {
           const x = index * pointWidth;
-          const y = 100 - (value / maxValue) * 100;
+          const y = maxValue > 0 ? 100 - (value / maxValue) * 100 : 100;
           return (
             <circle
               key={index}
@@ -123,385 +165,468 @@ const LineChart = ({ data, labels, color = "#0d6efd", height = 200 }) => {
   );
 };
 
-export const ReferralDashboardPage = () => {
+export const MaoniDashboardPage = () => {
   const user = useSelector((state) => state.userReducer?.data);
   const navigate = useNavigate();
-  const [timeRange, setTimeRange] = useState("month");
+  const location = useLocation();
+  const [timeRange, setTimeRange] = useState("all");
   const [activeTab, setActiveTab] = useState("overview");
   const [customDateRange, setCustomDateRange] = useState({
-    start: "2024-01-01",
-    end: "2024-01-31",
+    start: new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10),
+    end: new Date().toISOString().slice(0, 10),
   });
 
-  // Dashboard statistics
+  const isAdmin = isMaoniAdmin(user);
+  const userRoles = (user?.groups || []).map((g) => String(g).toLowerCase().trim());
+  const hasReviewerDashboardRole =
+    userRoles.includes("maoni_reviewer") ||
+    userRoles.includes("maoni_reviewe") ||
+    userRoles.includes("ppaa_maoni_reviewer") ||
+    userRoles.includes("hr");
+  const canAccessDashboard = Boolean(
+    isAdmin || user?.is_superuser || hasReviewerDashboardRole
+  );
+
+  const normalizeWorkflowStatus = (status) => {
+    const raw = String(status || "").toUpperCase();
+    const legacy = {
+      PENDING_REVIEW: "UNDER_HANDLER_REVIEW",
+      UNDER_CONSIDERATION: "ESCALATED_TO_REVIEWER",
+      APPROVED: "CLOSED_APPROVED",
+      IMPLEMENTED: "CLOSED_APPROVED",
+      REJECTED: "CLOSED_REJECTED",
+    };
+    return legacy[raw] || raw;
+  };
+
+  const [loading, setLoading] = useState(true);
+  const [allSuggestionsRaw, setAllSuggestionsRaw] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
-    totalContributions: 156,
-    newThisMonth: 24,
-    pendingReview: 18,
-    implemented: 32,
-    underConsideration: 42,
-    rejected: 28,
-    uniqueContributors: 67,
-    avgResponseTime: "2.5",
-    engagementRate: "43%",
-    satisfactionScore: "4.2",
+    totalContributions: 0,
+    newThisMonth: 0,
+    pendingReview: 0,
+    implemented: 0,
+    underConsideration: 0,
+    rejected: 0,
+    uniqueContributors: 0,
+    avgResponseTime: "—",
+    engagementRate: "—",
+    satisfactionScore: "—",
   });
 
-  // Chart data
+  // Chart data (computed from backend)
   const [contributionTrend, setContributionTrend] = useState({
-    labels: [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ],
-    data: [8, 12, 10, 15, 18, 22, 20, 25, 28, 24, 20, 18],
+    labels: [],
+    data: [],
   });
 
   const [statusDistribution, setStatusDistribution] = useState({
-    labels: [
-      "Implemented",
-      "Under Consideration",
-      "Pending Review",
-      "Rejected",
-    ],
-    data: [32, 42, 18, 28],
-    colors: ["#10b981", "#0ea5e9", "#f59e0b", "#ef4444"],
+    labels: ["Submitted", "Draft"],
+    data: [0, 0],
+    colors: ["#0d6efd", "#f59e0b"],
   });
 
   const [categoryDistribution, setCategoryDistribution] = useState({
-    labels: [
-      "HR Processes",
-      "ICT Infrastructure",
-      "Work Environment",
-      "Administration",
-      "Employee Welfare",
-    ],
-    data: [38, 29, 26, 22, 19],
+    labels: [],
+    data: [],
     colors: ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
   });
 
   const [departmentPerformance, setDepartmentPerformance] = useState({
-    labels: ["ICT", "HR", "Finance", "Operations", "Admin"],
-    data: [8, 10, 6, 3, 5],
+    labels: [],
+    data: [],
     colors: ["#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
   });
 
   const [monthlyEngagement, setMonthlyEngagement] = useState({
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    data: [35, 42, 38, 45, 50, 48],
+    labels: [],
+    data: [],
   });
 
-  // Sample data for all tabs
-  const [allContributions, setAllContributions] = useState([
-    {
-      id: 1,
-      title: "Implement Flexible Working Hours",
-      category: "Work Policy",
-      status: "pending_review",
-      date: "2024-01-15",
-      submittedBy: "anonymous_001",
-      votes: 45,
-      comments: 18,
-      priority: "high",
-      lastAction: "2 days ago",
-      department: "Multiple",
-      description:
-        "Allow flexible start and end times for better work-life balance",
-      estimatedImpact: "High",
-      estimatedCost: "Low",
-    },
-    {
-      id: 2,
-      title: "Upgrade Office Wi-Fi Infrastructure",
-      category: "ICT Infrastructure",
-      status: "under_review",
-      date: "2024-01-14",
-      submittedBy: "anonymous_002",
-      votes: 28,
-      comments: 9,
-      priority: "high",
-      lastAction: "1 day ago",
-      department: "ICT",
-      description:
-        "Replace current Wi-Fi routers with enterprise-grade equipment",
-      estimatedImpact: "High",
-      estimatedCost: "Medium",
-    },
-    {
-      id: 3,
-      title: "Improve Employee Onboarding Process",
-      category: "HR Processes",
-      status: "implemented",
-      date: "2024-01-10",
-      submittedBy: "anonymous_003",
-      votes: 32,
-      comments: 15,
-      priority: "medium",
-      lastAction: "1 week ago",
-      department: "HR",
-      description: "Create structured 30-60-90 day onboarding plan",
-      estimatedImpact: "Medium",
-      estimatedCost: "Low",
-      implementationDate: "2024-01-08",
-    },
-    {
-      id: 4,
-      title: "Implement Paperless Office System",
-      category: "Administration",
-      status: "under_consideration",
-      date: "2024-01-08",
-      submittedBy: "anonymous_004",
-      votes: 41,
-      comments: 22,
-      priority: "medium",
-      lastAction: "3 days ago",
-      department: "Admin",
-      description: "Digitize all internal documentation and approvals",
-      estimatedImpact: "High",
-      estimatedCost: "Medium",
-    },
-    {
-      id: 5,
-      title: "Enhance Cybersecurity Training",
-      category: "ICT Security",
-      status: "pending_review",
-      date: "2024-01-05",
-      submittedBy: "anonymous_005",
-      votes: 19,
-      comments: 7,
-      priority: "high",
-      lastAction: "Just now",
-      department: "ICT",
-      description: "Quarterly cybersecurity awareness workshops",
-      estimatedImpact: "High",
-      estimatedCost: "Low",
-    },
-    {
-      id: 6,
-      title: "Improve Cafeteria Food Options",
-      category: "Employee Welfare",
-      status: "rejected",
-      date: "2024-01-03",
-      submittedBy: "anonymous_006",
-      votes: 56,
-      comments: 31,
-      priority: "low",
-      lastAction: "2 weeks ago",
-      department: "HR",
-      description:
-        "Introduce healthier meal options and dietary accommodations",
-      estimatedImpact: "Medium",
-      estimatedCost: "High",
-      rejectionReason: "Budget constraints for this quarter",
-    },
-    {
-      id: 7,
-      title: "Create Mentorship Program",
-      category: "HR Processes",
-      status: "implemented",
-      date: "2023-12-20",
-      submittedBy: "anonymous_007",
-      votes: 38,
-      comments: 24,
-      priority: "medium",
-      lastAction: "1 month ago",
-      department: "HR",
-      description: "Pair junior staff with senior mentors",
-      estimatedImpact: "High",
-      estimatedCost: "Low",
-      implementationDate: "2024-01-02",
-    },
-    {
-      id: 8,
-      title: "Upgrade Meeting Room Equipment",
-      category: "Facilities",
-      status: "under_consideration",
-      date: "2023-12-15",
-      submittedBy: "anonymous_008",
-      votes: 22,
-      comments: 11,
-      priority: "medium",
-      lastAction: "3 weeks ago",
-      department: "Operations",
-      description: "Install new projectors and video conferencing systems",
-      estimatedImpact: "Medium",
-      estimatedCost: "Medium",
-    },
-  ]);
+  // Real data for contributions tab (mapped from backend)
+  const [allContributions, setAllContributions] = useState([]);
+  const [contribSearch, setContribSearch] = useState("");
+  const [contribPage, setContribPage] = useState(1);
 
-  const [topContributors, setTopContributors] = useState([
-    {
-      id: "anonymous_001",
-      contributions: 14,
-      implemented: 3,
-      active: true,
-      lastContribution: "2024-01-15",
-      avgRating: 4.5,
-    },
-    {
-      id: "anonymous_002",
-      contributions: 12,
-      implemented: 2,
-      active: true,
-      lastContribution: "2024-01-14",
-      avgRating: 4.2,
-    },
-    {
-      id: "anonymous_003",
-      contributions: 9,
-      implemented: 1,
-      active: true,
-      lastContribution: "2024-01-10",
-      avgRating: 4.8,
-    },
-    {
-      id: "anonymous_004",
-      contributions: 8,
+  const CONTRIB_PAGE_SIZE = 10;
+
+  const visibleContributions = useMemo(() => {
+    const query = (contribSearch || "").trim().toLowerCase();
+    if (!query) return allContributions;
+    return allContributions.filter((c) => {
+      const haystack = [
+        c.title,
+        c.category,
+        c.status,
+        c.priority,
+        c.submittedBy,
+        c.department,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [allContributions, contribSearch]);
+
+  const contribTotalPages = Math.max(1, Math.ceil(visibleContributions.length / CONTRIB_PAGE_SIZE));
+  const contribPageClamped = Math.min(Math.max(1, contribPage), contribTotalPages);
+  const visibleContributionsPaginated = useMemo(() => {
+    const start = (contribPageClamped - 1) * CONTRIB_PAGE_SIZE;
+    return visibleContributions.slice(start, start + CONTRIB_PAGE_SIZE);
+  }, [visibleContributions, contribPageClamped]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setContribPage(1);
+  }, [contribSearch]);
+
+  // Report configuration (Reports tab) – controls which sections appear in exported PDF
+  const [reportIncludeCharts, setReportIncludeCharts] = useState(true);
+  const [reportIncludeDetails, setReportIncludeDetails] = useState(true);
+  const [reportIncludeRecommendations, setReportIncludeRecommendations] = useState(true);
+  const [lastReportGenerated, setLastReportGenerated] = useState(null);
+
+  // When returning from suggestion detail (Back to list), open the requested tab (e.g. contributions)
+  useEffect(() => {
+    const tab = location?.state?.activeTab;
+    if (tab && ["overview", "analytics", "contributions", "moderation", "reports"].includes(tab)) {
+      setActiveTab(tab);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location?.state?.activeTab, location?.pathname, navigate]);
+
+  // Keep the visible "From" / "To" date inputs in sync with the selected time range.
+  useEffect(() => {
+    const now = new Date();
+    if (timeRange === "month") {
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      setCustomDateRange({
+        start: toLocalDateString(startDate),
+        end: toLocalDateString(now),
+      });
+    } else if (timeRange === "quarter") {
+      const q = Math.floor(now.getMonth() / 3);
+      const startDate = new Date(now.getFullYear(), q * 3, 1);
+      setCustomDateRange({
+        start: toLocalDateString(startDate),
+        end: toLocalDateString(now),
+      });
+    } else if (timeRange === "year") {
+      const startDate = new Date(now.getFullYear(), 0, 1);
+      setCustomDateRange({
+        start: toLocalDateString(startDate),
+        end: toLocalDateString(now),
+      });
+    }
+    // For "custom" and "all" we do NOT override the inputs.
+  }, [timeRange]);
+
+  // Access control: Executive dashboard is reviewer/admin only.
+  useEffect(() => {
+    if (!user) return;
+    if (canAccessDashboard) return;
+    if (userRoles.includes("maoni_handler")) {
+      navigate("/ppaa-maoni/handler-dashboard", { replace: true });
+      return;
+    }
+    Swal.fire({
+      icon: "warning",
+      title: "Access Denied",
+      text: "You don't have permission to access the Maoni Management Dashboard.",
+      confirmButtonText: "Go Back",
+    }).then(() => navigate(-1));
+  }, [user, userRoles, canAccessDashboard, navigate]);
+
+  // Helper: extract array from API response (handles { status, message, data: [] } and other shapes)
+  const extractList = (res) => {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    // Backend returns { status: 8000, message: "Success", data: [...] }
+    if (res.data !== undefined && Array.isArray(res.data)) return res.data;
+    if (res.data && Array.isArray(res.data.data)) return res.data.data;
+    if (res.data && Array.isArray(res.data.results)) return res.data.results;
+    if (res.results !== undefined && Array.isArray(res.results)) return res.results;
+    return [];
+  };
+
+  // Load backend data and compute dashboard metrics
+  useEffect(() => {
+    const load = async () => {
+      if (!canAccessDashboard) return;
+      setLoading(true);
+      let suggestions = [];
+      let depts = [];
+      try {
+        const suggestionsRes = await getAllSuggestions();
+        suggestions = extractList(suggestionsRes);
+        setAllSuggestionsRaw(suggestions);
+      } catch (e) {
+        console.error("Failed to load Maoni suggestions:", e);
+        Swal.fire({
+          icon: "error",
+          title: "Failed to load suggestions",
+          text: "Unable to fetch Maoni suggestions. Please refresh and try again.",
+        });
+        setAllSuggestionsRaw([]);
+      }
+      try {
+        const departmentsRes = await getDepartments();
+        depts = extractList(departmentsRes);
+        setDepartments(depts);
+      } catch (e) {
+        console.error("Failed to load departments:", e);
+        setDepartments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [canAccessDashboard]);
+
+  const deptByUid = useMemo(() => {
+    return new Map((departments || []).map((d) => [d.uid, d]));
+  }, [departments]);
+
+  useEffect(() => {
+    if (!canAccessDashboard) return;
+    const suggestions = allSuggestionsRaw || [];
+
+    // Time filtering (used by Analytics & Overview)
+    const now = new Date();
+    const parseDate = (s) => {
+      const d = new Date(s || 0);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const { start: rangeStart, end: rangeEnd } = getDashboardRange(
+      timeRange,
+      customDateRange,
+      now
+    );
+    const inRange = (s) => inDashboardRange(s, rangeStart, rangeEnd);
+    const isNotDraft = (s) => normalizeWorkflowStatus(s.status) !== "DRAFT";
+
+    // Exclude drafts from dashboard: leads/admins do not see draft suggestions
+    const scoped = suggestions.filter(inRange).filter(isNotDraft);
+
+    // Basic stats (all scoped are non-draft)
+    const total = scoped.length;
+    const submitted = scoped.filter((s) => {
+      const st = normalizeWorkflowStatus(s.status);
+      return (
+        st === "SUBMITTED" ||
+        st === "UNDER_HANDLER_REVIEW" ||
+        st === "ESCALATED_TO_REVIEWER" ||
+        st === "RETURNED_TO_HANDLER" ||
+        st === "HANDLER_RESPONDED_TO_REVIEWER"
+      );
+    }).length;
+    const drafts = 0;
+
+    const contributorIds = new Set(
+      scoped.map((s) => s.submitted_by_id).filter((x) => x != null)
+    );
+
+    // New this month: within current KPI set (scoped), activity in current calendar month
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const newThisMonth = scoped.filter((s) => {
+      const d = suggestionActivityDate(s);
+      return d && d >= monthStart && d <= now;
+    }).length;
+
+    setDashboardStats((prev) => ({
+      ...prev,
+      totalContributions: total,
+      newThisMonth,
+      pendingReview: 0,
       implemented: 0,
-      active: false,
-      lastContribution: "2023-12-20",
-      avgRating: 3.9,
-    },
-    {
-      id: "anonymous_005",
-      contributions: 7,
-      implemented: 2,
-      active: true,
-      lastContribution: "2024-01-05",
-      avgRating: 4.1,
-    },
-    {
-      id: "anonymous_006",
-      contributions: 6,
-      implemented: 1,
-      active: true,
-      lastContribution: "2024-01-03",
-      avgRating: 4.3,
-    },
-    {
-      id: "anonymous_007",
-      contributions: 5,
-      implemented: 2,
-      active: true,
-      lastContribution: "2023-12-28",
-      avgRating: 4.6,
-    },
-  ]);
+      underConsideration: 0,
+      rejected: 0,
+      uniqueContributors: contributorIds.size,
+      engagementRate: total > 0 ? `${Math.round((contributorIds.size / total) * 100)}%` : "0%",
+    }));
 
-  const [departmentStats, setDepartmentStats] = useState([
-    {
-      name: "ICT Department",
-      contributions: 42,
-      implemented: 8,
-      pending: 12,
-      engagement: "65%",
-      avgRating: 4.3,
-    },
-    {
-      name: "HR Department",
-      contributions: 38,
-      implemented: 10,
-      pending: 8,
-      engagement: "72%",
-      avgRating: 4.5,
-    },
-    {
-      name: "Finance",
-      contributions: 24,
-      implemented: 6,
-      pending: 4,
-      engagement: "58%",
-      avgRating: 4.1,
-    },
-    {
-      name: "Operations",
-      contributions: 22,
-      implemented: 3,
-      pending: 7,
-      engagement: "61%",
-      avgRating: 4.0,
-    },
-    {
-      name: "Administration",
-      contributions: 19,
-      implemented: 5,
-      pending: 2,
-      engagement: "54%",
-      avgRating: 4.2,
-    },
-    {
-      name: "Marketing",
-      contributions: 15,
-      implemented: 3,
-      pending: 5,
-      engagement: "48%",
-      avgRating: 3.9,
-    },
-    {
-      name: "Sales",
-      contributions: 12,
-      implemented: 2,
-      pending: 3,
-      engagement: "52%",
-      avgRating: 4.0,
-    },
-  ]);
+    // Status distribution (Submitted vs Draft)
+    setStatusDistribution((prev) => ({
+      ...prev,
+      data: [submitted, drafts],
+    }));
 
-  const [moderationQueue, setModerationQueue] = useState([
-    {
-      id: 1,
-      title: "Implement 4-Day Work Week",
-      category: "Work Policy",
-      date: "2024-01-16",
-      submittedBy: "anonymous_009",
-      priority: "high",
-      urgency: "New",
-      flags: ["High Impact", "Policy Change"],
-      reviewTime: "48h",
-    },
-    {
-      id: 5,
-      title: "Enhance Cybersecurity Training",
-      category: "ICT Security",
-      date: "2024-01-05",
-      submittedBy: "anonymous_005",
-      priority: "high",
-      urgency: "Overdue",
-      flags: ["Security Related", "High Votes"],
-      reviewTime: "120h",
-    },
-    {
-      id: 9,
-      title: "Introduce Remote Work Stipend",
-      category: "Employee Benefits",
-      date: "2024-01-18",
-      submittedBy: "anonymous_010",
-      priority: "medium",
-      urgency: "New",
-      flags: ["Budget Impact"],
-      reviewTime: "24h",
-    },
-    {
-      id: 10,
-      title: "Update Performance Review System",
-      category: "HR Processes",
-      date: "2024-01-17",
-      submittedBy: "anonymous_011",
-      priority: "medium",
-      urgency: "Normal",
-      flags: ["Process Improvement"],
-      reviewTime: "72h",
-    },
-  ]);
+    // Category distribution (top 5 by category_name)
+    const byCategory = new Map();
+    for (const s of scoped) {
+      const name = s.category_name || "Uncategorized";
+      byCategory.set(name, (byCategory.get(name) || 0) + 1);
+    }
+    const topCats = Array.from(byCategory.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    setCategoryDistribution((prev) => ({
+      ...prev,
+      labels: topCats.map(([k]) => k),
+      data: topCats.map(([, v]) => v),
+    }));
+
+    // Department performance (top 5 by count)
+    const byDept = new Map();
+    for (const s of scoped) {
+      const deptName = s.department_uid
+        ? deptByUid.get(s.department_uid)?.name || "Unknown"
+        : "—";
+      byDept.set(deptName, (byDept.get(deptName) || 0) + 1);
+    }
+    const topDepts = Array.from(byDept.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    setDepartmentPerformance((prev) => ({
+      ...prev,
+      labels: topDepts.map(([k]) => k),
+      data: topDepts.map(([, v]) => v),
+    }));
+
+    const trend = buildMonthlyTrend(scoped, rangeStart, rangeEnd, now);
+    setContributionTrend({ labels: trend.labels, data: trend.data });
+    setMonthlyEngagement({ labels: trend.labels, data: trend.data });
+
+    // Contributions table data (map + sort)
+    const mapped = scoped
+      .slice()
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .map((s) => ({
+        id: s.uid,
+        title: s.title,
+        category: s.category_name || "Uncategorized",
+        status: String(s.status || "").toLowerCase(),
+        date: s.submitted_at || s.created_at,
+        submittedBy: s.submitted_by_name || "Anonymous",
+        votes: 0,
+        comments: s.comment_count || 0,
+        priority: String(s.priority || "MEDIUM").toLowerCase(),
+        lastAction: s.updated_at ? formatDate(s.updated_at, "DD/MM/YYYY") : "—",
+        department: s.department_uid
+          ? deptByUid.get(s.department_uid)?.name || "Unknown"
+          : "—",
+        description: s.description || "",
+      }));
+    setAllContributions(mapped);
+
+    // Department stats table (based on scoped data)
+    const deptAgg = new Map();
+    for (const s of scoped) {
+      const name = s.department_uid
+        ? deptByUid.get(s.department_uid)?.name || "Unknown"
+        : "—";
+      const key = name;
+      const entry = deptAgg.get(key) || { name: key, contributions: 0, submitted: 0, drafts: 0 };
+      entry.contributions += 1;
+      const st = String(s.status || "").toUpperCase();
+      if (st === "DRAFT") entry.drafts += 1;
+      else entry.submitted += 1;
+      deptAgg.set(key, entry);
+    }
+    const deptRows = Array.from(deptAgg.values())
+      .sort((a, b) => b.contributions - a.contributions)
+      .slice(0, 10)
+      .map((d) => ({
+        ...d,
+        submitRate: d.contributions > 0 ? Math.round((d.submitted / d.contributions) * 100) : 0,
+      }));
+    setDepartmentStats(deptRows);
+
+    // Top contributors (based on submitted_by_id)
+    const contributorAgg = new Map();
+    for (const s of scoped) {
+      const id = s.submitted_by_id != null ? String(s.submitted_by_id) : "anonymous";
+      const name = s.submitted_by_name || "Anonymous";
+      const key = `${id}`;
+      const entry = contributorAgg.get(key) || {
+        id: key,
+        name,
+        contributions: 0,
+        submitted: 0,
+        drafts: 0,
+        lastContribution: null,
+      };
+      entry.contributions += 1;
+      const st = String(s.status || "").toUpperCase();
+      if (st === "DRAFT") entry.drafts += 1;
+      else entry.submitted += 1;
+      const d = parseDate(s.created_at || s.submitted_at || s.updated_at);
+      if (d && (!entry.lastContribution || d > entry.lastContribution)) {
+        entry.lastContribution = d;
+      }
+      contributorAgg.set(key, entry);
+    }
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const top = Array.from(contributorAgg.values())
+      .sort((a, b) => b.contributions - a.contributions)
+      .slice(0, 10)
+      .map((c) => ({
+        displayName: c.name || c.id,
+        submittedById: c.id !== "anonymous" ? c.id : null,
+        contributions: c.contributions,
+        implemented: 0,
+        successRate: c.contributions > 0 ? Math.round((c.submitted / c.contributions) * 100) : 0,
+        avgRating: null,
+        lastContribution: c.lastContribution ? c.lastContribution.toISOString() : null,
+        active: c.lastContribution ? c.lastContribution >= thirtyDaysAgo : false,
+      }));
+    setTopContributors(top);
+
+    // Moderation queue (latest submitted, top 5 by newest)
+    const moderation = scoped
+      .filter((s) => normalizeWorkflowStatus(s.status) === "UNDER_HANDLER_REVIEW")
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.submitted_at || b.created_at) -
+          new Date(a.submitted_at || a.created_at)
+      )
+      .slice(0, 10)
+      .map((s) => {
+        const created = parseDate(s.submitted_at || s.created_at) || now;
+        const ageHours = Math.round((now - created) / (1000 * 60 * 60));
+        const urgency = ageHours >= 72 ? "Overdue" : ageHours >= 24 ? "Normal" : "New";
+        return {
+          id: s.uid,
+          title: s.title,
+          category: s.category_name || "Uncategorized",
+          date: s.submitted_at || s.created_at,
+          submittedBy: s.submitted_by_name || "Anonymous",
+          priority: String(s.priority || "medium").toLowerCase(),
+          urgency,
+          flags: [String(s.priority || "MEDIUM").toUpperCase(), urgency],
+          reviewTime: `${ageHours}h`,
+        };
+      });
+    setModerationQueue(moderation);
+  }, [allSuggestionsRaw, canAccessDashboard, deptByUid, timeRange, customDateRange.start, customDateRange.end]);
+
+  const [topContributors, setTopContributors] = useState([]);
+  const [departmentStats, setDepartmentStats] = useState([]);
+  const [moderationQueue, setModerationQueue] = useState([]);
+
+  // Moderation stats derived from queue (backend only has SUBMITTED/DRAFT; no approve/reject yet)
+  const moderationStats = useMemo(() => {
+    const total = moderationQueue.length;
+    const high = moderationQueue.filter((i) => (i.priority || "").toLowerCase() === "high").length;
+    const medium = moderationQueue.filter((i) => (i.priority || "").toLowerCase() === "medium").length;
+    const low = moderationQueue.filter((i) => (i.priority || "").toLowerCase() === "low").length;
+    const urgent = moderationQueue.filter((i) => (i.priority || "").toLowerCase() === "urgent").length;
+    const highTotal = high + urgent;
+    return {
+      pending: total,
+      high: highTotal,
+      medium,
+      low,
+      highPct: total > 0 ? Math.round((highTotal / total) * 100) : 0,
+      mediumPct: total > 0 ? Math.round((medium / total) * 100) : 0,
+      lowPct: total > 0 ? Math.round((low / total) * 100) : 0,
+    };
+  }, [moderationQueue]);
 
   const [systemSettings, setSystemSettings] = useState({
     anonymity: true,
@@ -526,35 +651,59 @@ export const ReferralDashboardPage = () => {
   });
 
   const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "implemented":
-        return "bg-success-subtle text-success border-success";
-      case "under_review":
-      case "under_consideration":
+    const s = String(normalizeWorkflowStatus(status) || "").toLowerCase();
+    switch (s) {
+      case "submitted":
         return "bg-primary-subtle text-primary border-primary";
-      case "pending_review":
+      case "under_handler_review":
+        return maoniUnderHandlerReviewBadgeClasses;
+      case "returned_to_handler":
+      case "handler_responded_to_reviewer":
         return "bg-warning-subtle text-warning border-warning";
-      case "rejected":
+      case "escalated_to_reviewer":
+        return "bg-info-subtle text-info border-info";
+      case "closed_approved":
+        return "bg-success-subtle text-success border-success";
+      case "closed_rejected":
         return "bg-danger-subtle text-danger border-danger";
+      case "draft":
+        return "bg-warning-subtle text-warning border-warning";
       default:
         return "bg-secondary-subtle text-secondary border-secondary";
     }
   };
 
+  const getStatusBadgeStyle = (status) => {
+    const s = String(normalizeWorkflowStatus(status) || "").toLowerCase();
+    if (s === "under_handler_review") {
+      return getMaoniUnderHandlerReviewBadgeStyle();
+    }
+    return undefined;
+  };
+
   const getStatusText = (status) => {
-    switch (status) {
-      case "implemented":
-        return "Implemented";
-      case "under_review":
-        return "Under Review";
-      case "under_consideration":
-        return "Under Consideration";
-      case "pending_review":
-        return "Pending Review";
-      case "rejected":
-        return "Rejected";
+    const s = String(normalizeWorkflowStatus(status) || "").toLowerCase();
+    switch (s) {
+      case "submitted":
+        return "Submitted";
+      case "under_handler_review":
+        return "Under Handler Review";
+      case "escalated_to_reviewer":
+        return "Escalated to Reviewer";
+      case "returned_to_handler":
+        return "Returned to Handler";
+      case "handler_responded_to_reviewer":
+        return "Handler Responded to Reviewer";
+      case "handler_responded_to_contributor":
+        return "Handler Responded to Contributor";
+      case "closed_approved":
+        return "Closed - Approved";
+      case "closed_rejected":
+        return "Closed - Rejected";
+      case "draft":
+        return "Draft";
       default:
-        return status.replace("_", " ").toUpperCase();
+        return String(status || "").replaceAll("_", " ").toUpperCase();
     }
   };
 
@@ -584,93 +733,362 @@ export const ReferralDashboardPage = () => {
     }
   };
 
-  const handleExportData = () => {
-    const reportData = {
-      dateGenerated: new Date().toISOString(),
-      timeRange,
-      customDateRange,
-      statistics: dashboardStats,
-      contributions: allContributions,
-      topContributors,
-      departmentStats,
-      charts: {
-        contributionTrend,
-        statusDistribution,
-        categoryDistribution,
-      },
-    };
+  // Export only the Top Contributors list as a PDF table
+  const handleExportTopContributors = () => {
+    try {
+      if (!topContributors || topContributors.length === 0) {
+        Swal.fire({
+          icon: "info",
+          title: "No data to export",
+          text: "There are no top contributors to export for the selected period.",
+        });
+        return;
+      }
 
-    const dataStr = JSON.stringify(reportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `maoni-report-${formatDate(
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 14;
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("Maoni Top Contributors List", pageWidth / 2, y, { align: "center" });
+      y += 10;
+
+      // Period and generated time
+      const rangeLabel =
+        timeRange === "month"
+          ? "This Month"
+          : timeRange === "quarter"
+          ? "This Quarter"
+          : timeRange === "year"
+          ? "This Year"
+          : timeRange === "all"
+          ? "All time"
+          : "Custom";
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Period: ${rangeLabel} (${customDateRange.start} to ${customDateRange.end})`,
+        14,
+        y
+      );
+      y += 6;
+      doc.text(
+        `Generated: ${formatDate(new Date().toISOString(), "DD/MM/YYYY HH:mm")}`,
+        14,
+        y
+      );
+      y += 10;
+
+      // Table
+      const body = topContributors.map((c) => {
+        const submittedCount = Math.round(
+          (c.contributions * (c.successRate || 0)) / 100
+        );
+        return [
+          c.displayName || "—",
+          String(c.contributions ?? "0"),
+          String(submittedCount ?? "0"),
+          `${c.successRate || 0}%`,
+          c.lastContribution ? formatDate(c.lastContribution, "DD/MM/YY") : "—",
+          c.active ? "Active" : "Inactive",
+        ];
+      });
+
+      doc.autoTable({
+        startY: y,
+        head: [
+          [
+            "Contributor",
+            "Total Contributions",
+            "Submitted",
+            "Success Rate",
+            "Last Active",
+            "Status",
+          ],
+        ],
+        body,
+        theme: "grid",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [13, 110, 253] },
+        columnStyles: {
+          0: { cellWidth: 55 }, // Contributor
+          1: { cellWidth: 25 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 30 },
+          5: { cellWidth: 25 },
+        },
+        margin: { left: 14 },
+      });
+
+      const fileName = `maoni-top-contributors-${formatDate(
       new Date().toISOString(),
       "YYYY-MM-DD"
-    )}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      )}.pdf`;
+      doc.save(fileName);
 
-    alert("Report exported successfully!");
+      Swal.fire({
+        icon: "success",
+        title: "Top contributors exported",
+        text: "The top contributors list has been downloaded as PDF.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      console.error("Top contributors PDF export error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Export failed",
+        text: err?.message || "Could not generate the top contributors PDF.",
+      });
+    }
+  };
+
+  const handleExportData = (options = {}) => {
+    let includeCharts = options.includeCharts ?? reportIncludeCharts;
+    let includeDetails = options.includeDetails ?? reportIncludeDetails;
+    let includeRecommendations = options.includeRecommendations ?? reportIncludeRecommendations;
+    if (!includeCharts && !includeDetails && !includeRecommendations) {
+      Swal.fire({
+        icon: "info",
+        title: "Select sections",
+        text: "Include at least one section (Key Statistics, Detailed list, or Recommendations) for the report.",
+      });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 14;
+
+      const rangeLabel =
+        timeRange === "month"
+          ? "This Month"
+          : timeRange === "quarter"
+          ? "This Quarter"
+          : timeRange === "year"
+          ? "This Year"
+          : timeRange === "all"
+          ? "All time"
+          : "Custom";
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("Maoni Management Report", pageWidth / 2, y, { align: "center" });
+      y += 10;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Period: ${rangeLabel} (${customDateRange.start} to ${customDateRange.end})`,
+        14,
+        y
+      );
+      y += 6;
+      doc.text(
+        `Generated: ${formatDate(new Date().toISOString(), "DD/MM/YYYY HH:mm")}`,
+        14,
+        y
+      );
+      y += 12;
+
+      if (includeCharts) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Key Statistics", 14, y);
+        y += 8;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Total Contributions: ${dashboardStats.totalContributions}`, 14, y);
+        y += 6;
+        doc.text(`New This Month: ${dashboardStats.newThisMonth}`, 14, y);
+        y += 6;
+        doc.text(`Unique Contributors: ${dashboardStats.uniqueContributors}`, 14, y);
+        y += 6;
+        doc.text(`Engagement Rate: ${dashboardStats.engagementRate}`, 14, y);
+        y += 14;
+      }
+
+      if (includeDetails) {
+        if (y > 240) {
+          doc.addPage();
+          y = 14;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("All Contributions", 14, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        const contribRows = allContributions.length
+          ? allContributions.map((c) => [
+              c.title || "—",
+              c.category || "—",
+              c.status || "—",
+              formatDate(c.date, "DD/MM/YY"),
+              c.submittedBy || "—",
+            ])
+          : [["No contributions in this period.", "—", "—", "—", "—"]];
+        doc.autoTable({
+          startY: y,
+          head: [["Title", "Category", "Status", "Date", "Submitted By"]],
+          body: contribRows,
+          theme: "grid",
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [13, 110, 253] },
+          columnStyles: {
+            0: { cellWidth: 90 },
+            1: { cellWidth: 28 },
+            2: { cellWidth: 22 },
+            3: { cellWidth: 22 },
+            4: { cellWidth: 28 },
+          },
+          margin: { left: 14 },
+        });
+        y = doc.lastAutoTable.finalY + 12;
+
+        if (y > 240) {
+          doc.addPage();
+          y = 14;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Top Contributors", 14, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        const topRows = topContributors.slice(0, 10).map((t) => [
+          t.displayName || "—",
+          t.contributions,
+          `${t.successRate || 0}%`,
+          t.lastContribution ? formatDate(t.lastContribution, "DD/MM/YY") : "—",
+        ]);
+        doc.autoTable({
+          startY: y,
+          head: [["Name", "Contributions", "Success Rate", "Last Active"]],
+          body: topRows.length ? topRows : [["No data"]],
+          theme: "grid",
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [13, 110, 253] },
+        });
+        y = doc.lastAutoTable.finalY + 12;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Department Summary", 14, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        const deptRows = departmentStats.slice(0, 10).map((d) => [
+          d.name || "—",
+          d.contributions,
+          d.submitted,
+          d.drafts,
+          `${d.submitRate || 0}%`,
+        ]);
+        doc.autoTable({
+          startY: y,
+          head: [["Department", "Total", "Submitted", "Drafts", "Submit Rate"]],
+          body: deptRows.length ? deptRows : [["No data"]],
+          theme: "grid",
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [13, 110, 253] },
+        });
+        y = doc.lastAutoTable.finalY + 12;
+      }
+
+      if (includeRecommendations) {
+        if (y > 250) {
+          doc.addPage();
+          y = 14;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Recommendations", 14, y);
+        y += 8;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        const bullets = [];
+        if (moderationQueue.length > 0) {
+          bullets.push(`• Review ${moderationQueue.length} item(s) in the Moderation queue.`);
+        }
+        if (dashboardStats.totalContributions > 0) {
+          bullets.push(`• Engagement rate this period: ${dashboardStats.engagementRate}.`);
+        }
+        bullets.push("• Use the Suggestions detail page to reply to contributors.");
+        bullets.push("• Export this report regularly for records.");
+        bullets.forEach((line) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 14;
+          }
+          doc.text(line, 14, y);
+          y += 6;
+        });
+      }
+
+      const fileName = `maoni-report-${formatDate(new Date().toISOString(), "YYYY-MM-DD")}.pdf`;
+      doc.save(fileName);
+      setLastReportGenerated({
+        name: options.reportName || "Custom Report",
+        type: options.reportName || "Custom",
+        range: `${customDateRange.start} to ${customDateRange.end}`,
+        generated: new Date().toISOString(),
+      });
+      Swal.fire({
+        icon: "success",
+        title: "Report exported",
+        text: `PDF (${rangeLabel}) downloaded. Data from current Maoni backend.`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      console.error("PDF export error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Export failed",
+        text: err?.message || "Could not generate PDF. Please try again.",
+      });
+    }
   };
 
   const handleGenerateReport = (type = "detailed") => {
-    const reportTypes = {
+    const presets = {
       detailed: {
-        title: "Detailed Analytics Report",
-        sections: [
-          "Executive Summary",
-          "Contribution Trends",
-          "Category Analysis",
-          "Department Performance",
-          "Top Contributors",
-          "Recommendations",
-        ],
+        includeCharts: true,
+        includeDetails: true,
+        includeRecommendations: true,
+        reportName: "Detailed Analytics Report",
       },
       executive: {
-        title: "Executive Summary Report",
-        sections: [
-          "Key Metrics",
-          "Success Stories",
-          "Areas for Improvement",
-          "Strategic Recommendations",
-        ],
+        includeCharts: true,
+        includeDetails: false,
+        includeRecommendations: true,
+        reportName: "Executive Summary",
       },
       operational: {
-        title: "Operational Report",
-        sections: [
-          "Moderation Queue",
-          "Response Times",
-          "Implementation Status",
-          "Action Items",
-        ],
+        includeCharts: true,
+        includeDetails: true,
+        includeRecommendations: true,
+        reportName: "Operational Report",
       },
     };
-
-    const report = reportTypes[type] || reportTypes.detailed;
-
-    alert(
-      `Generating ${report.title}...\n\nSections:\n${report.sections.join(
-        "\n"
-      )}\n\nThe report has been queued for generation and will be available for download shortly.`
-    );
+    const preset = presets[type] || presets.detailed;
+    handleExportData(preset);
   };
 
   const handleQuickAction = (action) => {
     switch (action) {
       case "review_pending":
-        navigate("/mnh-connect/admin/maoni/pending");
+        navigate("/ppaa-internal-portal/admin/maoni/pending");
         break;
       case "add_category":
-        navigate("/mnh-connect/admin/maoni/categories/new");
+        navigate("/ppaa-internal-portal/admin/maoni/categories/new");
         break;
       case "generate_report":
-        handleGenerateReport("detailed");
+        handleExportData();
         break;
       case "settings":
-        navigate("/mnh-connect/admin/maoni/settings");
+        navigate("/ppaa-internal-portal/admin/maoni/settings");
         break;
       case "view_analytics":
         setActiveTab("analytics");
@@ -684,16 +1102,129 @@ export const ReferralDashboardPage = () => {
       ...prev,
       [name]: value,
     }));
-
-    if (name === "end") {
-      // Simulate data refresh based on date range
+    // Switch to custom when either date changes so getRange() uses customDateRange
       setTimeRange("custom");
-      alert(`Loading data for ${customDateRange.start} to ${value}`);
-    }
   };
 
+  const handleModerationBulkAction = (action) => {
+    Swal.fire({
+      icon: "info",
+      title: "Review individually",
+      text:
+        action === "approve"
+          ? "Backend currently supports DRAFT and SUBMITTED only. Use 'Review' on each row to open the suggestion and reply. Approve/reject status can be added when the backend supports it."
+          : "Use 'Review' on each row to open the suggestion. Reject/approve status will be available when the backend adds those statuses.",
+    });
+  };
+
+  const currentUserId = user?.id ?? user?.user_id ?? user?.pk ?? null;
+
+  const reviewerAttentionItems = useMemo(() => {
+    if (currentUserId == null || !canAccessDashboard) return [];
+    const raw = allSuggestionsRaw || [];
+    return raw
+      .filter((s) => maoniSuggestionNeedsReviewerAttention(s, currentUserId))
+      .sort(
+        (a, b) =>
+          new Date(b.last_comment_at || b.updated_at || 0) -
+          new Date(a.last_comment_at || a.updated_at || 0)
+      );
+  }, [allSuggestionsRaw, currentUserId, canAccessDashboard]);
+
+  const reviewerAttentionSig = useMemo(
+    () =>
+      reviewerAttentionItems
+        .map((s) => `${String(s.uid)}:${String(s.last_comment_at || "")}:${String(s.updated_at || "")}`)
+        .join("|"),
+    [reviewerAttentionItems]
+  );
+
+  const reviewerAttentionInitRef = useRef(false);
+  const reviewerAttentionPrevSigRef = useRef("");
+
+  useEffect(() => {
+    if (!canAccessDashboard || loading) return;
+    if (!reviewerAttentionInitRef.current) {
+      reviewerAttentionInitRef.current = true;
+      reviewerAttentionPrevSigRef.current = reviewerAttentionSig;
+      return;
+    }
+    if (
+      reviewerAttentionItems.length > 0 &&
+      reviewerAttentionSig !== reviewerAttentionPrevSigRef.current
+    ) {
+      const n = reviewerAttentionItems.length;
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "info",
+        title: n === 1 ? "New Maoni message for you" : `${n} new Maoni messages`,
+        text: "Someone posted in a suggestion that needs your review.",
+        showConfirmButton: true,
+        confirmButtonText: "Open latest",
+        showCancelButton: true,
+        cancelButtonText: "Dismiss",
+        timer: 20000,
+        timerProgressBar: true,
+      }).then((res) => {
+        if (!res.isConfirmed) return;
+        const uid = reviewerAttentionItems[0]?.uid;
+        if (uid) {
+          navigate(`/ppaa-maoni/suggestions/${uid}`, {
+            state: { fromDashboard: true, returnTab: activeTab },
+          });
+        }
+      });
+    }
+    reviewerAttentionPrevSigRef.current = reviewerAttentionSig;
+  }, [
+    reviewerAttentionSig,
+    reviewerAttentionItems,
+    canAccessDashboard,
+    loading,
+    navigate,
+    activeTab,
+  ]);
+
+  useEffect(() => {
+    if (!canAccessDashboard) return;
+    const id = window.setInterval(async () => {
+      try {
+        const suggestionsRes = await getAllSuggestions();
+        const list = extractList(suggestionsRes);
+        setAllSuggestionsRaw(list);
+      } catch {
+        /* keep existing data */
+      }
+    }, 90_000);
+    return () => window.clearInterval(id);
+  }, [canAccessDashboard]);
+
+  // ✅ Important: do NOT return early before hooks above have been declared.
+  // Access control: Maoni leads, admins, superusers
+  if (!canAccessDashboard) {
+    return null;
+  }
+
+  // Loading UI while we fetch backend suggestions for analytics
+  if (loading) {
+    return (
+      <div className="w-100 py-4">
+        <div className="card border-0 shadow-sm">
+          <div className="card-body p-5 text-center">
+            <i className="bx bx-loader-circle bx-spin fs-1 text-primary mb-3"></i>
+            <h5 className="mb-1">Loading dashboard...</h5>
+            <p className="text-muted mb-0">
+              Fetching Maoni analytics from the system.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container-fluid py-4">
+    <div className="w-100 py-4">
       {/* Dashboard Header */}
       <div className="row align-items-center mb-6">
         <div className="col-lg-6 col-md-6 mb-4 mb-md-0">
@@ -749,11 +1280,26 @@ export const ReferralDashboardPage = () => {
                   ? "This Quarter"
                   : timeRange === "year"
                   ? "This Year"
+                  : timeRange === "all"
+                  ? "All time"
                   : "Custom"}
               </button>
               <ul className="dropdown-menu">
                 <li>
                   <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => setTimeRange("all")}
+                  >
+                    All time
+                  </button>
+                </li>
+                <li>
+                  <hr className="dropdown-divider" />
+                </li>
+                <li>
+                  <button
+                    type="button"
                     className="dropdown-item"
                     onClick={() => setTimeRange("month")}
                   >
@@ -762,6 +1308,7 @@ export const ReferralDashboardPage = () => {
                 </li>
                 <li>
                   <button
+                    type="button"
                     className="dropdown-item"
                     onClick={() => setTimeRange("quarter")}
                   >
@@ -770,6 +1317,7 @@ export const ReferralDashboardPage = () => {
                 </li>
                 <li>
                   <button
+                    type="button"
                     className="dropdown-item"
                     onClick={() => setTimeRange("year")}
                   >
@@ -781,6 +1329,7 @@ export const ReferralDashboardPage = () => {
                 </li>
                 <li>
                   <button
+                    type="button"
                     className="dropdown-item"
                     onClick={() => setTimeRange("custom")}
                   >
@@ -798,6 +1347,28 @@ export const ReferralDashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {reviewerAttentionItems.length > 0 && (
+        <div className="row mb-3">
+          <div className="col-12">
+            <MaoniThreadAttentionBanner
+              items={reviewerAttentionItems}
+              onOpenSuggestion={(uid) =>
+                navigate(`/ppaa-maoni/suggestions/${uid}`, {
+                  state: { fromDashboard: true, returnTab: activeTab },
+                })
+              }
+              title="New messages for your review"
+              summary={buildMaoniReviewerAttentionSummary(reviewerAttentionItems.length)}
+              overflowNote={
+                reviewerAttentionItems.length > 6
+                  ? `+${reviewerAttentionItems.length - 6} more — open All Contributions or the suggestions list.`
+                  : undefined
+              }
+            />
+          </div>
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="row mb-4">
@@ -836,7 +1407,7 @@ export const ReferralDashboardPage = () => {
                 All Contributions ({allContributions.length})
               </button>
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <button
                 className={`nav-link ${
                   activeTab === "moderation" ? "active" : ""
@@ -849,7 +1420,7 @@ export const ReferralDashboardPage = () => {
                   {moderationQueue.length}
                 </span>
               </button>
-            </li>
+            </li> */}
             <li className="nav-item">
               <button
                 className={`nav-link ${
@@ -1098,6 +1669,7 @@ export const ReferralDashboardPage = () => {
                                 className={`badge ${getStatusBadgeClass(
                                   contribution.status
                                 )}`}
+                                style={getStatusBadgeStyle(contribution.status)}
                               >
                                 {getStatusText(contribution.status)}
                               </span>
@@ -1111,7 +1683,8 @@ export const ReferralDashboardPage = () => {
                               <button
                                 onClick={() =>
                                   navigate(
-                                    `/mnh-connect/admin/maoni/review/${contribution.id}`
+                                    `/ppaa-maoni/suggestions/${contribution.id}`,
+                                    { state: { fromDashboard: true, returnTab: "contributions" } }
                                   )
                                 }
                                 className="btn btn-sm btn-outline-primary"
@@ -1181,23 +1754,8 @@ export const ReferralDashboardPage = () => {
                       </div>
                     </button>
 
-                    <button
-                      onClick={() =>
-                        navigate("/mnh-connect/admin/maoni/settings")
-                      }
-                      className="btn btn-secondary d-flex align-items-center justify-content-start p-3 text-start"
-                    >
-                      <div className="p-2 bg-secondary-subtle rounded-circle me-3">
-                        <i className="bx bx-cog text-secondary"></i>
+           
                       </div>
-                      <div>
-                        <div className="fw-medium">System Settings</div>
-                        <small className="text-muted">
-                          Configure system preferences
-                        </small>
-                      </div>
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1263,7 +1821,7 @@ export const ReferralDashboardPage = () => {
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header bg-white border-0">
-                <h5 className="mb-0">Department Implementation Rate</h5>
+                <h5 className="mb-0">Department Contribution Summary</h5>
               </div>
               <div className="card-body">
                 <BarChart
@@ -1279,9 +1837,9 @@ export const ReferralDashboardPage = () => {
                         <tr>
                           <th>Department</th>
                           <th className="text-center">Contributions</th>
-                          <th className="text-center">Implemented</th>
-                          <th className="text-center">Rate</th>
-                          <th className="text-center">Engagement</th>
+                          <th className="text-center">Submitted</th>
+                          <th className="text-center">Drafts</th>
+                          <th className="text-center">Submit Rate</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1292,22 +1850,18 @@ export const ReferralDashboardPage = () => {
                               {dept.contributions}
                             </td>
                             <td className="text-center">
-                              <span className="badge bg-success">
-                                {dept.implemented}
+                              <span className="badge bg-primary">
+                                {dept.submitted}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <span className="badge bg-warning">
+                                {dept.drafts}
                               </span>
                             </td>
                             <td className="text-center">
                               <span className="badge bg-light text-dark">
-                                {(
-                                  (dept.implemented / dept.contributions) *
-                                  100
-                                ).toFixed(0)}
-                                %
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <span className="badge bg-info-subtle text-info">
-                                {dept.engagement}
+                                {dept.submitRate}%
                               </span>
                             </td>
                           </tr>
@@ -1376,7 +1930,17 @@ export const ReferralDashboardPage = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">Top Contributors Analysis</h5>
-                <button className="btn btn-sm btn-outline-primary">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={handleExportTopContributors}
+                  disabled={!topContributors || topContributors.length === 0}
+                  title={
+                    !topContributors || topContributors.length === 0
+                      ? "No data to export"
+                      : "Download top contributors as PDF"
+                  }
+                >
                   <i className="bx bx-download me-1"></i>
                   Export List
                 </button>
@@ -1388,7 +1952,7 @@ export const ReferralDashboardPage = () => {
                       <tr>
                         <th>Contributor ID</th>
                         <th className="text-center">Total Contributions</th>
-                        <th className="text-center">Implemented</th>
+                        <th className="text-center">Submitted</th>
                         <th className="text-center">Success Rate</th>
                         <th className="text-center">Avg. Rating</th>
                         <th className="text-center">Last Active</th>
@@ -1398,14 +1962,14 @@ export const ReferralDashboardPage = () => {
                     </thead>
                     <tbody>
                       {topContributors.map((contributor) => (
-                        <tr key={contributor.id}>
+                        <tr key={`${contributor.submittedById || "anonymous"}-${contributor.displayName}`}>
                           <td>
                             <div className="d-flex align-items-center">
                               <div className="me-2">
                                 <i className="bx bx-user-circle text-primary"></i>
                               </div>
                               <span className="font-monospace">
-                                {contributor.id}
+                                {contributor.displayName}
                               </span>
                             </div>
                           </td>
@@ -1416,28 +1980,26 @@ export const ReferralDashboardPage = () => {
                           </td>
                           <td className="text-center">
                             <span className="badge bg-success">
-                              {contributor.implemented}
+                              {Math.round(
+                                (contributor.contributions * contributor.successRate) /
+                                  100
+                              )}
                             </span>
                           </td>
                           <td className="text-center">
                             <span className="badge bg-info-subtle text-info">
-                              {(
-                                (contributor.implemented /
-                                  contributor.contributions) *
-                                100
-                              ).toFixed(0)}
-                              %
+                              {contributor.successRate}%
                             </span>
                           </td>
                           <td className="text-center">
                             <span className="badge bg-warning-subtle text-warning">
-                              {contributor.avgRating} ⭐
+                              — ⭐
                             </span>
                           </td>
                           <td className="text-center">
                             <small>
                               {formatDate(
-                                contributor.lastContribution,
+                                contributor.lastContribution || new Date().toISOString(),
                                 "DD/MM/YY"
                               )}
                             </small>
@@ -1456,7 +2018,26 @@ export const ReferralDashboardPage = () => {
                             )}
                           </td>
                           <td>
-                            <button className="btn btn-sm btn-outline-primary">
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              disabled={!contributor.submittedById}
+                              title={
+                                contributor.submittedById
+                                  ? "View this user's submitted suggestions"
+                                  : "User ID not available"
+                              }
+                              onClick={() => {
+                                if (!contributor.submittedById) return;
+                                navigate("/ppaa-maoni/suggestions", {
+                                  state: {
+                                    filter: "user",
+                                    userId: contributor.submittedById,
+                                    userName: contributor.displayName,
+                                    submittedOnly: true,
+                                  },
+                                });
+                              }}
+                            >
                               View Details
                             </button>
                           </td>
@@ -1478,7 +2059,11 @@ export const ReferralDashboardPage = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">
-                  All Contributions ({allContributions.length})
+                  All Contributions ({visibleContributions.length}
+                  {visibleContributions.length !== allContributions.length
+                    ? ` of ${allContributions.length}`
+                    : ""}
+                  )
                 </h5>
                 <div className="d-flex gap-2">
                   <div
@@ -1491,7 +2076,9 @@ export const ReferralDashboardPage = () => {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Search..."
+                      placeholder="Search by title, category, status, department..."
+                      value={contribSearch}
+                      onChange={(e) => setContribSearch(e.target.value)}
                     />
                   </div>
                   <select
@@ -1520,12 +2107,12 @@ export const ReferralDashboardPage = () => {
                         <th>Status</th>
                         <th>Priority</th>
                         <th>Submitted</th>
-                        <th>Votes</th>
+                        <th>Comments</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {allContributions.map((contribution) => (
+                      {visibleContributionsPaginated.map((contribution) => (
                         <tr key={contribution.id}>
                           <td>
                             <div className="d-flex align-items-center">
@@ -1553,6 +2140,7 @@ export const ReferralDashboardPage = () => {
                               className={`badge ${getStatusBadgeClass(
                                 contribution.status
                               )}`}
+                              style={getStatusBadgeStyle(contribution.status)}
                             >
                               {getStatusText(contribution.status)}
                             </span>
@@ -1565,8 +2153,7 @@ export const ReferralDashboardPage = () => {
                           </td>
                           <td>
                             <div className="d-flex align-items-center">
-                              <i className="bx bx-upvote text-success me-1"></i>
-                              <span className="me-3">{contribution.votes}</span>
+                             
                               <i className="bx bx-message text-primary me-1"></i>
                               <span>{contribution.comments}</span>
                             </div>
@@ -1576,23 +2163,15 @@ export const ReferralDashboardPage = () => {
                               <button
                                 onClick={() =>
                                   navigate(
-                                    `/mnh-connect/admin/maoni/review/${contribution.id}`
+                                    `/ppaa-maoni/suggestions/${contribution.id}`,
+                                    { state: { fromDashboard: true, returnTab: "contributions" } }
                                   )
                                 }
                                 className="btn btn-sm btn-outline-primary"
                               >
                                 Review
                               </button>
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/mnh-connect/admin/maoni/${contribution.id}`
-                                  )
-                                }
-                                className="btn btn-sm btn-outline-secondary"
-                              >
-                                View
-                              </button>
+                           
                             </div>
                           </td>
                         </tr>
@@ -1602,27 +2181,79 @@ export const ReferralDashboardPage = () => {
                 </div>
               </div>
               <div className="card-footer bg-white border-0">
-                <div className="d-flex justify-content-between align-items-center">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
                   <small className="text-muted">
-                    Showing {allContributions.length} of{" "}
-                    {allContributions.length} contributions
+                    Showing{" "}
+                    {visibleContributions.length === 0
+                      ? "0"
+                      : `${(contribPageClamped - 1) * CONTRIB_PAGE_SIZE + 1}-${Math.min(
+                          contribPageClamped * CONTRIB_PAGE_SIZE,
+                          visibleContributions.length
+                        )}`}{" "}
+                    of {visibleContributions.length} contributions
                   </small>
-                  <nav>
+                  <nav aria-label="Contributions pagination">
                     <ul className="pagination pagination-sm mb-0">
+                      <li
+                        className={`page-item ${contribPageClamped <= 1 ? "disabled" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          className="page-link"
+                          onClick={() => setContribPage((p) => Math.max(1, p - 1))}
+                          disabled={contribPageClamped <= 1}
+                          aria-label="Previous page"
+                        >
+                          Previous
+                        </button>
+                      </li>
+                      {Array.from({ length: contribTotalPages }, (_, i) => i + 1)
+                        .filter((p) => {
+                          if (contribTotalPages <= 7) return true;
+                          return (
+                            p === 1 ||
+                            p === contribTotalPages ||
+                            Math.abs(p - contribPageClamped) <= 2
+                          );
+                        })
+                        .map((p, idx, arr) => (
+                          <React.Fragment key={p}>
+                            {idx > 0 && arr[idx - 1] !== p - 1 && (
                       <li className="page-item disabled">
-                        <button className="page-link">Previous</button>
+                                <span className="page-link">…</span>
                       </li>
-                      <li className="page-item active">
-                        <button className="page-link">1</button>
+                            )}
+                            <li
+                              className={`page-item ${p === contribPageClamped ? "active" : ""}`}
+                            >
+                              <button
+                                type="button"
+                                className="page-link"
+                                onClick={() => setContribPage(p)}
+                                aria-label={`Page ${p}`}
+                                aria-current={p === contribPageClamped ? "page" : undefined}
+                              >
+                                {p}
+                              </button>
                       </li>
-                      <li className="page-item">
-                        <button className="page-link">2</button>
-                      </li>
-                      <li className="page-item">
-                        <button className="page-link">3</button>
-                      </li>
-                      <li className="page-item">
-                        <button className="page-link">Next</button>
+                          </React.Fragment>
+                        ))}
+                      <li
+                        className={`page-item ${contribPageClamped >= contribTotalPages ? "disabled" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          className="page-link"
+                          onClick={() =>
+                            setContribPage((p) =>
+                              Math.min(contribTotalPages, p + 1)
+                            )
+                          }
+                          disabled={contribPageClamped >= contribTotalPages}
+                          aria-label="Next page"
+                        >
+                          Next
+                        </button>
                       </li>
                     </ul>
                   </nav>
@@ -1634,7 +2265,7 @@ export const ReferralDashboardPage = () => {
       )}
 
       {/* Moderation Tab Content */}
-      {activeTab === "moderation" && (
+      {/* {activeTab === "moderation" && (
         <div className="row g-4">
           <div className="col-12">
             <div className="card border-0 shadow-sm">
@@ -1643,11 +2274,21 @@ export const ReferralDashboardPage = () => {
                   Moderation Queue ({moderationQueue.length} items)
                 </h5>
                 <div className="d-flex gap-2">
-                  <button className="btn btn-sm btn-success">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-success"
+                    onClick={() => handleModerationBulkAction("approve")}
+                    title="Backend supports DRAFT/SUBMITTED only; review each item via Review"
+                  >
                     <i className="bx bx-check-circle me-1"></i>
                     Approve All
                   </button>
-                  <button className="btn btn-sm btn-danger">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleModerationBulkAction("reject")}
+                    title="Review each suggestion individually"
+                  >
                     <i className="bx bx-x-circle me-1"></i>
                     Reject All
                   </button>
@@ -1668,7 +2309,15 @@ export const ReferralDashboardPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {moderationQueue.map((item) => (
+                      {moderationQueue.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="text-center text-muted py-4">
+                            <i className="bx bx-check-double fs-2 d-block mb-2"></i>
+                            No suggestions pending review. All submitted items in the selected period are shown here.
+                          </td>
+                        </tr>
+                      ) : (
+                        moderationQueue.map((item) => (
                         <tr key={item.id}>
                           <td>
                             <div className="d-flex align-items-center">
@@ -1717,19 +2366,29 @@ export const ReferralDashboardPage = () => {
                           </td>
                           <td>
                             <div className="btn-group">
-                              <button className="btn btn-sm btn-success">
-                                <i className="bx bx-check"></i>
-                              </button>
-                              <button className="btn btn-sm btn-danger">
-                                <i className="bx bx-x"></i>
-                              </button>
-                              <button className="btn btn-sm btn-primary">
-                                <i className="bx bx-show"></i>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-primary"
+                                  onClick={() =>
+                                    navigate(
+                                      `/ppaa-maoni/suggestions/${item.id}`,
+                                      {
+                                        state: {
+                                          fromDashboard: true,
+                                          returnTab: "moderation",
+                                        },
+                                      }
+                                    )}
+                                  title="Open suggestion to review and reply"
+                                >
+                                  <i className="bx bx-show me-0" aria-hidden="true"></i>
+                                  <span className="d-none d-sm-inline ms-1">Review</span>
                               </button>
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1737,126 +2396,83 @@ export const ReferralDashboardPage = () => {
             </div>
           </div>
 
-          {/* Moderation Statistics */}
-          <div className="col-lg-4">
+          {/* Moderation Statistics - from real queue (backend: SUBMITTED = pending) */}
+          {/* <div className="col-lg-4">
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white border-0">
                 <h5 className="mb-0">Moderation Stats</h5>
               </div>
               <div className="card-body">
                 <div className="text-center mb-4">
-                  <div className="h1 text-primary">18</div>
+                  <div className="h1 text-primary">{moderationStats.pending}</div>
                   <small className="text-muted">Pending Review</small>
                 </div>
                 <div className="mb-3">
                   <div className="d-flex justify-content-between mb-1">
-                    <small>High Priority</small>
-                    <small className="fw-medium">8</small>
+                    <small>High / Urgent</small>
+                    <small className="fw-medium">{moderationStats.high}</small>
                   </div>
                   <div className="progress" style={{ height: "6px" }}>
                     <div
                       className="progress-bar bg-danger"
-                      style={{ width: "44%" }}
+                      style={{
+                        width: `${moderationStats.pending > 0 ? moderationStats.highPct : 0}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
                 <div className="mb-3">
                   <div className="d-flex justify-content-between mb-1">
                     <small>Medium Priority</small>
-                    <small className="fw-medium">6</small>
+                    <small className="fw-medium">{moderationStats.medium}</small>
                   </div>
                   <div className="progress" style={{ height: "6px" }}>
                     <div
                       className="progress-bar bg-warning"
-                      style={{ width: "33%" }}
+                      style={{
+                        width: `${moderationStats.mediumPct}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
                 <div>
                   <div className="d-flex justify-content-between mb-1">
                     <small>Low Priority</small>
-                    <small className="fw-medium">4</small>
+                    <small className="fw-medium">{moderationStats.low}</small>
                   </div>
                   <div className="progress" style={{ height: "6px" }}>
                     <div
                       className="progress-bar bg-secondary"
-                      style={{ width: "22%" }}
+                      style={{
+                        width: `${moderationStats.lowPct}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
-          <div className="col-lg-8">
+          {/* Recent Moderation Actions - placeholder until backend supports audit log */}
+          {/* <div className="col-lg-8">
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white border-0">
                 <h5 className="mb-0">Recent Moderation Actions</h5>
               </div>
               <div className="card-body">
-                <div className="timeline">
-                  {[
-                    {
-                      action: "Approved",
-                      title: "Implement Paperless Office",
-                      by: "Admin_001",
-                      time: "2 hours ago",
-                    },
-                    {
-                      action: "Rejected",
-                      title: "Extended Lunch Break",
-                      by: "Admin_002",
-                      time: "1 day ago",
-                    },
-                    {
-                      action: "Approved",
-                      title: "Cybersecurity Training",
-                      by: "Admin_001",
-                      time: "2 days ago",
-                    },
-                    {
-                      action: "Pending",
-                      title: "Flexible Work Hours",
-                      by: "System",
-                      time: "3 days ago",
-                    },
-                  ].map((item, index) => (
-                    <div key={index} className="d-flex mb-3">
-                      <div className="me-3">
-                        <div
-                          className={`rounded-circle p-2 ${
-                            item.action === "Approved"
-                              ? "bg-success-subtle text-success"
-                              : item.action === "Rejected"
-                              ? "bg-danger-subtle text-danger"
-                              : "bg-warning-subtle text-warning"
-                          }`}
-                        >
-                          <i
-                            className={`bx ${
-                              item.action === "Approved"
-                                ? "bx-check"
-                                : item.action === "Rejected"
-                                ? "bx-x"
-                                : "bx-time"
-                            }`}
-                          ></i>
+                <div className="text-center text-muted py-4">
+                  <i className="bx bx-history fs-1 d-block mb-2"></i>
+                  <p className="mb-0 small">
+                    Moderation history will appear here when the backend supports
+                    audit logging of approve/reject actions. For now, use Review on
+                    each row to open the suggestion and reply.
+                  </p>
                         </div>
                       </div>
-                      <div>
-                        <div className="fw-medium">{item.title}</div>
-                        <small className="text-muted">
-                          {item.action} by {item.by} • {item.time}
-                        </small>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          </div> */}
+        {/* </div>
+      )} */} 
 
       {/* Reports Tab Content */}
       {activeTab === "reports" && (
@@ -1935,10 +2551,13 @@ export const ReferralDashboardPage = () => {
                   </div>
                 </div>
 
-                {/* Report Configuration */}
+                {/* Report Configuration – uses dashboard date range and Maoni data */}
                 <div className="card border-0 bg-light mt-4">
                   <div className="card-body">
                     <h6 className="mb-3">Report Configuration</h6>
+                    <p className="text-muted small mb-3">
+                      Reports use the dashboard date range and current Maoni data from the backend.
+                    </p>
                     <div className="row">
                       <div className="col-md-6 mb-3">
                         <label className="form-label">Date Range</label>
@@ -1966,13 +2585,14 @@ export const ReferralDashboardPage = () => {
                             className="form-check-input"
                             type="checkbox"
                             id="includeCharts"
-                            defaultChecked
+                            checked={reportIncludeCharts}
+                            onChange={(e) => setReportIncludeCharts(e.target.checked)}
                           />
                           <label
                             className="form-check-label"
                             htmlFor="includeCharts"
                           >
-                            Charts and Graphs
+                            Key Statistics
                           </label>
                         </div>
                         <div className="form-check">
@@ -1980,13 +2600,14 @@ export const ReferralDashboardPage = () => {
                             className="form-check-input"
                             type="checkbox"
                             id="includeDetails"
-                            defaultChecked
+                            checked={reportIncludeDetails}
+                            onChange={(e) => setReportIncludeDetails(e.target.checked)}
                           />
                           <label
                             className="form-check-label"
                             htmlFor="includeDetails"
                           >
-                            Detailed Contribution List
+                            Detailed Contribution List, Top Contributors & Department Summary
                           </label>
                         </div>
                         <div className="form-check">
@@ -1994,7 +2615,8 @@ export const ReferralDashboardPage = () => {
                             className="form-check-input"
                             type="checkbox"
                             id="includeRecommendations"
-                            defaultChecked
+                            checked={reportIncludeRecommendations}
+                            onChange={(e) => setReportIncludeRecommendations(e.target.checked)}
                           />
                           <label
                             className="form-check-label"
@@ -2007,7 +2629,8 @@ export const ReferralDashboardPage = () => {
                     </div>
                     <div className="text-center">
                       <button
-                        onClick={handleExportData}
+                        type="button"
+                        onClick={() => handleExportData()}
                         className="btn btn-primary px-5"
                       >
                         <i className="bx bx-download me-2"></i>
@@ -2017,9 +2640,9 @@ export const ReferralDashboardPage = () => {
                   </div>
                 </div>
 
-                {/* Recent Reports */}
+                {/* Recently Generated Report – on-demand from Maoni backend (no stored history) */}
                 <div className="mt-4">
-                  <h6 className="mb-3">Recently Generated Reports</h6>
+                  <h6 className="mb-3">Recently Generated Report</h6>
                   <div className="table-responsive">
                     <table className="table table-sm">
                       <thead>
@@ -2028,57 +2651,46 @@ export const ReferralDashboardPage = () => {
                           <th>Type</th>
                           <th>Date Range</th>
                           <th>Generated</th>
-                          <th>Size</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {[
-                          {
-                            name: "Q4 2023 Analysis",
-                            type: "Detailed",
-                            range: "Oct-Dec 2023",
-                            generated: "2 days ago",
-                            size: "2.4 MB",
-                          },
-                          {
-                            name: "Executive Summary Jan",
-                            type: "Executive",
-                            range: "Jan 2024",
-                            generated: "1 week ago",
-                            size: "1.1 MB",
-                          },
-                          {
-                            name: "Operational Review",
-                            type: "Operational",
-                            range: "Dec 2023",
-                            generated: "2 weeks ago",
-                            size: "1.8 MB",
-                          },
-                        ].map((report, index) => (
-                          <tr key={index}>
-                            <td>{report.name}</td>
+                        {lastReportGenerated ? (
+                          <tr>
+                            <td>{lastReportGenerated.name}</td>
                             <td>
                               <span className="badge bg-light text-dark">
-                                {report.type}
+                                {lastReportGenerated.type}
                               </span>
                             </td>
                             <td>
-                              <small>{report.range}</small>
+                              <small>{lastReportGenerated.range}</small>
                             </td>
                             <td>
-                              <small>{report.generated}</small>
+                              <small>
+                                {formatDate(lastReportGenerated.generated, "DD/MM/YYYY HH:mm")}
+                              </small>
                             </td>
                             <td>
-                              <small>{report.size}</small>
-                            </td>
-                            <td>
-                              <button className="btn btn-sm btn-outline-primary">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => handleExportData()}
+                                title="Generate same report again with current data"
+                              >
                                 <i className="bx bx-download"></i>
                               </button>
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          <tr>
+                            <td colSpan="5" className="text-center text-muted py-3">
+                              <small>
+                                Reports are generated on demand from current Maoni data. No history is stored. Generate a report above to download a PDF.
+                              </small>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>

@@ -271,7 +271,7 @@ export const OpenRolesManagementPage = () => {
                       <div
                         className="d-flex justify-content-start align-items-center user-name"
                         onClick={() => {
-                          navigate(`/mnh-connect/users/open/${row.guid}`);
+                          navigate(`/ppaa-internal-portal/users/open/${row.guid}`);
                         }}
                       >
                         <div className="avatar-wrapper">
