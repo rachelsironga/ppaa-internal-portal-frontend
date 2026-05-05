@@ -363,7 +363,7 @@ export const ppaaInternalPortalRoutes = (
       }
     />
     {/* <Route
-      path="/mnh-connect/requests-handling/open/:uid"
+      path="/ppaa-internal-portal/requests-handling/open/:uid"
       element={
         <ProtectedRoute
           requiredPermissions={[

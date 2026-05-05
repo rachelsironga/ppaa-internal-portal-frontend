@@ -6,9 +6,6 @@ const getBasePath = (pathname) => {
     if (pathname.startsWith('/ppaa-internal-portal')) {
         return '/ppaa-internal-portal';
     }
-    if (pathname.startsWith('/ict-assets')) {
-        return '/ict-assets';
-    }
     // Default fallback
     return '/ppaa-internal-portal';
 };

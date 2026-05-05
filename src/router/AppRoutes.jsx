@@ -7,13 +7,8 @@ import PortalPage from "../PortalPage";
 // Import all service routes
 import { authRoutes } from "./authRoutes";
 import { managementRoutes } from "./managementRoutes";
-import { ictAssetsRoutes } from "./ictAssetsRoutes";
-import { oxygenRoutes } from "./oxygenRoutes";
-import { analyticsRoutes } from "./analyticsRoutes";
 import { MaintenancePage } from "../pages/misc/MaintenancePage";
 import { maoniRoutes } from "./maoniRoutes";
-import { trainingRoutes } from "./trainingRoutes";
-import { externalReferralRoutes } from "./externalReferralRoutes";
 import { ppaaInternalPortalRoutes } from "./ppaaInternalPortal";
 
 const AppRoutes = () => {
@@ -79,23 +74,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-      {/* ICT Assets Routes */}
-      {/* {ictAssetsRoutes} */}
-
-      {/* Oxygen Management Routes */}
-      {/* {oxygenRoutes} */}
-
-      {/* Hospital Analitics Routes */}
-      {/* {analyticsRoutes} */}
-
-      
-
-      {/* Training Management Routes */}
-      {/* {trainingRoutes} */}
-
-      {/* External Referral Routes */}
-      {/* {externalReferralRoutes} */}
 
       {/* Catch-all 404 */}
       <Route path="*" element={<MaintenancePage />} />

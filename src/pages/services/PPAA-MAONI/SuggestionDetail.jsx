@@ -306,6 +306,8 @@ const SuggestionDetail = () => {
     !!suggestion &&
     canReply &&
     (isMaoniDepartmentHandler(user) || isAdmin);
+  // Primary Maoni reviewers should not see the top-level "Add reply" composer action.
+  const canOpenMainReplyComposer = canReply && !isMaoniPrimaryReviewerGroup(user);
 
   const openMainReplyCompose = () => {
     setReplyComposeOpen(true);
@@ -1285,7 +1287,7 @@ const SuggestionDetail = () => {
                             </button>
                             );
                           })}
-                        {canReply && (
+                        {canOpenMainReplyComposer && (
                           <button
                             type="button"
                             className={`btn btn-sm d-inline-flex align-items-center gap-2 rounded-2 px-2 py-1 ${
@@ -1365,7 +1367,7 @@ const SuggestionDetail = () => {
                       </div>
                     )}
 
-                    {canReply && !replyingTo && replyComposeOpen && (
+                    {canOpenMainReplyComposer && !replyingTo && replyComposeOpen && (
                       <div className="mt-3 pt-3 border-top maoni-thread-compose bg-light rounded-2 px-3 py-3">
                         <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
                           <span className="small fw-semibold text-muted text-uppercase">

@@ -97,7 +97,7 @@ export const DirectoryPage = () => {
                     ],
                   ])
                     ? navigate(
-                        `/mnh-connect/settings/directories/open/${row.uid}`
+                        `/ppaa-internal-portal/settings/directories/open/${row.uid}`
                       )
                     : null
                 }
@@ -145,7 +145,7 @@ export const DirectoryPage = () => {
                     ],
                   ])
                     ? navigate(
-                        `/mnh-connect/settings/directories/open/${row.uid}`
+                        `/ppaa-internal-portal/settings/directories/open/${row.uid}`
                       )
                     : null
                 }

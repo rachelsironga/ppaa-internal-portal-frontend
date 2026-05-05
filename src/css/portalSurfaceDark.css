@@ -224,22 +224,22 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35) !important;
 }
 
-[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-quick-access-btn {
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .ppaa-quick-access-btn {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
   border-color: rgba(52, 211, 153, 0.35) !important;
   color: #e2e8f0 !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
 }
 
-[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-notification-btn {
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .ppaa-notification-btn {
   color: #cbd5e1 !important;
 }
 
-[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-user-name {
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .ppaa-user-name {
   color: #f1f5f9 !important;
 }
 
-[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .mnh-user-designation {
+[data-portal-theme="dark"] .layout-wrapper.internal-portal-route .ppaa-user-designation {
   color: #94a3b8 !important;
 }
 
