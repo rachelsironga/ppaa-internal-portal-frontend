@@ -348,7 +348,7 @@ const SuggestionDetail = () => {
     if (isAdmin) {
       return [
         { status: "RETURNED_TO_HANDLER", label: "Return To Handler" },
-        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Close suggestion" },
+        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Send Response" },
       ];
     }
 
@@ -363,16 +363,16 @@ const SuggestionDetail = () => {
       SUBMITTED: [{ status: "UNDER_HANDLER_REVIEW", label: "Start Handler Review" }],
       UNDER_HANDLER_REVIEW: [
         { status: "ESCALATED_TO_REVIEWER", label: "Escalate to ES for guidelines" },
-        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Close suggestion" },
+        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Send Response" },
       ],
       RETURNED_TO_HANDLER: [
         { status: "HANDLER_RESPONDED_TO_REVIEWER", label: "Response to ES" },
-        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Close suggestion" },
+        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Send Response" },
       ],
-      ESCALATED_TO_REVIEWER: [{ status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Close suggestion" }],
+      ESCALATED_TO_REVIEWER: [{ status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Send Response" }],
       HANDLER_RESPONDED_TO_REVIEWER: [
         { status: "ESCALATED_TO_REVIEWER", label: "Escalate to ES for guidelines" },
-        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Close suggestion" },
+        { status: MAONI_CLOSE_SUBMISSION_ACTION, label: "Send Response" },
       ],
     };
 
@@ -899,11 +899,11 @@ const SuggestionDetail = () => {
                 style={{ letterSpacing: "0.08em" }}
                 title="Internal communication between handler and reviewer"
               >
-                Internal Communication between Handler and Reviewer
+                Internal Notes & Escalations
               </div>
             </div>
             <p className="text-muted small mb-0 mt-1" style={{ maxWidth: "40rem" }}>
-              Escalation notes and staff-only messages. The contributor does not see this channel.
+              Visible only to Heads of Department and ES. Not accessible to contributors.
             </p>
           </div>
           <div className="d-flex flex-wrap align-items-center gap-2 flex-shrink-0">
@@ -1470,9 +1470,9 @@ const SuggestionDetail = () => {
                         <div
                           className="small fw-semibold text-dark text-truncate mb-0 text-uppercase maoni-thread-replies-toggle-title"
                           style={{ letterSpacing: "0.1em" }}
-                          title="Between handler and contributor — shared visible thread"
+                          title="Responses & Clarifications"
                         >
-                          Between handler and contributor
+                          Responses & Clarifications
                         </div>
                         <div
                           className="text-truncate mb-0"
@@ -1480,7 +1480,7 @@ const SuggestionDetail = () => {
                           title={
                             hasStaffInternalView
                               ? "This thread is the channel between department handlers and the contributor: replies, workflow steps, and charts/figures they can see."
-                              : "Replies and workflow after the original message."
+                              : "Responses & Clarifications"
                           }
                         >
                           {currentStatus === "HANDLER_RESPONDED_TO_CONTRIBUTOR"
