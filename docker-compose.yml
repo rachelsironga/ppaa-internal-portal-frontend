@@ -10,6 +10,9 @@ services:
         # Default: mirror.gcr.io (Google mirror). Override if DNS blocks gcr, e.g. public.ecr.aws/... or node:18-alpine
         NODE_IMAGE: ${DOCKER_NODE_IMAGE:-mirror.gcr.io/library/node:18-alpine}
         NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-mirror.gcr.io/library/nginx:alpine}
+        # API base compiled into the built SPA by Vite.
+        # On servers that use `env` (not `.env`), Dockerfile also copies `env` -> `.env` automatically.
+        VITE_API_URL: ${VITE_API_URL:-http://192.168.1.4:3000}
     # Image already contains /usr/share/nginx/html from build; no bind mount needed to serve.
     ports:
       - "3000:80"
