@@ -9,12 +9,18 @@ FROM ${NODE_IMAGE} AS builder
 
 WORKDIR /app
 
+# Build-time env for Vite. Prefer build arg; otherwise allow an `env` file
+# (used on some servers instead of `.env`) to be copied to `.env` so Vite sees it.
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Copy package files and install deps
 COPY package*.json ./
 RUN npm install
 
 # Copy rest of the source and build
 COPY . .
+RUN if [ -z "$VITE_API_URL" ] && [ -f "./env" ] && [ ! -f "./.env" ]; then cp ./env ./.env; fi
 RUN npm run build
 
 # ---- Stage 2: Serve with Nginx ----
