@@ -287,14 +287,6 @@ export const AccountPage = () => {
   }, []);
 
   const handleUploadSign = async () => {
-    if (hasAccess(user, ["can_upload_profile_signature"]) === false) {
-      Swal.fire(
-        "Error!",
-        "Sorry You don't have permission to change Signature",
-        "error"
-      );
-      return;
-    }
     if (!selectedUser) {
       Swal.fire(
         "Error!",
@@ -371,16 +363,6 @@ export const AccountPage = () => {
   };
 
   const handleRemoveDelegation = async () => {
-    if (
-      hasAccess(user, ["can_assign_delegate", "can_remove_delegate"]) === false
-    ) {
-      Swal.fire(
-        "Error!",
-        "Sorry You don't have permission to Remove Delegation",
-        "error"
-      );
-      return;
-    }
     try {
       const confirmation = await Swal.fire({
         title: "Are you sure?",
@@ -1516,15 +1498,13 @@ export const AccountPage = () => {
                                       Currently assigned to acting user
                                     </p>
                                   </div>
-                                  {hasAccess(user, ["can_assign_delegate"]) && (
-                                    <button
-                                      className="remove-delegate-btn"
-                                      onClick={handleRemoveDelegation}
-                                    >
-                                      <UserMinus size={14} />
-                                      Remove
-                                    </button>
-                                  )}
+                                  <button
+                                    className="remove-delegate-btn"
+                                    onClick={handleRemoveDelegation}
+                                  >
+                                    <UserMinus size={14} />
+                                    Remove
+                                  </button>
                                 </div>
 
                                 <div className="position-details">
@@ -1836,7 +1816,7 @@ export const AccountPage = () => {
         )}
       </div>
 
-      {hasAccess(user, ["can_assign_delegate"]) && <DelegationModal />}
+      <DelegationModal />
       <ResetPasswordModal />
     </AccountContext.Provider>
   );

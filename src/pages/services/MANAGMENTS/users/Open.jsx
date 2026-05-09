@@ -1916,12 +1916,10 @@ export const UserOpenPage = () => {
                                       Currently assigned to acting user
                                     </p>
                                   </div>
-                                  {hasAccess(user, ["can_assign_delegate"]) && (
-                                    <button className="remove-delegate-btn">
-                                      <UserMinus size={14} />
-                                      Remove
-                                    </button>
-                                  )}
+                                  <button className="remove-delegate-btn">
+                                    <UserMinus size={14} />
+                                    Remove
+                                  </button>
                                 </div>
 
                                 <div className="position-details">

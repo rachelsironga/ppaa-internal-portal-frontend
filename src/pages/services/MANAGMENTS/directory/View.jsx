@@ -90,8 +90,6 @@ export const DirectoryPage = () => {
                   hasAccess(user, [
                     [
                       "view_directory",
-                      "can_add_directory",
-                      "can_update_directory",
                       "add_directory",
                       "change_directory",
                     ],
@@ -138,8 +136,6 @@ export const DirectoryPage = () => {
                   hasAccess(user, [
                     [
                       "view_directory",
-                      "can_add_directory",
-                      "can_update_directory",
                       "add_directory",
                       "change_directory",
                     ],

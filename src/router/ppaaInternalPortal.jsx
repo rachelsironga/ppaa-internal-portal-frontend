@@ -362,19 +362,6 @@ export const ppaaInternalPortalRoutes = (
         </ProtectedRoute>
       }
     />
-    {/* <Route
-      path="/ppaa-internal-portal/requests-handling/open/:uid"
-      element={
-        <ProtectedRoute
-          requiredPermissions={[
-            "can_view_request_handling",
-            "can_perform_request_handling",
-          ]}
-          requiredRoles={["Request_Handler"]}
-        >
-          <RequestHandlingOpenPage />
-        </ProtectedRoute>
-      }
-    /> */}
+    {/* Request handling routes removed (no longer used) */}
   </>
 );
