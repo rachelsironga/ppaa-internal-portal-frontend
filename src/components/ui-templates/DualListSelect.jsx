@@ -99,6 +99,7 @@ const DualListSelect = ({
     if (onAssign && selectedLeft.length > 0) {
       onAssign(selectedLeft);
       setSelectedLeft([]);
+      setOnlineLeftOptions([]);
     }
   };
 
@@ -106,14 +107,19 @@ const DualListSelect = ({
     if (onRemove && selectedRight.length > 0) {
       onRemove(selectedRight);
       setSelectedRight([]);
+      setOnlineLeftOptions([]);
     }
   };
 
   const normalize = (items) =>
-    (items || []).map((item) => ({
-      value: item.value ?? item.id ?? item.uid,
-      label: String(item.label ?? item.name ?? item.code ?? ""),
-    }));
+    (items || [])
+      .map((item) => ({
+        value: item.value ?? item.id ?? item.uid,
+        label: String(item.label ?? item.name ?? item.code ?? ""),
+      }))
+      .filter((o) => o.value != null && o.value !== "");
+
+  const optionValueKey = (o) => String(o?.value ?? "");
 
   useEffect(() => {
     setSelectedLeft([]);
@@ -132,6 +138,8 @@ const DualListSelect = ({
           isMulti
           menuIsOpen
           closeMenuOnSelect={false}
+          blurInputOnSelect={false}
+          hideSelectedOptions
           className="select2-selection fetched-select2"
           options={
             onlineLeftOptions.length > 0
@@ -139,7 +147,14 @@ const DualListSelect = ({
               : normalize(leftOptions)
           }
           value={normalize(selectedLeft)}
-          onChange={(selected) => setSelectedLeft(normalize(selected))}
+          onChange={(selected) => setSelectedLeft(normalize(selected || []))}
+          onInputChange={(input, meta) => {
+            if (meta.action === "input-change" && searchMethod) {
+              handleSearchLeft(input || "");
+            }
+          }}
+          getOptionValue={optionValueKey}
+          getOptionLabel={(o) => o.label}
           styles={selectStyles}
           placeholder="Search or select items..."
         />
@@ -180,7 +195,7 @@ const DualListSelect = ({
           onChange={(selected) =>
             setSelectedRight(normalize(selected || []))
           }
-          getOptionValue={(o) => o.value}
+          getOptionValue={optionValueKey}
           getOptionLabel={(o) => o.label}
           styles={selectStyles}
           placeholder="Selected items..."

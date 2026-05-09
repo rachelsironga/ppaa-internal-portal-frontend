@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import showToast from "../../../../helpers/ToastHelper";
@@ -8,6 +14,24 @@ import { createUpdateData, fetchData } from "../../../../utils/GlobalQueries";
 
 /** User API returns groups via get_groups() as lowercase names; Group API uses DB casing. */
 const normGroupName = (name) => String(name ?? "").trim().toLowerCase();
+
+/** Django group row id: prefer explicit uid (string pk), else numeric id from list serializers. */
+const groupOptionValue = (group) => {
+  const raw = group?.uid ?? group?.id;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const n = typeof raw === "number" ? raw : parseInt(String(raw), 10);
+  return Number.isFinite(n) ? n : null;
+};
+
+const parseUserRoleOptionId = (item) => {
+  const raw = item?.value ?? item?.id ?? item?.uid;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const n =
+    typeof raw === "number" && Number.isFinite(raw)
+      ? raw
+      : parseInt(String(raw), 10);
+  return Number.isFinite(n) ? n : null;
+};
 
 const UserPermissionModal = () => {
   const { selectedObj, setSelectedObj, setTableRefresh, tableRefresh } =
@@ -21,60 +45,88 @@ const UserPermissionModal = () => {
 
   const validationSchema = Yup.object().shape({
     user_uid: Yup.string().required("User is required"),
-    selected_roles: Yup.array()
-      .of(Yup.object())
-      .required("At least one permission is required"),
+    selected_roles: Yup.array().min(0),
   });
 
   const [leftOptions, setLeftOptions] = useState([]);
   const [rightOptions, setRightOptions] = useState([]);
   const [clearSelectTrigger, setClearSelectTrigger] = useState(0);
+  const rightOptionsRef = useRef([]);
 
-  const handleAssign = (selected) => {
-    // Move items to right
-    const toMove = selected.map((item) => item.value);
-    const newRight = [
-      ...rightOptions,
-      ...leftOptions.filter((item) => toMove.includes(item.value)),
-    ];
-    const newLeft = leftOptions.filter((item) => !toMove.includes(item.value));
-    setRightOptions(newRight);
-    setLeftOptions(newLeft);
-  };
+  useEffect(() => {
+    rightOptionsRef.current = rightOptions;
+  }, [rightOptions]);
 
-  const handleRemove = (selected) => {
-    // Move items back to left
-    const toMove = selected.map((item) => item.value);
-    const newLeft = [
-      ...leftOptions,
-      ...rightOptions.filter((item) => toMove.includes(item.value)),
-    ];
-    const newRight = rightOptions.filter(
-      (item) => !toMove.includes(item.value)
+  /** Only move rows explicitly chosen in the dual list (avoids moving every row when values are bad or stale). */
+  const handleAssign = useCallback((selected) => {
+    if (!Array.isArray(selected) || selected.length === 0) return;
+
+    const toAdd = [];
+    const pickedIds = new Set();
+    for (const item of selected) {
+      const id = parseUserRoleOptionId(item);
+      if (id == null || pickedIds.has(id)) continue;
+      pickedIds.add(id);
+      toAdd.push({
+        value: id,
+        label: String(item?.label ?? item?.name ?? ""),
+      });
+    }
+    if (toAdd.length === 0) return;
+
+    setRightOptions((prevRight) => {
+      const next = [...prevRight];
+      for (const row of toAdd) {
+        if (!next.some((r) => r.value === row.value)) next.push(row);
+      }
+      return next;
+    });
+    setLeftOptions((prevLeft) =>
+      prevLeft.filter((item) => !pickedIds.has(item.value))
     );
-    setLeftOptions(newLeft);
-    setRightOptions(newRight);
-  };
+  }, []);
+
+  const handleRemove = useCallback((selected) => {
+    if (!Array.isArray(selected) || selected.length === 0) return;
+
+    const removeIds = new Set();
+    for (const item of selected) {
+      const id = parseUserRoleOptionId(item);
+      if (id != null) removeIds.add(id);
+    }
+    if (removeIds.size === 0) return;
+
+    setRightOptions((prevRight) => {
+      const removedRows = prevRight.filter((item) => removeIds.has(item.value));
+      const newRight = prevRight.filter((item) => !removeIds.has(item.value));
+      setLeftOptions((prevLeft) => {
+        const existing = new Set(prevLeft.map((x) => x.value));
+        const toLeft = removedRows.filter((r) => !existing.has(r.value));
+        return [...prevLeft, ...toLeft];
+      });
+      return newRight;
+    });
+  }, []);
 
   const handleSubmit = async (
     values,
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
-      console.log("Submitting with values:", values);
-
       if (selectedObj) {
         values.permitted_user = selectedObj?.guid;
       }
-      console.log("Submitting with values:", values);
 
-      // Map to IDs (assuming your backend expects a list of permission IDs)
-      values.selected_roles = rightOptions.map((item) => item.value);
+      // Backend expects integer Django Group primary keys.
+      const roleIds = rightOptionsRef.current
+        .map((item) => parseUserRoleOptionId(item))
+        .filter((v) => v != null && Number.isFinite(v));
+      values.selected_roles = roleIds;
       const payload = {
         permitted_user: values.permitted_user,
-        selected_roles: values.selected_roles,
+        selected_roles: roleIds,
       };
-      if (values.selected_roles.length === 0) {
+      if (roleIds.length === 0) {
         showToast(
           "You must assign at least one Role to the user",
           "warning",
@@ -140,10 +192,12 @@ const UserPermissionModal = () => {
         },
       });
       if (result.status === 200 || result.status === 8000) {
-        const formattedOptions = (result.data || []).map((group) => ({
-          value: Number(group.uid),
-          label: `${group.name}`,
-        }));
+        const formattedOptions = (result.data || [])
+          .map((group) => ({
+            value: groupOptionValue(group),
+            label: `${group.name}`,
+          }))
+          .filter((o) => o.value != null);
 
         // Only treat current right-hand selection as assigned (not stale selectedObj.groups)
         const assignedIds = new Set(rightOptions.map((g) => g.value));
@@ -196,10 +250,12 @@ const UserPermissionModal = () => {
             },
           });
           if (result.status === 200 || result.status === 8000) {
-            const allGroups = (result.data || []).map((group) => ({
-              value: Number(group.uid),
-              label: `${group.name}`,
-            }));
+            const allGroups = (result.data || [])
+              .map((group) => ({
+                value: groupOptionValue(group),
+                label: `${group.name}`,
+              }))
+              .filter((o) => o.value != null);
 
             // Match user's groups (lowercase from UserSerializer.get_groups) to Group.name (any casing)
             const userGroupNamesLower = new Set(
@@ -265,8 +321,6 @@ const UserPermissionModal = () => {
             >
               {({
                 isSubmitting,
-                values,
-                setFieldValue,
                 setSubmitting,
                 setErrors,
                 resetForm,
@@ -376,16 +430,8 @@ const UserPermissionModal = () => {
                         Close
                       </button>
                       <button
-                        aria-label="Click me"
-                        type="button"
-                        onClick={() => {
-                          setFieldValue("selected_roles", rightOptions);
-                          handleSubmit(values, {
-                            setSubmitting,
-                            setErrors,
-                            resetForm,
-                          });
-                        }}
+                        aria-label="Save role assignment"
+                        type="submit"
                         disabled={isSubmitting}
                         className="btn btn-primary"
                       >
