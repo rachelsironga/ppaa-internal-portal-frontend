@@ -1,10 +1,10 @@
 export const formatDateForSubmit = date => {
-  const dateOfBirth = new Date(date)
-  const day = String(dateOfBirth.getDate()).padStart(2, "0") // Add leading zero if necessary
-  const month = String(dateOfBirth.getMonth() + 1).padStart(2, "0") // Add leading zero if necessary
-  const year = dateOfBirth.getFullYear() // Get the full 4-digit year
+  const d = new Date(date)
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const year = d.getFullYear()
 
-  return `${year}-${month}-${day}` // Format as YYYY-MM-DD
+  return `${year}-${month}-${day}`
 }
 
 export const formatDate = dateStr => {

@@ -453,7 +453,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                       {/* Tab 2 content */}
                       <div className="row text-start">
                         <div className="col mb-3">
-                          <label htmlFor="dobLarge" className="form-label">
+                          <label htmlFor="emailLarge" className="form-label">
                             Email
                           </label>
                           <Field
