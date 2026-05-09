@@ -19,19 +19,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
   const [isValidTab, setSInValidTab] = useState([false, false, false]);
   const [isFirstTabChange, setIsFirstTabChange] = useState(true);
   const [tabIndex, setTabIndex] = useState(0); // current tab index
-  const defaultDobISO = new Date(
-    new Date().setFullYear(new Date().getFullYear() - 17)
-  )
-    .toISOString()
-    .split("T")[0];
-
   const existingUserId = selectedObj?.guid || selectedObj?.uid || "";
   const isEditingUser = Boolean(existingUserId);
-  const rawDob = selectedObj?.dob;
-  const dobForInput =
-    rawDob != null && String(rawDob).trim() !== ""
-      ? String(rawDob).slice(0, 10)
-      : defaultDobISO;
 
   const initialValues = {
     user_guid: existingUserId,
@@ -39,7 +28,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     first_name: selectedObj?.first_name || "",
     middle_name: selectedObj?.middle_name || "",
     last_name: selectedObj?.last_name || "",
-    dob: dobForInput,
     sex: selectedObj?.sex || "",
 
     email: selectedObj?.email || "",
@@ -53,9 +41,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
     first_name: Yup.string().required("first name is required"),
     middle_name: Yup.string().required("middle name is required"),
     last_name: Yup.string().required("last name is required"),
-    dob: Yup.date()
-      .required("Date of birth is required")
-      .typeError("Please enter a valid date of birth"),
     sex: Yup.string().required("Sex is required"),
     email: Yup.string()
       .email("Invalid email format")
@@ -139,7 +124,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
         await validationSchema.validateAt("first_name", values);
         await validationSchema.validateAt("middle_name", values);
         await validationSchema.validateAt("last_name", values);
-        await validationSchema.validateAt("dob", values);
         await validationSchema.validateAt("sex", values);
       }
       if (tabIndex === 2) {
@@ -420,41 +404,6 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                         </div>
                       </div>
                       <div className="row text-start">
-                        <div className="col-md-6 mb-3">
-                          <label htmlFor="dobLarge" className="form-label">
-                            Date Of Birth
-                          </label>
-                          <Field
-                            type="date"
-                            name="dob"
-                            id="dobLarge"
-                            className="form-control"
-                            placeholder="Enter Date of Birth"
-                            min={
-                              new Date(
-                                new Date().setFullYear(
-                                  new Date().getFullYear() - 60
-                                )
-                              )
-                                .toISOString()
-                                .split("T")[0]
-                            } // optional: 60 years ago
-                            max={
-                              new Date(
-                                new Date().setFullYear(
-                                  new Date().getFullYear() - 17
-                                )
-                              )
-                                .toISOString()
-                                .split("T")[0]
-                            } // 17 years ago from today
-                          />{" "}
-                          <ErrorMessage
-                            name="dob"
-                            component="div"
-                            className="text-danger"
-                          />
-                        </div>
                         <div className="col-md-6 mb-3">
                           <label className="form-label d-block">Gender</label>
                           <div className="form-check form-check-inline">
