@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 /**
- * Transfer list: pick one or many items with checkboxes, then use the arrows.
- * Avoids react-select multi + menuIsOpen issues where focus/highlight is mistaken for selection.
+ * Transfer list: tick one or many rows, then use the arrows.
+ * Avoids react-select multi + always-open menu where focus is mistaken for selection
+ * (live bug: green arrow moved every role instead of only checked rows).
  */
 const DualListSelect = ({
   leftTitle = "Available Items",
@@ -43,10 +44,6 @@ const DualListSelect = ({
   );
   const normRight = useMemo(() => normalize(rightOptions), [rightOptions]);
 
-  /**
-   * 2+ chars + searchMethod: prefer inline API results (normOnline); if the parent only updates
-   * `leftOptions` and returns nothing (e.g. roles modal), fall back to `normLeftFromProps`.
-   */
   const leftDisplayList = useMemo(() => {
     if (searchMethod && leftSearch.trim().length >= 2) {
       if (normOnline.length > 0) return normOnline;
