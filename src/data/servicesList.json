@@ -36,12 +36,15 @@
     "available": true,
     "link": "/performance-dashboard",
     "permission": [
-      "can_view_spism_dashboard",
-      "can_view_spism_reports",
-      "can_view_spism_analytics",
-      "can_view_spism_approval"
     ],
-    "role": []
+    "role": [
+      "admin",
+      "staff",
+      "SPM_ADMIN",
+      "SPM_USER",
+      "SPM_VIEWER",
+      "SPM_APPROVER"
+    ]
   },
   {
     "id": "ppaa-reports",

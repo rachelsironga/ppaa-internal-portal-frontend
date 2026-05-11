@@ -107,8 +107,11 @@ export const getPositions = async ({
   pagination = {},
 }) => {
   try {
+    const safeUserUid = (user_uid || "").trim();
     const response = await api.get(
-      `${API_BASE_URL}/user/positions? &user_uid=${user_uid}&old_only=${old_only}`,
+      `${API_BASE_URL}/user/positions?user_uid=${encodeURIComponent(
+        safeUserUid
+      )}&old_only=${encodeURIComponent(String(old_only))}`,
       uid == "" ? setConfig(pagination) : {}
     );
     return response.data;

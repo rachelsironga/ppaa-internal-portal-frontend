@@ -6,6 +6,12 @@ const getBasePath = (pathname) => {
     if (pathname.startsWith('/ppaa-internal-portal')) {
         return '/ppaa-internal-portal';
     }
+    if (pathname.startsWith('/ppaa-maoni')) {
+        return '/ppaa-maoni';
+    }
+    if (pathname.startsWith('/performance-dashboard')) {
+        return '/performance-dashboard';
+    }
     // Default fallback
     return '/ppaa-internal-portal';
 };

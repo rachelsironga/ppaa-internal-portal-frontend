@@ -187,9 +187,9 @@ const SUGGESTION_FLOW_STEPS = [
   },
   {
     key: "reviewer",
-    label: "Reviewer",
+    label: "Reviewer (optional)",
     icon: "bx-shield-quarter",
-    hint: "Escalated to the PPAA reviewer team.",
+    hint: "Only if escalated to the PPAA reviewer team; handlers may close without this step.",
     statuses: ["ESCALATED_TO_REVIEWER"],
   },
   {
@@ -612,6 +612,61 @@ const SuggestionDetail = () => {
     });
     return { staffUidSet: set, staffInternalEntries: entries };
   }, [staffInternalComments, departmentLabel]);
+
+  /** True if this case ever involved institutional reviewer / ES (thread, status, or official ES reply). */
+  const maoniReviewerPathUsed = useMemo(() => {
+    const reviewerSignals = new Set([
+      "ESCALATED_TO_REVIEWER",
+      "HANDLER_RESPONDED_TO_REVIEWER",
+    ]);
+    for (const e of threadEntries) {
+      if (e.kind === "workflow" && e.workflowStatusKey && reviewerSignals.has(e.workflowStatusKey)) {
+        return true;
+      }
+    }
+    for (const e of staffInternalEntries) {
+      if (e.kind === "workflow" && e.workflowStatusKey && reviewerSignals.has(e.workflowStatusKey)) {
+        return true;
+      }
+    }
+    if (currentStatus === "ESCALATED_TO_REVIEWER") return true;
+    if (lastOfficialReviewerName) return true;
+    return false;
+  }, [threadEntries, staffInternalEntries, currentStatus, lastOfficialReviewerName]);
+
+  /** When the department queue first received the case (API field or earliest [UNDER_HANDLER_REVIEW] workflow note). */
+  const departmentReceivedIso = useMemo(() => {
+    if (!suggestion) return null;
+    if (suggestion.department_received_at) return suggestion.department_received_at;
+    const normTag = (raw) => {
+      const rawUp = String(raw || "").toUpperCase().replace(/\s+/g, "_");
+      const m = {
+        PENDING_REVIEW: "UNDER_HANDLER_REVIEW",
+        UNDER_CONSIDERATION: "ESCALATED_TO_REVIEWER",
+        APPROVED: "CLOSED_APPROVED",
+        IMPLEMENTED: "CLOSED_APPROVED",
+        REJECTED: "CLOSED_REJECTED",
+      };
+      return m[rawUp] || rawUp;
+    };
+    const scan = (rows) => {
+      if (!Array.isArray(rows)) return null;
+      for (const c of rows) {
+        const parsed = parseWorkflowCommentBody(c.comment || "");
+        if (!parsed.isWorkflow) continue;
+        const key = normTag(parsed.rawTag);
+        if (key === "UNDER_HANDLER_REVIEW" && c.created_at) return c.created_at;
+      }
+      return null;
+    };
+    const flat = sortCommentsByDate(flattenMaoniComments(suggestion.comments || []));
+    return scan(flat) || scan(suggestion.staff_internal_comments || []);
+  }, [
+    suggestion?.department_received_at,
+    suggestion?.comments,
+    suggestion?.staff_internal_comments,
+    suggestion?.uid,
+  ]);
 
   const hasStaffInternalView = staffInternalEntries.length > 0;
   /** Institutional reviewer / ES: collapse public handler–contributor thread by default when staff-only notes exist. */
@@ -1715,7 +1770,7 @@ const SuggestionDetail = () => {
                           keep posting follow-ups in the communication thread.
                         </p>
                         <p className="mb-1 fw-semibold text-secondary text-uppercase" style={{ fontSize: "0.65rem" }}>
-                          Supported path (simplified)
+                          Supported paths (simplified)
                         </p>
                         <ol className="mb-0 ps-3">
                           <li>
@@ -1723,8 +1778,13 @@ const SuggestionDetail = () => {
                             <strong>In progress</strong> / Under handler review
                           </li>
                           <li>
-                            Under handler review → escalate (timer / policy) →{" "}
-                            <strong>Escalated to reviewer</strong>
+                            <strong>Branch A — no reviewer:</strong> Under handler review → handler responds to the
+                            contributor if needed → <strong>Closed</strong> (approved or rejected) when the
+                            department is satisfied. No escalation required.
+                          </li>
+                          <li>
+                            <strong>Branch B — with reviewer:</strong> Under handler review → escalate (handler action
+                            or policy / timer) → <strong>Escalated to reviewer</strong>
                           </li>
                           <li>Reviewer may return with instructions → <strong>Returned to handler</strong></li>
                           <li>
@@ -1773,15 +1833,29 @@ const SuggestionDetail = () => {
                     {SUGGESTION_FLOW_STEPS.map((step, i) => {
                       const activeIdx = flowIndex;
                       const lastIdx = SUGGESTION_FLOW_STEPS.length - 1;
-                      const isDone =
-                        i < activeIdx || (activeIdx === lastIdx && i <= activeIdx);
-                      const isCurrent = i === activeIdx && activeIdx < lastIdx;
-                      const borderColor = isDone
-                        ? "#22c55e"
+                      const closed =
+                        currentStatus === "CLOSED_APPROVED" || currentStatus === "CLOSED_REJECTED";
+                      const reviewerSkipped =
+                        closed && step.key === "reviewer" && !maoniReviewerPathUsed;
+                      const isDone = reviewerSkipped
+                        ? false
+                        : i < activeIdx || (activeIdx === lastIdx && i <= activeIdx);
+                      const isCurrent =
+                        !reviewerSkipped && i === activeIdx && activeIdx < lastIdx;
+                      const borderColor = reviewerSkipped
+                        ? "#94a3b8"
+                        : isDone
+                          ? "#22c55e"
+                          : isCurrent
+                            ? "#16a34a"
+                            : "#e2e8f0";
+                      const flowCardTone = reviewerSkipped
+                        ? "skipped"
                         : isCurrent
-                        ? "#16a34a"
-                        : "#e2e8f0";
-                      const flowCardTone = isCurrent ? "current" : isDone ? "done" : "pending";
+                          ? "current"
+                          : isDone
+                            ? "done"
+                            : "pending";
 
                       const submittedWhen = formatDate(
                         suggestion.submitted_at || suggestion.created_at
@@ -1793,7 +1867,11 @@ const SuggestionDetail = () => {
                           : "No department linked yet");
                       const deptActivity = lastDepartmentResponderName
                         ? `Last department-side reply: ${lastDepartmentResponderName}`
-                        : "No department replies logged yet.";
+                        : departmentReceivedIso
+                          ? `Department received on ${formatDate(departmentReceivedIso)}`
+                          : currentStatus === "SUBMITTED"
+                            ? `Awaiting department pickup · submitted ${submittedWhen}`
+                            : "In department queue — receipt time appears when a handler opens this case.";
                       const reviewerLine = "PPAA reviewer team";
                       const reviewerActivity = lastOfficialReviewerName
                         ? `Official reviewer reply: ${lastOfficialReviewerName}`
@@ -1817,8 +1895,14 @@ const SuggestionDetail = () => {
                         lineA = deptLine;
                         lineB = deptActivity;
                       } else if (step.key === "reviewer") {
-                        lineA = reviewerLine;
-                        lineB = reviewerActivity;
+                        if (reviewerSkipped) {
+                          lineA = "Not escalated to reviewer";
+                          lineB =
+                            "Department closed this case without PPAA reviewer involvement — valid when policy allows.";
+                        } else {
+                          lineA = reviewerLine;
+                          lineB = reviewerActivity;
+                        }
                       } else {
                         lineA = resolvedOutcome || "Awaiting closure";
                         lineB = resolvedWhen || "Outcome recorded when closed";
@@ -1830,9 +1914,11 @@ const SuggestionDetail = () => {
                             className={`maoni-flow-step-card maoni-flow-step-card--${flowCardTone} h-100 rounded-3 p-3 d-flex flex-column`}
                             style={{
                               borderLeft: `4px solid ${borderColor}`,
-                              boxShadow: isCurrent
-                                ? "0 4px 20px rgba(22, 163, 74, 0.12), 0 0 0 1px rgba(22, 163, 74, 0.12)"
-                                : "0 1px 3px rgba(15, 23, 42, 0.05)",
+                              boxShadow: reviewerSkipped
+                                ? "0 1px 3px rgba(15, 23, 42, 0.06)"
+                                : isCurrent
+                                  ? "0 4px 20px rgba(22, 163, 74, 0.12), 0 0 0 1px rgba(22, 163, 74, 0.12)"
+                                  : "0 1px 3px rgba(15, 23, 42, 0.05)",
                               minHeight: "168px",
                             }}
                           >
@@ -1842,12 +1928,20 @@ const SuggestionDetail = () => {
                                 style={{
                                   width: 44,
                                   height: 44,
-                                  background: isDone
-                                    ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)"
-                                    : isCurrent
-                                    ? "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)"
-                                    : "#e2e8f0",
-                                  color: isDone ? "#fff" : isCurrent ? "#14532d" : "#64748b",
+                                  background: reviewerSkipped
+                                    ? "linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)"
+                                    : isDone
+                                      ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)"
+                                      : isCurrent
+                                        ? "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)"
+                                        : "#e2e8f0",
+                                  color: reviewerSkipped
+                                    ? "#475569"
+                                    : isDone
+                                      ? "#fff"
+                                      : isCurrent
+                                        ? "#14532d"
+                                        : "#64748b",
                                   boxShadow: isCurrent
                                     ? "inset 0 1px 0 rgba(255,255,255,0.6)"
                                     : "none",
@@ -1862,7 +1956,7 @@ const SuggestionDetail = () => {
                                     className="fw-bold text-truncate"
                                     style={{
                                       fontSize: "0.82rem",
-                                      color: isCurrent ? "#14532d" : "#0f172a",
+                                      color: isCurrent ? "#14532d" : reviewerSkipped ? "#475569" : "#0f172a",
                                     }}
                                   >
                                     {step.label}
@@ -1873,15 +1967,29 @@ const SuggestionDetail = () => {
                                       fontSize: "0.62rem",
                                       fontWeight: 700,
                                       letterSpacing: "0.04em",
-                                      background: isDone
-                                        ? "#dcfce7"
-                                        : isCurrent
-                                        ? "#bbf7d0"
-                                        : "#f1f5f9",
-                                      color: isDone ? "#166534" : isCurrent ? "#14532d" : "#64748b",
+                                      background: reviewerSkipped
+                                        ? "#e2e8f0"
+                                        : isDone
+                                          ? "#dcfce7"
+                                          : isCurrent
+                                            ? "#bbf7d0"
+                                            : "#f1f5f9",
+                                      color: reviewerSkipped
+                                        ? "#475569"
+                                        : isDone
+                                          ? "#166534"
+                                          : isCurrent
+                                            ? "#14532d"
+                                            : "#64748b",
                                     }}
                                   >
-                                    {isDone ? "Done" : isCurrent ? "Current" : "Upcoming"}
+                                    {reviewerSkipped
+                                      ? "Not used"
+                                      : isDone
+                                        ? "Done"
+                                        : isCurrent
+                                          ? "Current"
+                                          : "Upcoming"}
                                   </span>
                                 </div>
                               </div>
@@ -1909,10 +2017,18 @@ const SuggestionDetail = () => {
                       <div
                         className="h-100 rounded-pill"
                         style={{
-                          width: `${Math.min(
-                            100,
-                            Math.max(8, ((flowIndex + 1) / SUGGESTION_FLOW_STEPS.length) * 100)
-                          )}%`,
+                          width: `${
+                            currentStatus === "CLOSED_APPROVED" ||
+                            currentStatus === "CLOSED_REJECTED"
+                              ? 100
+                              : Math.min(
+                                  100,
+                                  Math.max(
+                                    8,
+                                    ((flowIndex + 1) / SUGGESTION_FLOW_STEPS.length) * 100
+                                  )
+                                )
+                          }%`,
                           background: "linear-gradient(90deg, #22c55e 0%, #16a34a 100%)",
                           transition: "width 0.35s ease",
                         }}
@@ -2226,6 +2342,10 @@ const SuggestionDetail = () => {
           background: #f8fafc;
           opacity: 0.94;
         }
+        .maoni-flow-step-card--skipped {
+          background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+          opacity: 0.98;
+        }
         .maoni-flow-step-card:hover {
           transform: translateY(-5px);
           box-shadow: 0 14px 38px rgba(15, 23, 42, 0.11), 0 0 0 1px rgba(22, 163, 74, 0.2) !important;
@@ -2238,6 +2358,9 @@ const SuggestionDetail = () => {
         .maoni-flow-step-card--pending:hover {
           background: linear-gradient(165deg, #e2e8f0 0%, #ecfdf5 42%, #ffffff 100%) !important;
           opacity: 1 !important;
+        }
+        .maoni-flow-step-card--skipped:hover {
+          background: linear-gradient(165deg, #e2e8f0 0%, #f1f5f9 45%, #ffffff 100%) !important;
         }
         .maoni-flow-step-icon-wrap {
           transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
