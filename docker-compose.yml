@@ -7,9 +7,10 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Default: mirror.gcr.io (Google mirror). Override if DNS blocks gcr, e.g. public.ecr.aws/... or node:18-alpine
-        NODE_IMAGE: ${DOCKER_NODE_IMAGE:-mirror.gcr.io/library/node:18-alpine}
-        NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-mirror.gcr.io/library/nginx:alpine}
+        # Default: Docker Hub official images. Override via DOCKER_NODE_IMAGE / DOCKER_NGINX_IMAGE.
+        # Some networks can't resolve mirror.gcr.io; these defaults work more often.
+        NODE_IMAGE: ${DOCKER_NODE_IMAGE:-node:18-alpine}
+        NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-nginx:alpine}
         # API base compiled into the SPA at build time (browser must reach this host:port).
         # Backend stack maps nginx API at 8092 (see ppaa-internal-portal-backend/docker-compose.yml).
         # Port 3000 is this SPA container — do not use it as VITE_API_URL unless you intentionally proxy /api there.

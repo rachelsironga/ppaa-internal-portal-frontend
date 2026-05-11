@@ -1,7 +1,6 @@
 import axios from "axios";
 import { ACCESS_TOKEN, API_BASE_URL, REFRESH_TOKEN } from "./Costants";
 import showLoginDialog from "./pages/authentication/loginModal";
-import Swal from "sweetalert2";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -119,27 +118,6 @@ api.interceptors.response.use(
         window.location.href = "/auth/login";
         return Promise.reject(e);
       }
-    }
-
-    /** ============================
-     *  403 ACCESS DENIED
-     *  ============================
-     */
-    if (
-      error.response &&
-      (error.response.status === 403 || error.response.data?.status === 8006)
-    ) {
-      Swal.fire({
-        title: "Access Denied!",
-        text: "You don’t have permission to proceed with this action",
-        icon: "warning",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showCancelButton: false,
-        confirmButtonText: "Go to Dashboard",
-      }).then(() => {
-        window.location.href = "/";
-      });
     }
 
     return Promise.reject(error);

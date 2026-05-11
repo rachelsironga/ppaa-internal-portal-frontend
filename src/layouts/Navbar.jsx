@@ -101,6 +101,9 @@ const Navbar = ({ isService = false, activeService = "" }) => {
     if (pathname.startsWith('/ppaa-internal-portal')) {
       return '/ppaa-internal-portal/account/settings';
     }
+    if (pathname.startsWith('/ppaa-maoni')) {
+      return '/ppaa-maoni/profile';
+    }
     if (pathname.startsWith('/performance-dashboard')) {
       return '/performance-dashboard/profile';
     }

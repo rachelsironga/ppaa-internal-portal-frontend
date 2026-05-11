@@ -6,7 +6,8 @@ export const hasPermission = (
     user = null,
     excludeRoles = null
 ) => {
-    if (user?.is_superuser) {
+    // Treat Django superuser OR portal "SUPER_USER" account_type as full access.
+    if (user?.is_superuser || String(user?.account_type || "").toUpperCase() === "SUPER_USER") {
         return true;
     }
     // Normalize roles to lowercase for case-insensitive comparison
