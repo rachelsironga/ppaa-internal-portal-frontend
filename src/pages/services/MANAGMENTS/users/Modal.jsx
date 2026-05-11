@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, { useContext, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Swal from "sweetalert2";
@@ -63,6 +63,8 @@ export const UserModal = ({ loadOnlyModal = false }) => {
         "";
       const isEdit = Boolean(String(userGuid || "").trim());
       const payload = { ...values };
+      delete payload.dob;
+      delete payload.date_of_birth;
       if (isEdit) {
         const gid = String(userGuid).trim();
         payload.user_guid = gid;
@@ -404,7 +406,7 @@ export const UserModal = ({ loadOnlyModal = false }) => {
                         </div>
                       </div>
                       <div className="row text-start">
-                        <div className="col-md-6 mb-3">
+                        <div className="col-md-12 mb-3">
                           <label className="form-label d-block">Gender</label>
                           <div className="form-check form-check-inline">
                             <Field

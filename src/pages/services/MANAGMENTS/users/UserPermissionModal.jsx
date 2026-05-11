@@ -15,12 +15,29 @@ import { createUpdateData, fetchData } from "../../../../utils/GlobalQueries";
 /** User API returns groups via get_groups() as lowercase names; Group API uses DB casing. */
 const normGroupName = (name) => String(name ?? "").trim().toLowerCase();
 
-/** Django group row id: prefer explicit uid (string pk), else numeric id from list serializers. */
+/** Django group row id: GroupListSerializer uses stringified integer pk in `uid`. */
 const groupOptionValue = (group) => {
   const raw = group?.uid ?? group?.id;
   if (raw === undefined || raw === null || raw === "") return null;
-  const n = typeof raw === "number" ? raw : parseInt(String(raw), 10);
-  return Number.isFinite(n) ? n : null;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  const s = String(raw).trim();
+  const n = parseInt(s, 10);
+  if (Number.isFinite(n) && String(n) === s) return n;
+  return null;
+};
+
+/** API may return a bare array or a paginated/wrapped object depending on gateway/version. */
+const normalizeListPayload = (data) => {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  if (data && Array.isArray(data.data)) return data.data;
+  return [];
+};
+
+const toastText = (msg, fallback) => {
+  if (msg == null || msg === "") return fallback;
+  const s = String(msg).trim();
+  return s === "" || s === "null" || s === "undefined" ? fallback : s;
 };
 
 const parseUserRoleOptionId = (item) => {
@@ -122,8 +139,18 @@ const UserPermissionModal = () => {
         .map((item) => parseUserRoleOptionId(item))
         .filter((v) => v != null && Number.isFinite(v));
       values.selected_roles = roleIds;
+      const userGuid = (selectedObj?.guid || values.permitted_user || "").trim();
+      if (!userGuid) {
+        showToast(
+          "Missing user id — close the modal and open Edit Permissions again.",
+          "warning",
+          "Validation Failed"
+        );
+        setSubmitting(false);
+        return;
+      }
       const payload = {
-        permitted_user: values.permitted_user,
+        permitted_user: userGuid,
         selected_roles: roleIds,
       };
       if (roleIds.length === 0) {
@@ -142,7 +169,11 @@ const UserPermissionModal = () => {
       });
 
       if (result.status === 200 || result.status === 8000) {
-        showToast("Data Saved Successfuly", "success", "Complete");
+        showToast(
+          toastText(result.message, "Roles updated successfully."),
+          "success",
+          "Complete"
+        );
         // Update selectedObj with the response data which contains updated groups
         setSelectedObj(result.data);
         // Trigger refresh in Open.jsx to fetch latest user data
@@ -153,16 +184,35 @@ const UserPermissionModal = () => {
           resetForm();
         }, 100);
       } else if (result.status === 8002) {
-        showToast(`${result.message}`, "warning", "Validation Failed");
+        showToast(
+          toastText(
+            result.message,
+            "Validation failed — check role selection and try again."
+          ),
+          "warning",
+          "Validation Failed"
+        );
         setErrors(result.data);
         setOtherError(result.data);
       } else {
-        showToast(`${result.message}`, "warning", "Process Failed");
+        showToast(
+          toastText(
+            result.message,
+            `Could not save roles (status ${result?.status ?? "unknown"}).`
+          ),
+          "warning",
+          "Process Failed"
+        );
         handleClose();
         resetForm();
       }
     } catch (error) {
-      showToast("Something went wrong while saving", "error", "Failed");
+      const apiMsg = error?.response?.data?.message;
+      showToast(
+        toastText(apiMsg, error?.message || "Something went wrong while saving"),
+        "error",
+        "Failed"
+      );
       handleClose(); // Close the modal after submission
       resetForm();
     } finally {
@@ -192,10 +242,14 @@ const UserPermissionModal = () => {
         },
       });
       if (result.status === 200 || result.status === 8000) {
-        const formattedOptions = (result.data || [])
+        const rows = normalizeListPayload(result.data);
+        const formattedOptions = rows
           .map((group) => ({
             value: groupOptionValue(group),
-            label: `${group.name}`,
+            label:
+              group?.name != null && String(group.name).trim() !== ""
+                ? String(group.name)
+                : `Role #${groupOptionValue(group) ?? "?"}`,
           }))
           .filter((o) => o.value != null);
 
@@ -250,10 +304,14 @@ const UserPermissionModal = () => {
             },
           });
           if (result.status === 200 || result.status === 8000) {
-            const allGroups = (result.data || [])
+            const rows = normalizeListPayload(result.data);
+            const allGroups = rows
               .map((group) => ({
                 value: groupOptionValue(group),
-                label: `${group.name}`,
+                label:
+                  group?.name != null && String(group.name).trim() !== ""
+                    ? String(group.name)
+                    : `Role #${groupOptionValue(group) ?? "?"}`,
               }))
               .filter((o) => o.value != null);
 
