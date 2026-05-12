@@ -7,6 +7,7 @@ import "./css/portalFaqTheme.css";
 import "./css/portalHighlightCarousel.css";
 import "./css/portalWelcomeHero.css";
 import { formatDate } from "./helpers/DateFormater";
+import { normalizePublicPortalAssetUrl } from "./helpers/publicPortalAssetUrl";
 import { persistAndApplyPortalFontSize, readPortalFontPct } from "./helpers/portalFontSize";
 import { applyPortalThemeToDocument } from "./helpers/portalTheme";
 import "./css/portalSurfaceDark.css";
@@ -2384,7 +2385,7 @@ const PortalPage = () => {
                                 >
                                   {link.logo && !quickLinkLogoErrors[link.uid] ? (
                                     <img
-                                      src={link.logo}
+                                      src={normalizePublicPortalAssetUrl(link.logo)}
                                       alt={link.name}
                                       style={{
                                         width: "100%",

@@ -3,6 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { createUpdateQuickLink } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
+import { normalizePublicPortalAssetUrl } from "../../../../helpers/publicPortalAssetUrl";
 
 const QuickLinkModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefresh }) => {
   const [errors, setOtherError] = useState({});
@@ -114,7 +115,7 @@ const QuickLinkModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRef
   useEffect(() => {
     // Reset logo preview when selectedObj changes
     if (selectedObj?.logo) {
-      setLogoPreview(selectedObj.logo);
+      setLogoPreview(normalizePublicPortalAssetUrl(selectedObj.logo));
     } else {
       setLogoPreview("");
     }

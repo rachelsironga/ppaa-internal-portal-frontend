@@ -23,6 +23,7 @@ import {
   useUtcDateKey,
 } from "../../../../helpers/dashboardActivityVisibility";
 import showToast from "../../../../helpers/ToastHelper";
+import { normalizePublicPortalAssetUrl } from "../../../../helpers/publicPortalAssetUrl";
 import { portalPublicApi } from "../../../../portalPublicApi";
 import { recordQuickLinkClick } from "../quick_links/Queries";
 import { downloadPortalDocument } from "../documents/Queries";
@@ -1921,7 +1922,7 @@ export const StaffDashboard = () => {
                             <div className="card-body p-3 p-md-4 d-flex flex-column justify-content-center align-items-center">
                               {link.logo ? (
                                 <img
-                                  src={link.logo}
+                                  src={normalizePublicPortalAssetUrl(link.logo)}
                                   alt={link.name}
                                   className="mb-3"
                                   style={{
