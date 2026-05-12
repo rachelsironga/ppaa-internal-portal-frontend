@@ -75,6 +75,12 @@ export const AccountPage = () => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const [selectedUser, setSelectedUser] = useState(null);
+  const isOwnAccountProfile =
+    user?.guid &&
+    selectedUser?.guid &&
+    String(user.guid) === String(selectedUser.guid);
+  const canEditProfilePhoto =
+    isOwnAccountProfile || hasAccess(user, ["can_upload_profile_photo"]);
   const [searchQuery, setSearchQuery] = useState("");
   const {
     currentPage,
@@ -208,10 +214,10 @@ export const AccountPage = () => {
   };
 
   const handleUpload = async () => {
-    if (hasAccess(user, ["can_upload_profile_photo"]) === false) {
+    if (!canEditProfilePhoto) {
       Swal.fire(
         "Error!",
-        "Sorry You don't have permission to change Profile",
+        "Sorry You don't have permission to change this user's profile photo",
         "error"
       );
       return;
@@ -1186,7 +1192,7 @@ export const AccountPage = () => {
                         </div>
                       </div>
                     )}
-                    {hasAccess(user, ["can_upload_profile_photo"]) && (
+                    {canEditProfilePhoto && (
                       <>
                         <input
                           type="file"
@@ -1217,8 +1223,7 @@ export const AccountPage = () => {
                 </div>
 
                 {/* Photo Upload Controls - Only show when file is selected */}
-                {isFileSelected &&
-                  hasAccess(user, ["can_upload_profile_photo"]) && (
+                {isFileSelected && canEditProfilePhoto && (
                     <div className="upload-controls mt-3">
                       <div className="d-flex gap-2">
                         <button
