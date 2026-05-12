@@ -5,6 +5,9 @@ import { createUpdateDocument, getDocumentCategories, downloadPortalDocument } f
 import showToast from "../../../../helpers/ToastHelper";
 import Select from "react-select";
 
+/** Must match ``PortalDocument.title`` max_length in ``ppaa_portal/models.py``. */
+const DOCUMENT_TITLE_MAX_CHARS = 500;
+
 const DocumentModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefresh }) => {
   const [errors, setOtherError] = useState({});
   const [categories, setCategories] = useState([]);
@@ -23,7 +26,12 @@ const DocumentModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefr
   };
 
   const validationSchema = Yup.object().shape({
-    title: Yup.string().required("Title is required"),
+    title: Yup.string()
+      .required("Title is required")
+      .max(
+        DOCUMENT_TITLE_MAX_CHARS,
+        `Title must be at most ${DOCUMENT_TITLE_MAX_CHARS} characters`
+      ),
     status: Yup.string().required("Status is required"),
   });
 
@@ -168,13 +176,23 @@ const DocumentModal = ({ selectedObj, setSelectedObj, tableRefresh, setTableRefr
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12 mb-3">
-                      <label className="form-label">Title *</label>
+                      <div className="d-flex justify-content-between align-items-baseline flex-wrap gap-1">
+                        <label className="form-label mb-0">Title *</label>
+                        <span className="small text-muted">
+                          {(values.title || "").length} / {DOCUMENT_TITLE_MAX_CHARS}{" "}
+                          characters
+                        </span>
+                      </div>
                       <Field
                         type="text"
                         name="title"
                         className="form-control"
                         placeholder="Enter document title"
+                        maxLength={DOCUMENT_TITLE_MAX_CHARS}
                       />
+                      <div className="form-text">
+                        Maximum {DOCUMENT_TITLE_MAX_CHARS} characters allowed for the title.
+                      </div>
                       <ErrorMessage
                         name="title"
                         component="div"
