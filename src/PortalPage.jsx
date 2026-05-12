@@ -272,9 +272,24 @@ const PortalPage = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showPopupCard, setShowPopupCard] = useState(true);
   const lastPopupShownAt = React.useRef(Date.now());
-  const SHOW_DURATION_MS = 60 * 1000;   // visible for 1 min
-  const HIDE_DURATION_MS = 4 * 60 * 1000; // hidden 4 min, then show again (every 5 min)
-  const FIVE_MIN_MS = 5 * 60 * 1000;
+  /** Daily Motivation floating card: how long it stays open vs how long it stays closed before reopening. */
+  const parsePopupCardMinutes = (raw, fallback) => {
+    const n = Number.parseInt(String(raw ?? "").trim(), 10);
+    if (!Number.isFinite(n) || n < 1) return fallback;
+    return Math.min(n, 120);
+  };
+  const popupCardVisibleMin = parsePopupCardMinutes(
+    import.meta.env.VITE_POPUP_CARD_VISIBLE_MINUTES,
+    10
+  );
+  const popupCardHiddenMin = parsePopupCardMinutes(
+    import.meta.env.VITE_POPUP_CARD_HIDDEN_MINUTES,
+    1
+  );
+  const SHOW_DURATION_MS = popupCardVisibleMin * 60 * 1000;
+  const HIDE_DURATION_MS = popupCardHiddenMin * 60 * 1000;
+  /** Full cycle (visible + hidden); used when user returns to the tab so the card does not pop too soon. */
+  const POPUP_CARD_CYCLE_MS = SHOW_DURATION_MS + HIDE_DURATION_MS;
   const utcDateKey = useUtcDateKey();
 
   // Default Daily Motivation when none in DB (used in popup and useEffects below)
@@ -286,7 +301,7 @@ const PortalPage = () => {
   const displayGratitude = data?.popup_card?.gratitude_message || DEFAULT_GRATITUDE_MESSAGE;
   const displayEsImage = data?.popup_card?.es_image_url || DEFAULT_ES_IMAGE;
 
-  // When card is visible: auto-hide after 1 min
+  // When card is visible: auto-hide after configured visible duration
   useEffect(() => {
     const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
     if (!hasContent || !showPopupCard) return;
@@ -298,7 +313,7 @@ const PortalPage = () => {
     return () => clearTimeout(hidePopupTimer);
   }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
 
-  // When card is hidden: show again after 4 min (every 5 min) only if user is actively on the page (tab visible)
+  // When card is hidden: show again after configured hidden duration (tab must be visible)
   useEffect(() => {
     const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
     if (!hasContent || showPopupCard) return;
@@ -310,14 +325,14 @@ const PortalPage = () => {
     return () => clearTimeout(showPopupTimer);
   }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
 
-  // When user returns to the tab: reopen card if it's been 5+ min since last show and they're actively on the page
+  // When user returns to the tab: reopen if a full visible+hidden cycle has passed since last show
   useEffect(() => {
     const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
     if (!hasContent) return;
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible" || showPopupCard) return;
       const elapsed = Date.now() - lastPopupShownAt.current;
-      if (elapsed >= FIVE_MIN_MS) {
+      if (elapsed >= POPUP_CARD_CYCLE_MS) {
         setShowPopupCard(true);
       }
     };
@@ -2943,7 +2958,7 @@ const PortalPage = () => {
         </div>
       </div>
 
-      {/* Daily Motivation – floating popup: visible 1 min, reappears every 5 min (uses defaults if none in DB) */}
+      {/* Daily Motivation – floating popup: timing from VITE_POPUP_CARD_* (defaults 10 min visible, 1 min hidden) */}
       {data && (displayQuote || displayGratitude || displayEsImage) && (
         <div
           className="portal-daily-motivation-popout"
@@ -3115,7 +3130,7 @@ const PortalPage = () => {
                 )}
 
                 <p className="daily-motivation-hint" style={{ marginTop: "14px", marginBottom: 0, fontSize: "0.68rem", color: "#9ca3af", textAlign: "center" }}>
-                  Auto-closes in 1 min · Shows again in 5 min
+                  Auto-closes in {popupCardVisibleMin} min · Shows again after {popupCardHiddenMin} min
                 </p>
               </div>
             </div>
