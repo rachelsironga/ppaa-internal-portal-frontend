@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import BreadCumb from "../../../../layouts/BreadCumb";
 import PaginatedTable from "../../../../components/ui-templates/PaginatedTable";
 import { formatDate } from "../../../../helpers/DateFormater";
+import { normalizePublicPortalAssetUrl } from "../../../../helpers/publicPortalAssetUrl";
 import QuickLinkModal from "./Modal";
 import { hasAccess } from "../../../../hooks/AccessHandler";
 
@@ -57,12 +58,20 @@ export const QuickLinkPage = () => {
             className: "text-center",
             render: (row) => (
               row.logo ? (
-                <img 
-                  src={row.logo} 
+                <img
+                  src={normalizePublicPortalAssetUrl(row.logo)}
                   alt={row.name}
                   style={{ width: "40px", height: "40px", objectFit: "contain" }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
                   onError={(e) => {
-                    e.target.style.display = "none";
+                    e.target.onerror = null;
+                    e.target.alt = "";
+                    e.target.src =
+                      "data:image/svg+xml," +
+                      encodeURIComponent(
+                        `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect fill='%23e9ecef' width='40' height='40' rx='6'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='11' fill='%236c757d'>?</text></svg>`
+                      );
                   }}
                 />
               ) : (

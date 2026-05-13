@@ -4,6 +4,7 @@ import BreadCumb from "../../../../layouts/BreadCumb";
 import { getQuickLinksList, deleteQuickLink } from "./Queries";
 import showToast from "../../../../helpers/ToastHelper";
 import { formatDate } from "../../../../helpers/DateFormater";
+import { normalizePublicPortalAssetUrl } from "../../../../helpers/publicPortalAssetUrl";
 import ReactLoading from "react-loading";
 import QuickLinkModal from "./Modal";
 import Swal from "sweetalert2";
@@ -245,18 +246,19 @@ export const QuickLinkOpenPage = () => {
               <div className="card-body text-center">
                 <small className="text-muted d-block mb-2">Logo</small>
                 <div className="mb-2">
-                  <img 
-                    src={selectedObj.logo} 
+                  <img
+                    src={normalizePublicPortalAssetUrl(selectedObj.logo)}
                     alt={selectedObj.name}
                     style={{ maxWidth: "100px", maxHeight: "100px", objectFit: "contain", border: "1px solid #ddd", padding: "5px", borderRadius: "4px" }}
                     onError={(e) => {
+                      e.target.onerror = null;
                       e.target.style.display = "none";
                     }}
                   />
                 </div>
                 <div className="d-flex gap-1 justify-content-center">
                   <a
-                    href={selectedObj.logo}
+                    href={normalizePublicPortalAssetUrl(selectedObj.logo)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-sm btn-outline-primary"
@@ -267,7 +269,9 @@ export const QuickLinkOpenPage = () => {
                   <button
                     className="btn btn-sm btn-outline-secondary"
                     onClick={() => {
-                      navigator.clipboard.writeText(selectedObj.logo);
+                      navigator.clipboard.writeText(
+                        normalizePublicPortalAssetUrl(selectedObj.logo)
+                      );
                       showToast("Logo URL copied", "success", "Copied");
                     }}
                     title="Copy URL"
