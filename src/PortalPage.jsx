@@ -271,28 +271,9 @@ const PortalPage = () => {
   });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showPopupCard, setShowPopupCard] = useState(true);
-  const lastPopupShownAt = React.useRef(Date.now());
-  /** Daily Motivation floating card: how long it stays open vs how long it stays closed before reopening. */
-  const parsePopupCardMinutes = (raw, fallback) => {
-    const n = Number.parseInt(String(raw ?? "").trim(), 10);
-    if (!Number.isFinite(n) || n < 1) return fallback;
-    return Math.min(n, 120);
-  };
-  const popupCardVisibleMin = parsePopupCardMinutes(
-    import.meta.env.VITE_POPUP_CARD_VISIBLE_MINUTES,
-    10
-  );
-  const popupCardHiddenMin = parsePopupCardMinutes(
-    import.meta.env.VITE_POPUP_CARD_HIDDEN_MINUTES,
-    1
-  );
-  const SHOW_DURATION_MS = popupCardVisibleMin * 60 * 1000;
-  const HIDE_DURATION_MS = popupCardHiddenMin * 60 * 1000;
-  /** Full cycle (visible + hidden); used when user returns to the tab so the card does not pop too soon. */
-  const POPUP_CARD_CYCLE_MS = SHOW_DURATION_MS + HIDE_DURATION_MS;
   const utcDateKey = useUtcDateKey();
 
-  // Default Daily Motivation when none in DB (used in popup and useEffects below)
+  // Default Daily Motivation when none in DB
   const DEFAULT_MOTIVATIONAL_QUOTE = "Timely and Fair Appeals Dispensation";
   const DEFAULT_GRATITUDE_MESSAGE =
     "I sincerely thank all employees for their dedication, professionalism, and commitment to delivering timely and fair services. Your hard work continues to strengthen our institution.";
@@ -300,45 +281,6 @@ const PortalPage = () => {
   const displayQuote = data?.popup_card?.motivational_quote || DEFAULT_MOTIVATIONAL_QUOTE;
   const displayGratitude = data?.popup_card?.gratitude_message || DEFAULT_GRATITUDE_MESSAGE;
   const displayEsImage = data?.popup_card?.es_image_url || DEFAULT_ES_IMAGE;
-
-  // When card is visible: auto-hide after configured visible duration
-  useEffect(() => {
-    const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
-    if (!hasContent || !showPopupCard) return;
-    lastPopupShownAt.current = Date.now();
-    const hidePopupTimer = window.setTimeout(
-      () => setShowPopupCard(false),
-      SHOW_DURATION_MS
-    );
-    return () => clearTimeout(hidePopupTimer);
-  }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
-
-  // When card is hidden: show again after configured hidden duration (tab must be visible)
-  useEffect(() => {
-    const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
-    if (!hasContent || showPopupCard) return;
-    const showPopupTimer = window.setTimeout(() => {
-      if (document.visibilityState === "visible") {
-        setShowPopupCard(true);
-      }
-    }, HIDE_DURATION_MS);
-    return () => clearTimeout(showPopupTimer);
-  }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
-
-  // When user returns to the tab: reopen if a full visible+hidden cycle has passed since last show
-  useEffect(() => {
-    const hasContent = data && (displayQuote || displayGratitude || displayEsImage);
-    if (!hasContent) return;
-    const onVisibilityChange = () => {
-      if (document.visibilityState !== "visible" || showPopupCard) return;
-      const elapsed = Date.now() - lastPopupShownAt.current;
-      if (elapsed >= POPUP_CARD_CYCLE_MS) {
-        setShowPopupCard(true);
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [showPopupCard, data, displayQuote, displayGratitude, displayEsImage]);
 
   // Scale root `rem` / Bootstrap typography (wrapper % alone does not affect `rem`)
   useEffect(() => {
@@ -2958,7 +2900,7 @@ const PortalPage = () => {
         </div>
       </div>
 
-      {/* Daily Motivation – floating popup: timing from VITE_POPUP_CARD_* (defaults 10 min visible, 1 min hidden) */}
+      {/* Daily Motivation – floating popup (stays open until the user closes it; no auto-hide) */}
       {data && (displayQuote || displayGratitude || displayEsImage) && (
         <div
           className="portal-daily-motivation-popout"
@@ -3130,7 +3072,7 @@ const PortalPage = () => {
                 )}
 
                 <p className="daily-motivation-hint" style={{ marginTop: "14px", marginBottom: 0, fontSize: "0.68rem", color: "#9ca3af", textAlign: "center" }}>
-                  Auto-closes in {popupCardVisibleMin} min · Shows again after {popupCardHiddenMin} min
+                  {t("publicPortal.dailyMotivationHint")}
                 </p>
               </div>
             </div>
