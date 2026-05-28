@@ -1,6 +1,15 @@
 import api from "../../../../api";
+import { invalidateInternalPortalDashboardCaches } from "../../../../helpers/internalPortalDashboardCache";
 
 const API_URL = `/api/internal-portal/events`;
+
+/** datetime-local values → UTC ISO for Django (USE_TZ). */
+function toApiDateTime(value) {
+  if (value == null || value === "") return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toISOString();
+}
 
 export const getEvents = async ({ uid = "", search = "", start_date = "", end_date = "", pagination = {} }) => {
   try {
@@ -24,8 +33,17 @@ export const createUpdateEvent = async (formData) => {
   try {
     const url = formData.uid ? `${API_URL}/${formData.uid}` : API_URL;
     const method = formData.uid ? "put" : "post";
-    const response = await api[method](url, formData);
-    return response.data;
+    const payload = {
+      ...formData,
+      start_date: toApiDateTime(formData.start_date),
+      end_date: toApiDateTime(formData.end_date),
+    };
+    const response = await api[method](url, payload);
+    const result = response.data;
+    if (result?.status === 200 || result?.status === 8000) {
+      invalidateInternalPortalDashboardCaches();
+    }
+    return result;
   } catch (error) {
     console.error("Error saving event:", error);
     throw error;
@@ -35,7 +53,11 @@ export const createUpdateEvent = async (formData) => {
 export const deleteEvent = async (uid) => {
   try {
     const response = await api.delete(`${API_URL}/${uid}`);
-    return response.data;
+    const result = response.data;
+    if (result?.status === 200 || result?.status === 8000) {
+      invalidateInternalPortalDashboardCaches();
+    }
+    return result;
   } catch (error) {
     console.error("Error deleting event:", error);
     throw error;

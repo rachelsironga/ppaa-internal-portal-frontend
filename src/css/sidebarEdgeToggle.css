@@ -1,0 +1,67 @@
+.ppaa-sidebar-edge-toggle {
+  position: fixed;
+  /* Float above the top cards (clear visibility) */
+  top: 28px;
+  /* Slightly inside the content so it doesn't hide behind the sidebar */
+  left: 260px; /* sidebar width */
+  transform: translateX(-50%);
+  z-index: 2000;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 133, 63, 0.22);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, left 180ms ease;
+}
+
+.ppaa-sidebar-edge-toggle i {
+  font-size: 1.4rem;
+  color: #00853f;
+  transition: transform 180ms ease;
+}
+
+.ppaa-sidebar-edge-toggle:hover {
+  background: rgba(0, 133, 63, 0.08);
+  transform: translateX(2px);
+}
+
+/* Ensure no decorative grip line is shown (older builds used ::before). */
+.ppaa-sidebar-edge-toggle::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* When the template collapses the menu, keep the toggle visible near the edge */
+.layout-menu-collapsed .ppaa-sidebar-edge-toggle {
+  left: 90px;
+  transform: translateX(-50%);
+}
+
+.layout-menu-collapsed .ppaa-sidebar-edge-toggle i {
+  transform: rotate(180deg);
+}
+
+/* Dark theme */
+.portal-surface-scope[data-portal-theme="dark"] .ppaa-sidebar-edge-toggle,
+.portal-surface-scope.portal-dark .ppaa-sidebar-edge-toggle {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(52, 211, 153, 0.35);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.42);
+}
+
+.portal-surface-scope[data-portal-theme="dark"] .ppaa-sidebar-edge-toggle:hover,
+.portal-surface-scope.portal-dark .ppaa-sidebar-edge-toggle:hover {
+  background: rgba(52, 211, 153, 0.12);
+}
+
+/* Avoid covering content on very short viewports */
+@media (max-height: 560px) {
+  .ppaa-sidebar-edge-toggle {
+    top: 22px;
+  }
+}
+

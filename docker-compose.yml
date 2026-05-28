@@ -11,10 +11,8 @@ services:
         # Some networks can't resolve mirror.gcr.io; these defaults work more often.
         NODE_IMAGE: ${DOCKER_NODE_IMAGE:-node:18-alpine}
         NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-nginx:alpine}
-        # API base compiled into the SPA at build time (browser must reach this host:port).
-        # Backend stack maps nginx API at 8092 (see ppaa-internal-portal-backend/docker-compose.yml).
-        # Port 3000 is this SPA container — do not use it as VITE_API_URL unless you intentionally proxy /api there.
-        VITE_API_URL: ${VITE_API_URL:-http://192.168.1.4:8092}
+        # Local dev: localhost. LAN deploy: set VITE_API_URL=http://192.168.1.4:8092 before build.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8092}
     # Image already contains /usr/share/nginx/html from build; no bind mount needed to serve.
     ports:
       - "3000:80"
