@@ -14,6 +14,7 @@ import {
   readPortalThemeIsDark,
 } from '../helpers/portalTheme';
 import '../css/portalSurfaceDark.css';
+import '../css/sidebarEdgeToggle.css';
 
 const Layout = ({ children, isService = false, activeService = null }) => {
   const location = useLocation();
@@ -65,12 +66,21 @@ const Layout = ({ children, isService = false, activeService = null }) => {
 
   return (
     <div
-      className={`layout-wrapper layout-content-navbar${
+      className={`layout-wrapper layout-content-navbar layout-menu-fixed${
         internalPortalRoute ? ' internal-portal-route' : ''
       }`}
     >
       <div className="layout-container">
         <Sidebar isService={isService} activeService={activeService} />
+        {/* Desktop sidebar toggle: sits between sidebar + content */}
+        <button
+          type="button"
+          className="layout-menu-toggle ppaa-sidebar-edge-toggle d-none d-xl-flex"
+          aria-label="Toggle sidebar"
+          title="Toggle sidebar"
+        >
+          <i className="bx bx-chevron-left" aria-hidden="true"></i>
+        </button>
         <div className="layout-page">
           <Navbar isService={isService} activeService={activeService} />
           <div className="content-wrapper">

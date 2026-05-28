@@ -34,8 +34,16 @@ import { PrFlyersGallery } from "./components/portal/PrFlyersGallery.jsx";
 import { InternalPortalLanguageToggle } from "./components/portal/InternalPortalLanguageToggle.jsx";
 import { useInternalPortalI18n } from "./contexts/InternalPortalI18nContext.jsx";
 import { INTERNAL_PORTAL_TRANSLATIONS } from "./i18n/internalPortalTranslations";
+import {
+  PUBLIC_DASHBOARD_CACHE_KEY,
+} from "./helpers/internalPortalDashboardCache";
+import {
+  getEventsOnCalendarDay,
+  dayHasEventEndDate,
+  getEventCalendarDayRole,
+  truncateEventTitle,
+} from "./helpers/portalEventCalendar";
 
-const PUBLIC_DASHBOARD_CACHE_KEY = "publicPortalDashboardCache";
 const PUBLIC_DASHBOARD_CACHE_TTL_MS = 2 * 60 * 1000;
 
 // Section reveal wrapper for scroll-triggered animations
@@ -83,23 +91,11 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
   const monthNames = pp.calendarMonths;
   const dayNames = pp.calendarDays;
   
-  const getEventsForDate = (day) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return events.filter(event => {
-      if (!event.start_date) return false;
-      const startDate = new Date(event.start_date).toISOString().split('T')[0];
-      return startDate === dateStr;
-    });
-  };
+  const getEventsForDate = (day) =>
+    getEventsOnCalendarDay(events, year, month, day);
 
-  const hasEventEndDate = (day) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return events.some(event => {
-      if (!event.end_date) return false;
-      const endDate = new Date(event.end_date).toISOString().split('T')[0];
-      return endDate === dateStr;
-    });
-  };
+  const hasEventEndDate = (day) =>
+    dayHasEventEndDate(events, year, month, day);
   
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -189,11 +185,24 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                               ></i>
                             )}
                           </div>
-                          {dayEvents.length > 0 && (
+                          {(() => {
+                            const visibleDayEvents = dayEvents.filter(
+                              (event) =>
+                                getEventCalendarDayRole(event, year, month, day) !==
+                                "end"
+                            );
+                            if (visibleDayEvents.length === 0) return null;
+                            return (
                             <div className="d-flex flex-column gap-1">
-                              {dayEvents.slice(0, 2).map((event, idx) => {
+                              {visibleDayEvents.slice(0, 2).map((event, idx) => {
                                 const chipStyle = getEventTypeCalendarStyle(
                                   event.event_type
+                                );
+                                const dayRole = getEventCalendarDayRole(
+                                  event,
+                                  year,
+                                  month,
+                                  day
                                 );
                                 return (
                                   <div
@@ -209,21 +218,32 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                                       e.stopPropagation();
                                       if (onEventClick) onEventClick(event);
                                     }}
-                                    title={event.title ? event.title.toUpperCase() : ''}
+                                    title={
+                                      event.title ? event.title.toUpperCase() : ""
+                                    }
                                   >
-                                    {event.title.length > 10 ? event.title.substring(0, 10) + '...' : event.title}
+                                    {dayRole === "start" ? (
+                                      truncateEventTitle(event.title)
+                                    ) : (
+                                      <i
+                                        className="bx bx-dots-horizontal-rounded"
+                                        aria-hidden
+                                        style={{ fontSize: "0.75rem" }}
+                                      />
+                                    )}
                                   </div>
                                 );
                               })}
-                              {dayEvents.length > 2 && (
+                              {visibleDayEvents.length > 2 && (
                                 <small className="text-muted">
                                   {t("publicPortal.moreCount", {
-                                    n: dayEvents.length - 2,
+                                    n: visibleDayEvents.length - 2,
                                   })}
                                 </small>
                               )}
                             </div>
-                          )}
+                            );
+                          })()}
                         </>
                       )}
                     </td>
@@ -272,6 +292,8 @@ const PortalPage = () => {
   });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showPopupCard, setShowPopupCard] = useState(true);
+  const [quickLinksSearch, setQuickLinksSearch] = useState("");
+  const [quickLinksPage, setQuickLinksPage] = useState(0);
   const utcDateKey = useUtcDateKey();
 
   // Default Daily Motivation when none in DB
@@ -331,12 +353,13 @@ const PortalPage = () => {
     if (cached) {
       setData(cached);
       setLoading(false);
-      return;
     }
 
     const fetchPublicDashboard = async () => {
       try {
-        setLoading(true);
+        if (!cached) {
+          setLoading(true);
+        }
         setError(null);
         const res = await axios.get(`${API_BASE_URL}/public/ppaa-dashboard/`, {
           timeout: 15000,
@@ -523,6 +546,29 @@ const PortalPage = () => {
   );
   const faqs = data?.faqs || [];
   const quickLinks = data?.quick_links || [];
+  const filteredQuickLinks = useMemo(() => {
+    const q = (quickLinksSearch || "").trim().toLowerCase();
+    const list = Array.isArray(quickLinks) ? quickLinks : [];
+    if (!q) return list;
+    return list.filter((l) => {
+      const hay = `${l?.name || ""} ${l?.title || ""} ${l?.url || ""} ${l?.description || ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [quickLinks, quickLinksSearch]);
+
+  const QUICK_LINKS_PAGE_SIZE = 12;
+  const quickLinksTotalPages = Math.max(
+    1,
+    Math.ceil(filteredQuickLinks.length / QUICK_LINKS_PAGE_SIZE)
+  );
+  const quickLinksPageSafe = Math.min(
+    Math.max(0, quickLinksPage),
+    quickLinksTotalPages - 1
+  );
+  const pagedQuickLinks = useMemo(() => {
+    const start = quickLinksPageSafe * QUICK_LINKS_PAGE_SIZE;
+    return filteredQuickLinks.slice(start, start + QUICK_LINKS_PAGE_SIZE);
+  }, [filteredQuickLinks, quickLinksPageSafe]);
   const quickLinkColorSchemes = useMemo(
     () =>
       isDarkTheme
@@ -1929,39 +1975,14 @@ const PortalPage = () => {
               <div className="card-body p-0">
                 {docsLibraryTab === "faqs" ? (
                   <div className="p-3">
-                    <div className="input-group input-group-sm mb-3">
-                      <span className="input-group-text bg-light">
-                        <i className="bx bx-search text-muted"></i>
-                      </span>
-                      <input
-                        type="search"
-                        className="form-control"
-                        placeholder={t("publicPortal.searchFaqsPlaceholder")}
-                        value={libraryFaqSearch}
-                        onChange={(e) => {
-                          setLibraryFaqSearch(e.target.value);
-                          setLibraryFaqOffset(0);
-                        }}
-                        aria-label={t("publicPortal.searchFaqsAria")}
-                      />
-                    </div>
                     {(() => {
-                      const filtered = faqs.filter((faq) => {
-                        if (!libraryFaqSearch.trim()) return true;
-                        const q = libraryFaqSearch.toLowerCase();
-                        return (
-                          faq.question?.toLowerCase().includes(q) ||
-                          faq.answer?.toLowerCase().includes(q)
-                        );
-                      });
+                      const filtered = faqs;
                       if (filtered.length === 0) {
                         return (
                           <div className="text-center py-4 text-muted">
                             <i className="bx bx-info-circle fs-1 mb-2"></i>
                             <p className="mb-0">
-                              {libraryFaqSearch.trim()
-                                ? t("publicPortal.noFaqMatch")
-                                : t("publicPortal.noFaqsAvailable")}
+                              {t("publicPortal.noFaqsAvailable")}
                             </p>
                           </div>
                         );
@@ -2324,8 +2345,67 @@ const PortalPage = () => {
                     <p className="mb-0">{t("publicPortal.noQuickLinks")}</p>
                   </div>
                 ) : (
-                  <div className="row g-3 justify-content-start">
-                    {quickLinks.slice(0, 8).map((link, index) => {
+                  <>
+                    <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                      <div className="input-group" style={{ maxWidth: 560, minWidth: 280 }}>
+                        <span className="input-group-text bg-light">
+                          <i className="bx bx-search text-muted"></i>
+                        </span>
+                        <input
+                          type="search"
+                          className="form-control"
+                          placeholder={t("publicPortal.searchQuickLinksPlaceholder")}
+                          aria-label={t("publicPortal.searchQuickLinksAria")}
+                          value={quickLinksSearch}
+                          style={{ minHeight: 42, fontSize: "0.95rem" }}
+                          onChange={(e) => {
+                            setQuickLinksSearch(e.target.value);
+                            setQuickLinksPage(0);
+                          }}
+                        />
+                      </div>
+                      <div className="d-flex align-items-center gap-2 ms-auto">
+                        <small className="text-muted d-none d-sm-inline">
+                          {t("publicPortal.pageOf", {
+                            n: quickLinksPageSafe + 1,
+                            total: quickLinksTotalPages,
+                          })}
+                        </small>
+                        <div className="btn-group" role="group" aria-label={t("publicPortal.quickLinks")}>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            disabled={quickLinksPageSafe <= 0}
+                            onClick={() => setQuickLinksPage((p) => Math.max(0, p - 1))}
+                            style={{ minHeight: 42, minWidth: 44 }}
+                          >
+                            <i className="bx bx-chevron-left fs-4" aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            disabled={quickLinksPageSafe + 1 >= quickLinksTotalPages}
+                            onClick={() =>
+                              setQuickLinksPage((p) =>
+                                Math.min(quickLinksTotalPages - 1, p + 1)
+                              )
+                            }
+                            style={{ minHeight: 42, minWidth: 44 }}
+                          >
+                            <i className="bx bx-chevron-right fs-4" aria-hidden />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {pagedQuickLinks.length === 0 ? (
+                      <div className="text-center py-4 text-muted">
+                        <i className="bx bx-search fs-1 mb-2"></i>
+                        <p className="mb-0">{t("dashboardSearch.noResults")}</p>
+                      </div>
+                    ) : (
+                      <div className="row g-3 justify-content-start">
+                        {pagedQuickLinks.map((link, index) => {
                       const colorScheme = quickLinkColorSchemes[index % quickLinkColorSchemes.length];
 
                       return (
@@ -2430,7 +2510,9 @@ const PortalPage = () => {
                         </div>
                       );
                     })}
-                  </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
