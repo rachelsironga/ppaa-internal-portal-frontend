@@ -3,7 +3,8 @@ import { useSelector } from "react-redux";
 import servicesList from "../data/servicesList.json";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { hasPermission } from "../utils/permissions";
+import { hasPermission, canAccessServiceMenu } from "../utils/permissions";
+import servicesConfig from "../data/servicesConfig";
 import { isMaoniDepartmentHandler } from "../utils/maoniRoles";
 import {
   pathIsUnderMaintenanceApp,
@@ -18,6 +19,23 @@ import {
   ChevronRight,
   Sparkles,
 } from "lucide-react";
+
+function isServiceVisible(service, userPermissions, userRoles, user) {
+  const cfg = servicesConfig.find(
+    (s) => s.id === service.id || s.link === service.link
+  );
+  if (cfg) {
+    const viaMenu = canAccessServiceMenu(cfg.menu, userPermissions, userRoles, user);
+    if (viaMenu !== null) return viaMenu;
+  }
+  return hasPermission(
+    service.permission,
+    service.role,
+    userPermissions,
+    userRoles,
+    user
+  );
+}
 
 export const Services = () => {
   const user = useSelector((state) => state.userReducer?.data);
@@ -35,13 +53,7 @@ export const Services = () => {
   const visibleServices = useMemo(
     () =>
       servicesList.filter((service) =>
-        hasPermission(
-          service.permission,
-          service.role,
-          userPermissions,
-          userRoles,
-          user
-        )
+        isServiceVisible(service, userPermissions, userRoles, user)
       ),
     [userPermissions, userRoles, user]
   );
@@ -99,9 +111,8 @@ export const Services = () => {
 
   const handleServiceClick = async (service) => {
     // Safety check: do not navigate if user lacks permission/role
-    const allowed = hasPermission(
-      service.permission,
-      service.role,
+    const allowed = isServiceVisible(
+      service,
       userPermissions,
       userRoles,
       user

@@ -1,24 +1,32 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "./portalPrFlyersGallery.css";
 import { useInternalPortalI18n } from "../../contexts/InternalPortalI18nContext.jsx";
 import {
   prFlyerVideoEmbedSrc,
   prFlyerVideoProviderLabel,
+  resolvePublicPortalAssetUrl,
 } from "../../utils/prFlyerVideo";
 
 function FlyerCard({ flyer, onOpen }) {
   const { t } = useInternalPortalI18n();
   const title = (flyer.title || "").trim();
-  const caption = (flyer.caption || "").trim();
-  const alt = title || "Flyer or poster image";
   const label = title || "Flyer or poster";
   const videoUrl = (flyer.video_url || "").trim();
   const embedSrc = useMemo(() => (videoUrl ? prFlyerVideoEmbedSrc(videoUrl) : null), [videoUrl]);
-  const posterSrc = (flyer.image_url || "").trim() || (flyer.video_thumb_url || "").trim();
+  const posterSrc = useMemo(() => {
+    const raw = (flyer.image_url || "").trim() || (flyer.video_thumb_url || "").trim();
+    return resolvePublicPortalAssetUrl(raw);
+  }, [flyer.image_url, flyer.video_thumb_url]);
   const hasVideo = !!(videoUrl && embedSrc);
   const provider = hasVideo ? prFlyerVideoProviderLabel(videoUrl) : null;
+  const [imgError, setImgError] = useState(false);
 
-  const canOpen = !!(posterSrc || hasVideo);
+  useEffect(() => {
+    setImgError(false);
+  }, [posterSrc]);
+
+  const canOpen = !!(posterSrc && !imgError) || hasVideo;
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -41,8 +49,14 @@ function FlyerCard({ flyer, onOpen }) {
       aria-label={hasVideo ? `Open video: ${label}` : `Open preview: ${label}`}
     >
       <div className="pr-flyer-card__media">
-        {posterSrc ? (
-          <img src={posterSrc} alt={alt} loading="lazy" decoding="async" />
+        {posterSrc && !imgError ? (
+          <img
+            src={posterSrc}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onError={() => setImgError(true)}
+          />
         ) : hasVideo ? (
           <div className="pr-flyer-card__video-placeholder" aria-hidden>
             <i
@@ -52,7 +66,11 @@ function FlyerCard({ flyer, onOpen }) {
             />
             <span>{provider || "Video"}</span>
           </div>
-        ) : null}
+        ) : (
+          <div className="pr-flyer-card__image-fallback" aria-hidden>
+            <i className="bx bx-image" />
+          </div>
+        )}
         <div className="pr-flyer-card__overlay" aria-hidden>
           <span className="pr-flyer-card__chip">
             {hasVideo ? (
@@ -69,37 +87,12 @@ function FlyerCard({ flyer, onOpen }) {
           </span>
         </div>
       </div>
-      {title || caption ? (
-        <div className="pr-flyer-card__meta">
-          {title ? (
-            <div className="pr-flyer-card__title" title={title}>
-              {title}
-            </div>
-          ) : null}
-          {caption ? (
-            <div className="pr-flyer-card__caption" title={caption}>
-              {caption}
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div className="pr-flyer-card__meta py-2">
-          <span className="text-muted small">
-            {hasVideo ? t("publicPortal.video") : t("publicPortal.poster")}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
 
 /**
  * Shared PR flyers / posters gallery for staff dashboard and public portal.
- * @param {{ uid: string, title?: string, caption?: string, image_url?: string, video_url?: string, video_thumb_url?: string }[]} flyers
- * @param {string} [id] - optional anchor id
- * @param {React.ReactNode} [headerRight] - e.g. Manage button
- * @param {boolean} [lift] - add portal-card-lift on public portal
- * @param {boolean} [compact] - single-column grid for narrow column beside Events/FAQs
  */
 export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = false, compact = false }) {
   const { t } = useInternalPortalI18n();
@@ -117,8 +110,15 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
     return u ? prFlyerVideoEmbedSrc(u) : null;
   }, [lightboxFlyer]);
 
+  const lightboxImageSrc = useMemo(() => {
+    const raw = (lightboxFlyer?.image_url || "").trim();
+    return raw ? resolvePublicPortalAssetUrl(raw) : "";
+  }, [lightboxFlyer]);
+
   const handleOpen = useCallback((flyer) => {
-    const poster = (flyer?.image_url || "").trim() || (flyer?.video_thumb_url || "").trim();
+    const poster = resolvePublicPortalAssetUrl(
+      (flyer?.image_url || "").trim() || (flyer?.video_thumb_url || "").trim()
+    );
     const v = (flyer?.video_url || "").trim();
     const emb = v ? prFlyerVideoEmbedSrc(v) : null;
     if (poster || emb) setLightboxFlyer(flyer);
@@ -137,7 +137,6 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
   useEffect(() => {
     const el = modalRef.current;
     if (!el || !window.bootstrap) return;
-    // No dimmed backdrop for this lightbox — avoids the theme’s heavy grey overlay (often feels “blurred”).
     if (!window.bootstrap.Modal.getInstance(el)) {
       new window.bootstrap.Modal(el, { backdrop: false, keyboard: true, focus: true });
     }
@@ -148,10 +147,74 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
 
   const lbTitle =
     (lightboxFlyer?.title || "").trim() || t("publicPortal.lightboxPoster");
-  const lbCaption = (lightboxFlyer?.caption || "").trim();
   const lbVideo = (lightboxFlyer?.video_url || "").trim();
   const lbProvider = prFlyerVideoProviderLabel(lbVideo);
   const isInstagramEmbed = lightboxEmbedSrc && lightboxEmbedSrc.includes("instagram.com");
+
+  const lightboxModal = (
+    <div
+      className="modal fade pr-flyer-lightbox-modal"
+      id={modalDomId}
+      ref={modalRef}
+      tabIndex={-1}
+      aria-hidden="true"
+      aria-label={lbTitle}
+      data-bs-backdrop="false"
+      data-bs-keyboard="true"
+    >
+      <div className="modal-dialog modal-dialog-centered modal-lg pr-flyer-lightbox-modal__dialog">
+        <div className="modal-content border-0 pr-flyer-lightbox-modal__content">
+          <button
+            type="button"
+            className="btn-close pr-flyer-lightbox-modal__close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          />
+          <div className="modal-body text-center pt-2 pr-flyer-lightbox-modal__body">
+            {lightboxEmbedSrc ? (
+              <div
+                className={`pr-flyer-lightbox-modal__iframe-wrap${
+                  isInstagramEmbed ? " pr-flyer-lightbox-modal__iframe-wrap--instagram" : ""
+                }`}
+              >
+                <iframe
+                  title={lbProvider ? `${lbProvider} video` : "Video"}
+                  src={lightboxEmbedSrc}
+                  className="pr-flyer-lightbox-modal__iframe"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+            ) : lightboxImageSrc ? (
+              <div className="pr-flyer-lightbox-modal__media">
+                <img
+                  src={lightboxImageSrc}
+                  alt={lbTitle}
+                  className="pr-flyer-lightbox-modal__img img-fluid"
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+            ) : null}
+            {lbVideo ? (
+              <p className="small text-muted mt-2 mb-0">
+                <a href={lbVideo} target="_blank" rel="noopener noreferrer">
+                  {lbProvider ? `Open on ${lbProvider}` : "Open video link"}
+                </a>
+              </p>
+            ) : lightboxImageSrc ? (
+              <p className="small text-muted mt-2 mb-0">
+                <a href={lightboxImageSrc} target="_blank" rel="noopener noreferrer">
+                  Open image in new tab
+                </a>
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -230,71 +293,7 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
         )}
       </div>
 
-      <div
-        className="modal fade pr-flyer-lightbox-modal"
-        id={modalDomId}
-        ref={modalRef}
-        tabIndex={-1}
-        aria-hidden="true"
-        aria-labelledby={`${modalDomId}-title`}
-        data-bs-backdrop="false"
-        data-bs-keyboard="true"
-      >
-        <div className="modal-dialog modal-dialog-centered modal-lg pr-flyer-lightbox-modal__dialog">
-          <div className="modal-content border-0 pr-flyer-lightbox-modal__content">
-            <div className="modal-header border-0 pb-0 flex-shrink-0">
-              <h5 className="modal-title fw-semibold" id={`${modalDomId}-title`} style={{ color: "#00853f" }}>
-                {lbTitle}
-              </h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
-            </div>
-            <div className="modal-body text-center pt-2 pr-flyer-lightbox-modal__body">
-              {lightboxEmbedSrc ? (
-                <div
-                  className={`pr-flyer-lightbox-modal__iframe-wrap${
-                    isInstagramEmbed ? " pr-flyer-lightbox-modal__iframe-wrap--instagram" : ""
-                  }`}
-                >
-                  <iframe
-                    title={lbProvider ? `${lbProvider} video` : "Video"}
-                    src={lightboxEmbedSrc}
-                    className="pr-flyer-lightbox-modal__iframe"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    loading="lazy"
-                  />
-                </div>
-              ) : lightboxFlyer?.image_url ? (
-                <div className="pr-flyer-lightbox-modal__media">
-                  <img
-                    src={lightboxFlyer.image_url}
-                    alt={lbTitle}
-                    className="pr-flyer-lightbox-modal__img img-fluid"
-                    loading="eager"
-                    decoding="async"
-                  />
-                </div>
-              ) : null}
-              {lbCaption ? (
-                <p className="text-muted small mt-3 mb-0 text-start">{lbCaption}</p>
-              ) : null}
-              {lbVideo ? (
-                <p className="small text-muted mt-2 mb-0">
-                  <a href={lbVideo} target="_blank" rel="noopener noreferrer">
-                    {lbProvider ? `Open on ${lbProvider}` : "Open video link"}
-                  </a>
-                </p>
-              ) : lightboxFlyer?.image_url ? (
-                <p className="small text-muted mt-2 mb-0">
-                  <a href={lightboxFlyer.image_url} target="_blank" rel="noopener noreferrer">
-                    Open image in new tab
-                  </a>
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
+      {typeof document !== "undefined" ? createPortal(lightboxModal, document.body) : null}
     </div>
   );
 }

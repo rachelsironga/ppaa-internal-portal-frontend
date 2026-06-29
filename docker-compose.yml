@@ -7,10 +7,10 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Default: Docker Hub official images. Override via DOCKER_NODE_IMAGE / DOCKER_NGINX_IMAGE.
-        # Some networks can't resolve mirror.gcr.io; these defaults work more often.
-        NODE_IMAGE: ${DOCKER_NODE_IMAGE:-node:18-alpine}
-        NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-nginx:alpine}
+        # Defaults: Google mirror of Docker Official Images (Dockerfile defaults). Hub often fails on some networks.
+        # Override: DOCKER_NODE_IMAGE=public.ecr.aws/docker/library/node:18-alpine
+        NODE_IMAGE: ${DOCKER_NODE_IMAGE:-mirror.gcr.io/library/node:18-alpine}
+        NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-mirror.gcr.io/library/nginx:alpine}
         # Local dev: localhost. LAN deploy: set VITE_API_URL=http://192.168.1.4:8092 before build.
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8092}
     # Image already contains /usr/share/nginx/html from build; no bind mount needed to serve.

@@ -47,7 +47,7 @@
     ]
   },
   {
-    "id": "ppaa-reports",
+    "id": "report-management",
     "text": "Reports Management",
     "icon": "bx bx-file",
     "available": true,

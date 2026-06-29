@@ -37,27 +37,34 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: 0;
+  min-height: clamp(268px, 42vw, 400px);
+  flex: 1 1 auto;
   mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    #000 2%,
-    #000 98%,
+    #000 3%,
+    #000 97%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    #000 2%,
-    #000 98%,
+    #000 3%,
+    #000 97%,
     transparent 100%
   );
 }
 
 .pr-flyers-gallery__marquee-track {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
   width: max-content;
-  animation: pr-flyers-marquee-scroll var(--pr-marquee-sec, 36s) linear infinite;
+  will-change: transform;
+  animation-name: pr-flyers-marquee-scroll;
+  animation-duration: var(--pr-marquee-sec, 36s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 .pr-flyers-gallery__marquee:hover .pr-flyers-gallery__marquee-track,
@@ -67,10 +74,11 @@
 
 .pr-flyers-gallery__marquee-group {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: row;
   align-items: stretch;
-  gap: 0.85rem;
-  padding-right: 0.85rem;
+  gap: 0.75rem;
+  padding-right: 0.75rem;
 }
 
 @media (min-width: 576px) {
@@ -129,10 +137,10 @@
 }
 
 .pr-flyer-card {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: block;
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: inherit;
   width: 100%;
   height: 100%;
   cursor: pointer;
@@ -158,9 +166,10 @@
 }
 
 .pr-flyer-card__media {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: clamp(168px, 32vw, 260px);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background: linear-gradient(160deg, #f4faf7 0%, #e8f2ec 50%, #eef5f0 100%);
 }
@@ -173,6 +182,19 @@
   object-fit: cover;
   object-position: center;
   display: block;
+  font-size: 0;
+  color: transparent;
+}
+
+.pr-flyer-card__image-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3da66a;
+  font-size: 2.5rem;
+  opacity: 0.45;
 }
 
 .pr-flyer-card__video-placeholder {
@@ -289,7 +311,7 @@
   margin-right: auto;
 }
 
-/* Sidebar column beside Events: narrower marquee cards */
+/* Dashboard sidebar column (col-lg-4) */
 .pr-flyers-gallery--narrow .pr-flyers-gallery__marquee-slot {
   width: clamp(140px, 72%, 200px);
   min-height: clamp(240px, 48vw, 320px);
@@ -329,12 +351,35 @@
   padding: 0.75rem !important;
 }
 
-/* Lightbox: no Bootstrap backdrop — use shadow so the dialog still reads as “floating” */
+/* Lightbox (portaled to body) */
 .pr-flyer-lightbox-modal__content {
+  position: relative;
   box-shadow: 0 1.25rem 3rem rgba(15, 24, 36, 0.22), 0 0.35rem 0.85rem rgba(15, 24, 36, 0.12);
   max-height: min(92dvh, calc(100vh - 2rem));
   overflow: hidden;
   min-height: 0;
+}
+
+.pr-flyer-lightbox-modal__close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 10;
+  margin: 0;
+  padding: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  opacity: 1;
+  border-radius: 50%;
+  background-color: #fff !important;
+  box-shadow: 0 2px 14px rgba(15, 24, 36, 0.22);
+  border: 1px solid rgba(0, 133, 63, 0.2);
+}
+
+.pr-flyer-lightbox-modal__close:hover,
+.pr-flyer-lightbox-modal__close:focus {
+  opacity: 1;
+  background-color: #f4faf7 !important;
 }
 
 /* Avoid theme fade scale(0.8) on this dialog — scaling often makes large images look soft */
@@ -369,6 +414,7 @@
 /* Natural size up to dialog width; body scrolls for very tall posters — no max-height here */
 .pr-flyer-lightbox-modal__img {
   max-width: 100%;
+  max-height: min(78dvh, calc(100vh - 5rem));
   width: auto;
   height: auto;
   display: block;
