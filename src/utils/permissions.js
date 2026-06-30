@@ -87,6 +87,19 @@ export const hasAnyVisibleItem = (items, userPermissions, userRoles, user = null
 };
 
 /**
+ * True if the user can see at least one real page in a service menu (ignores link back to /services).
+ * Returns null when the menu is empty so callers can fall back to role/permission on the service card.
+ */
+export const canAccessServiceMenu = (menu, userPermissions, userRoles, user = null) => {
+    if (!menu || menu.length === 0) return null;
+    const items = menu.flatMap((section) =>
+        (section.items || []).filter((item) => item.link !== "/services")
+    );
+    if (!items.length) return null;
+    return hasAnyVisibleItem(items, userPermissions, userRoles, user);
+};
+
+/**
  * Check if user has ONLY the 'staff' role (and no other roles)
  * @param {Array} userRoles - Array of user roles
  * @returns {boolean} True if user has only 'staff' role
