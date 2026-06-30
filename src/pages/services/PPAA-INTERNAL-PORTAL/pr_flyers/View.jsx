@@ -8,6 +8,7 @@ import { hasAccess } from "../../../../hooks/AccessHandler";
 import showToast from "../../../../helpers/ToastHelper";
 import PrFlyerModal from "./Modal";
 import { deletePrFlyer } from "./Queries";
+import { normalizePublicPortalAssetUrl } from "../../../../helpers/publicPortalAssetUrl";
 
 export const PrFlyerPage = () => {
   const [selectedObj, setSelectedObj] = useState(null);
@@ -100,7 +101,9 @@ export const PrFlyerPage = () => {
             style: { width: "100px", minWidth: "100px", maxWidth: "100px" },
             className: "text-center align-middle",
             render: (row) => {
-              const thumb = row.image_url || row.video_thumb_url;
+              const thumb = normalizePublicPortalAssetUrl(
+                row.image_url || row.video_thumb_url
+              );
               if (thumb) {
                 return (
                   <img

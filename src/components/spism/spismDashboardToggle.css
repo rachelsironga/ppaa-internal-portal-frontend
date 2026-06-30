@@ -1,0 +1,36 @@
+.spism-dashboard-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.spism-dashboard-toggle__btn {
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 0.375rem !important;
+}
+
+.spism-dashboard-toggle__btn.btn-outline-primary {
+  color: #2563eb;
+  border-color: #93c5fd;
+  background: #fff;
+}
+
+.spism-dashboard-toggle__btn.btn-outline-primary:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  border-color: #60a5fa;
+}
+
+.spism-dashboard-toggle__btn.btn-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+@media (max-width: 767.98px) {
+  .spism-dashboard-toggle {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

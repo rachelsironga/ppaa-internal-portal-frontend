@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Row, Col, Card, CardBody } from "reactstrap";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import RmsDashboardToggle from "../../../../components/rms/RmsDashboardToggle";
+import RmsStatCard from "../../../../components/rms/RmsStatCard";
+import "../../../../components/spism/spismDashboard.css";
 import { getDashboardStats, getFinancialYears, getReportTypes, DEADLINE_STATE_OPTIONS } from "../Queries";
 import { DoughnutChart } from "../../../../components/DashboardCharts/DoughnutChart";
 import showToast from "../../../../helpers/ToastHelper";
@@ -13,6 +16,7 @@ const EdDashboard = () => {
   const user = useSelector((state) => state.userReducer?.data);
 
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [stats, setStats] = useState(null);
   const [financialYears, setFinancialYears] = useState([]);
   const [reportTypes, setReportTypes] = useState([]);
@@ -89,21 +93,6 @@ const EdDashboard = () => {
   const selectedReportType =
     reportTypes.find((type) => String(type.uid) === String(selectedReportTypeUid)) ||
     null;
-
-  if (loading) {
-    return (
-      <div className="w-100">
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ minHeight: "400px" }}
-        >
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const byDepartment = stats?.by_department || stats?.by_directory || [];
   const byReportType = stats?.by_report_type || [];
@@ -192,6 +181,8 @@ const EdDashboard = () => {
   };
 
   const exportDepartmentStatistics = () => {
+    setExporting(true);
+    try {
     const rows = sortedDepartmentPerformance.map((item, index) => ({
       rank: index + 1,
       department_code: item.department__code || "",
@@ -231,7 +222,18 @@ const EdDashboard = () => {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
   };
+
+  const totalReports = stats?.total_reports || 0;
+  const submittedCount = statusSummary?.submitted || 0;
+  const submissionRate =
+    totalReports > 0 ? Math.round((submittedCount / totalReports) * 100) : 0;
+  const overdueCount = stats?.overdue_count || deadlineSummary?.overdue || 0;
+  const pendingWorkload =
+    (statusSummary?.pending || 0) + (statusSummary?.in_progress || 0);
 
   const getDeadlineStateConfig = (state) => {
     const configs = {
@@ -267,223 +269,204 @@ const EdDashboard = () => {
 
   return (
     <div className="w-100">
-      <BreadCumb pageList={["Report Management System (RMS)", "ED Dashboard"]} />
+      <BreadCumb pageList={["Report Management System (RMS)", "ED Dashboard"]}>
+        <RmsDashboardToggle />
+      </BreadCumb>
 
-      <div className="row">
-        <div className="col-12 mb-4">
-          <div className="card border-0 shadow-sm">
-            <div className="d-flex align-items-end row">
-              <div className="col-md-8">
-                <div className="card-body">
-                  <h5 className="card-title text-primary">
-                    Welcome, {user?.first_name || "User"} {user?.last_name || ""}!
-                  </h5>
-                  <p className="mb-4">
-                    Review institutional performance, compare departments, and track{" "}
-                    <span className="fw-medium">report submissions</span> across the selected financial year.
-                  </p>
-                  <div className="d-flex gap-2 flex-wrap">
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => navigate("/report-management/reports")}
-                    >
-                      <i className="bx bx-list-ul me-1"></i>
-                      View Reports
-                    </button>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => navigateToReports({ status: "submitted" })}
-                    >
-                      <i className="bx bx-check-circle me-1"></i>
-                      Submitted Reports
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => {
-                        fetchFilterOptions();
-                        fetchDashboardStats();
-                      }}
-                    >
-                      <i className="bx bx-refresh me-1"></i>
-                      Refresh Analytics
-                    </button>
-                  </div>
-                </div>
+      <div className="card shadow-sm border-0 mb-4">
+        <div className="card-body spism-dashboard-welcome">
+          <div className="spism-dashboard-header">
+            <div className="spism-dashboard-header__title">
+              <h5 className="mb-1 fw-semibold">
+                <i className="bx bx-pie-chart-alt me-2 text-primary" aria-hidden="true" />
+                Institutional Analytics Dashboard
+              </h5>
+              <p className="mb-0 text-muted small">
+                Welcome, {user?.first_name || "User"}! Review institutional performance, compare
+                departments, and track report submissions for{" "}
+                {selectedFinancialYear?.name || "the selected financial year"}.
+              </p>
+            </div>
+            <div className="spism-dashboard-header__actions">
+              <div className="spism-dashboard-toolbar__controls">
+                <label
+                  htmlFor="rms-ed-financial-year"
+                  className="form-label mb-0 small text-muted text-uppercase"
+                >
+                  Financial Year
+                </label>
+                <select
+                  id="rms-ed-financial-year"
+                  className="form-select form-select-sm"
+                  style={{ minWidth: "160px", maxWidth: "200px" }}
+                  value={selectedFY}
+                  onChange={(e) => setSelectedFY(e.target.value)}
+                >
+                  <option value="">All Financial Years</option>
+                  {financialYears.map((fy) => (
+                    <option key={fy.uid} value={fy.uid}>
+                      {fy.name}{" "}
+                      {currentFinancialYear && fy.uid === currentFinancialYear.uid
+                        ? "(Current)"
+                        : ""}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="col-md-4 text-center text-md-left d-none d-md-block">
-                <div className="card-body pb-0 px-0 px-md-4">
-                  <img
-                    src="/assets/img/illustrations/man-with-laptop-light.png"
-                    height="140"
-                    alt="ED Dashboard"
-                    data-app-dark-img="illustrations/man-with-laptop-dark.png"
-                    data-app-light-img="illustrations/man-with-laptop-light.png"
-                  />
-                </div>
+              <div className="spism-dashboard-toolbar__controls">
+                <label
+                  htmlFor="rms-ed-report-type"
+                  className="form-label mb-0 small text-muted text-uppercase"
+                >
+                  Report Type
+                </label>
+                <select
+                  id="rms-ed-report-type"
+                  className="form-select form-select-sm"
+                  style={{ minWidth: "160px", maxWidth: "200px" }}
+                  value={selectedReportTypeUid}
+                  onChange={(e) => setSelectedReportTypeUid(e.target.value)}
+                >
+                  <option value="">All Report Types</option>
+                  {reportTypes.map((type) => (
+                    <option key={type.uid} value={type.uid}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
               </div>
+              <button
+                type="button"
+                className="btn btn-success btn-sm spism-dashboard-toolbar__export"
+                onClick={exportDepartmentStatistics}
+                disabled={exporting || loading}
+              >
+                {exporting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
+                    Exporting…
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-download me-1" aria-hidden="true" />
+                    Export Department Statistics
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <Card className="border-0 shadow-sm mb-4 overflow-hidden">
-        <CardBody className="py-4">
-          <div className="row g-3 align-items-end">
-            <div className="col-lg-5">
-              <h4 className="mb-1">
-                <i className="bx bx-pie-chart-alt text-primary me-2" />
-                Institutional Analytics Dashboard
-              </h4>
-              <p className="text-muted mb-0">
-                Deep institutional analysis for {user?.office_name || "the institution"} by report type and department.
-              </p>
+      <div className="spism-stat-grid mb-4">
+        <RmsStatCard
+          label="Total reports"
+          value={loading ? "—" : totalReports}
+          sub="Across all departments"
+          icon="bx bx-file-blank"
+          tone="spism-stat-card--purple"
+          onClick={() => navigateToReports()}
+        />
+        <RmsStatCard
+          label="Submitted"
+          value={loading ? "—" : submittedCount}
+          sub={`${submissionRate}% of all reports`}
+          icon="bx bx-check-circle"
+          tone="spism-stat-card--green"
+          onClick={() => navigateToReports({ status: "submitted" })}
+        />
+        <RmsStatCard
+          label="Pending / In progress"
+          value={loading ? "—" : pendingWorkload}
+          sub="Active institutional workload"
+          icon="bx bx-time-five"
+          tone="spism-stat-card--orange"
+          onClick={() => navigateToReports({ status: "pending" })}
+        />
+        <RmsStatCard
+          label="Overdue"
+          value={loading ? "—" : overdueCount}
+          sub="Immediate attention required"
+          icon="bx bx-error-circle"
+          tone="spism-stat-card--red"
+          onClick={() => navigateToReports({ deadline_state: "overdue" })}
+        />
+        <RmsStatCard
+          label="Late submissions"
+          value={loading ? "—" : stats?.late_submissions_count || 0}
+          sub="Submitted after deadline"
+          icon="bx bx-alarm-exclamation"
+          tone="spism-stat-card--teal"
+          onClick={() => navigateToReports({ status: "submitted" })}
+        />
+      </div>
+
+      <div className="row g-3 mb-4">
+        <div className="col-md-4">
+          <button
+            type="button"
+            className="card spism-quick-link h-100 text-decoration-none text-body w-100 border-0 text-start"
+            onClick={() => navigate("/report-management/reports")}
+          >
+            <div className="card-body d-flex align-items-center gap-3">
+              <span className="avatar bg-label-primary rounded">
+                <i className="bx bx-list-ul fs-4" />
+              </span>
+              <div>
+                <div className="fw-semibold">View Reports</div>
+                <div className="small text-muted">Full institutional register</div>
+              </div>
             </div>
-            <div className="col-md-6 col-lg-3">
-              <label className="form-label fw-semibold mb-2 text-muted small text-uppercase">
-                Financial Year
-              </label>
-              <select
-                className="form-select"
-                value={selectedFY}
-                onChange={(e) => setSelectedFY(e.target.value)}
-              >
-                <option value="">All Financial Years</option>
-                {financialYears.map((fy) => (
-                  <option key={fy.uid} value={fy.uid}>
-                    {fy.name} {(currentFinancialYear && fy.uid === currentFinancialYear.uid) ? "(Current)" : ""}
-                  </option>
-                ))}
-              </select>
+          </button>
+        </div>
+        <div className="col-md-4">
+          <button
+            type="button"
+            className="card spism-quick-link h-100 text-decoration-none text-body w-100 border-0 text-start"
+            onClick={() => navigateToReports({ status: "submitted" })}
+          >
+            <div className="card-body d-flex align-items-center gap-3">
+              <span className="avatar bg-label-success rounded">
+                <i className="bx bx-check-double fs-4" />
+              </span>
+              <div>
+                <div className="fw-semibold">Submitted Reports</div>
+                <div className="small text-muted">Review completed submissions</div>
+              </div>
             </div>
-            <div className="col-md-6 col-lg-4">
-              <label className="form-label fw-semibold mb-2 text-muted small text-uppercase">
-                Report Type
-              </label>
-              <select
-                className="form-select"
-                value={selectedReportTypeUid}
-                onChange={(e) => setSelectedReportTypeUid(e.target.value)}
-              >
-                <option value="">All Report Types</option>
-                {reportTypes.map((type) => (
-                  <option key={type.uid} value={type.uid}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
+          </button>
+        </div>
+        <div className="col-md-4">
+          <button
+            type="button"
+            className="card spism-quick-link h-100 text-decoration-none text-body w-100 border-0 text-start"
+            onClick={() => {
+              fetchFilterOptions();
+              fetchDashboardStats();
+            }}
+          >
+            <div className="card-body d-flex align-items-center gap-3">
+              <span className="avatar bg-label-info rounded">
+                <i className="bx bx-refresh fs-4" />
+              </span>
+              <div>
+                <div className="fw-semibold">Refresh Analytics</div>
+                <div className="small text-muted">Reload charts and rankings</div>
+              </div>
             </div>
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-4 mb-4">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading…</span>
           </div>
-
-        </CardBody>
-      </Card>
-
-      <Row className="g-4 mb-4">
-        <Col md={3}>
-          <Card className="border-0 shadow-sm h-100">
-            <CardBody>
-              <div className="d-flex align-items-center">
-                <div className="avatar flex-shrink-0 me-3">
-                  <span className="avatar-initial rounded bg-label-primary">
-                    <i className="bx bx-file-blank text-primary fs-4" />
-                  </span>
-                </div>
-                <div>
-                  <small className="text-muted d-block mb-1">
-                    Total Institutional Reports
-                  </small>
-                  <h3 className="fw-bold mb-1">
-                    {stats?.total_reports || 0}
-                  </h3>
-                  <small className="text-muted">
-                    Across all departments in view
-                  </small>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="border-0 shadow-sm h-100">
-            <CardBody>
-              <div className="d-flex align-items-center">
-                <div className="avatar flex-shrink-0 me-3">
-                  <span className="avatar-initial rounded bg-label-success">
-                    <i className="bx bx-check-circle text-success fs-4" />
-                  </span>
-                </div>
-                <div>
-                  <small className="text-muted d-block mb-1">
-                    Submitted Reports
-                  </small>
-                  <h3 className="fw-bold text-success mb-1">
-                    {stats?.status_summary?.submitted || 0}
-                  </h3>
-                  <small className="text-muted">
-                    {stats?.total_reports
-                      ? `${Math.round(
-                          (stats.status_summary.submitted /
-                            stats.total_reports) *
-                            100
-                        )}% of all reports`
-                      : "No submissions yet"}
-                  </small>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="border-0 shadow-sm h-100">
-            <CardBody>
-              <div className="d-flex align-items-center">
-                <div className="avatar flex-shrink-0 me-3">
-                  <span className="avatar-initial rounded bg-label-warning">
-                    <i className="bx bx-time-five text-warning fs-4" />
-                  </span>
-                </div>
-                <div>
-                  <small className="text-muted d-block mb-1">
-                    Pending / In Progress
-                  </small>
-                  <h3 className="fw-bold text-warning mb-1">
-                    {(stats?.status_summary?.pending || 0) +
-                      (stats?.status_summary?.in_progress || 0)}
-                  </h3>
-                  <small className="text-muted">
-                    Active institutional workload
-                  </small>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="border-0 shadow-sm h-100">
-            <CardBody>
-              <div className="d-flex align-items-center">
-                <div className="avatar flex-shrink-0 me-3">
-                  <span className="avatar-initial rounded bg-label-danger">
-                    <i className="bx bx-error-circle text-danger fs-4" />
-                  </span>
-                </div>
-                <div>
-                  <small className="text-muted d-block mb-1">
-                    Overdue Reports
-                  </small>
-                  <h3 className="fw-bold text-danger mb-1">
-                    {stats?.overdue_count || 0}
-                  </h3>
-                  <small className="text-muted">
-                    Immediate attention required
-                  </small>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Deadline Monitoring - institutional view */}
+          <p className="text-muted small mt-2 mb-0">Loading institutional analytics…</p>
+        </div>
+      ) : (
+        <>
       <Card className="border-0 shadow-sm mb-4">
         <CardBody>
           <div className="d-flex justify-content-between align-items-center mb-4">
@@ -698,18 +681,13 @@ const EdDashboard = () => {
                   <i className="bx bx-link-external me-1"></i>
                   Open Submitted Reports
                 </button>
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={exportDepartmentStatistics}
-                >
-                  <i className="bx bx-download me-1"></i>
-                  Export Department Statistics
-                </button>
               </div>
             </CardBody>
           </Card>
         </Col>
       </Row>
+        </>
+      )}
 
       {/* Shared dashboard hover styles like main RMS dashboard */}
       <style>{`

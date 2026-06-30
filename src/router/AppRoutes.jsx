@@ -10,6 +10,8 @@ import { managementRoutes } from "./managementRoutes";
 import { MaintenancePage } from "../pages/misc/MaintenancePage";
 import { maoniRoutes } from "./maoniRoutes";
 import { ppaaInternalPortalRoutes } from "./ppaaInternalPortal";
+import { performanceDashboardRoutes } from "./performanceDashboardRoutes";
+import { reportManagementRoutes } from "./reportManagementRoutes";
 
 const AppRoutes = () => {
   return (
@@ -39,7 +41,13 @@ const AppRoutes = () => {
       {/* MAONI Routes */}
       {maoniRoutes}
 
-      {/* Dedicated maintenance screen (e.g. from Services home cards) */}
+      {/* Strategic Performance */}
+      {performanceDashboardRoutes}
+
+      {/* Reports Management */}
+      {reportManagementRoutes}
+
+      {/* Dedicated maintenance screen (e.g. Help Desk placeholder) */}
       <Route
         path="/maintenance"
         element={
@@ -49,23 +57,6 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Strategic Performance, Reports Management, Help Desk — under development */}
-      <Route
-        path="/performance-dashboard/*"
-        element={
-          <ProtectedRoute>
-            <MaintenancePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/report-management/*"
-        element={
-          <ProtectedRoute>
-            <MaintenancePage />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path="/help-desk/*"
         element={
@@ -76,8 +67,7 @@ const AppRoutes = () => {
       />
 
       {/* Catch-all 404 */}
-      <Route path="*" element={<MaintenancePage />} />
-      {/* <Route path="*" element={<ErrorPage />} /> */}
+      <Route path="*" element={<ErrorPage />} />
     </Routes>
   );
 };

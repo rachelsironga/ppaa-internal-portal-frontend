@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import SpismDashboardToggle from "../../../../components/spism/SpismDashboardToggle";
 import { spismCan } from "../../../../utils/spismPermissions";
 import {
   getFinancialYears,
@@ -220,7 +221,9 @@ export const ESDashboardPage = () => {
 
   return (
     <div className="w-100">
-      <BreadCumb pageList={["SPISM", "Approver Dashboard"]} />
+      <BreadCumb pageList={["SPISM", "Approver Dashboard"]}>
+        <SpismDashboardToggle />
+      </BreadCumb>
 
       <div className="row">
         <div className="col-12 mb-4">

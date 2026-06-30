@@ -5,7 +5,8 @@ import { refreshCurrentUser } from "../redux/actions/authentication/refreshUserA
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import servicesList from "../data/servicesList.json";
-import { isStaffOnly, isAllowedRouteForStaffOnly } from "../utils/permissions";
+import { isServiceVisible } from "../utils/serviceVisibility";
+import { isMaoniDepartmentHandler } from "../utils/maoniRoles";
 import {
   pathIsUnderMaintenanceApp,
   maintenanceScreenPath,
@@ -46,7 +47,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
   const user = useSelector((state) => state.userReducer?.data);
   const displayName = getUserDisplayName(user);
   const userRoles = user?.groups || [];
-  const staffOnly = isStaffOnly(userRoles);
+  const userPermissions = user?.user_permissions;
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,24 +117,12 @@ const Navbar = ({ isService = false, activeService = "" }) => {
   const servicesDropdownId = `services-dropdown-${Date.now()}`;
   const profileDropdownId = `profile-dropdown-${Date.now()}`;
 
-  // Filter services based on search and staff-only restrictions
+  // Filter services by role/permission and optional search
   useEffect(() => {
-    let services = servicesList;
-    
-    // For staff-only users, only show services they can access
-    if (staffOnly) {
-      services = services.filter((service) => {
-        if (service.link && isAllowedRouteForStaffOnly(service.link)) {
-          return true;
-        }
-        // Allow PPAA Internal Portal service for staff
-        if (service.link === '/ppaa-internal-portal') {
-          return true;
-        }
-        return false;
-      });
-    }
-    
+    let services = servicesList.filter((service) =>
+      isServiceVisible(service, userPermissions, userRoles, user)
+    );
+
     if (searchQuery.trim() === "") {
       setFilteredServices(services.slice(0, 6));
     } else {
@@ -149,7 +138,7 @@ const Navbar = ({ isService = false, activeService = "" }) => {
         .slice(0, 6);
       setFilteredServices(filtered);
     }
-  }, [searchQuery, staffOnly]);
+  }, [searchQuery, userPermissions, userRoles, user]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -172,12 +161,19 @@ const Navbar = ({ isService = false, activeService = "" }) => {
   };
 
   const handleServiceClick = (service) => {
+    if (!isServiceVisible(service, userPermissions, userRoles, user)) {
+      return;
+    }
     const raw =
       service.link ||
       `/dashboard/${service.text.toLowerCase().replace(/\s+/g, "-")}`;
-    const dest = pathIsUnderMaintenanceApp(raw)
-      ? maintenanceScreenPath()
-      : raw;
+    let dest = pathIsUnderMaintenanceApp(raw) ? maintenanceScreenPath() : raw;
+    if (
+      (dest === "/ppaa-maoni" || dest === "/ppaa-maoni/") &&
+      isMaoniDepartmentHandler(user)
+    ) {
+      dest = "/ppaa-maoni/handler-dashboard";
+    }
     navigate(dest);
     setShowDropdown(false);
   };

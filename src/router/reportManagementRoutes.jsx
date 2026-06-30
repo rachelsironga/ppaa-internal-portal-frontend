@@ -12,18 +12,11 @@ import StakeholderDetailPage from "../pages/services/REPORT-MANAGEMENT/setup/sta
 import ReportCategoryListPage from "../pages/services/REPORT-MANAGEMENT/setup/report_categories/ReportCategoryListPage";
 import ReportTypeListPage from "../pages/services/REPORT-MANAGEMENT/setup/report_types/ReportTypeListPage";
 
-const ReportsManagementEntryRedirect = () => {
-  const roles = useSelector((state) => state.userReducer?.data?.groups || []);
-  const normalized = roles.map((r) => String(r).toLowerCase());
-  const institutionDash =
-    normalized.includes("rms_report_manager") ||
-    normalized.includes("rms_sys_admin") ||
-    normalized.includes("admin");
-  const landingPath = institutionDash
-    ? "/report-management/dashboard/ed"
-    : "/report-management/dashboard";
+import { getRmsPrimaryDashboardLink } from "../utils/rmsDashboardNav";
 
-  return <Navigate to={landingPath} replace />;
+const ReportsManagementEntryRedirect = () => {
+  const user = useSelector((state) => state.userReducer?.data);
+  return <Navigate to={getRmsPrimaryDashboardLink(user)} replace />;
 };
 
 export const reportManagementRoutes = (
