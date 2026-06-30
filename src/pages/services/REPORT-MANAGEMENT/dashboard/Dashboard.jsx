@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Card, CardBody, Row, Col, Progress } from "reactstrap";
 import BreadCumb from "../../../../layouts/BreadCumb";
+import RmsDashboardToggle from "../../../../components/rms/RmsDashboardToggle";
+import RmsStatCard from "../../../../components/rms/RmsStatCard";
+import "../../../../components/spism/spismDashboard.css";
 import { getDashboardStats, getFinancialYears, DEADLINE_STATE_OPTIONS } from "../Queries";
 import { formatDate } from "../../../../helpers/DateFormater";
 import showToast from "../../../../helpers/ToastHelper";
@@ -11,24 +14,14 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.userReducer?.data);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [stats, setStats] = useState(null);
   const [financialYears, setFinancialYears] = useState([]);
   const [selectedFY, setSelectedFY] = useState("");
 
   useEffect(() => {
-    const roles = user?.groups || [];
-    const normalized = roles.map((r) => String(r).toLowerCase());
-    if (
-      normalized.includes("rms_report_manager") ||
-      normalized.includes("rms_sys_admin") ||
-      normalized.includes("admin")
-    ) {
-      navigate("/report-management/dashboard/ed", { replace: true });
-      return;
-    }
-
     fetchFinancialYears();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -65,6 +58,46 @@ const Dashboard = () => {
     }
   };
 
+  const handleExportSummary = () => {
+    if (!stats) {
+      showToast("No dashboard data to export yet", "info");
+      return;
+    }
+    setExporting(true);
+    try {
+      const fyLabel =
+        financialYears.find((fy) => fy.uid === selectedFY)?.name || "All Financial Years";
+      const rows = [
+        ["Metric", "Count"],
+        ["Pending", stats?.status_summary?.pending || 0],
+        ["In Progress", stats?.status_summary?.in_progress || 0],
+        ["Submitted", stats?.status_summary?.submitted || 0],
+        ["Due Today", stats?.due_today_count || 0],
+        ["Overdue", stats?.overdue_count || stats?.deadline_summary?.overdue || 0],
+        ["On Track", stats?.deadline_summary?.on_track || 0],
+        ["Due Soon", stats?.deadline_summary?.due_soon || 0],
+        ["Completed", stats?.deadline_summary?.completed || 0],
+      ];
+      const csv = [
+        `"RMS Dashboard Summary — ${fyLabel}"`,
+        "",
+        ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")),
+      ].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `rms-dashboard-summary-${fyLabel.replace(/\s+/g, "-").toLowerCase()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast("Dashboard summary exported", "success");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const getDeadlineStateConfig = (state) => {
     const configs = {
       on_track: { color: "success", icon: "bx-check-circle", bg: "bg-success" },
@@ -75,24 +108,6 @@ const Dashboard = () => {
     };
     return configs[state] || { color: "secondary", icon: "bx-help-circle", bg: "bg-secondary" };
   };
-
-  const StatCard = ({ title, value, icon, color, onClick }) => (
-    <Card 
-      className={`border-0 shadow-sm h-100 ${onClick ? 'cursor-pointer hover-shadow' : ''}`}
-      onClick={onClick}
-      style={{ transition: 'all 0.3s ease' }}
-    >
-      <CardBody className="d-flex align-items-center">
-        <div className={`rounded-circle p-3 bg-label-${color} me-3`}>
-          <i className={`bx ${icon} fs-3 text-${color}`}></i>
-        </div>
-        <div>
-          <h3 className="mb-0 fw-bold">{value}</h3>
-          <small className="text-muted">{title}</small>
-        </div>
-      </CardBody>
-    </Card>
-  );
 
   const DeadlineStateCard = ({ state, count, onClick }) => {
     const config = getDeadlineStateConfig(state);
@@ -115,133 +130,183 @@ const Dashboard = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="w-100">
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const selectedFyName =
+    financialYears.find((fy) => fy.uid === selectedFY)?.name || "All Financial Years";
+  const totalReports = stats?.total_reports || 0;
+  const submittedCount = stats?.status_summary?.submitted || 0;
+  const submissionRate =
+    totalReports > 0 ? Math.round((submittedCount / totalReports) * 100) : 0;
 
   return (
     <div className="w-100">
-      <BreadCumb pageList={["Report Management System (RMS)", "Dashboard"]} />
+      <BreadCumb pageList={["Report Management System (RMS)", "Dashboard"]}>
+        <RmsDashboardToggle />
+      </BreadCumb>
 
-      <div className="row">
-        <div className="col-12 mb-4">
-          <div className="card border-0 shadow-sm">
-            <div className="d-flex align-items-end row">
-              <div className="col-md-8">
-                <div className="card-body">
-                  <h5 className="card-title text-primary">
-                    Welcome, {user?.first_name || "User"} {user?.last_name || ""}!
-                  </h5>
-                  <p className="mb-4">
-                    Track deadlines, monitor submission progress, and manage your{" "}
-                    <span className="fw-medium">PPAA Reports</span> work from one place.
-                  </p>
-                  <div className="d-flex gap-2 flex-wrap">
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => navigate("/report-management/reports")}
-                    >
-                      <i className="bx bx-list-ul me-1"></i>
-                      View All Reports
-                    </button>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => navigate("/report-management/reports?status=submitted")}
-                    >
-                      <i className="bx bx-check-circle me-1"></i>
-                      Submitted Reports
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={fetchDashboardStats}
-                    >
-                      <i className="bx bx-refresh me-1"></i>
-                      Refresh Data
-                    </button>
-                  </div>
-                </div>
+      <div className="card shadow-sm border-0 mb-4">
+        <div className="card-body spism-dashboard-welcome">
+          <div className="spism-dashboard-header">
+            <div className="spism-dashboard-header__title">
+              <h5 className="mb-1 fw-semibold">
+                <i className="bx bx-file-blank me-2 text-primary" aria-hidden="true" />
+                PPAA Reports Dashboard
+              </h5>
+              <p className="mb-0 text-muted small">
+                Welcome, {user?.first_name || "User"}! Track deadlines, monitor submission progress,
+                and manage your reports for {selectedFyName}.
+              </p>
+            </div>
+            <div className="spism-dashboard-header__actions">
+              <div className="spism-dashboard-toolbar__controls">
+                <label
+                  htmlFor="rms-dept-financial-year"
+                  className="form-label mb-0 small text-muted text-uppercase"
+                >
+                  Financial Year
+                </label>
+                <select
+                  id="rms-dept-financial-year"
+                  className="form-select form-select-sm"
+                  style={{ minWidth: "180px", maxWidth: "240px" }}
+                  value={selectedFY}
+                  onChange={(e) => setSelectedFY(e.target.value)}
+                >
+                  <option value="">All Financial Years</option>
+                  {financialYears.map((fy) => (
+                    <option key={fy.uid} value={fy.uid}>
+                      {fy.name} {fy.is_current && "(Current)"}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="col-md-4 text-center text-md-left d-none d-md-block">
-                <div className="card-body pb-0 px-0 px-md-4">
-                  <img
-                    src="/assets/img/illustrations/man-with-laptop-light.png"
-                    height="140"
-                    alt="PPAA Reports Dashboard"
-                    data-app-dark-img="illustrations/man-with-laptop-dark.png"
-                    data-app-light-img="illustrations/man-with-laptop-light.png"
-                  />
-                </div>
-              </div>
+              <button
+                type="button"
+                className="btn btn-success btn-sm spism-dashboard-toolbar__export"
+                onClick={handleExportSummary}
+                disabled={exporting || loading}
+              >
+                {exporting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
+                    Exporting…
+                  </>
+                ) : (
+                  <>
+                    <i className="bx bx-download me-1" aria-hidden="true" />
+                    Export Summary
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Header with Financial Year Filter */}
-      <Row className="mb-4">
-        <Col md={8}>
-          <h4 className="mb-0">
-            <i className="bx bx-chart me-2 text-primary"></i>
-            Dashboard Overview
-          </h4>
-          <p className="text-muted mb-0">Monitor report status and deadlines at a glance</p>
-        </Col>
-        <Col md={4}>
-          <select
-            className="form-select"
-            value={selectedFY}
-            onChange={(e) => setSelectedFY(e.target.value)}
+      <div className="spism-stat-grid mb-4">
+        <RmsStatCard
+          label="Pending"
+          value={loading ? "—" : stats?.status_summary?.pending || 0}
+          sub="Awaiting action"
+          icon="bx bx-hourglass"
+          tone="spism-stat-card--orange"
+          onClick={() => navigate("/report-management/reports?status=pending")}
+        />
+        <RmsStatCard
+          label="In Progress"
+          value={loading ? "—" : stats?.status_summary?.in_progress || 0}
+          sub="Being prepared"
+          icon="bx bx-loader-circle"
+          tone="spism-stat-card--blue"
+          onClick={() => navigate("/report-management/reports?status=in_progress")}
+        />
+        <RmsStatCard
+          label="Submitted"
+          value={loading ? "—" : stats?.status_summary?.submitted || 0}
+          sub={`${submissionRate}% completion`}
+          icon="bx bx-check-circle"
+          tone="spism-stat-card--green"
+          onClick={() => navigate("/report-management/reports?status=submitted")}
+        />
+        <RmsStatCard
+          label="Due Today"
+          value={loading ? "—" : stats?.due_today_count || stats?.deadline_summary?.due_today || 0}
+          sub="Submit before end of day"
+          icon="bx bx-calendar-event"
+          tone="spism-stat-card--teal"
+          onClick={() => navigate("/report-management/reports?deadline_state=due_today")}
+        />
+        <RmsStatCard
+          label="Overdue"
+          value={loading ? "—" : stats?.overdue_count || stats?.deadline_summary?.overdue || 0}
+          sub="Needs immediate action"
+          icon="bx bx-error-circle"
+          tone="spism-stat-card--red"
+          onClick={() => navigate("/report-management/reports?deadline_state=overdue")}
+        />
+      </div>
+
+      <div className="row g-3 mb-4">
+        <div className="col-md-4">
+          <button
+            type="button"
+            className="card spism-quick-link h-100 text-decoration-none text-body w-100 border-0 text-start"
+            onClick={() => navigate("/report-management/reports")}
           >
-            <option value="">All Financial Years</option>
-            {financialYears.map(fy => (
-              <option key={fy.uid} value={fy.uid}>
-                {fy.name} {fy.is_current && "(Current)"}
-              </option>
-            ))}
-          </select>
-        </Col>
-      </Row>
+            <div className="card-body d-flex align-items-center gap-3">
+              <span className="avatar bg-label-primary rounded">
+                <i className="bx bx-list-ul fs-4" />
+              </span>
+              <div>
+                <div className="fw-semibold">View All Reports</div>
+                <div className="small text-muted">Open the full reports register</div>
+              </div>
+            </div>
+          </button>
+        </div>
+        <div className="col-md-4">
+          <button
+            type="button"
+            className="card spism-quick-link h-100 text-decoration-none text-body w-100 border-0 text-start"
+            onClick={() => navigate("/report-management/reports?status=submitted")}
+          >
+            <div className="card-body d-flex align-items-center gap-3">
+              <span className="avatar bg-label-success rounded">
+                <i className="bx bx-check-double fs-4" />
+              </span>
+              <div>
+                <div className="fw-semibold">Submitted Reports</div>
+                <div className="small text-muted">Review completed submissions</div>
+              </div>
+            </div>
+          </button>
+        </div>
+        <div className="col-md-4">
+          <button
+            type="button"
+            className="card spism-quick-link h-100 text-decoration-none text-body w-100 border-0 text-start"
+            onClick={fetchDashboardStats}
+          >
+            <div className="card-body d-flex align-items-center gap-3">
+              <span className="avatar bg-label-info rounded">
+                <i className="bx bx-refresh fs-4" />
+              </span>
+              <div>
+                <div className="fw-semibold">Refresh Data</div>
+                <div className="small text-muted">Reload dashboard statistics</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
 
-      {/* Status Summary Cards */}
-      <Row className="mb-4 g-3">
-        <Col md={4}>
-          <StatCard
-            title="Pending Reports"
-            value={stats?.status_summary?.pending || 0}
-            icon="bx-hourglass"
-            color="warning"
-            onClick={() => navigate('/report-management/reports?status=pending')}
-          />
-        </Col>
-        <Col md={4}>
-          <StatCard
-            title="In Progress"
-            value={stats?.status_summary?.in_progress || 0}
-            icon="bx-loader-circle"
-            color="info"
-            onClick={() => navigate('/report-management/reports?status=in_progress')}
-          />
-        </Col>
-        <Col md={4}>
-          <StatCard
-            title="Submitted"
-            value={stats?.status_summary?.submitted || 0}
-            icon="bx-check-circle"
-            color="success"
-            onClick={() => navigate('/report-management/reports?status=submitted')}
-          />
-        </Col>
-      </Row>
-
-      {/* Deadline Monitoring Section */}
+      {loading ? (
+        <div className="text-center py-4 mb-4">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading…</span>
+          </div>
+        </div>
+      ) : (
+        <>
       <Card className="border-0 shadow-sm mb-4">
         <CardBody>
           <div className="d-flex justify-content-between align-items-center mb-4">
@@ -528,6 +593,8 @@ const Dashboard = () => {
           </Col>
         )}
       </Row>
+        </>
+      )}
 
       <style>{`
         .cursor-pointer { cursor: pointer; }

@@ -3,9 +3,8 @@ import { useSelector } from "react-redux";
 import servicesList from "../data/servicesList.json";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { hasPermission, canAccessServiceMenu } from "../utils/permissions";
-import servicesConfig from "../data/servicesConfig";
 import { isMaoniDepartmentHandler } from "../utils/maoniRoles";
+import { isServiceVisible } from "../utils/serviceVisibility";
 import {
   pathIsUnderMaintenanceApp,
   maintenanceScreenPath,
@@ -19,23 +18,6 @@ import {
   ChevronRight,
   Sparkles,
 } from "lucide-react";
-
-function isServiceVisible(service, userPermissions, userRoles, user) {
-  const cfg = servicesConfig.find(
-    (s) => s.id === service.id || s.link === service.link
-  );
-  if (cfg) {
-    const viaMenu = canAccessServiceMenu(cfg.menu, userPermissions, userRoles, user);
-    if (viaMenu !== null) return viaMenu;
-  }
-  return hasPermission(
-    service.permission,
-    service.role,
-    userPermissions,
-    userRoles,
-    user
-  );
-}
 
 export const Services = () => {
   const user = useSelector((state) => state.userReducer?.data);

@@ -1,7 +1,6 @@
 /**
  * Helpers for PR flyer gallery: YouTube / Instagram page URLs → embed iframes.
  */
-import { API_BASE_URL } from "../Costants.jsx";
 
 export function prFlyerYoutubeVideoId(url) {
   if (!url || typeof url !== "string") return "";
@@ -64,20 +63,9 @@ export function prFlyerVideoProviderLabel(url) {
   return "Video";
 }
 
-/** Rewrite flyer/logo public URLs to the API base the browser actually uses (fixes wrong LAN host in image_url). */
+import { normalizePublicPortalAssetUrl } from "../helpers/publicPortalAssetUrl";
+
+/** Rewrite flyer/logo public URLs to the API base the browser actually uses. */
 export function resolvePublicPortalAssetUrl(url) {
-  const raw = (url || "").trim();
-  if (!raw) return "";
-  try {
-    const parsed = new URL(raw);
-    if (parsed.pathname.startsWith("/public/")) {
-      return `${API_BASE_URL}${parsed.pathname}${parsed.search}`;
-    }
-  } catch {
-    /* fall through */
-  }
-  if (raw.startsWith("/public/")) {
-    return `${API_BASE_URL}${raw}`;
-  }
-  return raw;
+  return normalizePublicPortalAssetUrl(url);
 }

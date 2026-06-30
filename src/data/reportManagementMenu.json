@@ -17,7 +17,8 @@
         "available": true,
         "link": "/report-management/dashboard",
         "permission": ["view_rmsreport"],
-        "role": ["RMS_DEPT_REPORTER", "RMS_SYS_ADMIN", "admin"]
+        "role": ["RMS_DEPT_REPORTER", "RMS_SYS_ADMIN", "admin"],
+        "isMain": true
       },
       {
         "id": "rms-ed-dashboard",

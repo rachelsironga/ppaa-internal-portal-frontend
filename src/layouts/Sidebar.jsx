@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 
 import servicesConfig from "../data/servicesConfig";
 import { hasPermission, hasAnyVisibleItem, isStaffOnly, isAllowedRouteForStaffOnly } from "../utils/permissions";
+import { injectSpismSidebarDashboard, isSpismDashboardPath } from "../utils/spismDashboardNav";
+import { injectRmsSidebarDashboard, isRmsDashboardPath } from "../utils/rmsDashboardNav";
 import { useInternalPortalI18n } from "../contexts/InternalPortalI18nContext.jsx";
 
 // KEEPING YOUR ORIGINAL UI EXACTLY THE SAME
@@ -136,6 +138,13 @@ const Sidebar = ({ isService = false }) => {
                 })
               : section.items;
 
+            let itemsToRender = filteredItems;
+            if (activeService === "performance-dashboard" && sectionIndex === 0) {
+              itemsToRender = injectSpismSidebarDashboard(filteredItems, user);
+            } else if (activeService === "report-management" && sectionIndex === 0) {
+              itemsToRender = injectRmsSidebarDashboard(filteredItems, user);
+            }
+
             return (
               <React.Fragment key={"header-" + sectionIndex}>
                 {section.header &&
@@ -154,8 +163,10 @@ const Sidebar = ({ isService = false }) => {
                     </li>
                   )}
 
-                {filteredItems
+                {itemsToRender
                   .filter((item) =>
+                    item.isSpismDashboardNav ||
+                    item.isRmsDashboardNav ||
                     hasPermission(
                       item.permission,
                       item.role,
@@ -196,7 +207,17 @@ const isMaoniExecutiveDashboardSidebarContext = (location) =>
   location.pathname !== "/ppaa-maoni/suggestions/new";
 
 const MenuItem = (item) => {
-  const { user, userPermissions, userRoles, submenu, staffOnly, isMain, translateMenuItem } = item;
+  const {
+    user,
+    userPermissions,
+    userRoles,
+    submenu,
+    staffOnly,
+    isMain,
+    isSpismDashboardNav,
+    isRmsDashboardNav,
+    translateMenuItem,
+  } = item;
   const location = useLocation();
   const label = translateMenuItem ? translateMenuItem(item.link, item.text) : item.text;
 
@@ -288,6 +309,14 @@ const MenuItem = (item) => {
       const currentSearch = (location.search || "").replace(/^\?/, "");
       isActive = currentSearch.includes(queryString);
     }
+  }
+
+  if (isSpismDashboardNav) {
+    isActive = isSpismDashboardPath(location.pathname);
+  }
+
+  if (isRmsDashboardNav) {
+    isActive = isRmsDashboardPath(location.pathname);
   }
 
   // PPAA Maoni: keep "Executive Dashboard" highlighted when reviewing a suggestion opened from that dashboard.

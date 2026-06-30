@@ -1,7 +1,5 @@
 /** Apps shown on /services that route to MaintenancePage while under development. */
 export const MAINTENANCE_APP_PATH_PREFIXES = [
-  "/performance-dashboard",
-  "/report-management",
   "/help-desk",
 ];
 

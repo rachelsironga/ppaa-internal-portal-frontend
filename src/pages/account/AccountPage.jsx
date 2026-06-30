@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Swal from "sweetalert2";
 import showToast from "../../helpers/ToastHelper";
 import { AccountContext } from "../../utils/context";
@@ -37,6 +37,7 @@ import {
   X,
   Key,
   FileSignature,
+  KeyRound,
   UserPlus,
   UserMinus,
   ChevronDown,
@@ -82,6 +83,37 @@ export const AccountPage = () => {
   const canEditProfilePhoto =
     isOwnAccountProfile || hasAccess(user, ["can_upload_profile_photo"]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [permissionSearch, setPermissionSearch] = useState("");
+
+  const profileRoles = useMemo(() => {
+    const groups = [...(selectedUser?.groups || user?.groups || [])];
+    const u = selectedUser || user;
+    if (!u) return groups;
+    const lower = new Set(groups.map((g) => String(g).toLowerCase()));
+    if (u.is_superuser && !lower.has("superuser")) {
+      groups.unshift("superuser");
+    }
+    if (
+      (u.is_superuser || String(u.account_type || "").toUpperCase() === "SUPER_USER") &&
+      !lower.has("admin")
+    ) {
+      groups.unshift("admin");
+    }
+    return groups;
+  }, [selectedUser, user]);
+
+  const profilePermissions = useMemo(
+    () => selectedUser?.user_permissions || user?.user_permissions || [],
+    [selectedUser, user]
+  );
+
+  const filteredProfilePermissions = useMemo(
+    () =>
+      profilePermissions.filter((perm) =>
+        String(perm).toLowerCase().includes(permissionSearch.toLowerCase())
+      ),
+    [profilePermissions, permissionSearch]
+  );
   const {
     currentPage,
     pageSize,
@@ -907,6 +939,38 @@ export const AccountPage = () => {
   border: 1px solid rgba(0, 133, 63, 0.2);
 }
 
+.role-badge--superuser {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: rgba(180, 83, 9, 0.25);
+}
+
+.permissions-container {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.permission-text {
+  word-break: break-word;
+}
+
 /* Buttons */
 .btn-primary {
   background: #00853f;
@@ -1408,8 +1472,8 @@ export const AccountPage = () => {
                   onClick={() => setActiveTab("roles")}
                 >
                   <ClipboardList size={16} />
-                  My Roles
-                  <span className="count-badge">{user?.groups?.length}</span>
+                  My Roles & Permissions
+                  <span className="count-badge">{profileRoles.length}</span>
                 </button>
                
               </div>
@@ -1796,24 +1860,84 @@ export const AccountPage = () => {
                 <div className="profile-card">
                   <h6 className="section-title mb-4">
                     <ClipboardList size={18} />
-                    Assigned Roles
+                    Assigned Roles & Permissions
                   </h6>
 
-                  {user?.groups?.length === 0 ? (
-                    <div className="empty-state">
-                      <ClipboardList size={32} />
-                      <p>No roles assigned</p>
-                    </div>
-                  ) : (
-                    <div className="roles-container">
-                      {user?.groups?.map((group, index) => (
-                        <div key={index} className="role-badge">
-                          <Shield size={14} />
-                          {group}
-                        </div>
-                      ))}
+                  {(selectedUser?.is_superuser ||
+                    String(selectedUser?.account_type || "").toUpperCase() === "SUPER_USER") && (
+                    <div className="alert alert-warning border-0 py-2 px-3 mb-4 small" role="status">
+                      <Shield size={14} className="me-1" />
+                      You have <strong>superuser</strong> access with full portal permissions.
                     </div>
                   )}
+
+                  <div className="mb-4">
+                    <h6 className="mb-3">Assigned Roles</h6>
+                    {profileRoles.length === 0 ? (
+                      <div className="empty-state">
+                        <ClipboardList size={32} />
+                        <p>No roles assigned</p>
+                      </div>
+                    ) : (
+                      <div className="roles-container">
+                        {profileRoles.map((group, index) => (
+                          <div
+                            key={`${group}-${index}`}
+                            className={`role-badge ${
+                              String(group).toLowerCase() === "superuser"
+                                ? "role-badge--superuser"
+                                : ""
+                            }`}
+                          >
+                            <Shield size={14} />
+                            {group}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                      <h6 className="mb-0">
+                        Assigned Permissions
+                        {profilePermissions.length > 0 ? (
+                          <span className="text-muted fw-normal ms-1">
+                            ({profilePermissions.length})
+                          </span>
+                        ) : null}
+                      </h6>
+                      <input
+                        type="text"
+                        placeholder="Search permissions..."
+                        className="form-control form-control-sm w-auto"
+                        value={permissionSearch}
+                        onChange={(e) => setPermissionSearch(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="permissions-container">
+                      {filteredProfilePermissions.length > 0 ? (
+                        <div className="permissions-grid">
+                          {filteredProfilePermissions.map((perm, index) => (
+                            <div key={`${perm}-${index}`} className="permission-item">
+                              <Shield size={12} className="text-primary" />
+                              <span className="permission-text">{perm}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-state small">
+                          <KeyRound size={24} />
+                          <p>
+                            {profilePermissions.length === 0
+                              ? "No permissions loaded"
+                              : "No permissions match your search"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

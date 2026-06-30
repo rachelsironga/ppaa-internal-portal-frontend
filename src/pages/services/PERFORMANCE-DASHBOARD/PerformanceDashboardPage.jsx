@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BreadCumb from "../../../layouts/BreadCumb";
+import SpismDashboardToggle from "../../../components/spism/SpismDashboardToggle";
+import "../../../components/spism/spismDashboard.css";
 import {
   getDashboardSummary,
   getFinancialYears,
@@ -68,41 +70,6 @@ export const PerformanceDashboardPage = () => {
     const roles = (user?.groups || []).map((r) => String(r).toLowerCase());
     return roles.some((r) => ["spism_dept_head", "spism_contributor", "spims_dept_head"].includes(r));
   }, [user]);
-
-  // Role-specific landing: dept heads stay here (scoped data); viewers → viewer dashboard; approvers → ES dashboard.
-  // SPISM admins keep both entry points without forced redirect.
-  useEffect(() => {
-    if (!user) return;
-    const normalized = (user?.groups || []).map((r) => String(r).toLowerCase());
-    if (normalized.includes("spism_admin")) return;
-    if (isDeptHeadLike) return;
-
-    const isApproverRole = normalized.some((r) => ["spism_approver", "spims_approver"].includes(r));
-    const hasEsWorkbench =
-      hasPermission(
-        ["can_view_spism_analytics"],
-        [],
-        user?.user_permissions,
-        user?.groups,
-        user
-      ) &&
-      hasPermission(
-        ["can_view_spism_approval"],
-        [],
-        user?.user_permissions,
-        user?.groups,
-        user
-      );
-    if (isApproverRole || hasEsWorkbench) {
-      navigate("/performance-dashboard/es-dashboard", { replace: true });
-      return;
-    }
-
-    const isViewerRole = normalized.some((r) => ["spism_viewer", "spims_viewer"].includes(r));
-    if (isViewerRole) {
-      navigate("/performance-dashboard/viewer-dashboard", { replace: true });
-    }
-  }, [user, navigate, isDeptHeadLike]);
 
   useEffect(() => {
     let cancelled = false;
@@ -305,47 +272,55 @@ export const PerformanceDashboardPage = () => {
 
   return (
     <>
-      <BreadCumb pageList={["SPISM"]} />
+      <BreadCumb pageList={["SPISM", "Dashboard"]}>
+        <SpismDashboardToggle />
+      </BreadCumb>
       <div className="row animate__animated animate__fadeIn">
         <div className="col-12">
-          <div className="card mb-4">
-            <div className="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
-              <div>
-                <h5 className="card-title mb-2">
-                  <i className="bx bx-line-chart me-2"></i>
-                  Strategic Performance Management Information System (SPISM)
+          <div className="card mb-4 shadow-sm border-0">
+            <div className="card-body spism-dashboard-welcome d-flex flex-wrap align-items-start justify-content-between gap-3">
+              <div className="flex-grow-1">
+                <h5 className="card-title mb-2 fw-semibold">
+                  <i className="bx bx-line-chart me-2 text-primary" aria-hidden="true" />
+                  Strategic Performance Management (SPISM)
                 </h5>
                 <p className="text-muted small mb-0">
-                  Activity → Target (KPI) → Objective → Institution. Weight-based aggregation and KPI-driven outcome tracking.
+                  Activity → Target (KPI) → Objective → Institution. Weight-based aggregation and
+                  KPI-driven outcome tracking for {financialYear}.
                 </p>
               </div>
-              <div className="d-flex align-items-center gap-2">
-                <label htmlFor="spism-dashboard-financial-year" className="form-label mb-0 small text-muted text-uppercase">
-                  Financial Year
-                </label>
-                <select
-                  id="spism-dashboard-financial-year"
-                  className="form-select form-select-sm"
-                  style={{ minWidth: "180px", maxWidth: "240px" }}
-                  value={financialYear}
-                  onChange={(e) => setFinancialYear(e.target.value)}
-                  disabled={financialYearsLoading}
-                  aria-busy={financialYearsLoading}
-                  aria-label="Financial year"
-                  title="Choose a configured financial year"
-                >
-                  {financialYearRows.length === 0 ? (
-                    <option value={financialYear}>
-                      {financialYearsLoading ? "Loading years…" : financialYear}
-                    </option>
-                  ) : (
-                    financialYearRows.map((y) => (
-                      <option key={y.uid || y.name} value={y.name}>
-                        {y.name}
+              <div className="spism-dashboard-toolbar">
+                <div className="spism-dashboard-toolbar__controls">
+                  <label
+                    htmlFor="spism-dashboard-financial-year"
+                    className="form-label mb-0 small text-muted text-uppercase"
+                  >
+                    Financial Year
+                  </label>
+                  <select
+                    id="spism-dashboard-financial-year"
+                    className="form-select form-select-sm"
+                    style={{ minWidth: "180px", maxWidth: "240px" }}
+                    value={financialYear}
+                    onChange={(e) => setFinancialYear(e.target.value)}
+                    disabled={financialYearsLoading}
+                    aria-busy={financialYearsLoading}
+                    aria-label="Financial year"
+                    title="Choose a configured financial year"
+                  >
+                    {financialYearRows.length === 0 ? (
+                      <option value={financialYear}>
+                        {financialYearsLoading ? "Loading years…" : financialYear}
                       </option>
-                    ))
-                  )}
-                </select>
+                    ) : (
+                      financialYearRows.map((y) => (
+                        <option key={y.uid || y.name} value={y.name}>
+                          {y.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -381,25 +356,33 @@ export const PerformanceDashboardPage = () => {
             {cards.map((card, idx) => (
               <div key={idx} className="col-md-4 col-lg-4 mb-4">
                 <div
-                  className="card h-100 cursor-pointer shadow-sm position-relative"
+                  className={`spism-stat-card spism-stat-card--${
+                    card.color === "primary"
+                      ? "purple"
+                      : card.color === "info"
+                        ? "blue"
+                        : "green"
+                  } cursor-pointer position-relative`}
                   onClick={() => navigate(card.link)}
                   style={{ cursor: "pointer" }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") navigate(card.link);
+                  }}
                 >
                   {card.badge != null ? (
-                    <span className="position-absolute top-0 end-0 m-2 badge bg-warning text-dark">
+                    <span className="position-absolute top-0 end-0 m-2 badge bg-white text-dark">
                       {card.badge}
                     </span>
                   ) : null}
-                  <div className="card-body d-flex align-items-center">
-                    <div className={`avatar avatar-lg me-3 bg-label-${card.color}`}>
-                      <i className={`bx ${card.icon} fs-2`}></i>
+                  <div className="spism-stat-card__body">
+                    <div className="spism-stat-card__icon" aria-hidden="true">
+                      <i className={card.icon} />
                     </div>
-                    <div className="flex-grow-1">
-                      <h6 className="mb-1">{card.title}</h6>
-                      <h4 className="mb-0">{card.value}</h4>
-                      <small className="text-muted">{card.sub}</small>
-                    </div>
-                    <i className="bx bx-chevron-right text-muted"></i>
+                    <div className="spism-stat-card__label">{card.title}</div>
+                    <div className="spism-stat-card__value">{card.value}</div>
+                    <div className="spism-stat-card__sub">{card.sub}</div>
                   </div>
                 </div>
               </div>
