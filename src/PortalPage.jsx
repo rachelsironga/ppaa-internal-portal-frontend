@@ -38,9 +38,10 @@ import {
   PUBLIC_DASHBOARD_CACHE_KEY,
 } from "./helpers/internalPortalDashboardCache";
 import {
-  getEventsOnCalendarDay,
   dayHasEventEndDate,
-  getEventCalendarDayRole,
+  getCalendarDisplayEventsForDay,
+  shouldShowEventEndMarkOnCalendarDay,
+  shouldShowEventTitleOnCalendarDay,
   truncateEventTitle,
 } from "./helpers/portalEventCalendar";
 
@@ -92,7 +93,7 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
   const dayNames = pp.calendarDays;
   
   const getEventsForDate = (day) =>
-    getEventsOnCalendarDay(events, year, month, day);
+    getCalendarDisplayEventsForDay(events, year, month, day);
 
   const hasEventEndDate = (day) =>
     dayHasEventEndDate(events, year, month, day);
@@ -185,35 +186,35 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                               ></i>
                             )}
                           </div>
-                          {(() => {
-                            const visibleDayEvents = dayEvents.filter(
-                              (event) =>
-                                getEventCalendarDayRole(event, year, month, day) !==
-                                "end"
-                            );
-                            if (visibleDayEvents.length === 0) return null;
-                            return (
+                          {dayEvents.length > 0 && (
                             <div className="d-flex flex-column gap-1">
-                              {visibleDayEvents.slice(0, 2).map((event, idx) => {
+                              {dayEvents.slice(0, 2).map(({ event, dayRole }, idx) => {
                                 const chipStyle = getEventTypeCalendarStyle(
                                   event.event_type
                                 );
-                                const dayRole = getEventCalendarDayRole(
-                                  event,
-                                  year,
-                                  month,
-                                  day
+                                const isStartCard = shouldShowEventTitleOnCalendarDay(dayRole);
+                                const isEndMark = shouldShowEventEndMarkOnCalendarDay(
+                                  dayRole,
+                                  event
                                 );
                                 return (
                                   <div
                                     key={event.uid || idx}
-                                    className="badge border-0"
-                                    style={{
-                                      fontSize: "0.65rem",
-                                      cursor: "pointer",
-                                      ...chipStyle,
-                                      padding: "3px 6px",
-                                    }}
+                                    className={
+                                      isEndMark
+                                        ? "d-flex justify-content-center"
+                                        : "badge border-0"
+                                    }
+                                    style={
+                                      isEndMark
+                                        ? { cursor: "pointer" }
+                                        : {
+                                            fontSize: "0.65rem",
+                                            cursor: "pointer",
+                                            ...chipStyle,
+                                            padding: "3px 6px",
+                                          }
+                                    }
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       if (onEventClick) onEventClick(event);
@@ -222,28 +223,35 @@ const SimpleCalendar = ({ events = [], onEventClick }) => {
                                       event.title ? event.title.toUpperCase() : ""
                                     }
                                   >
-                                    {dayRole === "start" ? (
+                                    {isStartCard ? (
                                       truncateEventTitle(event.title)
-                                    ) : (
-                                      <i
-                                        className="bx bx-dots-horizontal-rounded"
-                                        aria-hidden
-                                        style={{ fontSize: "0.75rem" }}
+                                    ) : isEndMark ? (
+                                      <span
+                                        aria-hidden="true"
+                                        style={{
+                                          display: "inline-block",
+                                          width: "0.5rem",
+                                          height: "0.5rem",
+                                          borderRadius: "50%",
+                                          backgroundColor:
+                                            chipStyle.backgroundColor,
+                                          border: `2px solid ${chipStyle.backgroundColor}`,
+                                          boxShadow: `0 0 0 1px ${chipStyle.color}`,
+                                        }}
                                       />
-                                    )}
+                                    ) : null}
                                   </div>
                                 );
                               })}
-                              {visibleDayEvents.length > 2 && (
+                              {dayEvents.length > 2 && (
                                 <small className="text-muted">
                                   {t("publicPortal.moreCount", {
-                                    n: visibleDayEvents.length - 2,
+                                    n: dayEvents.length - 2,
                                   })}
                                 </small>
                               )}
                             </div>
-                            );
-                          })()}
+                          )}
                         </>
                       )}
                     </td>
