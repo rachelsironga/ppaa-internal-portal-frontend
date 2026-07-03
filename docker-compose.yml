@@ -11,8 +11,9 @@ services:
         # Override: DOCKER_NODE_IMAGE=public.ecr.aws/docker/library/node:18-alpine
         NODE_IMAGE: ${DOCKER_NODE_IMAGE:-mirror.gcr.io/library/node:18-alpine}
         NGINX_IMAGE: ${DOCKER_NGINX_IMAGE:-mirror.gcr.io/library/nginx:alpine}
-        # Local dev: localhost. LAN deploy: set VITE_API_URL=http://192.168.1.4:8092 before build.
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8092}
+        # Baked into the JS at build time. Prefer .env (VITE_API_URL). Default = LAN server, NOT localhost,
+        # because on other PCs "localhost" means the visitor's own machine. For local dev set VITE_API_URL=http://localhost:8092.
+        VITE_API_URL: ${VITE_API_URL:-http://192.168.1.4:8092}
     # Image already contains /usr/share/nginx/html from build; no bind mount needed to serve.
     ports:
       - "3000:80"
