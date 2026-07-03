@@ -8,7 +8,7 @@ import {
   resolvePublicPortalAssetUrl,
 } from "../../utils/prFlyerVideo";
 
-function FlyerCard({ flyer, onOpen }) {
+function FlyerCard({ flyer, onOpen, eager = false }) {
   const { t } = useInternalPortalI18n();
   const title = (flyer.title || "").trim();
   const label = title || "Flyer or poster";
@@ -53,7 +53,8 @@ function FlyerCard({ flyer, onOpen }) {
           <img
             src={posterSrc}
             alt=""
-            loading="lazy"
+            loading={eager ? "eager" : "lazy"}
+            fetchpriority={eager ? "high" : "auto"}
             decoding="async"
             onError={() => setImgError(true)}
           />
@@ -271,9 +272,9 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
               style={{ "--pr-marquee-sec": `${marqueeDurationSec}s` }}
             >
               <div className="pr-flyers-gallery__marquee-group">
-                {list.map((flyer) => (
+                {list.map((flyer, idx) => (
                   <div key={flyer.uid} className="pr-flyers-gallery__marquee-slot">
-                    <FlyerCard flyer={flyer} onOpen={handleOpen} />
+                    <FlyerCard flyer={flyer} onOpen={handleOpen} eager={idx < 3} />
                   </div>
                 ))}
               </div>
@@ -288,7 +289,7 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
           </div>
         ) : (
           <div className="pr-flyers-gallery__single flex-grow-1">
-            <FlyerCard flyer={list[0]} onOpen={handleOpen} />
+            <FlyerCard flyer={list[0]} onOpen={handleOpen} eager />
           </div>
         )}
       </div>
