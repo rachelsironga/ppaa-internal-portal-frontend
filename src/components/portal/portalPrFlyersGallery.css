@@ -18,18 +18,18 @@
   background: linear-gradient(180deg, rgba(248, 250, 249, 0.95) 0%, rgba(255, 255, 255, 1) 28%);
 }
 
-/* Single flyer: one card, full width of gallery body */
+/* Single flyer: one card, roughly half the gallery body width, taller so image is clearly visible */
 .pr-flyers-gallery__single {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  min-height: clamp(268px, 42vw, 400px);
+  min-height: clamp(320px, 50vw, 480px);
 }
 
 .pr-flyers-gallery__single .pr-flyer-card {
   width: 100%;
-  max-width: 280px;
-  min-height: clamp(268px, 42vw, 400px);
+  max-width: clamp(300px, 66%, 460px);
+  min-height: clamp(360px, 56vw, 540px);
 }
 
 /* Horizontal marquee when multiple flyers */
@@ -37,7 +37,7 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: clamp(268px, 42vw, 400px);
+  min-height: clamp(320px, 50vw, 480px);
   flex: 1 1 auto;
   mask-image: linear-gradient(
     90deg,
@@ -90,15 +90,16 @@
 
 .pr-flyers-gallery__marquee-slot {
   flex: 0 0 auto;
-  width: clamp(158px, 38vw, 220px);
+  width: clamp(300px, 72vw, 420px);
   display: flex;
   align-self: stretch;
-  min-height: clamp(268px, 42vw, 400px);
+  min-height: clamp(360px, 56vw, 540px);
 }
 
 @media (min-width: 992px) {
   .pr-flyers-gallery__marquee-slot {
-    width: clamp(176px, 22vw, 240px);
+    /* About half of the parent gallery width per card */
+    width: clamp(360px, 44vw, 480px);
   }
 }
 
@@ -311,14 +312,14 @@
   margin-right: auto;
 }
 
-/* Dashboard sidebar column (col-lg-4) */
+/* Dashboard sidebar column (col-lg-4) — wide cards so the image reads clearly */
 .pr-flyers-gallery--narrow .pr-flyers-gallery__marquee-slot {
-  width: clamp(140px, 72%, 200px);
-  min-height: clamp(240px, 48vw, 320px);
+  width: clamp(300px, 96%, 460px);
+  min-height: clamp(360px, 60vw, 520px);
 }
 
 .pr-flyers-gallery--narrow .pr-flyer-card__media {
-  min-height: clamp(148px, 38vw, 220px);
+  min-height: clamp(320px, 56vw, 480px);
 }
 
 .pr-flyers-gallery--narrow .pr-flyers-gallery__single .pr-flyer-card {
