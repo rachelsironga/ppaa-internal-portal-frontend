@@ -7,6 +7,8 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
-    open: true
-  }
+    // Allow opening via http://portal.ppaa.go.tz (local nginx on :80 → :3000)
+    allowedHosts: ['portal.ppaa.go.tz', 'localhost', '192.168.1.4'],
+    open: '/',
+  },
 })

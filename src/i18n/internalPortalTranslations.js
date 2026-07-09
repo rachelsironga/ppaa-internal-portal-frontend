@@ -161,7 +161,7 @@ const en = {
     prFlyersEmptyLead:
       "When PR adds flyers, posters, or video links, they will appear here. Check back soon.",
     prFlyersMarqueeAria:
-      "Flyers and posters, auto-scrolling. Hover to pause.",
+      "Flyers and posters, scrolling left to right. Hover to pause.",
     lightboxPoster: "Poster",
     dragToRearrange: "Drag to rearrange",
     statusLabel: "Status",
@@ -330,7 +330,7 @@ const sw = {
     prFlyersEmptyLead:
       "PR inapoongeza mabango, makavazi, au viungo vya video, vitaonekana hapa. Rudia baadaye.",
     prFlyersMarqueeAria:
-      "Matangazo na makavazi, yanasogeza kiotomatiki. Peana kielekezi kusitisha.",
+      "Matangazo na makavazi, yanasogeza kushoto kwenda kulia. Peana kielekezi kusitisha.",
     lightboxPoster: "Bango",
     dragToRearrange: "Buruta kupanga upya",
     statusLabel: "Hali",
