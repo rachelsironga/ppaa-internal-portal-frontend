@@ -11,6 +11,7 @@ import {
 function FlyerCard({ flyer, onOpen, eager = false }) {
   const { t } = useInternalPortalI18n();
   const title = (flyer.title || "").trim();
+  const caption = (flyer.caption || "").trim();
   const label = title || "Flyer or poster";
   const videoUrl = (flyer.video_url || "").trim();
   const embedSrc = useMemo(() => (videoUrl ? prFlyerVideoEmbedSrc(videoUrl) : null), [videoUrl]);
@@ -52,7 +53,7 @@ function FlyerCard({ flyer, onOpen, eager = false }) {
         {posterSrc && !imgError ? (
           <img
             src={posterSrc}
-            alt=""
+            alt={title || "Flyer or poster"}
             loading={eager ? "eager" : "lazy"}
             fetchpriority={eager ? "high" : "auto"}
             decoding="async"
@@ -88,6 +89,7 @@ function FlyerCard({ flyer, onOpen, eager = false }) {
           </span>
         </div>
       </div>
+    
     </div>
   );
 }
@@ -99,7 +101,7 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
   const { t } = useInternalPortalI18n();
   const list = Array.isArray(flyers) ? flyers : [];
   const useMarquee = list.length > 1;
-  const marqueeDurationSec = Math.min(90, Math.max(24, list.length * 14));
+  const marqueeDurationSec = Math.min(90, Math.max(28, list.length * 12));
 
   const reactId = useId().replace(/:/g, "");
   const modalDomId = `pr-flyer-lightbox-${reactId}`;
@@ -224,13 +226,17 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
         lift ? " portal-card-lift" : ""
       }${compact ? " pr-flyers-gallery--narrow" : ""}`}
     >
-      <div className="card-header border-0 pr-flyers-gallery__header d-flex justify-content-between align-items-start flex-wrap gap-2 py-3 flex-shrink-0">
-        <div className="d-flex align-items-start gap-2 min-w-0 flex-grow-1">
+      <div
+        className={`card-header border-0 pr-flyers-gallery__header d-flex justify-content-between align-items-center flex-wrap gap-2 flex-shrink-0${
+          compact ? " portal-dashboard-card-header py-3" : " py-2"
+        }`}
+      >
+        <div className="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
           <span
             className="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
             style={{
-              width: 38,
-              height: 38,
+              width: compact ? 32 : 38,
+              height: compact ? 32 : 38,
               background: "linear-gradient(135deg, rgba(0,133,63,0.15), rgba(61,166,106,0.12))",
             }}
             aria-hidden
@@ -241,14 +247,16 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
             <h5 className="mb-0 pr-flyers-gallery__title-text" style={{ color: "#00853f", fontWeight: 700 }}>
               {t("publicPortal.prFlyersTitle")}
             </h5>
-            <p className="mb-0 text-muted small pr-flyers-gallery__subtitle">
-              {t("publicPortal.prFlyersSubtitle")}
-            </p>
+            {!compact ? (
+              <p className="mb-0 text-muted small pr-flyers-gallery__subtitle">
+                {t("publicPortal.prFlyersSubtitle")}
+              </p>
+            ) : null}
           </div>
         </div>
         {headerRight ? <div className="d-flex align-items-center gap-2 flex-shrink-0">{headerRight}</div> : null}
       </div>
-      <div className="card-body p-3 p-md-4 pr-flyers-gallery__body flex-grow-1 d-flex flex-column">
+      <div className="card-body p-2 p-md-3 pr-flyers-gallery__body flex-grow-1 d-flex flex-column min-h-0">
         {list.length === 0 ? (
           <div className="pr-flyers-gallery__empty flex-grow-1 d-flex flex-column justify-content-center">
             <div className="pr-flyers-gallery__empty-icon">
@@ -263,7 +271,7 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
           </div>
         ) : useMarquee ? (
           <div
-            className="pr-flyers-gallery__marquee flex-grow-1"
+            className="pr-flyers-gallery__marquee flex-grow-1 min-h-0"
             role="region"
             aria-label={t("publicPortal.prFlyersMarqueeAria")}
           >
@@ -278,7 +286,10 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
                   </div>
                 ))}
               </div>
-              <div className="pr-flyers-gallery__marquee-group pr-flyers-gallery__marquee-group--clone" aria-hidden="true">
+              <div
+                className="pr-flyers-gallery__marquee-group pr-flyers-gallery__marquee-group--clone"
+                aria-hidden="true"
+              >
                 {list.map((flyer) => (
                   <div key={`${flyer.uid}-clone`} className="pr-flyers-gallery__marquee-slot">
                     <FlyerCard flyer={flyer} onOpen={handleOpen} />
@@ -288,7 +299,7 @@ export function PrFlyersGallery({ flyers = [], id, headerRight = null, lift = fa
             </div>
           </div>
         ) : (
-          <div className="pr-flyers-gallery__single flex-grow-1">
+          <div className="pr-flyers-gallery__single flex-grow-1 min-h-0">
             <FlyerCard flyer={list[0]} onOpen={handleOpen} eager />
           </div>
         )}

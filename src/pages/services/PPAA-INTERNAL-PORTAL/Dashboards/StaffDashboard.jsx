@@ -1006,7 +1006,7 @@ export const StaffDashboard = () => {
 
         {/* PR flyers & posters — same row as Events */}
         <div className="col-12 col-lg-4 d-flex">
-          <PrFlyersGallery flyers={prFlyers} />
+          <PrFlyersGallery flyers={prFlyers} compact />
         </div>
       </div>
                         </div>

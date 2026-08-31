@@ -1481,7 +1481,7 @@ const PortalPage = () => {
 
           {/* PR flyers & posters — same row */}
           <div className="col-12 col-lg-4 d-flex">
-            <PrFlyersGallery flyers={prFlyers} id="pr-flyers-section" lift />
+            <PrFlyersGallery flyers={prFlyers} id="pr-flyers-section" lift compact />
           </div>
         </SectionReveal>
 
